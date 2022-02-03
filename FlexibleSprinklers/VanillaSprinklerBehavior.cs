@@ -7,7 +7,7 @@ namespace Shockah.FlexibleSprinklers
 	{
 		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{
-			return info.Layout.Select(t => new IntPoint((int)t.X + sprinklerPosition.X, (int)t.Y + sprinklerPosition.Y)).ToHashSet();
+			return info.Layout.Select(t => new IntPoint((int)t.X, (int)t.Y)).ToHashSet();
 		}
 	}
 }

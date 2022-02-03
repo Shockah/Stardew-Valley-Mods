@@ -18,7 +18,8 @@ namespace Shockah.FlexibleSprinklers
 
 		internal ModConfig Config { get; private set; }
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; }
-		private List<System.Func<Object, Vector2[]>> sprinklerCoverageProviders = new();
+		private readonly List<System.Func<Object, int?>> sprinklerTierProviders = new();
+		private readonly List<System.Func<Object, Vector2[]>> sprinklerCoverageProviders = new();
 
 		internal ILineSprinklersApi LineSprinklersApi { get; private set; }
 		internal IBetterSprinklersApi BetterSprinklersApi { get; private set; }
@@ -54,7 +55,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnObjectListChanged(object sender, ObjectListChangedEventArgs e)
 		{
-			if (!Config.activateOnPlacement)
+			if (!Config.ActivateOnPlacement)
 				return;
 			foreach (var (_, sprinkler) in e.Added)
 			{
@@ -64,7 +65,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
 		{
-			if (!Config.activateOnAction)
+			if (!Config.ActivateOnAction)
 				return;
 			if (!Context.IsPlayerFree)
 				return;
@@ -99,13 +100,13 @@ namespace Shockah.FlexibleSprinklers
 				}
 			);
 
-			string ConfigNameForSprinklerBehavior(ModConfig.SprinklerBehavior behavior)
+			string ConfigNameForSprinklerBehavior(ModConfig.SprinklerBehaviorEnum behavior)
 			{
 				return behavior switch
 				{
-					ModConfig.SprinklerBehavior.Flexible => "Flexible (vanilla > flood fill)",
-					ModConfig.SprinklerBehavior.FlexibleWithoutVanilla => "Flood fill",
-					ModConfig.SprinklerBehavior.Vanilla => "Vanilla",
+					ModConfig.SprinklerBehaviorEnum.Flexible => "Flexible (vanilla > flood fill)",
+					ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => "Flood fill",
+					ModConfig.SprinklerBehaviorEnum.Vanilla => "Vanilla",
 					_ => throw new System.ArgumentException(),
 				};
 			}
@@ -130,17 +131,17 @@ namespace Shockah.FlexibleSprinklers
 				mod: ModManifest,
 				name: () => "Sprinkler behavior",
 				tooltip: () => "> Flexible: Will water using vanilla behavior, and then flood fill for any tiles that failed.\n> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Does not change the sprinkler behavior.",
-				getValue: () => ConfigNameForSprinklerBehavior(Config.sprinklerBehavior),
-				setValue: value => Config.sprinklerBehavior = ((ModConfig.SprinklerBehavior[])System.Enum.GetValues(typeof(ModConfig.SprinklerBehavior))).First(e => ConfigNameForSprinklerBehavior(e) == value),
-				allowedValues: ((ModConfig.SprinklerBehavior[])System.Enum.GetValues(typeof(ModConfig.SprinklerBehavior))).Select(e => ConfigNameForSprinklerBehavior(e)).ToArray()
+				getValue: () => ConfigNameForSprinklerBehavior(Config.SprinklerBehavior),
+				setValue: value => Config.SprinklerBehavior = ((ModConfig.SprinklerBehaviorEnum[])System.Enum.GetValues(typeof(ModConfig.SprinklerBehaviorEnum))).First(e => ConfigNameForSprinklerBehavior(e) == value),
+				allowedValues: ((ModConfig.SprinklerBehaviorEnum[])System.Enum.GetValues(typeof(ModConfig.SprinklerBehaviorEnum))).Select(e => ConfigNameForSprinklerBehavior(e)).ToArray()
 			);
 
 			configMenu.AddTextOption(
 				mod: ModManifest,
 				name: () => "Flood fill balance mode",
 				tooltip: () => "Edge case handling for the flood fill behavior.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
-				getValue: () => ConfigNameForTileWaterBalanceMode(Config.tileWaterBalanceMode),
-				setValue: value => Config.tileWaterBalanceMode = ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])System.Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).First(e => ConfigNameForTileWaterBalanceMode(e) == value),
+				getValue: () => ConfigNameForTileWaterBalanceMode(Config.TileWaterBalanceMode),
+				setValue: value => Config.TileWaterBalanceMode = ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])System.Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).First(e => ConfigNameForTileWaterBalanceMode(e) == value),
 				allowedValues: ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])System.Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).Select(e => ConfigNameForTileWaterBalanceMode(e)).ToArray()
 			);
 
@@ -152,25 +153,103 @@ namespace Shockah.FlexibleSprinklers
 			configMenu.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Activate on placement",
-				getValue: () => Config.activateOnPlacement,
-				setValue: value => Config.activateOnPlacement = value
+				getValue: () => Config.ActivateOnPlacement,
+				setValue: value => Config.ActivateOnPlacement = value
 			);
 
 			configMenu.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Activate on action",
-				getValue: () => Config.activateOnAction,
-				setValue: value => Config.activateOnAction = value
+				getValue: () => Config.ActivateOnAction,
+				setValue: value => Config.ActivateOnAction = value
+			);
+
+			configMenu.AddSectionTitle(
+				mod: ModManifest,
+				text: () => "Sprinkler power",
+				tooltip: () => "The values below will only be used when watering via the flood fill method."
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 1 (Basic)",
+				tooltip: () => "How many tiles should tier 1 (Basic) sprinklers cover.",
+				getValue: () => Config.Tier1Power,
+				setValue: value => Config.Tier1Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 2 (Quality)",
+				tooltip: () => "How many tiles should tier 2 (Quality / Basic + Pressure Nozzle) sprinklers cover.",
+				getValue: () => Config.Tier2Power,
+				setValue: value => Config.Tier2Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 3 (Iridium)",
+				tooltip: () => "How many tiles should tier 3 (Iridium / Quality + Pressure Nozzle) sprinklers cover.",
+				getValue: () => Config.Tier3Power,
+				setValue: value => Config.Tier3Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 4 (Iridium + Nozzle)",
+				tooltip: () => "How many tiles should tier 4 (Iridium + Pressure Nozzle) sprinklers cover.",
+				getValue: () => Config.Tier4Power,
+				setValue: value => Config.Tier4Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 5",
+				tooltip: () => "How many tiles should tier 5 sprinklers (if you have mods with such a tier) cover.",
+				getValue: () => Config.Tier5Power,
+				setValue: value => Config.Tier5Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 6",
+				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+				getValue: () => Config.Tier6Power,
+				setValue: value => Config.Tier6Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 7",
+				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+				getValue: () => Config.Tier7Power,
+				setValue: value => Config.Tier7Power = value,
+				min: 0, interval: 1
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Tier 8",
+				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+				getValue: () => Config.Tier8Power,
+				setValue: value => Config.Tier8Power = value,
+				min: 0, interval: 1
 			);
 		}
 
 		private void SetupSprinklerBehavior()
 		{
-			SprinklerBehavior = Config.sprinklerBehavior switch
+			SprinklerBehavior = Config.SprinklerBehavior switch
 			{
-				ModConfig.SprinklerBehavior.Flexible => new FlexibleSprinklerBehavior(Config.tileWaterBalanceMode, new VanillaSprinklerBehavior()),
-				ModConfig.SprinklerBehavior.FlexibleWithoutVanilla => new FlexibleSprinklerBehavior(Config.tileWaterBalanceMode, null),
-				ModConfig.SprinklerBehavior.Vanilla => new VanillaSprinklerBehavior(),
+				ModConfig.SprinklerBehaviorEnum.Flexible => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
+				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, null),
+				ModConfig.SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
 				_ => throw new System.ArgumentException(),
 			};
 		}
@@ -191,7 +270,46 @@ namespace Shockah.FlexibleSprinklers
 
 		private int GetSprinklerPower(Object sprinkler, Vector2[] layout)
 		{
-			return layout.Length;
+			int? GetTier()
+			{
+				foreach (var sprinklerTierProvider in sprinklerTierProviders)
+				{
+					var tier = sprinklerTierProvider(sprinkler);
+					if (tier != null)
+						return tier;
+				}
+
+				if (LineSprinklersApi != null)
+				{
+					if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[] tilePositions))
+					{
+						switch (tilePositions.Length)
+						{
+							case 4:
+								return 1;
+							case 8:
+								return 2;
+							case 24:
+								return 3;
+						}
+					}
+				}
+
+				var radius = sprinkler.GetModifiedRadiusForSprinkler();
+				return radius == -1 ? null : radius + 1;
+			}
+
+			var tier = GetTier();
+
+			if (tier == null)
+			{
+				return layout.Length;
+			}
+			else
+			{
+				var powers = new[] { Config.Tier1Power, Config.Tier2Power, Config.Tier3Power, Config.Tier4Power, Config.Tier5Power, Config.Tier6Power, Config.Tier7Power, Config.Tier8Power };
+				return tier.Value < powers.Length ? powers[tier.Value - 1] : layout.Length;
+			}
 		}
 
 		internal SprinklerInfo GetSprinklerInfo(Object sprinkler)
@@ -237,6 +355,11 @@ namespace Shockah.FlexibleSprinklers
 			var layout = sprinkler.GetSprinklerTiles().Where(t => t != Vector2.Zero).ToArray();
 			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return layout;
+		}
+
+		public void RegisterSprinklerTierProvider(System.Func<Object, int?> provider)
+		{
+			sprinklerTierProviders.Add(provider);
 		}
 
 		public void RegisterSprinklerCoverageProvider(System.Func<Object, Vector2[]> provider)
