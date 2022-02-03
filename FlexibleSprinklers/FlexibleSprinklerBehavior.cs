@@ -69,14 +69,44 @@ namespace Shockah.FlexibleSprinklers
 			var otherSprinklers = new HashSet<IntPoint>();
 			var @checked = new HashSet<IntPoint>();
 			var toCheck = new Queue<IntPoint>();
-			var costMap = new Dictionary<IntPoint, double>();
+			var maxCost = 0;
 
-			toCheck.Enqueue(sprinklerPosition);
-			costMap[sprinklerPosition] = 0;
+			var maxDX = Math.Max(wateredTiles.Count > 0 ? wateredTiles.Max(t => Math.Abs(t.X - sprinklerPosition.X)) : 0, sprinklerRange);
+			var maxDY = Math.Max(wateredTiles.Count > 0 ? wateredTiles.Max(t => Math.Abs(t.Y - sprinklerPosition.Y)) : 0, sprinklerRange);
+
+			var costArray = new int[maxDX * 2 + 1, maxDY * 2 + 1];
+			var costArrayBaseXIndex = maxDX;
+			var costArrayBaseYIndex = maxDY;
+
+			for (int y = 0; y < costArray.GetLength(1); y++)
+			{
+				for (int x = 0; x < costArray.GetLength(0); x++)
+				{
+					costArray[x, y] = int.MaxValue;
+				}
+			}
+
+			int GetCost(IntPoint point)
+			{
+				return costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y];
+			}
+
+			void SetCost(IntPoint point, int cost)
+			{
+				costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y] = cost;
+			}
+
+			@checked.Add(sprinklerPosition);
+			SetCost(sprinklerPosition, 0);
 			foreach (var wateredTile in wateredTiles)
 			{
 				toCheck.Enqueue(sprinklerPosition);
-				costMap[wateredTile] = 0;
+				SetCost(sprinklerPosition, 0);
+			}
+			foreach (var neighbor in sprinklerPosition.Neighbors)
+			{
+				toCheck.Enqueue(neighbor);
+				SetCost(neighbor, 1);
 			}
 
 			while (toCheck.Count > 0)
@@ -84,37 +114,38 @@ namespace Shockah.FlexibleSprinklers
 				var tilePosition = toCheck.Dequeue();
 				@checked.Add(tilePosition);
 
-				var tilePathLength = costMap[tilePosition];
+				var tilePathLength = GetCost(tilePosition);
 				var newTilePathLength = tilePathLength + 1;
 
-				if (tilePathLength > 0)
+				if (waterableTiles.Count >= unwateredTileCount && newTilePathLength > maxCost)
+					continue;
+
+				switch (map[tilePosition])
 				{
-					if (tilePathLength > sprinklerRange)
+					case SoilType.Dry:
+					case SoilType.Wet:
+						if (!wateredTiles.Contains(tilePosition))
+							waterableTiles.Add(tilePosition);
+						break;
+					case SoilType.Sprinkler:
+						otherSprinklers.Add(tilePosition);
 						continue;
-					if (waterableTiles.Count >= unwateredTileCount && costMap[waterableTiles.Last()] > newTilePathLength)
+					case SoilType.NonSoil:
+					case SoilType.NonWaterable:
 						continue;
-					switch (map[tilePosition])
-					{
-						case SoilType.Dry:
-						case SoilType.Wet:
-							if (!wateredTiles.Contains(tilePosition))
-								waterableTiles.Add(tilePosition);
-							break;
-						case SoilType.Sprinkler:
-							otherSprinklers.Add(tilePosition);
-							continue;
-						case SoilType.NonSoil:
-						case SoilType.NonWaterable:
-							continue;
-					}
 				}
+
+				if (tilePathLength == sprinklerRange)
+					continue;
 
 				foreach (var neighbor in tilePosition.Neighbors)
 				{
 					if (@checked.Contains(neighbor))
 						continue;
 					toCheck.Enqueue(neighbor);
-					costMap[neighbor] = costMap.ContainsKey(neighbor) ? Math.Min(costMap[neighbor], newTilePathLength) : newTilePathLength;
+					var newCost = Math.Min(GetCost(neighbor), newTilePathLength);
+					SetCost(neighbor, newCost);
+					maxCost = Math.Max(newCost, maxCost);
 				}
 			}
 

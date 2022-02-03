@@ -54,11 +54,12 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (IsVanillaQueryInProgress)
 				return true;
-			
-			var currentLocation = ObjectPatches.CurrentLocation ?? throw new System.InvalidOperationException("Location should not be null - potential mod conflict.");
+
+			if (ObjectPatches.CurrentLocation == null)
+				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", StardewModdingAPI.LogLevel.Error);
 			
 			__result = FlexibleSprinklers.Instance.SprinklerBehavior.GetSprinklerTiles(
-				new GameLocationMap(currentLocation),
+				new GameLocationMap(ObjectPatches.CurrentLocation),
 				new IntPoint((int)__instance.TileLocation.X, (int)__instance.TileLocation.Y),
 				FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
 			).Select(e => new Vector2(e.X, e.Y)).ToList();
