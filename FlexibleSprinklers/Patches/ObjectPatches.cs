@@ -112,19 +112,9 @@ namespace Shockah.FlexibleSprinklers
 
 			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;
 			ObjectPatches.IsVanillaQueryInProgress = true;
-
-			var sortedSprinklers = CurrentLocation.Objects.Values
-				.Where(o => o.IsSprinkler())
-				.OrderBy(s => (target - s.TileLocation).Length() * FlexibleSprinklers.Instance.GetSprinklerInfo(s).Power);
-
+			var result = FlexibleSprinklers.Instance.IsTileInRangeOfSprinklers(CurrentLocation.Objects.Values.Where(o => o.IsSprinkler()), CurrentLocation, target);
 			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
-
-			foreach (var sprinkler in sortedSprinklers)
-			{
-				if (FlexibleSprinklers.Instance.GetModifiedSprinklerCoverage(sprinkler, CurrentLocation).Contains(target))
-					return true;
-			}
-			return false;
+			return result;
 		}
 
 		private static bool IsInSprinklerRangeBroadphase_Prefix(Object __instance, Vector2 target, ref bool __result)

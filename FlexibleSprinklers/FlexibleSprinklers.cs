@@ -340,12 +340,44 @@ namespace Shockah.FlexibleSprinklers
 				return tier.Value < powers.Length ? powers[tier.Value - 1] : layout.Length;
 			}
 		}
-
 		internal SprinklerInfo GetSprinklerInfo(Object sprinkler)
 		{
 			var layout = GetUnmodifiedSprinklerCoverage(sprinkler);
 			var power = GetSprinklerPower(sprinkler, layout);
 			return new SprinklerInfo(layout, power);
+		}
+
+		public int GetSprinklerPower(Object sprinkler)
+		{
+			return GetSprinklerInfo(sprinkler).Power;
+		}
+
+		public int GetFloodFillSprinklerRange(int power)
+		{
+			return (int)System.Math.Floor(System.Math.Pow(power, 0.62) + 1);
+		}
+
+		public bool IsTileInRangeOfSprinkler(Object sprinkler, GameLocation location, Vector2 tileLocation)
+		{
+			var info = GetSprinklerInfo(sprinkler);
+			var manhattanDistance = ((int)tileLocation.X - (int)sprinkler.TileLocation.X) + ((int)tileLocation.Y - (int)sprinkler.TileLocation.Y);
+			if (manhattanDistance > GetFloodFillSprinklerRange(info.Power))
+			{
+				if (!info.Layout.Contains(tileLocation - sprinkler.TileLocation))
+					return false;
+			}
+			return GetModifiedSprinklerCoverage(sprinkler, location).Contains(tileLocation);
+		}
+
+		public bool IsTileInRangeOfSprinklers(IEnumerable<Object> sprinklers, GameLocation location, Vector2 tileLocation)
+		{
+			var sortedSprinklers = sprinklers.OrderBy(s => (tileLocation - s.TileLocation).Length() * FlexibleSprinklers.Instance.GetSprinklerInfo(s).Power);
+			foreach (var sprinkler in sortedSprinklers)
+			{
+				if (IsTileInRangeOfSprinkler(sprinkler, location, tileLocation))
+					return true;
+			}
+			return false;
 		}
 
 		public Vector2[] GetModifiedSprinklerCoverage(Object sprinkler, GameLocation location)
@@ -386,7 +418,9 @@ namespace Shockah.FlexibleSprinklers
 
 			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;
 			ObjectPatches.IsVanillaQueryInProgress = true;
-			var layout = sprinkler.GetSprinklerTiles().Where(t => t != Vector2.Zero).ToArray();
+			var layout = sprinkler.GetSprinklerTiles()
+				.Select(t => t - sprinkler.TileLocation)
+				.Where(t => t != Vector2.Zero).ToArray();
 			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return layout;
 		}

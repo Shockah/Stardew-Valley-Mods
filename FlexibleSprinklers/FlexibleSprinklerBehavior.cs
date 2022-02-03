@@ -20,11 +20,6 @@ namespace Shockah.FlexibleSprinklers
 			this.vanillaBehavior = vanillaBehavior;
 		}
 
-		private int GetSprinklerRange(SprinklerInfo info)
-		{
-			return (int)Math.Floor(Math.Pow(info.Power, 0.62) + 1);
-		}
-
 		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{
 			var wateredTiles = new HashSet<IntPoint>();
@@ -64,7 +59,7 @@ namespace Shockah.FlexibleSprinklers
 			if (unwateredTileCount <= 0)
 				return wateredTiles;
 
-			var sprinklerRange = GetSprinklerRange(info);
+			var sprinklerRange = FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(info.Power);
 			var waterableTiles = new HashSet<IntPoint>();
 			var otherSprinklers = new HashSet<IntPoint>();
 			var @checked = new HashSet<IntPoint>();
@@ -185,10 +180,12 @@ namespace Shockah.FlexibleSprinklers
 					var dy = Math.Abs(e.Y - sprinklerPosition.Y) * ((verticalSprinklerDistance ?? 0) * sprinklerRange + 1);
 					return (
 						tilePosition: e,
+						pathLength: GetCost(e),
 						distance: Math.Sqrt(Math.Pow(dx, 2) + Math.Pow(dy, 2))
 					);
 				})
-				.OrderBy(e => e.distance)
+				.OrderBy(e => e.pathLength)
+				.ThenBy(e => e.distance)
 				.ToList();
 
 			while (unwateredTileCount > 0 && sortedWaterableTiles.Count > 0)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using StardewValley;
+using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -23,10 +24,22 @@ namespace Shockah.FlexibleSprinklers
 		/// <summary>Activates a sprinkler, taking into account the Flexible Sprinklers mod behavior.</summary>
 		void ActivateSprinkler(Object sprinkler, GameLocation location);
 
+		/// <summary>Returns the sprinkler's power after config modifications (that is, the number of tiles it will water).</summary>
+		int GetSprinklerPower(Object sprinkler);
+
+		/// <summary>Returns a sprinkler's flood fill range (that is, how many tiles away will it look for tiles to water) for a given sprinkler power.</summary>
+		int GetFloodFillSprinklerRange(int power);
+
 		/// <summary>Get the relative tile coverage by supported sprinkler ID. This API is location/position-agnostic. Note that sprinkler IDs may change after a save is loaded due to Json Assets reallocating IDs.</summary>
 		Vector2[] GetUnmodifiedSprinklerCoverage(Object sprinkler);
 
 		/// <summary>Get the relative tile coverage by supported sprinkler ID, modified by the Flexible Sprinklers mod. This API takes into consideration the location and position. Note that sprinkler IDs may change after a save is loaded due to Json Assets reallocating IDs.</summary>
 		Vector2[] GetModifiedSprinklerCoverage(Object sprinkler, GameLocation location);
+
+		/// <summary>Returns whether a given tile is in range of the specified sprinkler.</summary>
+		bool IsTileInRangeOfSprinkler(Object sprinkler, GameLocation location, Vector2 tileLocation);
+
+		/// <summary>Returns whether a given tile is in range of specified sprinklers.</summary>
+		bool IsTileInRangeOfSprinklers(IEnumerable<Object> sprinklers, GameLocation location, Vector2 tileLocation);
 	}
 }
