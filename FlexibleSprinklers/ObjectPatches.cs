@@ -9,6 +9,7 @@ namespace Shockah.FlexibleSprinklers
 {
     internal static class ObjectPatches
     {
+        internal static bool IsVanillaQueryInProgress = false;
         internal static GameLocation currentLocation;
 
         internal static void Apply(Harmony harmony)
@@ -16,10 +17,6 @@ namespace Shockah.FlexibleSprinklers
             harmony.Patch(
                 original: AccessTools.Method(typeof(Object), nameof(Object.GetSprinklerTiles)),
                 prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(GetSprinklerTiles_Prefix))
-            );
-            harmony.Patch(
-               original: AccessTools.Method(typeof(Object), nameof(Object.ApplySprinklerAnimation)),
-               prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(ApplySprinklerAnimation_Prefix))
             );
 
             foreach (var nestedType in typeof(Object).GetTypeInfo().DeclaredNestedTypes)
@@ -48,6 +45,9 @@ namespace Shockah.FlexibleSprinklers
 
         private static bool GetSprinklerTiles_Prefix(Object __instance, ref List<Vector2> __result)
         {
+            if (IsVanillaQueryInProgress)
+                return true;
+            
             var currentLocation = ObjectPatches.currentLocation ?? throw new System.InvalidOperationException("Location should not be null - potential mod conflict.");
             
             __result = FlexibleSprinklers.Instance.SprinklerBehavior.GetSprinklerTiles(
@@ -59,16 +59,11 @@ namespace Shockah.FlexibleSprinklers
             return false;
         }
 
-        private static bool ApplySprinklerAnimation_Prefix(Object __instance, GameLocation location)
-        {
-            // TODO: re-implement animation
-            return true;
-        }
-
         private static bool DayUpdatePostFarmEventOvernightActionsDelegate_Prefix(object __instance)
         {
             var locationField = __instance.GetType().GetTypeInfo().DeclaredFields.First(f => f.FieldType == typeof(GameLocation) && f.Name == "location");
             currentLocation = (GameLocation?)locationField.GetValue(__instance);
+            IsVanillaQueryInProgress = false;
             return true;
         }
     }

@@ -12,11 +12,12 @@ namespace Shockah.FlexibleSprinklers
         }
 
         private readonly TileWaterBalanceMode tileWaterBalanceMode;
-        private readonly ISprinklerBehavior vanillaBehavior = new VanillaSprinklerBehavior();
+        private readonly ISprinklerBehavior vanillaBehavior;
 
-        public FlexibleSprinklerBehavior(TileWaterBalanceMode tileWaterBalanceMode)
+        public FlexibleSprinklerBehavior(TileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior vanillaBehavior)
         {
             this.tileWaterBalanceMode = tileWaterBalanceMode;
+            this.vanillaBehavior = vanillaBehavior;
         }
 
         private int GetSprinklerRange(SprinklerInfo info)
@@ -43,7 +44,7 @@ namespace Shockah.FlexibleSprinklers
                 }
             }
 
-            if (!FlexibleSprinklers.Instance.SkipVanillaBehavior)
+            if (vanillaBehavior != null)
             {
                 foreach (var tileToWater in vanillaBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
                 {
