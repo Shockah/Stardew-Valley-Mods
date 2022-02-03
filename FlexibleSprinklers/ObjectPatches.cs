@@ -10,7 +10,7 @@ namespace Shockah.FlexibleSprinklers
     internal static class ObjectPatches
     {
         internal static bool IsVanillaQueryInProgress = false;
-        internal static GameLocation currentLocation;
+        internal static GameLocation CurrentLocation;
 
         internal static void Apply(Harmony harmony)
         {
@@ -48,7 +48,7 @@ namespace Shockah.FlexibleSprinklers
             if (IsVanillaQueryInProgress)
                 return true;
             
-            var currentLocation = ObjectPatches.currentLocation ?? throw new System.InvalidOperationException("Location should not be null - potential mod conflict.");
+            var currentLocation = ObjectPatches.CurrentLocation ?? throw new System.InvalidOperationException("Location should not be null - potential mod conflict.");
             
             __result = FlexibleSprinklers.Instance.SprinklerBehavior.GetSprinklerTiles(
                 new GameLocationMap(currentLocation),
@@ -62,7 +62,7 @@ namespace Shockah.FlexibleSprinklers
         private static bool DayUpdatePostFarmEventOvernightActionsDelegate_Prefix(object __instance)
         {
             var locationField = __instance.GetType().GetTypeInfo().DeclaredFields.First(f => f.FieldType == typeof(GameLocation) && f.Name == "location");
-            currentLocation = (GameLocation?)locationField.GetValue(__instance);
+            CurrentLocation = (GameLocation?)locationField.GetValue(__instance);
             IsVanillaQueryInProgress = false;
             return true;
         }

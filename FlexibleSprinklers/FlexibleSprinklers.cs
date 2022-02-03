@@ -10,11 +10,11 @@ namespace Shockah.FlexibleSprinklers
 {
     public class FlexibleSprinklers: Mod
     {
-        public static FlexibleSprinklers Instance { get; private set; } = null!;
+        private const int PressureNozzleParentSheetIndex = 915;
+        
+        public static FlexibleSprinklers Instance { get; private set; }
 
         internal ModConfig Config { get; private set; }
-
-        public bool SkipVanillaBehavior { get; private set; } = false;
         public ISprinklerBehavior SprinklerBehavior { get; private set; }
 
         public override void Entry(IModHelper helper)
@@ -24,6 +24,8 @@ namespace Shockah.FlexibleSprinklers
             Config = helper.ReadConfig<ModConfig>();
 
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            helper.Events.World.ObjectListChanged += OnObjectListChanged;
+            helper.Events.Input.ButtonPressed += OnButtonPressed;
 
             var harmony = new Harmony(ModManifest.UniqueID);
             ObjectPatches.Apply(harmony);
@@ -36,8 +38,41 @@ namespace Shockah.FlexibleSprinklers
             SetupConfig();
         }
 
+        private void OnObjectListChanged(object sender, ObjectListChangedEventArgs e)
+        {
+            if (!Config.activateOnPlacement)
+                return;
+            foreach (var (_, sprinkler) in e.Added)
+            {
+                ActivateSprinkler(sprinkler, e.Location);
+            }
+        }
+
+        private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
+        {
+            if (!Config.activateOnAction)
+                return;
+            if (!Context.IsPlayerFree)
+                return;
+            if (!e.Button.IsActionButton())
+                return;
+
+            var tile = e.Cursor.GrabTile;
+            var location = Game1.currentLocation;
+            var @object = location.getObjectAtTile((int)tile.X, (int)tile.Y);
+            if (@object == null || !@object.IsSprinkler())
+                return;
+
+            var heldItem = Game1.player.CurrentItem;
+            if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
+                return;
+
+            ActivateSprinkler(@object, location);
+        }
+
         private void SetupConfig()
         {
+            // TODO: add translation support
             var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
             configMenu.Register(
@@ -72,6 +107,11 @@ namespace Shockah.FlexibleSprinklers
                 };
             }
 
+            configMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => "Watering options"
+            );
+
             configMenu.AddTextOption(
                 mod: ModManifest,
                 name: () => "Sprinkler behavior",
@@ -89,6 +129,25 @@ namespace Shockah.FlexibleSprinklers
                 setValue: value => Config.tileWaterBalanceMode = ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])System.Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).First(e => ConfigNameForTileWaterBalanceMode(e) == value),
                 allowedValues: ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])System.Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).Select(e => ConfigNameForTileWaterBalanceMode(e)).ToArray()
             );
+
+            configMenu.AddSectionTitle(
+                mod: ModManifest,
+                text: () => "Activation options"
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => "Activate on placement",
+                getValue: () => Config.activateOnPlacement,
+                setValue: value => Config.activateOnPlacement = value
+            );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                name: () => "Activate on action",
+                getValue: () => Config.activateOnAction,
+                setValue: value => Config.activateOnAction = value
+            );
         }
 
         private void SetupSprinklerBehavior()
@@ -100,6 +159,22 @@ namespace Shockah.FlexibleSprinklers
                 ModConfig.SprinklerBehavior.Vanilla => new VanillaSprinklerBehavior(),
                 _ => throw new System.ArgumentException(),
             };
+        }
+
+        public void ActivateSprinkler(Object sprinkler, GameLocation location)
+        {
+            if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
+                return;
+            if (sprinkler == null || !sprinkler.IsSprinkler())
+                return;
+
+            ObjectPatches.IsVanillaQueryInProgress = false;
+            ObjectPatches.CurrentLocation = location;
+            foreach (var sprinklerTile in sprinkler.GetSprinklerTiles())
+            {
+                sprinkler.ApplySprinkler(location, sprinklerTile);
+            }
+            sprinkler.ApplySprinklerAnimation(location);
         }
 
         public SprinklerInfo GetSprinklerInfo(Object sprinkler)
