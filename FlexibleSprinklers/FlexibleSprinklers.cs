@@ -252,6 +252,19 @@ namespace Shockah.FlexibleSprinklers
 				setValue: value => Config.Tier8Power = value,
 				min: 0, interval: 1
 			);
+
+			configMenu.AddSectionTitle(
+				mod: ModManifest,
+				text: () => "Other settings"
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Compatibility mode",
+				tooltip: () => "Patch the game code in a more mod-compatible way, at the cost of some performance.",
+				getValue: () => Config.CompatibilityMode,
+				setValue: value => Config.CompatibilityMode = value
+			);
 		}
 
 		private void SetupSprinklerBehavior()
@@ -279,7 +292,7 @@ namespace Shockah.FlexibleSprinklers
 			sprinkler.ApplySprinklerAnimation(location);
 		}
 
-		private int GetSprinklerPower(Object sprinkler, Vector2[] layout)
+		internal int GetSprinklerPower(Object sprinkler, Vector2[] layout)
 		{
 			int? GetTier()
 			{

@@ -19,5 +19,6 @@
 		public int Tier6Power { get; set; } = 11 * 11 - 1;
 		public int Tier7Power { get; set; } = 13 * 13 - 1;
 		public int Tier8Power { get; set; } = 15 * 15 - 1;
+		public bool CompatibilityMode { get; set; } = true;
 	}
 }
