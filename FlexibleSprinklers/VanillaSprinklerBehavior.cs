@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
-    public class VanillaSprinklerBehavior: ISprinklerBehavior
-    {
-        public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
-        {
-            return info.Layout.Select(e => e + sprinklerPosition).ToHashSet();
-        }
-    }
+	internal class VanillaSprinklerBehavior: ISprinklerBehavior
+	{
+		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+		{
+			return info.Layout.Select(t => new IntPoint((int)t.X + sprinklerPosition.X, (int)t.Y + sprinklerPosition.Y)).ToHashSet();
+		}
+	}
 }

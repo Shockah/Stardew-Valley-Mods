@@ -1,17 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {
-    public struct SprinklerInfo
-    {
-        public ISet<IntPoint> Layout { get; set; }
+	public struct SprinklerInfo
+	{
+		public Vector2[] Layout { get; set; }
 
-        public int Power
-        {
-            get
-            {
-                return Layout.Count;
-            }
-        }
-    }
+		public int Power { get; set; }
+
+		public SprinklerInfo(Vector2[] layout): this(layout, layout.Length) { }
+
+		public SprinklerInfo(Vector2[] layout, int power)
+		{
+			this.Layout = layout;
+			this.Power = power;
+		}
+	}
 }
