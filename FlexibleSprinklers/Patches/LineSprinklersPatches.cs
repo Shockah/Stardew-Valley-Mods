@@ -30,12 +30,14 @@ namespace Shockah.FlexibleSprinklers
 
 				harmony.Patch(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
-					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Prefix))
+					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Prefix)),
+					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Postfix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.GetModifiedRadiusForSprinkler)),
-					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetModifiedRadiusForSprinkler_Prefix))
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.GetBaseRadiusForSprinkler)),
+					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetBaseRadiusForSprinkler_Prefix)),
+					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetBaseRadiusForSprinkler_Postfix))
 				);
 			}
 			catch (Exception e)
@@ -68,30 +70,51 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
+		private static bool Object_IsSprinkler_Result(SObject instance)
+		{
+			return FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(instance.ParentSheetIndex);
+		}
+
 		internal static bool Object_IsSprinkler_Prefix(SObject __instance, ref bool __result)
 		{
-			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex))
+			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
+				return true;
+			__result = Object_IsSprinkler_Result(__instance);
+			return false;
+		}
+
+		internal static void Object_IsSprinkler_Postfix(SObject __instance, ref bool __result)
+		{
+			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
+				return;
+			__result = Object_IsSprinkler_Result(__instance);
+		}
+
+		private static int Object_GetBaseRadiusForSprinkler_Result(SObject instance)
+		{
+			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[] tilePositions))
 			{
-				__result = true;
-				return false;
+				return (int)Math.Sqrt(tilePositions.Length / 2) - 1;
 			}
 			else
 			{
-				return true;
+				return -1;
 			}
 		}
 
-		internal static bool Object_GetModifiedRadiusForSprinkler_Prefix(SObject __instance, ref int __result)
+		internal static bool Object_GetBaseRadiusForSprinkler_Prefix(SObject __instance, ref int __result)
 		{
-			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().TryGetValue(__instance.ParentSheetIndex, out Vector2[] tilePositions))
-			{
-				__result = (int)Math.Sqrt(tilePositions.Length / 2) - 1;
-				return false;
-			}
-			else
-			{
+			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return true;
-			}
+			__result = Object_GetBaseRadiusForSprinkler_Result(__instance);
+			return false;
+		}
+
+		internal static void Object_GetBaseRadiusForSprinkler_Postfix(SObject __instance, ref int __result)
+		{
+			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
+				return;
+			__result = Object_GetBaseRadiusForSprinkler_Result(__instance);
 		}
 	}
 }

@@ -305,21 +305,7 @@ namespace Shockah.FlexibleSprinklers
 						return tier;
 				}
 
-				if (LineSprinklersApi != null)
-				{
-					if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[] tilePositions))
-					{
-						switch (tilePositions.Length)
-						{
-							case 4:
-								return 1;
-							case 8:
-								return 2;
-							case 24:
-								return 3;
-						}
-					}
-				}
+				// Line Sprinklers is patched, no need for custom handling here
 
 				if (PrismaticToolsApi != null && sprinkler.ParentSheetIndex == PrismaticToolsApi.SprinklerIndex && sprinkler.ParentSheetIndex == PrismaticToolsApi.SprinklerIndex)
 				{
