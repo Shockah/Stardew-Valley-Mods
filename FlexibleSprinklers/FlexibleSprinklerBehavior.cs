@@ -221,8 +221,50 @@ namespace Shockah.FlexibleSprinklers
 							unwateredTileCount = 0;
 							break;
 						case TileWaterBalanceMode.Exact:
-							// TODO: more fair implementation
-							WaterTiles(tileEntries.Take(unwateredTileCount).Select(e => e.tilePosition));
+							IEnumerable<IntPoint> GetSpiralingTiles()
+							{
+								var minD = tileEntries.Min(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
+								var maxD = tileEntries.Max(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
+
+								for (int i = minD; i <= maxD; i++)
+								{
+									var borderTiles = new List<IntPoint>();
+									for (int j = 0; j <= i; j++)
+									{
+										yield return new IntPoint(sprinklerPosition.X - j, sprinklerPosition.Y - i);
+										if (j != 0)
+											yield return new IntPoint(sprinklerPosition.X + j, sprinklerPosition.Y - i);
+
+										yield return new IntPoint(sprinklerPosition.X + i, sprinklerPosition.Y - j);
+										if (j != 0)
+											yield return new IntPoint(sprinklerPosition.X + i, sprinklerPosition.Y + j);
+
+										yield return new IntPoint(sprinklerPosition.X + j, sprinklerPosition.Y + i);
+										if (j != 0)
+											yield return new IntPoint(sprinklerPosition.X - j, sprinklerPosition.Y + i);
+
+										yield return new IntPoint(sprinklerPosition.X - i, sprinklerPosition.Y + j);
+										if (j != 0)
+											yield return new IntPoint(sprinklerPosition.X - i, sprinklerPosition.Y - j);
+									}
+								}
+							}
+
+							foreach (var spiralingTile in GetSpiralingTiles())
+							{
+								foreach (var tileEntry in tileEntries)
+								{
+									if (tileEntry.tilePosition == spiralingTile)
+									{
+										WaterTile(tileEntry.tilePosition);
+										tileEntries.Remove(tileEntry);
+										if (unwateredTileCount <= 0)
+											goto done;
+										break;
+									}
+								}
+							}
+							done:;
 							break;
 					}
 				}

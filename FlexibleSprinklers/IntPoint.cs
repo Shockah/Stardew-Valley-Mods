@@ -74,5 +74,15 @@ namespace Shockah.FlexibleSprinklers
 		{
 			return new IntPoint(-point.X, -point.Y);
 		}
+
+		public static bool operator ==(IntPoint lhs, IntPoint rhs)
+		{
+			return lhs.Equals(rhs);
+		}
+
+		public static bool operator !=(IntPoint lhs, IntPoint rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
 	}
 }
