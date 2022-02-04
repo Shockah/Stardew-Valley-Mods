@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using StardewValley;
+using System;
 using System.Collections.Generic;
+using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -16,27 +18,27 @@ namespace Shockah.FlexibleSprinklers
 			try
 			{
 				harmony.Patch(
-					original: AccessTools.Method(System.Type.GetType(LineSprinklersModEntryQualifiedName), "OnDayStarted"),
+					original: AccessTools.Method(Type.GetType(LineSprinklersModEntryQualifiedName), "OnDayStarted"),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(OnDayStarted_Prefix)),
 					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(OnDayStarted_Postfix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(System.Type.GetType(LineSprinklersModEntryQualifiedName), "GetLocations"),
+					original: AccessTools.Method(Type.GetType(LineSprinklersModEntryQualifiedName), "GetLocations"),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(GetLocations_Prefix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(Object), nameof(Object.IsSprinkler)),
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Prefix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(Object), nameof(Object.GetModifiedRadiusForSprinkler)),
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.GetModifiedRadiusForSprinkler)),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetModifiedRadiusForSprinkler_Prefix))
 				);
 			}
-			catch (System.Exception e)
+			catch (Exception e)
 			{
 				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch LineSprinklers - they probably won't work.\nReason: {e}", StardewModdingAPI.LogLevel.Warn);
 			}
@@ -66,7 +68,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
-		internal static bool Object_IsSprinkler_Prefix(Object __instance, ref bool __result)
+		internal static bool Object_IsSprinkler_Prefix(SObject __instance, ref bool __result)
 		{
 			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex))
 			{
@@ -79,11 +81,11 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
-		internal static bool Object_GetModifiedRadiusForSprinkler_Prefix(Object __instance, ref int __result)
+		internal static bool Object_GetModifiedRadiusForSprinkler_Prefix(SObject __instance, ref int __result)
 		{
 			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().TryGetValue(__instance.ParentSheetIndex, out Vector2[] tilePositions))
 			{
-				__result = (int)System.Math.Sqrt(tilePositions.Length / 2) - 1;
+				__result = (int)Math.Sqrt(tilePositions.Length / 2) - 1;
 				return false;
 			}
 			else

@@ -1,9 +1,11 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using StardewValley;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -17,25 +19,25 @@ namespace Shockah.FlexibleSprinklers
 			try
 			{
 				harmony.Patch(
-					original: AccessTools.Method(typeof(Object), nameof(Object.GetSprinklerTiles)),
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.GetSprinklerTiles)),
 					prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(GetSprinklerTiles_Prefix)),
 					postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(GetSprinklerTiles_Postfix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(Object), nameof(Object.placementAction)),
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.placementAction)),
 					prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(placementAction_Prefix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(Object), nameof(Object.IsInSprinklerRangeBroadphase)),
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.IsInSprinklerRangeBroadphase)),
 					prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(IsInSprinklerRangeBroadphase_Prefix)),
 					postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(IsInSprinklerRangeBroadphase_Postfix))
 				);
 
-				foreach (var nestedType in typeof(Object).GetTypeInfo().DeclaredNestedTypes)
+				foreach (var nestedType in typeof(SObject).GetTypeInfo().DeclaredNestedTypes)
 				{
-					if (!nestedType.DeclaredFields.Where(f => f.FieldType == typeof(Object) && f.Name.EndsWith("__this")).Any())
+					if (!nestedType.DeclaredFields.Where(f => f.FieldType == typeof(SObject) && f.Name.EndsWith("__this")).Any())
 						continue;
 					if (!nestedType.DeclaredFields.Where(f => f.FieldType == typeof(GameLocation) && f.Name == "location").Any())
 						continue;
@@ -56,13 +58,13 @@ namespace Shockah.FlexibleSprinklers
 				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: Cannot patch DayUpdate/PostFarmEventOvernightActions/Delegate.", StardewModdingAPI.LogLevel.Error);
 				done:;
 			}
-			catch (System.Exception e)
+			catch (Exception e)
 			{
 				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: {e}", StardewModdingAPI.LogLevel.Error);
 			}
 		}
 
-		private static List<Vector2> GetSprinklerTiles_Result(Object __instance)
+		private static List<Vector2> GetSprinklerTiles_Result(SObject __instance)
 		{
 			if (CurrentLocation == null)
 			{
@@ -77,7 +79,7 @@ namespace Shockah.FlexibleSprinklers
 			).Select(e => new Vector2(e.X, e.Y)).ToList();
 		}
 
-		private static bool GetSprinklerTiles_Prefix(Object __instance, ref List<Vector2> __result)
+		private static bool GetSprinklerTiles_Prefix(SObject __instance, ref List<Vector2> __result)
 		{
 			if (IsVanillaQueryInProgress)
 				return true;
@@ -87,7 +89,7 @@ namespace Shockah.FlexibleSprinklers
 			return false;
 		}
 
-		private static void GetSprinklerTiles_Postfix(Object __instance, ref List<Vector2> __result)
+		private static void GetSprinklerTiles_Postfix(SObject __instance, ref List<Vector2> __result)
 		{
 			if (IsVanillaQueryInProgress)
 				return;
@@ -102,7 +104,7 @@ namespace Shockah.FlexibleSprinklers
 			return true;
 		}
 
-		private static bool IsInSprinklerRangeBoardphase_Result(Object instance, Vector2 target)
+		private static bool IsInSprinklerRangeBoardphase_Result(Vector2 target)
 		{
 			if (CurrentLocation == null)
 			{
@@ -117,19 +119,19 @@ namespace Shockah.FlexibleSprinklers
 			return result;
 		}
 
-		private static bool IsInSprinklerRangeBroadphase_Prefix(Object __instance, Vector2 target, ref bool __result)
+		private static bool IsInSprinklerRangeBroadphase_Prefix(Vector2 target, ref bool __result)
 		{
 			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return true;
-			__result = IsInSprinklerRangeBoardphase_Result(__instance, target);
+			__result = IsInSprinklerRangeBoardphase_Result(target);
 			return false;
 		}
 
-		private static void IsInSprinklerRangeBroadphase_Postfix(Object __instance, Vector2 target, ref bool __result)
+		private static void IsInSprinklerRangeBroadphase_Postfix(Vector2 target, ref bool __result)
 		{
 			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return;
-			__result = IsInSprinklerRangeBoardphase_Result(__instance, target);
+			__result = IsInSprinklerRangeBoardphase_Result(target);
 		}
 
 		private static bool DayUpdatePostFarmEventOvernightActionsDelegate_Prefix(object __instance)

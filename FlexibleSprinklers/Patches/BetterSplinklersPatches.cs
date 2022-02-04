@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -11,11 +12,11 @@ namespace Shockah.FlexibleSprinklers
 			try
 			{
 				harmony.Patch(
-					original: AccessTools.Method(System.Type.GetType(BetterSprinklersSprinklerModQualifiedName), "RunSprinklers"),
+					original: AccessTools.Method(Type.GetType(BetterSprinklersSprinklerModQualifiedName), "RunSprinklers"),
 					prefix: new HarmonyMethod(typeof(BetterSplinklersPatches), nameof(RunSprinklers_Prefix))
 				);
 			}
-			catch (System.Exception e)
+			catch (Exception e)
 			{
 				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch BetterSprinklers - they probably won't work.\nReason: {e}", StardewModdingAPI.LogLevel.Warn);
 			}

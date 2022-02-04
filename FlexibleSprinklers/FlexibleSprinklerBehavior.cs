@@ -95,8 +95,8 @@ namespace Shockah.FlexibleSprinklers
 			SetCost(sprinklerPosition, 0);
 			foreach (var wateredTile in wateredTiles)
 			{
-				toCheck.Enqueue(sprinklerPosition);
-				SetCost(sprinklerPosition, 0);
+				toCheck.Enqueue(wateredTile);
+				SetCost(wateredTile, 0);
 			}
 			foreach (var neighbor in sprinklerPosition.Neighbors)
 			{
