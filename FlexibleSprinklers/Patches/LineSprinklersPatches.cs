@@ -30,7 +30,6 @@ namespace Shockah.FlexibleSprinklers
 
 				harmony.Patch(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
-					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Prefix)),
 					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Postfix))
 				);
 
@@ -70,27 +69,12 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
-		private static bool Object_IsSprinkler_Result(SObject instance)
-		{
-			return FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(instance.ParentSheetIndex);
-		}
-
-		internal static bool Object_IsSprinkler_Prefix(SObject __instance, ref bool __result)
-		{
-			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
-				return true;
-			__result = Object_IsSprinkler_Result(__instance);
-			return false;
-		}
-
 		internal static void Object_IsSprinkler_Postfix(SObject __instance, ref bool __result)
 		{
-			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
-				return;
-			__result = Object_IsSprinkler_Result(__instance);
+			__result = __result || FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex);
 		}
 
-		private static int Object_GetBaseRadiusForSprinkler_Result(SObject instance)
+		private static int? Object_GetBaseRadiusForSprinkler_Result(SObject instance)
 		{
 			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[] tilePositions))
 			{
@@ -98,7 +82,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 			else
 			{
-				return -1;
+				return null;
 			}
 		}
 
@@ -106,15 +90,25 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return true;
-			__result = Object_GetBaseRadiusForSprinkler_Result(__instance);
-			return false;
+			var radius = Object_GetBaseRadiusForSprinkler_Result(__instance);
+			if (radius == null)
+			{
+				return true;
+			}
+			else
+			{
+				__result = radius.Value;
+				return false;
+			}
 		}
 
 		internal static void Object_GetBaseRadiusForSprinkler_Postfix(SObject __instance, ref int __result)
 		{
 			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return;
-			__result = Object_GetBaseRadiusForSprinkler_Result(__instance);
+			var radius = Object_GetBaseRadiusForSprinkler_Result(__instance);
+			if (radius != null)
+				__result = radius.Value;
 		}
 	}
 }

@@ -135,7 +135,7 @@ namespace Shockah.FlexibleSprinklers
 
 				foreach (var neighbor in tilePosition.Neighbors)
 				{
-					if (@checked.Contains(neighbor))
+					if (@checked.Contains(neighbor) || Math.Abs(neighbor.X - sprinklerPosition.X) > maxDX || Math.Abs(neighbor.Y - sprinklerPosition.Y) > maxDY)
 						continue;
 					toCheck.Enqueue(neighbor);
 					var newCost = Math.Min(GetCost(neighbor), newTilePathLength);
