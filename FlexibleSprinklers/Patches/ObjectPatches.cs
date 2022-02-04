@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
@@ -55,12 +56,12 @@ namespace Shockah.FlexibleSprinklers
 					}
 				}
 
-				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: Cannot patch DayUpdate/PostFarmEventOvernightActions/Delegate.", StardewModdingAPI.LogLevel.Error);
+				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: Cannot patch DayUpdate/PostFarmEventOvernightActions/Delegate.", LogLevel.Error);
 				done:;
 			}
 			catch (Exception e)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: {e}", StardewModdingAPI.LogLevel.Error);
+				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: {e}", LogLevel.Error);
 			}
 		}
 
@@ -68,7 +69,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (CurrentLocation == null)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", StardewModdingAPI.LogLevel.Error);
+				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", LogLevel.Error);
 				return new List<Vector2>();
 			}
 
@@ -108,7 +109,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (CurrentLocation == null)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", StardewModdingAPI.LogLevel.Error);
+				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", LogLevel.Error);
 				return true;
 			}
 

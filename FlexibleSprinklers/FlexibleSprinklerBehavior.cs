@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StardewModdingAPI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -197,7 +198,7 @@ namespace Shockah.FlexibleSprinklers
 				var tileEntries = reachable.TakeWhile(e => e.distance == currentDistance).ToList();
 				if (tileEntries.Count == 0)
 				{
-					FlexibleSprinklers.Instance.Monitor.Log($"Could not find all tiles to water for sprinkler at {sprinklerPosition}.", StardewModdingAPI.LogLevel.Warn);
+					FlexibleSprinklers.Instance.Monitor.Log($"Could not find all tiles to water for sprinkler at {sprinklerPosition}.", LogLevel.Warn);
 					break;
 				}
 

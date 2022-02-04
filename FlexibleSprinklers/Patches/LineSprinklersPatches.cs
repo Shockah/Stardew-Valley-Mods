@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 			catch (Exception e)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch LineSprinklers - they probably won't work.\nReason: {e}", StardewModdingAPI.LogLevel.Warn);
+				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch LineSprinklers - they probably won't work.\nReason: {e}", LogLevel.Warn);
 			}
 		}
 
