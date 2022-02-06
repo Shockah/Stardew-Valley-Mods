@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlexibleSprinklers", "Flexi
 EndProject
 Project("{291CE83A-86EB-11EC-A8A3-0242AC120002}") = "DontStopMeNow", "DontStopMeNow\DontStopMeNow.csproj", "{D49F8392-3B72-43D5-AB06-206FB71EEEA4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictableRetainingSoil", "PredictableRetainingSoil\PredictableRetainingSoil.csproj", "{1F02BE31-490B-474C-B5DB-D16990F287CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,6 +23,10 @@ Global
 		{D49F8392-3B72-43D5-AB06-206FB71EEEA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D49F8392-3B72-43D5-AB06-206FB71EEEA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D49F8392-3B72-43D5-AB06-206FB71EEEA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F02BE31-490B-474C-B5DB-D16990F287CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F02BE31-490B-474C-B5DB-D16990F287CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F02BE31-490B-474C-B5DB-D16990F287CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F02BE31-490B-474C-B5DB-D16990F287CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
