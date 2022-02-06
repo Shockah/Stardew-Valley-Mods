@@ -147,7 +147,6 @@ namespace Shockah.PredictableRetainingSoil
 
 		private void SetupConfig()
 		{
-			// TODO: add translation support
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
 			configMenu?.Register(
@@ -158,13 +157,13 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddSectionTitle(
 				mod: ModManifest,
-				text: () => "Days to retain water",
-				tooltip: () => "0: will never retain water\n-1: will always retain water"
+				text: () => Helper.Translation.Get("config.daysToRetain.section.text"),
+				tooltip: () => Helper.Translation.Get("config.daysToRetain.section.tooltip")
 			);
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => "Basic Retaining Soil",
+				name: () => Helper.Translation.Get("config.daysToRetain.basic.name"),
 				getValue: () => Config.BasicRetainingSoilDays,
 				setValue: value => Config.BasicRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -172,7 +171,7 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => "Quality Retaining Soil",
+				name: () => Helper.Translation.Get("config.daysToRetain.quality.name"),
 				getValue: () => Config.QualityRetainingSoilDays,
 				setValue: value => Config.QualityRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -180,7 +179,7 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => "Deluxe Retaining Soil",
+				name: () => Helper.Translation.Get("config.daysToRetain.deluxe.name"),
 				getValue: () => Config.DeluxeRetainingSoilDays,
 				setValue: value => Config.DeluxeRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -241,13 +240,12 @@ namespace Shockah.PredictableRetainingSoil
 			if (retainingSoilDays == null)
 				return;
 
-			// TODO: add translation support
 			__result = retainingSoilDays.Value switch
 			{
-				-1 => "This soil will stay watered overnight.\nMix into tilled soil.",
-				0 => "This soil will not stay watered overnight.\nMix into tilled soil.",
-				1 => "This soil will stay watered overnight once.\nMix into tilled soil.",
-				_ => $"This soil will stay watered overnight for {retainingSoilDays.Value} nights.\nMix into tilled soil.",
+				-1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.infinite"),
+				0 => Instance.Helper.Translation.Get("retainingSoil.tooltip.zero"),
+				1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.one"),
+				_ => Instance.Helper.Translation.Get("retainingSoil.tooltip.other", new { Days = retainingSoilDays.Value })
 			};
 		}
 

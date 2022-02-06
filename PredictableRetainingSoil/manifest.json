@@ -1,7 +1,7 @@
 ﻿{
 	"Name": "Predictable Retaining Soil",
 	"Author": "Shockah",
-	"Version": "1.0.1",
+	"Version": "1.1.0",
 	"Description": "Makes all retaining soils stay watered a specified number of days (instead of being random).",
 	"UniqueID": "Shockah.PredictableRetainingSoil",
 	"EntryDll": "PredictableRetainingSoil.dll",
