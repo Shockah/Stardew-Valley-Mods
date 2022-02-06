@@ -5,7 +5,8 @@ VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlexibleSprinklers", "FlexibleSprinklers\FlexibleSprinklers.csproj", "{2270E272-3DE2-4E0D-8907-29E32ECF68FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DontStopMeNow", "DontStopMeNow\DontStopMeNow.csproj", "{D49F8392-3B72-43D5-AB06-206FB71EEEA4}"
+Project("{291CE83A-86EB-11EC-A8A3-0242AC120002}") = "DontStopMeNow", "DontStopMeNow\DontStopMeNow.csproj", "{D49F8392-3B72-43D5-AB06-206FB71EEEA4}"
+EndProject
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
