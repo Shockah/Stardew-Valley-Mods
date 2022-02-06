@@ -27,12 +27,5 @@ namespace Shockah.PredictableRetainingSoil
 		{
 			Holder.Values.GetOrCreateValue(instance).RetainingSoilDaysLeft.Set(value);
 		}
-
-		public static void RefreshRetainingSoilDaysLeft(this HoeDirt instance)
-		{
-			var retainingSoilDays = PredictableRetainingSoil.Instance.GetRetainingSoilDays(instance.fertilizer.Value);
-			if (retainingSoilDays != null)
-				instance.SetRetainingSoilDaysLeft(retainingSoilDays.Value);
-		}
 	}
 }

@@ -7,15 +7,23 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.PredictableRetainingSoil
 {
-	public class PredictableRetainingSoil: Mod
+	public class PredictableRetainingSoil: Mod, IPredictableRetainingSoilApi
 	{
 		private const int BasicRetainingSoilID = 370;
 		private const int QualityRetainingSoilID = 371;
 		private const int DeluxeRetainingSoilID = 920;
 
+		private static readonly string MultiFertilizerModQualifiedName = "MultiFertilizer.Mod, MultiFertilizer";
+		private static readonly string MultiFertilizerDirtHelperQualifiedName = "MultiFertilizer.Framework.DirtHelper, MultiFertilizer";
+		private static readonly string MultiFertilizerFertilizerDataQualifiedName = "MultiFertilizer.Framework.FertilizerData, MultiFertilizer";
+
 		internal static PredictableRetainingSoil Instance { get; set; }
 
 		internal ModConfig Config { get; private set; }
+
+		private bool isMultiFertilizerLoaded = false;
+		private Func<string> multiFertilizerKeyRetain;
+		private Func<HoeDirt, int?> getMultiFertilizerRetainingSoilType;
 
 		private bool isStayingWateredViaRetainingSoil = false;
 
@@ -54,8 +62,70 @@ namespace Shockah.PredictableRetainingSoil
 			}
 		}
 
+		public override object GetApi()
+		{
+			return this;
+		}
+
 		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
 		{
+			if (Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer"))
+			{
+				isMultiFertilizerLoaded = true;
+
+				var multiFertilizerKeyRetainPropertyGetter = AccessTools.PropertyGetter(Type.GetType(MultiFertilizerModQualifiedName), "KeyRetain");
+				multiFertilizerKeyRetain = () =>
+				{
+					if (!isMultiFertilizerLoaded)
+						return null;
+					
+					try
+					{
+						return (string)multiFertilizerKeyRetainPropertyGetter.Invoke(null, null);
+					}
+					catch (Exception e)
+					{
+						Monitor.Log($"There was a problem with MultiFertilizer compatibility.\nReason: {e}", LogLevel.Error);
+						isMultiFertilizerLoaded = false;
+						return null;
+					}
+				};
+
+				var tryGetFertilizerMethod = AccessTools.DeclaredMethod(Type.GetType(MultiFertilizerDirtHelperQualifiedName), "TryGetFertilizer", new Type[] { typeof(HoeDirt), typeof(string), Type.GetType(MultiFertilizerFertilizerDataQualifiedName).MakeByRefType() });
+				var levelPropertyGetter = AccessTools.PropertyGetter(Type.GetType(MultiFertilizerFertilizerDataQualifiedName), "Level");
+				getMultiFertilizerRetainingSoilType = soil =>
+				{
+					if (!isMultiFertilizerLoaded)
+						return null;
+
+					try
+					{
+						var parameters = new object[] { soil, multiFertilizerKeyRetain(), null };
+						if ((bool)tryGetFertilizerMethod.Invoke(null, parameters))
+						{
+							var fertilizerData = parameters[2];
+							var level = (int)levelPropertyGetter.Invoke(fertilizerData, null);
+							return level switch
+							{
+								1 => BasicRetainingSoilID,
+								2 => QualityRetainingSoilID,
+								3 => DeluxeRetainingSoilID,
+								_ => null,
+							};
+						}
+						return null;
+					}
+					catch (Exception e)
+					{
+						Monitor.Log($"There was a problem with MultiFertilizer compatibility.\nReason: {e}", LogLevel.Error);
+						isMultiFertilizerLoaded = false;
+						return null;
+					}
+				};
+			}
+			
+			isMultiFertilizerLoaded = Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer");
+
 			var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore");
 			if (sc == null)
 			{
@@ -117,30 +187,13 @@ namespace Shockah.PredictableRetainingSoil
 			);
 		}
 
-		public int? GetRetainingSoilDays(int index)
-		{
-			// TODO: maybe add some API for other mods to add their own, but no idea what to do about config then (probably also make it part of the API)
-			return index switch
-			{
-				BasicRetainingSoilID => Config.BasicRetainingSoilDays,
-				QualityRetainingSoilID => Config.QualityRetainingSoilDays,
-				DeluxeRetainingSoilID => Config.DeluxeRetainingSoilDays,
-				_ => null,
-			};
-		}
-
-		public bool IsRetainingSoil(int index)
-		{
-			return GetRetainingSoilDays(index) != null;
-		}
-
 		private static void HoeDirt_ctor_Postfix(HoeDirt __instance)
 		{
 			__instance.NetFields.AddFields(__instance.GetRetainingSoilDaysLeftNetField());
 			__instance.state.fieldChangeVisibleEvent += (_, _, newValue) =>
 			{
 				if (newValue > 0 && !Instance.isStayingWateredViaRetainingSoil)
-					__instance.RefreshRetainingSoilDaysLeft();
+					Instance.RefreshRetainingSoilDaysLeft(__instance);
 			};
 		}
 
@@ -153,7 +206,7 @@ namespace Shockah.PredictableRetainingSoil
 		{
 			if (__instance.hasPaddyCrop())
 				return;
-			if (Instance.IsRetainingSoil(__instance.fertilizer.Value))
+			if (Instance.HasRetainingSoil(__instance))
 			{
 				if (__instance.state.Value == 0)
 				{
@@ -177,7 +230,7 @@ namespace Shockah.PredictableRetainingSoil
 				return;
 			if (__instance.state.Value == 0)
 				return;
-			__instance.RefreshRetainingSoilDaysLeft();
+			Instance.RefreshRetainingSoilDaysLeft(__instance);
 		}
 
 		private static void Object_getDescription_postfix(SObject __instance, ref string __result)
@@ -197,5 +250,70 @@ namespace Shockah.PredictableRetainingSoil
 				_ => $"This soil will stay watered overnight for {retainingSoilDays.Value} nights.\nMix into tilled soil.",
 			};
 		}
+
+		#region API
+
+		#region HoeDirt
+		public bool HasRetainingSoil(HoeDirt soil)
+		{
+			return GetRetainingSoilType(soil) != null;
+		}
+
+		public int? GetRetainingSoilType(HoeDirt soil)
+		{
+			if (isMultiFertilizerLoaded)
+			{
+				return getMultiFertilizerRetainingSoilType(soil);
+			}
+			else
+			{
+				return soil.fertilizer.Value is BasicRetainingSoilID or QualityRetainingSoilID or DeluxeRetainingSoilID ? soil.fertilizer.Value : null;
+			}
+		}
+
+		public int? GetRetainingSoilDaysLeft(HoeDirt soil)
+		{
+			return HasRetainingSoil(soil) ? soil.GetRetainingSoilDaysLeft() : null;
+		}
+
+		public void SetRetainingSoilDaysLeft(HoeDirt soil, int days)
+		{
+			if (!HasRetainingSoil(soil))
+				return;
+			soil.SetRetainingSoilDaysLeft(days);
+		}
+
+		public void RefreshRetainingSoilDaysLeft(HoeDirt soil)
+		{
+			var retainingSoilType = GetRetainingSoilType(soil);
+			if (retainingSoilType == null)
+				return;
+
+			var retainingSoilDays = GetRetainingSoilDays(retainingSoilType.Value);
+			if (retainingSoilDays != null)
+				soil.SetRetainingSoilDaysLeft(retainingSoilDays.Value);
+		}
+		#endregion
+
+		#region Object
+		public bool IsRetainingSoil(int index)
+		{
+			return GetRetainingSoilDays(index) != null;
+		}
+
+		public int? GetRetainingSoilDays(int index)
+		{
+			// TODO: maybe add some API for other mods to add their own, but no idea what to do about config then (probably also make it part of the API)
+			return index switch
+			{
+				BasicRetainingSoilID => Config.BasicRetainingSoilDays,
+				QualityRetainingSoilID => Config.QualityRetainingSoilDays,
+				DeluxeRetainingSoilID => Config.DeluxeRetainingSoilDays,
+				_ => null,
+			};
+		}
+		#endregion
+
+		#endregion
 	}
 }
