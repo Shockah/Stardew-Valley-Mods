@@ -85,18 +85,18 @@ namespace Shockah.DontStopMeNow
 			// TODO: add translation support
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
-			configMenu.Register(
+			configMenu?.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () => Helper.WriteConfig(Config)
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Movement while swinging"
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Tools",
 				tooltip: () => "Allows movement while swinging non-charging tools.",
@@ -104,7 +104,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.MoveWhileSwingingTools = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Melee weapons",
 				tooltip: () => "Allows movement while swinging a melee weapon.",
@@ -112,7 +112,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.MoveWhileSwingingMeleeWeapons = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Special attacks",
 				tooltip: () => "Allows movement while using a special attack of a melee weapon.",
@@ -120,7 +120,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.MoveWhileSpecial = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Aiming slingshots",
 				tooltip: () => "Allows movement while aiming a slingshot.",
@@ -128,7 +128,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.MoveWhileAimingSlingshot = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Charging tools",
 				tooltip: () => "Allows movement while charging tools.",
@@ -136,12 +136,12 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.MoveWhileChargingTools = value
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Facing direction fixes"
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Tools",
 				tooltip: () => "Allows changing the facing direction while using tools.",
@@ -149,7 +149,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.FixToolFacing = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Melee weapons",
 				tooltip: () => "Allows changing the facing direction while using melee weapons.",
@@ -157,7 +157,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.FixMeleeWeaponFacing = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Charging tools",
 				tooltip: () => "Allows changing the facing direction while charging a tool.",
@@ -165,7 +165,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.FixChargingToolFacing = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Mouse",
 				tooltip: () => "Face the direction of the mouse cursor when swinging.",
@@ -173,7 +173,7 @@ namespace Shockah.DontStopMeNow
 				setValue: value => Config.FixFacingOnMouse = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Controller",
 				tooltip: () => "Face the direction of the cursor when swinging while playing using a controller.",
