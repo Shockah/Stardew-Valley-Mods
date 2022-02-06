@@ -103,7 +103,7 @@ namespace Shockah.FlexibleSprinklers
 			// TODO: add translation support
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
-			configMenu.Register(
+			configMenu?.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () =>
@@ -135,12 +135,12 @@ namespace Shockah.FlexibleSprinklers
 				};
 			}
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Watering options"
 			);
 
-			configMenu.AddTextOption(
+			configMenu?.AddTextOption(
 				mod: ModManifest,
 				name: () => "Sprinkler behavior",
 				tooltip: () => "> Flexible: Will water using vanilla behavior, and then flood fill for any tiles that failed.\n> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Does not change the sprinkler behavior.",
@@ -149,7 +149,7 @@ namespace Shockah.FlexibleSprinklers
 				allowedValues: ((ModConfig.SprinklerBehaviorEnum[])Enum.GetValues(typeof(ModConfig.SprinklerBehaviorEnum))).Select(e => ConfigNameForSprinklerBehavior(e)).ToArray()
 			);
 
-			configMenu.AddTextOption(
+			configMenu?.AddTextOption(
 				mod: ModManifest,
 				name: () => "Flood fill balance mode",
 				tooltip: () => "Edge case handling for the flood fill behavior.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
@@ -158,32 +158,32 @@ namespace Shockah.FlexibleSprinklers
 				allowedValues: ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).Select(e => ConfigNameForTileWaterBalanceMode(e)).ToArray()
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Activation options"
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Activate on placement",
 				getValue: () => Config.ActivateOnPlacement,
 				setValue: value => Config.ActivateOnPlacement = value
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Activate on action",
 				getValue: () => Config.ActivateOnAction,
 				setValue: value => Config.ActivateOnAction = value
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Sprinkler power",
 				tooltip: () => "The values below will only be used when watering via the flood fill method."
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 1 (Basic)",
 				tooltip: () => "How many tiles should tier 1 (Basic) sprinklers cover.",
@@ -192,7 +192,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 2 (Quality)",
 				tooltip: () => "How many tiles should tier 2 (Quality / Basic + Pressure Nozzle) sprinklers cover.",
@@ -201,7 +201,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 3 (Iridium)",
 				tooltip: () => "How many tiles should tier 3 (Iridium / Quality + Pressure Nozzle) sprinklers cover.",
@@ -210,7 +210,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 4 (Iridium + Nozzle)",
 				tooltip: () => "How many tiles should tier 4 (Iridium + Pressure Nozzle) sprinklers cover.",
@@ -219,7 +219,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 5",
 				tooltip: () => "How many tiles should tier 5 sprinklers (if you have mods with such a tier) cover.",
@@ -228,7 +228,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 6",
 				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
@@ -237,7 +237,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 7",
 				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
@@ -246,7 +246,7 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Tier 8",
 				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
@@ -255,12 +255,12 @@ namespace Shockah.FlexibleSprinklers
 				min: 0, interval: 1
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Other settings"
 			);
 
-			configMenu.AddBoolOption(
+			configMenu?.AddBoolOption(
 				mod: ModManifest,
 				name: () => "Compatibility mode",
 				tooltip: () => "Patch the game code in a more mod-compatible way, at the cost of some performance.",
