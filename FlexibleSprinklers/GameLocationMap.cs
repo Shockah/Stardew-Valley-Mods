@@ -44,7 +44,7 @@ namespace Shockah.FlexibleSprinklers
 					return SoilType.NonWaterable;
 
 				var soil = (HoeDirt)feature;
-				return soil.needsWatering() ? SoilType.Dry : SoilType.Wet;
+				return soil.state.Value == 0 ? SoilType.Dry : SoilType.Wet;
 			}
 		}
 
