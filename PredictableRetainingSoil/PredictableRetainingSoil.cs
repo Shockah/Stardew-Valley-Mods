@@ -184,9 +184,10 @@ namespace Shockah.PredictableRetainingSoil
 			// TODO: add translation support
 			__result = retainingSoilDays.Value switch
 			{
-				-1 => "This soil will stay watered overnight. Mix into tilled soil.",
-				0 => "This soil will not stay watered overnight. Mix into tilled soil.",
-				_ => $"This soil will stay watered overnight for {retainingSoilDays.Value} nights. Mix into tilled soil.",
+				-1 => "This soil will stay watered overnight.\nMix into tilled soil.",
+				0 => "This soil will not stay watered overnight.\nMix into tilled soil.",
+				1 => "This soil will stay watered overnight once.\nMix into tilled soil.",
+				_ => $"This soil will stay watered overnight for {retainingSoilDays.Value} nights.\nMix into tilled soil.",
 			};
 		}
 	}
