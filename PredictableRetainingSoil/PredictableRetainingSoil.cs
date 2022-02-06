@@ -80,19 +80,19 @@ namespace Shockah.PredictableRetainingSoil
 			// TODO: add translation support
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
-			configMenu.Register(
+			configMenu?.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () => Helper.WriteConfig(Config)
 			);
 
-			configMenu.AddSectionTitle(
+			configMenu?.AddSectionTitle(
 				mod: ModManifest,
 				text: () => "Days to retain water",
 				tooltip: () => "0: will never retain water\n-1: will always retain water"
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Basic Retaining Soil",
 				getValue: () => Config.BasicRetainingSoilDays,
@@ -100,7 +100,7 @@ namespace Shockah.PredictableRetainingSoil
 				min: -1, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Quality Retaining Soil",
 				getValue: () => Config.QualityRetainingSoilDays,
@@ -108,7 +108,7 @@ namespace Shockah.PredictableRetainingSoil
 				min: -1, interval: 1
 			);
 
-			configMenu.AddNumberOption(
+			configMenu?.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Deluxe Retaining Soil",
 				getValue: () => Config.DeluxeRetainingSoilDays,
