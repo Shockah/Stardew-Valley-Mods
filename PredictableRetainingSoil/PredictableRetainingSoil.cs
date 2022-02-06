@@ -1,9 +1,9 @@
 ﻿using HarmonyLib;
-using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley.TerrainFeatures;
 using System;
+using SObject = StardewValley.Object;
 
 namespace Shockah.PredictableRetainingSoil
 {
@@ -42,6 +42,10 @@ namespace Shockah.PredictableRetainingSoil
 				harmony.Patch(
 					original: AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.plant)),
 					postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_plant_Postfix))
+				);
+				harmony.Patch(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.getDescription)),
+					postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(Object_getDescription_postfix))
 				);
 			}
 			catch (Exception e)
@@ -167,6 +171,23 @@ namespace Shockah.PredictableRetainingSoil
 			if (__instance.state.Value == 0)
 				return;
 			__instance.RefreshRetainingSoilDaysLeft();
+		}
+
+		private static void Object_getDescription_postfix(SObject __instance, ref string __result)
+		{
+			if (__instance.Category != SObject.fertilizerCategory)
+				return;
+			var retainingSoilDays = Instance.GetRetainingSoilDays(__instance.ParentSheetIndex);
+			if (retainingSoilDays == null)
+				return;
+
+			// TODO: add translation support
+			__result = retainingSoilDays.Value switch
+			{
+				-1 => "This soil will stay watered overnight. Mix into tilled soil.",
+				0 => "This soil will not stay watered overnight. Mix into tilled soil.",
+				_ => $"This soil will stay watered overnight for {retainingSoilDays.Value} nights. Mix into tilled soil.",
+			};
 		}
 	}
 }
