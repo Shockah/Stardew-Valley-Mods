@@ -57,13 +57,20 @@ namespace Shockah.PredictableRetainingSoil
 		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
 		{
 			var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore");
-			sc.RegisterCustomProperty(
-				typeof(HoeDirt),
-				"RetainingSoilDaysLeft",
-				typeof(int),
-				AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.GetRetainingSoilDaysLeft)),
-				AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.SetRetainingSoilDaysLeft))
-			);
+			if (sc == null)
+			{
+				Monitor.Log($"Missing SpaceCore dependency. Precitable Retaining Soil probably won't work.", LogLevel.Error);
+			}
+			else
+			{
+				sc.RegisterCustomProperty(
+					typeof(HoeDirt),
+					"RetainingSoilDaysLeft",
+					typeof(int),
+					AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.GetRetainingSoilDaysLeft)),
+					AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.SetRetainingSoilDaysLeft))
+				);
+			}
 
 			SetupConfig();
 		}
