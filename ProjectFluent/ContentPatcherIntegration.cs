@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using StardewModdingAPI;
 using System;
+using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
@@ -20,6 +21,10 @@ namespace Shockah.ProjectFluent
 			if (api == null)
 				return;
 
+			var version = ProjectFluent.Instance.Helper.ModRegistry.Get(ContentPatcherModID).Manifest.Version;
+			if (version.MajorVersion > 1)
+				ProjectFluent.Instance.Monitor.Log("Detected newer Content Patcher than 1.24.x, integration might not behave correctly.", LogLevel.Warn);
+
 			Patch(harmony);
 			RegisterTokenInContentPacks(api);
 		}
@@ -30,11 +35,16 @@ namespace Shockah.ProjectFluent
 			{
 				var modTokenContextType = Type.GetType(ContentPatcherModTokenContextQualifiedName);
 
+				var getTokenMethod = AccessTools.Method(modTokenContextType, "GetToken");
+				if (Harmony.GetAllPatchedMethods().Where(m => m == getTokenMethod).Any())
+				{
+					ProjectFluent.Instance.Monitor.Log($"{ContentPatcherModTokenContextQualifiedName}.GetToken already patched by some mod, probably doing the same thing. Skipping. If Content Patcher integration doesn't work, please contact Project Fluent's author.", LogLevel.Warn);
+					return;
+				}
+				getToken = (context, name, enforceContext) => getTokenMethod.Invoke(context, new object[] { name, enforceContext });
+
 				var getScopeField = AccessTools.Field(modTokenContextType, "Scope");
 				getScope = (context) => (string)getScopeField.GetValue(context);
-
-				var getTokenMethod = AccessTools.Method(modTokenContextType, "GetToken");
-				getToken = (context, name, enforceContext) => getTokenMethod.Invoke(context, new object[] { name, enforceContext });
 
 				harmony.Patch(
 					original: getTokenMethod,
