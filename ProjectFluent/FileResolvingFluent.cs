@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StardewModdingAPI;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -17,15 +18,24 @@ namespace Shockah.ProjectFluent
 					if (!File.Exists(filePathCandidate))
 						continue;
 
+					String content;
 					try
 					{
-						var content = File.ReadAllText(filePathCandidate);
-						var fluent = new FluentImpl(locale, content, fallback);
-						return fluent;
+						content = File.ReadAllText(filePathCandidate);
 					}
-					catch (Exception)
+					catch (Exception e)
 					{
-						// TODO: log at least?
+						ProjectFluent.Instance.Monitor.Log($"There was a problem reading {filePathCandidate}:\n{e}", LogLevel.Error);
+						continue;
+					}
+
+					try
+					{
+						return new FluentImpl(locale, content, fallback);
+					}
+					catch (Exception e)
+					{
+						ProjectFluent.Instance.Monitor.Log($"There was a problem parsing {filePathCandidate}:\n{e}", LogLevel.Error);
 					}
 				}
 

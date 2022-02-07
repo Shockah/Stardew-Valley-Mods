@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Shockah.ProjectFluent
@@ -17,6 +18,8 @@ namespace Shockah.ProjectFluent
 
 			var context = new MessageContext(locale.LanguageCode);
 			var errors = context.AddMessages(content);
+			if (errors.Count > 0)
+				throw new ArgumentException($"Errors parsing Fluent:\n{String.Join('\n', errors.Select(e => $"\t{e.Message}"))}");
 			this.context = context;
 		}
 
