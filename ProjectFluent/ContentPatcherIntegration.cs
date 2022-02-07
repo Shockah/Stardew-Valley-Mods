@@ -36,7 +36,7 @@ namespace Shockah.ProjectFluent
 				var modTokenContextType = Type.GetType(ContentPatcherModTokenContextQualifiedName);
 
 				var getTokenMethod = AccessTools.Method(modTokenContextType, "GetToken");
-				if (Harmony.GetAllPatchedMethods().Where(m => m == getTokenMethod).Any())
+				if (Harmony.GetPatchInfo(getTokenMethod) != null)
 				{
 					ProjectFluent.Instance.Monitor.Log($"{ContentPatcherModTokenContextQualifiedName}.GetToken already patched by some mod, probably doing the same thing. Skipping. If Content Patcher integration doesn't work, please contact Project Fluent's author.", LogLevel.Warn);
 					return;
