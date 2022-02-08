@@ -21,6 +21,8 @@ namespace Shockah.PredictableRetainingSoil
 
 		internal ModConfig Config { get; private set; }
 
+		private Func<string, object, string> localizationFunction;
+
 		private bool isMultiFertilizerLoaded = false;
 		private Func<string> multiFertilizerKeyRetain;
 		private Func<HoeDirt, int?> getMultiFertilizerRetainingSoilType;
@@ -67,8 +69,13 @@ namespace Shockah.PredictableRetainingSoil
 			return this;
 		}
 
+		internal string Localized(string key, object tokens = null) => localizationFunction(key, tokens);
+
 		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
 		{
+			var fluentApi = Helper.ModRegistry.GetApi<IFluentApi>("Shockah.ProjectFluent");
+			localizationFunction = fluentApi.GetLocalizationFunctionForStringKeysForCurrentLocale(ModManifest);
+
 			if (Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer"))
 			{
 				isMultiFertilizerLoaded = true;
@@ -157,13 +164,13 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddSectionTitle(
 				mod: ModManifest,
-				text: () => Helper.Translation.Get("config.daysToRetain.section.text"),
-				tooltip: () => Helper.Translation.Get("config.daysToRetain.section.tooltip")
+				text: () => Localized("config-daysToRetain-section-text"),
+				tooltip: () => Localized("config-daysToRetain-section-tooltip")
 			);
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.daysToRetain.basic.name"),
+				name: () => Localized("config-daysToRetain-basic-name"),
 				getValue: () => Config.BasicRetainingSoilDays,
 				setValue: value => Config.BasicRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -171,7 +178,7 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.daysToRetain.quality.name"),
+				name: () => Localized("config-daysToRetain-quality-name"),
 				getValue: () => Config.QualityRetainingSoilDays,
 				setValue: value => Config.QualityRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -179,7 +186,7 @@ namespace Shockah.PredictableRetainingSoil
 
 			configMenu?.AddNumberOption(
 				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.daysToRetain.deluxe.name"),
+				name: () => Localized("config-daysToRetain-deluxe-name"),
 				getValue: () => Config.DeluxeRetainingSoilDays,
 				setValue: value => Config.DeluxeRetainingSoilDays = value,
 				min: -1, interval: 1
@@ -240,6 +247,7 @@ namespace Shockah.PredictableRetainingSoil
 			if (retainingSoilDays == null)
 				return;
 
+			// old:
 			__result = retainingSoilDays.Value switch
 			{
 				-1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.infinite"),
@@ -247,6 +255,9 @@ namespace Shockah.PredictableRetainingSoil
 				1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.one"),
 				_ => Instance.Helper.Translation.Get("retainingSoil.tooltip.other", new { Days = retainingSoilDays.Value })
 			};
+
+			// new:
+			__result = Instance.Localized("retainingSoil-tooltip", new { Days = retainingSoilDays.Value });
 		}
 
 		#region API
