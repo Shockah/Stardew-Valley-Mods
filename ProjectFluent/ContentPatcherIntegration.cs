@@ -22,7 +22,7 @@ namespace Shockah.ProjectFluent
 				return;
 
 			var version = ProjectFluent.Instance.Helper.ModRegistry.Get(ContentPatcherModID).Manifest.Version;
-			if (version.MajorVersion > 1)
+			if (version.MajorVersion > 1 || version.MinorVersion > 24)
 				ProjectFluent.Instance.Monitor.Log("Detected newer Content Patcher than 1.24.x, integration might not behave correctly.", LogLevel.Warn);
 
 			Patch(harmony);
