@@ -1,6 +1,6 @@
 ﻿namespace Shockah.ProjectFluent
 {
-    public interface IFluentKey
+	public interface IFluentKey
 	{
 		string FluentKey { get; }
 	}

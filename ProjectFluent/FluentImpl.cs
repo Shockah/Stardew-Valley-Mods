@@ -58,10 +58,15 @@ namespace Shockah.ProjectFluent
 
 		public string Get(string key, object tokens)
 		{
-			if (context.HasMessage(key))
+			var dotIndex = key.IndexOf('.');
+			var messageKey = dotIndex == -1 ? key : key[..dotIndex];
+			var attributeKey = dotIndex == -1 ? null : key[(dotIndex + 1)..];
+			
+			if (context.HasMessage(messageKey))
 			{
-				var message = context.GetMessage(key);
-				return context.Format(message, ExtractTokens(tokens));
+				var message = context.GetMessage(messageKey);
+				var node = attributeKey == null ? message : message.Attributes[attributeKey];
+				return context.Format(node, ExtractTokens(tokens)).Replace("\u2068", "").Replace("\u2069", "");
 			}
 			else
 			{
