@@ -21,9 +21,11 @@ config-contentPatcherPatchingMode-value = .
     .PatchFluentToken = Only patch {"{{"}Fluent{"}}"}
     .PatchAllTokens = Patch all tokens
 
-config-localeOverride-section = Locale override
+config-localeOverride = Locale override
     .tooltip =
         Allows you to override the current locale used by { -mod-name }.
-        Choose either a built-in locale, or enter a different locale manually.
-config-localeOverride-builtIn = Built-in
-config-localeOverride-custom = Custom
+        Enter either a built-in locale (listed below), or a different (mod) locale.
+        Leave empty to use the game locale.
+    .subtitle =
+        Built-in values:
+        { $Values }

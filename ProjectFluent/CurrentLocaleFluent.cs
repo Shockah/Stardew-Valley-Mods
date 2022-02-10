@@ -4,8 +4,8 @@ namespace Shockah.ProjectFluent
 {
 	internal class CurrentLocaleFluent<Key>: IFluent<Key>
 	{
-		private IManifest mod;
-		private string name;
+		private readonly IManifest mod;
+		private readonly string name;
 
 		private GameLocale locale;
 		private IFluent<Key> wrapped;

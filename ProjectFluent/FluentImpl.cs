@@ -66,6 +66,8 @@ namespace Shockah.ProjectFluent
 			{
 				var message = context.GetMessage(messageKey);
 				var node = attributeKey == null ? message : message.Attributes[attributeKey];
+				if (node == null)
+					return fallback?.Get(key, tokens);
 				return context.Format(node, ExtractTokens(tokens)).Replace("\u2068", "").Replace("\u2069", "");
 			}
 			else

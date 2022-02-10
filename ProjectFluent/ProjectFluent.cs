@@ -22,7 +22,7 @@ namespace Shockah.ProjectFluent
 		private Func<IManifest, string> getModDirectoryPath;
 
 		private readonly IFluent<string> noOpFluent = new NoOpFluent();
-		private IDictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>> localizationCache = new Dictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>>();
+		private readonly IDictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>> localizationCache = new Dictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>>();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -55,10 +55,8 @@ namespace Shockah.ProjectFluent
 		{
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
-			IEnumerable<string> GetBuiltInLocales(bool includeEmpty)
+			static IEnumerable<string> GetBuiltInLocales()
 			{
-				if (includeEmpty)
-					yield return "";
 				foreach (var value in Enum.GetValues(typeof(LanguageCode)))
 				{
 					var typedValue = (LanguageCode)value;
@@ -83,25 +81,18 @@ namespace Shockah.ProjectFluent
 				allowedValues: FluentContentPatcherPatchingMode.GetAllLocalizedNames().ToArray()
 			);
 
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => Fluent["config-localeOverride-section"],
-				tooltip: () => Fluent["config-localeOverride-section.tooltip"]
-			);
-
 			configMenu?.AddTextOption(
 				mod: ModManifest,
-				name: () => Fluent["config-localeOverride-builtIn"],
-				getValue: () => GetBuiltInLocales(false).Contains(Config.CurrentLocaleOverride) ? Config.CurrentLocaleOverride : "",
-				setValue: value => Config.CurrentLocaleOverride = value == "" ? null : value,
-				allowedValues: GetBuiltInLocales(true).ToArray()
-			);
-
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => Fluent["config-localeOverride-custom"],
+				name: () => Fluent["config-localeOverride"],
+				tooltip: () => Fluent["config-localeOverride.tooltip"],
 				getValue: () => String.IsNullOrEmpty(Config.CurrentLocaleOverride) ? "" : Config.CurrentLocaleOverride,
-				setValue: value => Config.CurrentLocaleOverride = String.IsNullOrEmpty(value) ? null : value
+				setValue: value => Config.CurrentLocaleOverride = String.IsNullOrEmpty(value) ? null : value,
+				fieldId: "localeOverride-custom"
+			);
+
+			configMenu?.AddParagraph(
+				mod: ModManifest,
+				text: () => Fluent.Get("config-localeOverride.subtitle", new { Values = GetBuiltInLocales().Join() })
 			);
 		}
 
