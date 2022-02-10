@@ -10,6 +10,7 @@ namespace Shockah.ProjectFluent
 		private static readonly string ContentPatcherModID = "Pathoschild.ContentPatcher";
 		private static readonly string ContentPatcherModTokenContextQualifiedName = "ContentPatcher.Framework.ModTokenContext, ContentPatcher";
 		private static readonly string RegisterFluentTokenManifestKey = "UsesFluentContentPatcherTokens";
+		private static readonly string TokenName = "Fluent";
 
 		private static bool didTryGetTokenWithNamespace = false;
 		private static Func<object, string> getScope;
@@ -65,13 +66,25 @@ namespace Shockah.ProjectFluent
 					continue;
 				if (modInfo.Manifest.ExtraFields.TryGetValue(RegisterFluentTokenManifestKey, out object value) && value is true)
 				{
-					api.RegisterToken(modInfo.Manifest, "Fluent", new ContentPatcherToken(modInfo.Manifest, null));
+					api.RegisterToken(modInfo.Manifest, TokenName, new ContentPatcherToken(modInfo.Manifest, null));
 				}
 			}
 		}
 
 		private static void ModTokenContext_GetToken_Postfix(ref object __instance, ref object __result, string name, bool enforceContext)
 		{
+			switch (ProjectFluent.Instance.Config.ContentPatcherPatchingMode)
+			{
+				case ContentPatcherPatchingMode.Disabled:
+					return;
+				case ContentPatcherPatchingMode.PatchFluentToken:
+					if (name != TokenName)
+						return;
+					break;
+				case ContentPatcherPatchingMode.PatchAllTokens:
+					break;
+			}
+			
 			if (__result != null)
 				return;
 			if (didTryGetTokenWithNamespace)

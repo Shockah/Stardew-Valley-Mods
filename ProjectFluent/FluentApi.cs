@@ -22,7 +22,7 @@ namespace Shockah.ProjectFluent
 			=> instance.GetLocalizations<Key>(mod, name, locale);
 
 		public IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string name)
-			=> GetLocalizations<Key>(mod, name, CurrentLocale);
+			=> new CurrentLocaleFluent<Key>(mod, name);
 
 		public IFluent<Key> GetLocalizations<Key>(IManifest mod, GameLocale locale)
 			=> GetLocalizations<Key>(mod, null, locale);

@@ -7,7 +7,7 @@ namespace Shockah.ProjectFluent
 {
 	public abstract class GameLocale
 	{
-		public static readonly GameLocale Default = new GameLocale.BuiltIn(LocalizedContentManager.LanguageCode.en);
+		public static readonly GameLocale Default = new BuiltIn(LocalizedContentManager.LanguageCode.en);
 		
 		public abstract string LanguageCode { get; }
 
