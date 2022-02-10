@@ -22,10 +22,15 @@ namespace Shockah.ProjectFluent
 					try
 					{
 						content = File.ReadAllText(filePathCandidate);
+						if (content.Contains('\t'))
+						{
+							ProjectFluent.Instance.Monitor.Log($"Fluent file \"{filePathCandidate}\" contains tab (\\t) characters. Those aren't officially supported and may cause problems; replacing with 4 spaces.", LogLevel.Warn);
+							content = content.Replace("\t", "    ");
+						}
 					}
 					catch (Exception e)
 					{
-						ProjectFluent.Instance.Monitor.Log($"There was a problem reading {filePathCandidate}:\n{e}", LogLevel.Error);
+						ProjectFluent.Instance.Monitor.Log($"There was a problem reading \"{filePathCandidate}\":\n{e}", LogLevel.Error);
 						continue;
 					}
 
@@ -35,7 +40,7 @@ namespace Shockah.ProjectFluent
 					}
 					catch (Exception e)
 					{
-						ProjectFluent.Instance.Monitor.Log($"There was a problem parsing {filePathCandidate}:\n{e}", LogLevel.Error);
+						ProjectFluent.Instance.Monitor.Log($"There was a problem parsing \"{filePathCandidate}\":\n{e}", LogLevel.Error);
 					}
 				}
 

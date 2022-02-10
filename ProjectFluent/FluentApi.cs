@@ -72,6 +72,9 @@ namespace Shockah.ProjectFluent
 		public Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod)
 			=> GetLocalizationFunctionForCurrentLocale<string>(mod, null);
 
+		public Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod, string name)
+			=> GetLocalizationFunctionForCurrentLocale<string>(mod, name);
+
 		#endregion
 	}
 }
