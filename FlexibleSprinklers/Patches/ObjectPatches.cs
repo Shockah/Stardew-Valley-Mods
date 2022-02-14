@@ -36,6 +36,11 @@ namespace Shockah.FlexibleSprinklers
 					postfix: new HarmonyMethod(typeof(ObjectPatches), nameof(IsInSprinklerRangeBroadphase_Postfix))
 				);
 
+				harmony.Patch(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.ApplySprinklerAnimation)),
+					prefix: new HarmonyMethod(typeof(ObjectPatches), nameof(ApplySprinklerAnimation_Prefix))
+				);
+
 				foreach (var nestedType in typeof(SObject).GetTypeInfo().DeclaredNestedTypes)
 				{
 					if (!nestedType.DeclaredFields.Where(f => f.FieldType == typeof(SObject) && f.Name.EndsWith("__this")).Any())
@@ -113,10 +118,10 @@ namespace Shockah.FlexibleSprinklers
 				return true;
 			}
 
-			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;
-			ObjectPatches.IsVanillaQueryInProgress = true;
+			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
+			IsVanillaQueryInProgress = true;
 			var result = FlexibleSprinklers.Instance.IsTileInRangeOfSprinklers(CurrentLocation.Objects.Values.Where(o => o.IsSprinkler()), CurrentLocation, target);
-			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return result;
 		}
 
@@ -133,6 +138,12 @@ namespace Shockah.FlexibleSprinklers
 			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return;
 			__result = IsInSprinklerRangeBoardphase_Result(target);
+		}
+
+		private static void ApplySprinklerAnimation_Prefix(SObject __instance, GameLocation location)
+		{
+			// remove all temporary sprites related to this sprinkler
+			location.TemporarySprites.RemoveAll(sprite => sprite.id == __instance.TileLocation.X * 4000f + __instance.TileLocation.Y);
 		}
 
 		private static bool DayUpdatePostFarmEventOvernightActionsDelegate_Prefix(object __instance)
