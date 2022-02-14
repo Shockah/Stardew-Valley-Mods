@@ -26,7 +26,6 @@ namespace Shockah.FlexibleSprinklers
 
 		internal ILineSprinklersApi LineSprinklersApi { get; private set; }
 		internal IBetterSprinklersApi BetterSprinklersApi { get; private set; }
-		internal IPrismaticToolsApi PrismaticToolsApi { get; private set; }
 
 		public override void Entry(IModHelper helper)
 		{
@@ -58,10 +57,6 @@ namespace Shockah.FlexibleSprinklers
 			BetterSprinklersApi = Helper.ModRegistry.GetApi<IBetterSprinklersApi>(BetterSprinklersModID);
 			if (BetterSprinklersApi != null)
 				BetterSplinklersPatches.Apply(harmony);
-
-			PrismaticToolsApi = Helper.ModRegistry.GetApi<IPrismaticToolsApi>(BetterSprinklersModID);
-			if (PrismaticToolsApi != null)
-				PrismaticToolsPatches.Apply(harmony);
 
 			SetupConfig();
 		}
@@ -307,11 +302,6 @@ namespace Shockah.FlexibleSprinklers
 
 				// Line Sprinklers is patched, no need for custom handling here
 
-				if (PrismaticToolsApi != null && sprinkler.ParentSheetIndex == PrismaticToolsApi.SprinklerIndex && sprinkler.ParentSheetIndex == PrismaticToolsApi.SprinklerIndex)
-				{
-					return PrismaticToolsApi.SprinklerRange + 1;
-				}
-
 				var radius = sprinkler.GetModifiedRadiusForSprinkler();
 				return radius == -1 ? null : radius + 1;
 			}
@@ -397,11 +387,6 @@ namespace Shockah.FlexibleSprinklers
 			{
 				if (BetterSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[] tilePositions))
 					return tilePositions.Where(t => t != Vector2.Zero).ToArray();
-			}
-
-			if (PrismaticToolsApi != null && sprinkler.ParentSheetIndex == PrismaticToolsApi.SprinklerIndex)
-			{
-				return PrismaticToolsApi.GetSprinklerCoverage(Vector2.Zero).Where(t => t != Vector2.Zero).ToArray();
 			}
 
 			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;

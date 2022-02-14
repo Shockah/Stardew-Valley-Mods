@@ -3,15 +3,8 @@ using StardewModdingAPI;
 
 namespace Shockah.FlexibleSprinklers
 {
-	/// <summary>The API which lets other mods add a config UI through Generic Mod Config Menu.</summary>
 	public interface IGenericModConfigMenuApi
 	{
-		/*********
-		** Methods
-		*********/
-		/****
-		** Must be called first
-		****/
 		/// <summary>Register a mod whose config can be edited through the UI.</summary>
 		/// <param name="mod">The mod's manifest.</param>
 		/// <param name="reset">Reset the mod's config to its default values.</param>
@@ -20,10 +13,6 @@ namespace Shockah.FlexibleSprinklers
 		/// <remarks>Each mod can only be registered once, unless it's deleted via <see cref="Unregister"/> before calling this again.</remarks>
 		void Register(IManifest mod, Action reset, Action save, bool titleScreenOnly = false);
 
-
-		/****
-		** Basic options
-		****/
 		/// <summary>Add a section title at the current position in the form.</summary>
 		/// <param name="mod">The mod's manifest.</param>
 		/// <param name="text">The title text shown in the form.</param>
