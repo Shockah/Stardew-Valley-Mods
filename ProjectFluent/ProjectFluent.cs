@@ -22,7 +22,7 @@ namespace Shockah.ProjectFluent
 		private Func<IManifest, string> getModDirectoryPath;
 
 		private readonly IFluent<string> noOpFluent = new NoOpFluent();
-		private readonly IDictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>> localizationCache = new Dictionary<(string modID, string name), IDictionary<GameLocale, IFluent<string>>>();
+		private readonly IDictionary<(string modID, string name), IDictionary<IGameLocale, IFluent<string>>> localizationCache = new Dictionary<(string modID, string name), IDictionary<IGameLocale, IFluent<string>>>();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -96,7 +96,7 @@ namespace Shockah.ProjectFluent
 			);
 		}
 
-		private IEnumerable<string> GetFilePathCandidates(IManifest mod, string name, GameLocale locale)
+		private IEnumerable<string> GetFilePathCandidates(IManifest mod, string name, IGameLocale locale)
 		{
 			var baseModPath = getModDirectoryPath(mod);
 			if (baseModPath == null)
@@ -111,23 +111,23 @@ namespace Shockah.ProjectFluent
 
 		#region APIs
 
-		public GameLocale CurrentLocale
+		public IGameLocale CurrentLocale
 		{
 			get
 			{
 				return CurrentLanguageCode switch
 				{
-					LanguageCode.mod => new GameLocale.Mod(CurrentModLanguage),
-					_ => new GameLocale.BuiltIn(CurrentLanguageCode),
+					LanguageCode.mod => new IGameLocale.Mod(CurrentModLanguage),
+					_ => new IGameLocale.BuiltIn(CurrentLanguageCode),
 				};
 			}
 		}
 
-		public IFluent<Key> GetLocalizations<Key>(IManifest mod, string name, GameLocale locale)
+		public IFluent<Key> GetLocalizations<Key>(IGameLocale locale, IManifest mod, string name = null)
 		{
 			var rootKey = (modID: mod.UniqueID, name: name);
 			if (!localizationCache.ContainsKey(rootKey))
-				localizationCache[rootKey] = new Dictionary<GameLocale, IFluent<string>>();
+				localizationCache[rootKey] = new Dictionary<IGameLocale, IFluent<string>>();
 
 			var specificCache = localizationCache[rootKey];
 			if (!specificCache.ContainsKey(locale))

@@ -3,9 +3,14 @@ using System;
 
 namespace Shockah.PredictableRetainingSoil
 {
+	public interface IFluent<Key>
+	{
+		string this[Key key] { get; }
+		string Get(Key key, object tokens);
+	}
+
 	public interface IFluentApi
 	{
-		Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod);
-		Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod, string name);
+		IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string name = null);
 	}
 }

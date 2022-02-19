@@ -7,7 +7,7 @@ namespace Shockah.ProjectFluent
 		private readonly IManifest mod;
 		private readonly string name;
 
-		private GameLocale locale;
+		private IGameLocale locale;
 		private IFluent<Key> wrapped;
 
 		public CurrentLocaleFluent(IManifest mod, string name = null)
@@ -23,7 +23,7 @@ namespace Shockah.ProjectFluent
 				if (locale == null || locale != ProjectFluent.Instance.Api.CurrentLocale)
 				{
 					locale = ProjectFluent.Instance.Api.CurrentLocale;
-					wrapped = ProjectFluent.Instance.Api.GetLocalizations<Key>(mod, name, locale);
+					wrapped = ProjectFluent.Instance.Api.GetLocalizations<Key>(locale, mod, name);
 				}
 				return wrapped;
 			}

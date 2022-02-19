@@ -9,7 +9,7 @@ namespace Shockah.ProjectFluent
 	{
 		private readonly Lazy<IFluent<string>> wrapped;
 		
-		public FileResolvingFluent(GameLocale locale, IEnumerable<string> filePathCandidates, IFluent<string> fallback)
+		public FileResolvingFluent(IGameLocale locale, IEnumerable<string> filePathCandidates, IFluent<string> fallback)
 		{
 			wrapped = new(() =>
 			{

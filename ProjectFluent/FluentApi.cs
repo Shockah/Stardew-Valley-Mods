@@ -1,7 +1,6 @@
 ﻿using StardewModdingAPI;
+using StardewValley;
 using StardewValley.GameData;
-using System;
-using static StardewValley.LocalizedContentManager;
 
 namespace Shockah.ProjectFluent
 {
@@ -14,67 +13,18 @@ namespace Shockah.ProjectFluent
 			this.instance = instance;
 		}
 
-		#region Strongly-typed APIs
+		public IGameLocale CurrentLocale => instance.CurrentLocale;
 
-		public GameLocale CurrentLocale => instance.CurrentLocale;
+		public IGameLocale GetBuiltInLocale(LocalizedContentManager.LanguageCode languageCode)
+			=> new IGameLocale.BuiltIn(languageCode);
 
-		public IFluent<Key> GetLocalizations<Key>(IManifest mod, string name, GameLocale locale)
-			=> instance.GetLocalizations<Key>(mod, name, locale);
+		public IGameLocale GetModLocale(ModLanguage language)
+			=> new IGameLocale.Mod(language);
 
-		public IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string name)
+		public IFluent<Key> GetLocalizations<Key>(IGameLocale locale, IManifest mod, string name = null)
+			=> instance.GetLocalizations<Key>(locale, mod, name);
+
+		public IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string name = null)
 			=> new CurrentLocaleFluent<Key>(mod, name);
-
-		public IFluent<Key> GetLocalizations<Key>(IManifest mod, GameLocale locale)
-			=> GetLocalizations<Key>(mod, null, locale);
-
-		public IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod)
-			=> GetLocalizationsForCurrentLocale<Key>(mod, null);
-
-		#endregion
-
-		#region Weakly-typed APIs
-
-		public LanguageCode? CurrentLanguageCode => (CurrentLocale as GameLocale.BuiltIn)?.BuiltInLanguageCode;
-
-		public ModLanguage CurrentModLanguage => (CurrentLocale as GameLocale.Mod)?.Language;
-
-		public Func<Key, object, string> GetLocalizationFunction<Key>(IManifest mod, string name, LanguageCode builtInLanguageCode)
-		{
-			var fluent = GetLocalizations<Key>(mod, name, new GameLocale.BuiltIn(builtInLanguageCode));
-			return (key, tokens) => fluent.Get(key, tokens);
-		}
-
-		public Func<Key, object, string> GetLocalizationFunction<Key>(IManifest mod, string name, ModLanguage modLanguage)
-		{
-			var fluent = GetLocalizations<Key>(mod, name, new GameLocale.Mod(modLanguage));
-			return (key, tokens) => fluent.Get(key, tokens);
-		}
-
-		public Func<Key, object, string> GetLocalizationFunctionForCurrentLocale<Key>(IManifest mod, string name)
-		{
-			var fluent = GetLocalizationsForCurrentLocale<Key>(mod, name);
-			return (key, tokens) => fluent.Get(key, tokens);
-		}
-
-		public Func<Key, object, string> GetLocalizationFunction<Key>(IManifest mod, LanguageCode builtInLanguageCode)
-			=> GetLocalizationFunction<Key>(mod, null, builtInLanguageCode);
-
-		public Func<Key, object, string> GetLocalizationFunction<Key>(IManifest mod, ModLanguage modLanguage)
-			=> GetLocalizationFunction<Key>(mod, null, modLanguage);
-
-		public Func<Key, object, string> GetLocalizationFunctionForCurrentLocale<Key>(IManifest mod)
-			=> GetLocalizationFunctionForCurrentLocale<Key>(mod, null);
-
-		#endregion
-
-		#region Temporary stuff until SMAPI works
-
-		public Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod)
-			=> GetLocalizationFunctionForCurrentLocale<string>(mod, null);
-
-		public Func<string, object, string> GetLocalizationFunctionForStringKeysForCurrentLocale(IManifest mod, string name)
-			=> GetLocalizationFunctionForCurrentLocale<string>(mod, name);
-
-		#endregion
 	}
 }

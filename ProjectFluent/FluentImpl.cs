@@ -12,7 +12,7 @@ namespace Shockah.ProjectFluent
 		private readonly IFluent<string> fallback;
 		private readonly MessageContext context;
 
-		public FluentImpl(GameLocale locale, string content, IFluent<string> fallback = null)
+		public FluentImpl(IGameLocale locale, string content, IFluent<string> fallback = null)
 		{
 			this.fallback = fallback;
 
