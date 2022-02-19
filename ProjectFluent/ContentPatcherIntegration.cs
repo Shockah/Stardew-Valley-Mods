@@ -65,9 +65,7 @@ namespace Shockah.ProjectFluent
 				if (modInfo.Manifest.ContentPackFor?.UniqueID != ContentPatcherModID)
 					continue;
 				if (modInfo.Manifest.ExtraFields.TryGetValue(RegisterFluentTokenManifestKey, out object value) && value is true)
-				{
-					api.RegisterToken(modInfo.Manifest, TokenName, new ContentPatcherToken(modInfo.Manifest, null));
-				}
+					api.RegisterToken(modInfo.Manifest, TokenName, new ContentPatcherToken(modInfo.Manifest));
 			}
 		}
 

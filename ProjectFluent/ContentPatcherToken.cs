@@ -1,5 +1,4 @@
 ﻿using StardewModdingAPI;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,16 +7,13 @@ namespace Shockah.ProjectFluent
 	internal class ContentPatcherToken
 	{
 		private readonly IManifest mod;
-		private readonly string localizationsName;
-		private readonly Lazy<IFluent<string>> fluent;
+		private readonly IDictionary<string, IFluent<string>> fluents = new Dictionary<string, IFluent<string>>();
 
 		private bool isUpdated = false;
 
-		public ContentPatcherToken(IManifest mod, string localizationsName)
+		public ContentPatcherToken(IManifest mod)
 		{
 			this.mod = mod;
-			this.localizationsName = localizationsName;
-			fluent = new(() => ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale<string>(mod, localizationsName));
 		}
 
 		public bool IsReady() => true;
@@ -38,7 +34,12 @@ namespace Shockah.ProjectFluent
 		public IEnumerable<string> GetValues(string input)
 		{
 			var args = ParseArgs(input);
-			yield return fluent.Value.Get(args.Key, args.Named);
+			if (args.Named.TryGetValue("file", out string localizationsName))
+				args.Named.Remove("file");
+			else
+				localizationsName = null;
+
+			yield return ObtainFluent(localizationsName).Get(args.Key, args.Named);
 		}
 
 		private Args ParseArgs(string input)
@@ -57,6 +58,15 @@ namespace Shockah.ProjectFluent
 				named[argName] = argValue;
 			}
 			return new Args(key, named);
+		}
+
+		private IFluent<string> ObtainFluent(string name)
+		{
+			if (fluents.TryGetValue(name, out IFluent<string> fluent))
+				return fluent;
+			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale<string>(mod, name);
+			fluents[name] = fluent;
+			return fluent;
 		}
 
 		internal struct Args
