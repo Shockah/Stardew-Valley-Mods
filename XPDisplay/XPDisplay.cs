@@ -2,7 +2,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
+using SpaceCore;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -26,7 +28,11 @@ namespace Shockah.XPView
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+		}
 
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		{
 			var harmony = new Harmony(ModManifest.UniqueID);
 			try
 			{
@@ -40,7 +46,7 @@ namespace Shockah.XPView
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 				);
 
-				if (helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
+				if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 				{
 					harmony.Patch(
 						original: AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", new Type[] { typeof(SpriteBatch) }),
@@ -48,9 +54,9 @@ namespace Shockah.XPView
 					);
 				}
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: {e}", LogLevel.Error);
+				Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: {ex}", LogLevel.Error);
 			}
 		}
 
@@ -104,11 +110,15 @@ namespace Shockah.XPView
 			worker.Insert(1, new[]
 			{
 				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
+
 				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
-				new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
 				new CodeInstruction(OpCodes.Ldloc_2), // this *should* be the `addedX` local
+				new CodeInstruction(OpCodes.Add),
+
+				new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
 				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `i` local - the currently drawn level index (0-9)
 				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `j` local - the skill index
+				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
 			});
 
@@ -132,35 +142,69 @@ namespace Shockah.XPView
 			if (worker is null)
 			{
 				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
-				return instructions;
+			}
+			else
+			{
+				// TODO: some kind of local finder to stop hardcoding the indexes
+				worker.Insert(1, new[]
+				{
+					new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
+
+					new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
+					new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `xOffset` local
+					new CodeInstruction(OpCodes.Add),
+
+					new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
+					new CodeInstruction(OpCodes.Ldloc, 8), // this *should* be the `levelIndex` local
+					new CodeInstruction(OpCodes.Ldloc, 9), // this *should* be the `skillIndex` local
+					new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+				});
 			}
 
-			worker.Insert(1, new[]
+			// IL to find:
+			// IL_0cc1: ldloc.s 19
+			// IL_0cc3: ldc.i4.s 9
+			// IL_0cc5: bne.un IL_0d84
+			worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
 			{
-				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
+				i => i.IsLdloc(),
+				i => i.IsLdcI4(9),
+				i => i.IsBneUn()
+			}, startIndex: worker?.EndIndex ?? 0);
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+			}
+			else
+			{
+				// TODO: some kind of local finder to stop hardcoding the indexes
+				worker.Insert(1, new[]
+				{
+					new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 
-				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
-				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `xOffset` local
-				new CodeInstruction(OpCodes.Add),
+					new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
+					new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `xOffset` local
+					new CodeInstruction(OpCodes.Add),
 
-				new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
-				new CodeInstruction(OpCodes.Ldloc, 32), // this *should* be the `addedX` local
-				new CodeInstruction(OpCodes.Ldloc, 8), // this *should* be the `i` local - the currently drawn level index (0-9)
-				new CodeInstruction(OpCodes.Ldloc, 9), // this *should* be the `j` local - the skill index
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
-			});
+					new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
+					new CodeInstruction(OpCodes.Ldloc, 19), // this *should* be the `levelIndex` local
+					new CodeInstruction(OpCodes.Ldloc_2), // this *should* be the `indexWithLuckSkill` local
+					new CodeInstruction(OpCodes.Ldloc, 17), // this *should* be the `skillName` local
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+				});
+			}
 
 			return instructions;
 		}
 
-		public static void SkillsPage_draw_Addition(SpriteBatch b, int x, int y, int addedX, int levelIndex, int uiSkillIndex)
+		public static void SkillsPage_draw_Addition(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
-			int skillIndex = OrderedSkillIndexes[uiSkillIndex];
-			if (Game1.player.GetUnmodifiedSkillLevel(skillIndex) != levelIndex)
+			if (GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName) != levelIndex)
 				return;
-			int nextLevelXP = Instance.XPValues[levelIndex];
-			int currentLevelXP = levelIndex == 0 ? 0 : Instance.XPValues[levelIndex - 1];
-			int currentXP = Game1.player.experiencePoints[skillIndex];
+			int nextLevelXP = GetLevelXP(levelIndex, spaceCoreSkillName);
+			int currentLevelXP = levelIndex == 0 ? 0 : GetLevelXP(levelIndex - 1, spaceCoreSkillName);
+			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
 			float nextLevelProgress = 1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP);
 
 			float scale = 4f;
@@ -169,7 +213,7 @@ namespace Shockah.XPView
 				int rectangleWidthPixels = (int)(BigObtainedLevelCursorsRectangle.Height * nextLevelProgress);
 				b.Draw(
 					Game1.mouseCursors,
-					new Vector2(addedX + x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
+					new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
 					new Rectangle(
 						BigObtainedLevelCursorsRectangle.Left,
 						BigObtainedLevelCursorsRectangle.Top,
@@ -184,7 +228,7 @@ namespace Shockah.XPView
 				int rectangleHeightPixels = (int)(SmallObtainedLevelCursorsRectangle.Height * nextLevelProgress);
 				b.Draw(
 					Game1.mouseCursors,
-					new Vector2(addedX + x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (SmallObtainedLevelCursorsRectangle.Height - rectangleHeightPixels) * scale),
+					new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (SmallObtainedLevelCursorsRectangle.Height - rectangleHeightPixels) * scale),
 					new Rectangle(
 						SmallObtainedLevelCursorsRectangle.Left,
 						SmallObtainedLevelCursorsRectangle.Top + SmallObtainedLevelCursorsRectangle.Height - rectangleHeightPixels,
@@ -194,6 +238,48 @@ namespace Shockah.XPView
 					Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
 				);
 			}
+		}
+
+		private static int GetUnmodifiedSkillLevel(int uiSkillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is null)
+				return Game1.player.GetUnmodifiedSkillLevel(OrderedSkillIndexes[uiSkillIndex]);
+			else
+				return GetSpaceCoreUnmodifiedSkillLevel(spaceCoreSkillName);
+		}
+
+		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is null)
+				return Instance.XPValues[levelIndex];
+			else
+				return GetSpaceCoreLevelXP(levelIndex, spaceCoreSkillName);
+		}
+
+		private static int GetCurrentXP(int uiSkillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is null)
+				return Game1.player.experiencePoints[OrderedSkillIndexes[uiSkillIndex]];
+			else
+				return GetSpaceCoreCurrentXP(spaceCoreSkillName);
+		}
+
+		private static int GetSpaceCoreUnmodifiedSkillLevel(string spaceCoreSkillName)
+		{
+			var skill = Skills.GetSkill(spaceCoreSkillName);
+			return Game1.player.GetCustomSkillLevel(skill);
+		}
+
+		private static int GetSpaceCoreLevelXP(int levelIndex, string spaceCoreSkillName)
+		{
+			var skill = Skills.GetSkill(spaceCoreSkillName);
+			return skill.ExperienceCurve[levelIndex];
+		}
+
+		private static int GetSpaceCoreCurrentXP(string spaceCoreSkillName)
+		{
+			var skill = Skills.GetSkill(spaceCoreSkillName);
+			return Game1.player.GetCustomSkillExperience(skill);
 		}
 	}
 }

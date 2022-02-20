@@ -6,5 +6,11 @@
 	"UniqueID": "Shockah.PredictableRetainingSoil",
 	"EntryDll": "PredictableRetainingSoil.dll",
 	"MinimumApiVersion": "3.0.0",
-	"UpdateKeys": [ "Nexus:10956" ]
+	"UpdateKeys": [ "Nexus:10956" ],
+	"Dependencies": [
+		{
+			"UniqueID": "spacechase0.SpaceCore",
+			"IsRequired": true
+		}
+	]
 }

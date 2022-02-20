@@ -13,4 +13,9 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\_Common\.Common.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Reference Include="SpaceCore">
+	    <HintPath>References\SpaceCore.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
 </Project>
