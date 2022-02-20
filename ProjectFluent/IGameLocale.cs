@@ -2,7 +2,6 @@
 using StardewValley.GameData;
 using System;
 using System.Collections.Generic;
-using static StardewValley.LocalizedContentManager;
 
 namespace Shockah.ProjectFluent
 {
@@ -12,12 +11,17 @@ namespace Shockah.ProjectFluent
 
 		string LanguageCode { get; }
 
+		bool IsBuiltInLocale
+			=> this is BuiltIn;
+		bool IsModLocale
+			=> this is Mod;
+
 		public sealed class BuiltIn: IGameLocale
 		{
-			internal LanguageCode BuiltInLanguageCode { get; private set; }
+			internal LocalizedContentManager.LanguageCode BuiltInLanguageCode { get; private set; }
 			public string LanguageCode => BuiltInLanguageCode == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(BuiltInLanguageCode);
 
-			public BuiltIn(LanguageCode code)
+			public BuiltIn(LocalizedContentManager.LanguageCode code)
 			{
 				if (code == LocalizedContentManager.LanguageCode.mod)
 					throw new ArgumentException("`mod` is not a valid built-in locale.");
