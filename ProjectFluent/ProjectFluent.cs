@@ -6,18 +6,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using static StardewValley.LocalizedContentManager;
 
 namespace Shockah.ProjectFluent
 {
 	public class ProjectFluent: Mod
 	{
 		public static ProjectFluent Instance { get; private set; }
-		public FluentApi Api { get; private set; }
+		public IFluentApi Api { get; private set; }
 
 		internal ModConfig Config { get; private set; }
 		internal IFluent<string> Fluent { get; private set; }
-		internal IFluent<ContentPatcherPatchingMode> FluentContentPatcherPatchingMode { get; private set; }
+		internal IEnumFluent<ContentPatcherPatchingMode> FluentContentPatcherPatchingMode { get; private set; }
 
 		private Func<IManifest, string> getModDirectoryPath;
 
@@ -30,7 +29,7 @@ namespace Shockah.ProjectFluent
 			Api = new FluentApi(this);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale<string>(ModManifest);
-			FluentContentPatcherPatchingMode = Fluent.ForEnum<ContentPatcherPatchingMode>("config-contentPatcherPatchingMode-value.");
+			FluentContentPatcherPatchingMode = Api.GetEnumFluent<ContentPatcherPatchingMode>(Fluent, "config-contentPatcherPatchingMode-value.");
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 
 			var directoryPathGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "DirectoryPath");
@@ -57,12 +56,12 @@ namespace Shockah.ProjectFluent
 
 			static IEnumerable<string> GetBuiltInLocales()
 			{
-				foreach (var value in Enum.GetValues(typeof(LanguageCode)))
+				foreach (var value in Enum.GetValues(typeof(LocalizedContentManager.LanguageCode)))
 				{
-					var typedValue = (LanguageCode)value;
-					if (typedValue == LanguageCode.mod)
+					var typedValue = (LocalizedContentManager.LanguageCode)value;
+					if (typedValue == LocalizedContentManager.LanguageCode.mod)
 						continue;
-					yield return typedValue == LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(typedValue);
+					yield return typedValue == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(typedValue);
 				}
 			}
 
@@ -115,10 +114,10 @@ namespace Shockah.ProjectFluent
 		{
 			get
 			{
-				return CurrentLanguageCode switch
+				return LocalizedContentManager.CurrentLanguageCode switch
 				{
-					LanguageCode.mod => new IGameLocale.Mod(CurrentModLanguage),
-					_ => new IGameLocale.BuiltIn(CurrentLanguageCode),
+					LocalizedContentManager.LanguageCode.mod => new IGameLocale.Mod(LocalizedContentManager.CurrentModLanguage),
+					_ => new IGameLocale.BuiltIn(LocalizedContentManager.CurrentLanguageCode),
 				};
 			}
 		}

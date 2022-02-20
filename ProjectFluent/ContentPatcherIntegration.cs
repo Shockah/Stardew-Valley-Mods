@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using StardewModdingAPI;
 using System;
-using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
