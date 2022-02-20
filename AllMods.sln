@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DontStopMeNow", "DontStopMe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PredictableRetainingSoil", "PredictableRetainingSoil\PredictableRetainingSoil.csproj", "{1F02BE31-490B-474C-B5DB-D16990F287CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XPDisplay", "XPDisplay\XPDisplay.csproj", "{5AE05C77-966B-49A8-8000-2FB2486DD82F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XPDisplay", "XPDisplay\XPDisplay.csproj", "{5AE05C77-966B-49A8-8000-2FB2486DD82F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_Common", "_Common\_Common.csproj", "{9F1C3448-A759-479E-AA8D-EA5ACB6304B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = ".Common", "_Common\.Common.csproj", "{9F1C3448-A759-479E-AA8D-EA5ACB6304B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

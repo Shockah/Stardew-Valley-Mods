@@ -12,13 +12,14 @@ using System.Reflection.Emit;
 
 namespace Shockah.XPView
 {
-	public class XPView: Mod
+	public class XPDisplay: Mod
 	{
-		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new Rectangle(137, 338, 8, 9);
-		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new Rectangle(159, 338, 14, 9);
+		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 8, 9);
+		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 14, 9);
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
+		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
-		private static XPView Instance = null!;
+		private static XPDisplay Instance = null!;
 
 		private int[] XPValues = null!;
 
@@ -31,12 +32,21 @@ namespace Shockah.XPView
 			{
 				harmony.Patch(
 					original: AccessTools.Method(typeof(Farmer), nameof(Farmer.checkForLevelGain)),
-					transpiler: new HarmonyMethod(typeof(XPView), nameof(Farmer_checkForLevelGain_Transpiler))
+					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_checkForLevelGain_Transpiler))
 				);
+
 				harmony.Patch(
 					original: AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), new Type[] { typeof(SpriteBatch) }),
-					transpiler: new HarmonyMethod(typeof(XPView), nameof(SkillsPage_draw_Transpiler))
+					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 				);
+
+				if (helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
+				{
+					harmony.Patch(
+						original: AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", new Type[] { typeof(SpriteBatch) }),
+						transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
+					);
+				}
 			}
 			catch (Exception e)
 			{
@@ -93,20 +103,57 @@ namespace Shockah.XPView
 
 			worker.Insert(1, new[]
 			{
-				new CodeInstruction(OpCodes.Ldarg_0),
 				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
 				new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
 				new CodeInstruction(OpCodes.Ldloc_2), // this *should* be the `addedX` local
 				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `i` local - the currently drawn level index (0-9)
 				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `j` local - the skill index
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPView), nameof(SkillsPage_draw_Addition)))
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
 			});
 
 			return instructions;
 		}
 
-		public static void SkillsPage_draw_Addition(SkillsPage __instance, SpriteBatch b, int x, int y, int addedX, int levelIndex, int uiSkillIndex)
+		private static IEnumerable<CodeInstruction> SpaceCore_NewSkillsPage_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		{
+			var instructions = enumerableInstructions.ToList();
+
+			// IL to find:
+			// IL_08b1: ldloc.s 8
+			// IL_08b3: ldc.i4.s 9
+			// IL_08b5: bne.un IL_0976
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdloc(),
+				i => i.IsLdcI4(9),
+				i => i.IsBneUn()
+			});
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Insert(1, new[]
+			{
+				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
+
+				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `x` local
+				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `xOffset` local
+				new CodeInstruction(OpCodes.Add),
+
+				new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
+				new CodeInstruction(OpCodes.Ldloc, 32), // this *should* be the `addedX` local
+				new CodeInstruction(OpCodes.Ldloc, 8), // this *should* be the `i` local - the currently drawn level index (0-9)
+				new CodeInstruction(OpCodes.Ldloc, 9), // this *should* be the `j` local - the skill index
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+			});
+
+			return instructions;
+		}
+
+		public static void SkillsPage_draw_Addition(SpriteBatch b, int x, int y, int addedX, int levelIndex, int uiSkillIndex)
 		{
 			int skillIndex = OrderedSkillIndexes[uiSkillIndex];
 			if (Game1.player.GetUnmodifiedSkillLevel(skillIndex) != levelIndex)
