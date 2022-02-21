@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
-using SpaceCore;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -245,7 +244,7 @@ namespace Shockah.XPView
 			if (spaceCoreSkillName is null)
 				return Game1.player.GetUnmodifiedSkillLevel(OrderedSkillIndexes[uiSkillIndex]);
 			else
-				return GetSpaceCoreUnmodifiedSkillLevel(spaceCoreSkillName);
+				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
 		}
 
 		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
@@ -253,7 +252,7 @@ namespace Shockah.XPView
 			if (spaceCoreSkillName is null)
 				return Instance.XPValues[levelIndex];
 			else
-				return GetSpaceCoreLevelXP(levelIndex, spaceCoreSkillName);
+				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
 		}
 
 		private static int GetCurrentXP(int uiSkillIndex, string? spaceCoreSkillName)
@@ -261,25 +260,7 @@ namespace Shockah.XPView
 			if (spaceCoreSkillName is null)
 				return Game1.player.experiencePoints[OrderedSkillIndexes[uiSkillIndex]];
 			else
-				return GetSpaceCoreCurrentXP(spaceCoreSkillName);
-		}
-
-		private static int GetSpaceCoreUnmodifiedSkillLevel(string spaceCoreSkillName)
-		{
-			var skill = Skills.GetSkill(spaceCoreSkillName);
-			return Game1.player.GetCustomSkillLevel(skill);
-		}
-
-		private static int GetSpaceCoreLevelXP(int levelIndex, string spaceCoreSkillName)
-		{
-			var skill = Skills.GetSkill(spaceCoreSkillName);
-			return skill.ExperienceCurve[levelIndex];
-		}
-
-		private static int GetSpaceCoreCurrentXP(string spaceCoreSkillName)
-		{
-			var skill = Skills.GetSkill(spaceCoreSkillName);
-			return Game1.player.GetCustomSkillExperience(skill);
+				return SpaceCoreBridge.GetCurrentXP(spaceCoreSkillName);
 		}
 	}
 }
