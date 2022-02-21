@@ -9,38 +9,32 @@ namespace Shockah.FlexibleSprinklers
 {
 	internal class GameLocationMap: IMap
 	{
-		private readonly GameLocation location;
+		private readonly GameLocation Location;
 
 		internal GameLocationMap(GameLocation location)
 		{
-			this.location = location;
+			this.Location = location;
 		}
 
-		public override bool Equals(object obj)
-		{
-			return obj is GameLocationMap map && location == map.location;
-		}
+		public override bool Equals(object? obj)
+			=> obj is IMap other && Equals(other);
 
 		public override int GetHashCode()
-		{
-			return location.GetHashCode();
-		}
+			=> Location.GetHashCode();
 
-		public bool Equals(IMap other)
-		{
-			return Equals((object)other);
-		}
+		public bool Equals(IMap? other)
+			=> other is GameLocationMap map && Location == map.Location;
 
 		public SoilType this[IntPoint point]
 		{
 			get
 			{
 				var tileVector = new Vector2(point.X, point.Y);
-				if (location.Objects.TryGetValue(tileVector, out SObject @object) && @object.IsSprinkler())
+				if (Location.Objects.TryGetValue(tileVector, out SObject @object) && @object.IsSprinkler())
 					return SoilType.Sprinkler;
-				if (!location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature) || feature is not HoeDirt)
+				if (!Location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature) || feature is not HoeDirt)
 					return SoilType.NonSoil;
-				if (location.doesTileHaveProperty(point.X, point.Y, "NoSprinklers", "Back")?.StartsWith("T", StringComparison.InvariantCultureIgnoreCase) == true)
+				if (Location.doesTileHaveProperty(point.X, point.Y, "NoSprinklers", "Back")?.StartsWith("T", StringComparison.InvariantCultureIgnoreCase) == true)
 					return SoilType.NonWaterable;
 
 				var soil = (HoeDirt)feature;
@@ -53,10 +47,10 @@ namespace Shockah.FlexibleSprinklers
 			var can = new WateringCan();
 			var tileVector = new Vector2(point.X, point.Y);
 
-			if (location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature))
-				feature.performToolAction(can, 0, tileVector, location);
-			if (location.Objects.TryGetValue(tileVector, out SObject @object))
-				@object.performToolAction(can, location);
+			if (Location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature))
+				feature.performToolAction(can, 0, tileVector, Location);
+			if (Location.Objects.TryGetValue(tileVector, out SObject @object))
+				@object.performToolAction(can, Location);
 
 			// TODO: add animation, if needed
 		}

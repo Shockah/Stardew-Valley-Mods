@@ -72,12 +72,12 @@ namespace Shockah.FlexibleSprinklers
 
 		internal static void Object_IsSprinkler_Postfix(SObject __instance, ref bool __result)
 		{
-			__result = __result || FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex);
+			__result = __result || FlexibleSprinklers.Instance.LineSprinklersApi!.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex);
 		}
 
 		private static int? Object_GetBaseRadiusForSprinkler_Result(SObject instance)
 		{
-			if (FlexibleSprinklers.Instance.LineSprinklersApi.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[] tilePositions))
+			if (FlexibleSprinklers.Instance.LineSprinklersApi!.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[]? tilePositions))
 			{
 				return (int)Math.Sqrt(tilePositions.Length / 2) - 1;
 			}

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
-	internal class VanillaSprinklerBehavior: ISprinklerBehavior
+	internal class VanillaSprinklerBehavior: ISprinklerBehavior.Independent
 	{
 		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{

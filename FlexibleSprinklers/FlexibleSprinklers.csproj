@@ -3,9 +3,14 @@
 		<RootNamespace>Shockah.FlexibleSprinklers</RootNamespace>
 		<Version>1.1.2</Version>
 		<TargetFramework>net5.0</TargetFramework>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\_Common\.Common.csproj" />
 	</ItemGroup>
 </Project>

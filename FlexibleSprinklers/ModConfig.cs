@@ -2,13 +2,10 @@
 {
 	internal class ModConfig
 	{
-		internal enum SprinklerBehaviorEnum
-		{
-			Flexible, FlexibleWithoutVanilla, Vanilla
-		}
+		internal enum SprinklerBehaviorEnum { Flexible, FlexibleWithoutVanilla, Vanilla }
 
 		public SprinklerBehaviorEnum SprinklerBehavior { get; set; } = SprinklerBehaviorEnum.Flexible;
-		public FlexibleSprinklerBehavior.TileWaterBalanceMode TileWaterBalanceMode { get; set; } = FlexibleSprinklerBehavior.TileWaterBalanceMode.Relaxed;
+		public FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode { get; set; } = FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed;
 		public bool ActivateOnPlacement { get; set; } = true;
 		public bool ActivateOnAction { get; set; } = true;
 		public int Tier1Power { get; set; } = 4;

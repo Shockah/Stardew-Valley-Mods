@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Shockah.CommonModCode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -17,15 +18,15 @@ namespace Shockah.FlexibleSprinklers
 		internal static readonly string BetterSprinklersModID = "Speeder.BetterSprinklers";
 		internal static readonly string PrismaticToolsModID = "stokastic.PrismaticTools";
 
-		public static FlexibleSprinklers Instance { get; private set; }
+		public static FlexibleSprinklers Instance { get; private set; } = null!;
 
-		internal ModConfig Config { get; private set; }
-		internal ISprinklerBehavior SprinklerBehavior { get; private set; }
-		private readonly List<Func<SObject, int?>> sprinklerTierProviders = new();
-		private readonly List<Func<SObject, Vector2[]>> sprinklerCoverageProviders = new();
+		internal ModConfig Config { get; private set; } = null!;
+		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
+		private readonly List<Func<SObject, int?>> SprinklerTierProviders = new();
+		private readonly List<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new();
 
-		internal ILineSprinklersApi LineSprinklersApi { get; private set; }
-		internal IBetterSprinklersApi BetterSprinklersApi { get; private set; }
+		internal ILineSprinklersApi? LineSprinklersApi { get; private set; }
+		internal IBetterSprinklersApi? BetterSprinklersApi { get; private set; }
 
 		public override void Entry(IModHelper helper)
 		{
@@ -45,7 +46,7 @@ namespace Shockah.FlexibleSprinklers
 			return this;
 		}
 
-		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
 			ObjectPatches.Apply(harmony);
@@ -61,17 +62,15 @@ namespace Shockah.FlexibleSprinklers
 			SetupConfig();
 		}
 
-		private void OnObjectListChanged(object sender, ObjectListChangedEventArgs e)
+		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
-			if (!Config.ActivateOnPlacement)
+			if (Config.ActivateOnPlacement)
 				return;
 			foreach (var (_, sprinkler) in e.Added)
-			{
 				ActivateSprinkler(sprinkler, e.Location);
-			}
 		}
 
-		private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
+		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
 			if (!Config.ActivateOnAction)
 				return;
@@ -108,7 +107,7 @@ namespace Shockah.FlexibleSprinklers
 				}
 			);
 
-			string ConfigNameForSprinklerBehavior(ModConfig.SprinklerBehaviorEnum behavior)
+			string TranslateBehavior(ModConfig.SprinklerBehaviorEnum behavior)
 			{
 				return behavior switch
 				{
@@ -119,13 +118,13 @@ namespace Shockah.FlexibleSprinklers
 				};
 			}
 
-			string ConfigNameForTileWaterBalanceMode(FlexibleSprinklerBehavior.TileWaterBalanceMode tileWaterBalanceMode)
+			string TranslateFlexibleBehaviorTileWaterBalanceMode(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode)
 			{
 				return tileWaterBalanceMode switch
 				{
-					FlexibleSprinklerBehavior.TileWaterBalanceMode.Relaxed => "Relaxed",
-					FlexibleSprinklerBehavior.TileWaterBalanceMode.Exact => "Exact",
-					FlexibleSprinklerBehavior.TileWaterBalanceMode.Restrictive => "Restrictive",
+					FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed => "Relaxed",
+					FlexibleSprinklerBehaviorTileWaterBalanceMode.Exact => "Exact",
+					FlexibleSprinklerBehaviorTileWaterBalanceMode.Restrictive => "Restrictive",
 					_ => throw new ArgumentException(),
 				};
 			}
@@ -139,18 +138,18 @@ namespace Shockah.FlexibleSprinklers
 				mod: ModManifest,
 				name: () => "Sprinkler behavior",
 				tooltip: () => "> Flexible: Will water using vanilla behavior, and then flood fill for any tiles that failed.\n> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Does not change the sprinkler behavior.",
-				getValue: () => ConfigNameForSprinklerBehavior(Config.SprinklerBehavior),
-				setValue: value => Config.SprinklerBehavior = ((ModConfig.SprinklerBehaviorEnum[])Enum.GetValues(typeof(ModConfig.SprinklerBehaviorEnum))).First(e => ConfigNameForSprinklerBehavior(e) == value),
-				allowedValues: ((ModConfig.SprinklerBehaviorEnum[])Enum.GetValues(typeof(ModConfig.SprinklerBehaviorEnum))).Select(e => ConfigNameForSprinklerBehavior(e)).ToArray()
+				getValue: () => TranslateBehavior(Config.SprinklerBehavior),
+				setValue: value => Config.SprinklerBehavior = I18nEnum.GetFromTranslation<ModConfig.SprinklerBehaviorEnum>(value, TranslateBehavior)!,
+				allowedValues: I18nEnum.GetTranslations<ModConfig.SprinklerBehaviorEnum>(TranslateBehavior).ToArray()
 			);
 
 			configMenu?.AddTextOption(
 				mod: ModManifest,
 				name: () => "Flood fill balance mode",
 				tooltip: () => "Edge case handling for the flood fill behavior.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
-				getValue: () => ConfigNameForTileWaterBalanceMode(Config.TileWaterBalanceMode),
-				setValue: value => Config.TileWaterBalanceMode = ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).First(e => ConfigNameForTileWaterBalanceMode(e) == value),
-				allowedValues: ((FlexibleSprinklerBehavior.TileWaterBalanceMode[])Enum.GetValues(typeof(FlexibleSprinklerBehavior.TileWaterBalanceMode))).Select(e => ConfigNameForTileWaterBalanceMode(e)).ToArray()
+				getValue: () => TranslateFlexibleBehaviorTileWaterBalanceMode(Config.TileWaterBalanceMode),
+				setValue: value => Config.TileWaterBalanceMode = I18nEnum.GetFromTranslation<FlexibleSprinklerBehaviorTileWaterBalanceMode>(value, TranslateFlexibleBehaviorTileWaterBalanceMode)!,
+				allowedValues: I18nEnum.GetTranslations<FlexibleSprinklerBehaviorTileWaterBalanceMode>(TranslateFlexibleBehaviorTileWaterBalanceMode).ToArray()
 			);
 
 			configMenu?.AddSectionTitle(
@@ -279,13 +278,11 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
-			if (sprinkler == null || !sprinkler.IsSprinkler())
+			if (!sprinkler.IsSprinkler())
 				return;
 
 			foreach (var sprinklerTile in GetModifiedSprinklerCoverage(sprinkler, location))
-			{
 				sprinkler.ApplySprinkler(location, new Vector2(sprinklerTile.X, sprinklerTile.Y));
-			}
 			sprinkler.ApplySprinklerAnimation(location);
 		}
 
@@ -293,7 +290,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			int? GetTier()
 			{
-				foreach (var sprinklerTierProvider in sprinklerTierProviders)
+				foreach (var sprinklerTierProvider in SprinklerTierProviders)
 				{
 					var tier = sprinklerTierProvider(sprinkler);
 					if (tier != null)
@@ -370,7 +367,7 @@ namespace Shockah.FlexibleSprinklers
 
 		public Vector2[] GetUnmodifiedSprinklerCoverage(SObject sprinkler)
 		{
-			foreach (var sprinklerCoverageProvider in sprinklerCoverageProviders)
+			foreach (var sprinklerCoverageProvider in SprinklerCoverageProviders)
 			{
 				var coverage = sprinklerCoverageProvider(sprinkler);
 				if (coverage != null)
@@ -379,13 +376,13 @@ namespace Shockah.FlexibleSprinklers
 			
 			if (LineSprinklersApi != null)
 			{
-				if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[] tilePositions))
+				if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[]? tilePositions))
 					return tilePositions.Where(t => t != Vector2.Zero).ToArray();
 			}
 
 			if (BetterSprinklersApi != null)
 			{
-				if (BetterSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[] tilePositions))
+				if (BetterSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[]? tilePositions))
 					return tilePositions.Where(t => t != Vector2.Zero).ToArray();
 			}
 
@@ -400,12 +397,12 @@ namespace Shockah.FlexibleSprinklers
 
 		public void RegisterSprinklerTierProvider(Func<SObject, int?> provider)
 		{
-			sprinklerTierProviders.Add(provider);
+			SprinklerTierProviders.Add(provider);
 		}
 
 		public void RegisterSprinklerCoverageProvider(Func<SObject, Vector2[]> provider)
 		{
-			sprinklerCoverageProviders.Add(provider);
+			SprinklerCoverageProviders.Add(provider);
 		}
 	}
 }

@@ -5,20 +5,17 @@ using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
-	internal class FlexibleSprinklerBehavior: ISprinklerBehavior
+	internal enum FlexibleSprinklerBehaviorTileWaterBalanceMode { Relaxed, Exact, Restrictive }
+
+	internal class FlexibleSprinklerBehavior: ISprinklerBehavior.Independent
 	{
-		public enum TileWaterBalanceMode
-		{
-			Relaxed, Exact, Restrictive
-		}
+		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
+		private readonly ISprinklerBehavior VanillaBehavior;
 
-		private readonly TileWaterBalanceMode tileWaterBalanceMode;
-		private readonly ISprinklerBehavior vanillaBehavior;
-
-		public FlexibleSprinklerBehavior(TileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior vanillaBehavior)
+		public FlexibleSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior vanillaBehavior)
 		{
-			this.tileWaterBalanceMode = tileWaterBalanceMode;
-			this.vanillaBehavior = vanillaBehavior;
+			this.TileWaterBalanceMode = tileWaterBalanceMode;
+			this.VanillaBehavior = vanillaBehavior;
 		}
 
 		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
@@ -40,9 +37,9 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
-			if (vanillaBehavior != null)
+			if (VanillaBehavior != null)
 			{
-				foreach (var tileToWater in vanillaBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
+				foreach (var tileToWater in VanillaBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
 				{
 					switch (map[tileToWater])
 					{
@@ -62,7 +59,7 @@ namespace Shockah.FlexibleSprinklers
 
 			var sprinklerRange = FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(info.Power);
 			var waterableTiles = new HashSet<IntPoint>();
-			var otherSprinklers = new HashSet<IntPoint>();
+			ISet<IntPoint> otherSprinklers = new HashSet<IntPoint>();
 			var @checked = new HashSet<IntPoint>();
 			var toCheck = new Queue<IntPoint>();
 			var maxCost = 0;
@@ -213,15 +210,15 @@ namespace Shockah.FlexibleSprinklers
 				}
 				else
 				{
-					switch (tileWaterBalanceMode)
+					switch (TileWaterBalanceMode)
 					{
-						case TileWaterBalanceMode.Relaxed:
+						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed:
 							WaterTiles(tileEntries.Select(e => e.tilePosition));
 							break;
-						case TileWaterBalanceMode.Restrictive:
+						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Restrictive:
 							unwateredTileCount = 0;
 							break;
-						case TileWaterBalanceMode.Exact:
+						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Exact:
 							IEnumerable<IntPoint> GetSpiralingTiles()
 							{
 								var minD = tileEntries.Min(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
