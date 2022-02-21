@@ -15,24 +15,27 @@ namespace Shockah.XPView
 {
 	public class XPDisplay: Mod
 	{
-		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 8, 9);
-		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 14, 9);
+		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
+		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
 		private static readonly string LuckSkillModQualifiedName = "LuckSkill.Mod, LuckSkill";
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
 		private static XPDisplay Instance = null!;
-
+		internal ModConfig Config { get; private set; } = null!;
 		private int[] XPValues = null!;
 
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			Config = helper.ReadConfig<ModConfig>();
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			SetupConfig();
+			
 			var harmony = new Harmony(ModManifest.UniqueID);
 			try
 			{
@@ -66,6 +69,65 @@ namespace Shockah.XPView
 			{
 				Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: {ex}", LogLevel.Error);
 			}
+		}
+
+		private void SetupConfig()
+		{
+			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+
+			string Translate(ModConfig.Orientation orientation)
+			{
+				return orientation switch
+				{
+					ModConfig.Orientation.Horizontal => Helper.Translation.Get("config.orientation.horizontal"),
+					ModConfig.Orientation.Vertical => Helper.Translation.Get("config.orientation.vertical"),
+					_ => throw new ArgumentException(),
+				};
+			}
+
+			configMenu?.Register(
+				ModManifest,
+				reset: () => Config = new ModConfig(),
+				save: () => Helper.WriteConfig(Config)
+			);
+
+			configMenu?.AddSectionTitle(
+				mod: ModManifest,
+				text: () => Helper.Translation.Get("config.orientation.section.text"),
+				tooltip: () => Helper.Translation.Get("config.orientation.section.tooltip")
+			);
+
+			configMenu?.AddTextOption(
+				mod: ModManifest,
+				name: () => Helper.Translation.Get("config.orientation.smallBars.name"),
+				tooltip: () => Helper.Translation.Get("config.orientation.smallBars.tooltip"),
+				getValue: () => Translate(Config.SmallBarOrientation),
+				setValue: value => Config.SmallBarOrientation = I18nEnum.GetFromTranslation<ModConfig.Orientation>(value, Translate),
+				allowedValues: I18nEnum.GetTranslations<ModConfig.Orientation>(Translate).ToArray()
+			);
+
+			configMenu?.AddTextOption(
+				mod: ModManifest,
+				name: () => Helper.Translation.Get("config.orientation.bigBars.name"),
+				tooltip: () => Helper.Translation.Get("config.orientation.bigBars.tooltip"),
+				getValue: () => Translate(Config.BigBarOrientation),
+				setValue: value => Config.BigBarOrientation = I18nEnum.GetFromTranslation<ModConfig.Orientation>(value, Translate),
+				allowedValues: I18nEnum.GetTranslations<ModConfig.Orientation>(Translate).ToArray()
+			);
+
+			configMenu?.AddSectionTitle(
+				mod: ModManifest,
+				text: () => Helper.Translation.Get("config.appearance.section.text")
+			);
+
+			configMenu?.AddNumberOption(
+				mod: ModManifest,
+				name: () => Helper.Translation.Get("config.appearance.alpha.name"),
+				tooltip: () => Helper.Translation.Get("config.appearance.alpha.tooltip"),
+				getValue: () => Config.Alpha,
+				setValue: value => Config.Alpha = value,
+				min: 0, max: 1, interval: 0.05f
+			);
 		}
 
 		private static IEnumerable<CodeInstruction> Farmer_checkForLevelGain_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -255,35 +317,40 @@ namespace Shockah.XPView
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
 			float scale = 4f;
-			if ((levelIndex + 1) % 5 == 0) // "big" levels (5 and 10)
+			bool isBigLevel = (levelIndex + 1) % 5 == 0;
+			Rectangle baseSourceRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
+			ModConfig.Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
+
+			switch (orientation)
 			{
-				int rectangleWidthPixels = (int)(BigObtainedLevelCursorsRectangle.Height * nextLevelProgress);
-				b.Draw(
-					Game1.mouseCursors,
-					new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
-					new Rectangle(
-						BigObtainedLevelCursorsRectangle.Left,
-						BigObtainedLevelCursorsRectangle.Top,
-						rectangleWidthPixels,
-						BigObtainedLevelCursorsRectangle.Height
-					),
-					Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-				);
-			}
-			else
-			{
-				int rectangleHeightPixels = (int)(SmallObtainedLevelCursorsRectangle.Height * nextLevelProgress);
-				b.Draw(
-					Game1.mouseCursors,
-					new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (SmallObtainedLevelCursorsRectangle.Height - rectangleHeightPixels) * scale),
-					new Rectangle(
-						SmallObtainedLevelCursorsRectangle.Left,
-						SmallObtainedLevelCursorsRectangle.Top + SmallObtainedLevelCursorsRectangle.Height - rectangleHeightPixels,
-						SmallObtainedLevelCursorsRectangle.Width,
-						rectangleHeightPixels
-					),
-					Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-				);
+				case ModConfig.Orientation.Horizontal:
+					int rectangleWidthPixels = (int)(baseSourceRectangle.Height * nextLevelProgress);
+					b.Draw(
+						Game1.mouseCursors,
+						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
+						new Rectangle(
+							baseSourceRectangle.Left,
+							baseSourceRectangle.Top,
+							rectangleWidthPixels,
+							baseSourceRectangle.Height
+						),
+						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
+					);
+					break;
+				case ModConfig.Orientation.Vertical:
+					int rectangleHeightPixels = (int)(baseSourceRectangle.Height * nextLevelProgress);
+					b.Draw(
+						Game1.mouseCursors,
+						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (baseSourceRectangle.Height - rectangleHeightPixels) * scale),
+						new Rectangle(
+							baseSourceRectangle.Left,
+							baseSourceRectangle.Top + baseSourceRectangle.Height - rectangleHeightPixels,
+							baseSourceRectangle.Width,
+							rectangleHeightPixels
+						),
+						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
+					);
+					break;
 			}
 		}
 

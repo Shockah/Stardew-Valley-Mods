@@ -1,0 +1,17 @@
+﻿{
+    "config.orientation.section.text": "Orientation",
+    "config.orientation.section.tooltip": "The orientation to draw partial level bars at.",
+
+    "config.orientation.smallBars.name": "Small bars",
+    "config.orientation.smallBars.tooltip": "Non-profession bars (levels 1-4, 6-9).",
+
+    "config.orientation.bigBars.name": "Big bars",
+    "config.orientation.bigBars.tooltip": "Profession bars (levels 5 and 10).",
+
+    "config.orientation.horizontal": "Horizontal",
+    "config.orientation.vertical": "Vertical",
+
+    "config.appearance.section.text": "Appearance",
+    "config.appearance.alpha.name": "Alpha",
+    "config.appearance.alpha.tooltip": "Transparency of the partial bars.\n0: fully transparent\n1: fully opaque"
+}
