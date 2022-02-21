@@ -23,6 +23,7 @@ namespace Shockah.XPView
 
 		private static XPDisplay Instance = null!;
 		internal ModConfig Config { get; private set; } = null!;
+		private bool IsWalkOfLifeInstalled = false;
 		private int[] XPValues = null!;
 
 		public override void Entry(IModHelper helper)
@@ -64,6 +65,8 @@ namespace Shockah.XPView
 						transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
 					);
 				}
+
+				IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.AwesomeProfessions");
 			}
 			catch (Exception ex)
 			{
@@ -309,43 +312,48 @@ namespace Shockah.XPView
 
 		public static void SkillsPage_draw_Addition(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
-			if (GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName) != levelIndex)
+			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+			if (currentLevel % 10 != levelIndex)
 				return;
-			int nextLevelXP = GetLevelXP(levelIndex, spaceCoreSkillName);
-			int currentLevelXP = levelIndex == 0 ? 0 : GetLevelXP(levelIndex - 1, spaceCoreSkillName);
+			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
+			int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
 			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
 			float scale = 4f;
 			bool isBigLevel = (levelIndex + 1) % 5 == 0;
-			Rectangle baseSourceRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
+			Texture2D barTexture = Game1.mouseCursors;
+			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
 			ModConfig.Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
+
+			if (currentLevel >= 10 && Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+				(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar() : WalkOfLifeBridge.GetExtendedSmallBar();
 
 			switch (orientation)
 			{
 				case ModConfig.Orientation.Horizontal:
-					int rectangleWidthPixels = (int)(baseSourceRectangle.Height * nextLevelProgress);
+					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
 					b.Draw(
-						Game1.mouseCursors,
+						barTexture,
 						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
 						new Rectangle(
-							baseSourceRectangle.Left,
-							baseSourceRectangle.Top,
+							barTextureRectangle.Left,
+							barTextureRectangle.Top,
 							rectangleWidthPixels,
-							baseSourceRectangle.Height
+							barTextureRectangle.Height
 						),
 						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
 					);
 					break;
 				case ModConfig.Orientation.Vertical:
-					int rectangleHeightPixels = (int)(baseSourceRectangle.Height * nextLevelProgress);
+					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
 					b.Draw(
-						Game1.mouseCursors,
-						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (baseSourceRectangle.Height - rectangleHeightPixels) * scale),
+						barTexture,
+						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale),
 						new Rectangle(
-							baseSourceRectangle.Left,
-							baseSourceRectangle.Top + baseSourceRectangle.Height - rectangleHeightPixels,
-							baseSourceRectangle.Width,
+							barTextureRectangle.Left,
+							barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
+							barTextureRectangle.Width,
 							rectangleHeightPixels
 						),
 						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
@@ -365,9 +373,28 @@ namespace Shockah.XPView
 		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
 		{
 			if (spaceCoreSkillName is null)
+			{
+				if (levelIndex >= 10)
+				{
+					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+					{
+						int levelXP = Instance.XPValues.Last();
+						int requiredXPPerExtendedLevel = WalkOfLifeBridge.GetRequiredXPPerExtendedLevel();
+						for (int i = 10; i <= levelIndex; i++)
+							levelXP += requiredXPPerExtendedLevel;
+						return levelXP;
+					}
+					else
+					{
+						levelIndex %= 10;
+					}
+				}
 				return Instance.XPValues[levelIndex];
+			}
 			else
+			{
 				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
+			}
 		}
 
 		private static int GetCurrentXP(int uiSkillIndex, string? spaceCoreSkillName)

@@ -67,7 +67,7 @@ namespace Shockah.CommonModCode
 					break;
 			}
 			return (instruction.opcode == OpCodes.Ldc_I4 && (int)instruction.operand == value) ||
-				(value < 256 && instruction.opcode == OpCodes.Ldc_I4_S && (sbyte)instruction.operand == value);
+				(value < 256 && instruction.opcode == OpCodes.Ldc_I4_S && ((instruction.operand is int @int && @int == value) || (instruction.operand is sbyte @byte && @byte == value)));
 		}
 
 		public static int? GetLdcI4Value(this CodeInstruction instruction)

@@ -6,5 +6,11 @@
 	"UniqueID": "Shockah.XPDisplay",
 	"EntryDll": "XPDisplay.dll",
 	"MinimumApiVersion": "3.0.0",
-	"UpdateKeys": [ "Nexus:0" ]
+	"UpdateKeys": [ "Nexus:0" ],
+	"Dependencies": [
+		{
+			"UniqueID": "DaLion.AwesomeProfessions",
+			"IsRequired": false
+		}
+	]
 }
