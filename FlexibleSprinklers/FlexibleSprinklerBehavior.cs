@@ -219,36 +219,9 @@ namespace Shockah.FlexibleSprinklers
 							unwateredTileCount = 0;
 							break;
 						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Exact:
-							IEnumerable<IntPoint> GetSpiralingTiles()
-							{
-								var minD = tileEntries.Min(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
-								var maxD = tileEntries.Max(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
-
-								for (int i = minD; i <= maxD; i++)
-								{
-									var borderTiles = new List<IntPoint>();
-									for (int j = 0; j <= i; j++)
-									{
-										yield return new IntPoint(sprinklerPosition.X - j, sprinklerPosition.Y - i);
-										if (j != 0)
-											yield return new IntPoint(sprinklerPosition.X + j, sprinklerPosition.Y - i);
-
-										yield return new IntPoint(sprinklerPosition.X + i, sprinklerPosition.Y - j);
-										if (j != 0)
-											yield return new IntPoint(sprinklerPosition.X + i, sprinklerPosition.Y + j);
-
-										yield return new IntPoint(sprinklerPosition.X + j, sprinklerPosition.Y + i);
-										if (j != 0)
-											yield return new IntPoint(sprinklerPosition.X - j, sprinklerPosition.Y + i);
-
-										yield return new IntPoint(sprinklerPosition.X - i, sprinklerPosition.Y + j);
-										if (j != 0)
-											yield return new IntPoint(sprinklerPosition.X - i, sprinklerPosition.Y - j);
-									}
-								}
-							}
-
-							foreach (var spiralingTile in GetSpiralingTiles())
+							var minD = tileEntries.Min(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
+							var maxD = tileEntries.Max(e => Math.Max(Math.Abs(e.tilePosition.X - sprinklerPosition.X), Math.Abs(e.tilePosition.Y - sprinklerPosition.Y)));
+							foreach (var spiralingTile in sprinklerPosition.GetSpiralingTiles(minD, maxD))
 							{
 								foreach (var tileEntry in tileEntries)
 								{

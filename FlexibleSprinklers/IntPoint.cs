@@ -63,5 +63,32 @@ namespace Shockah.FlexibleSprinklers
 
 		public static bool operator !=(IntPoint lhs, IntPoint rhs)
 			=> !lhs.Equals(rhs);
+
+		public IEnumerable<IntPoint> GetSpiralingTiles(int minDistanceFromCenter = 1, int maxDistanceFromCenter = int.MaxValue)
+		{
+			if (minDistanceFromCenter == 0)
+				yield return this;
+			for (int i = Math.Max(minDistanceFromCenter, 1); i <= maxDistanceFromCenter; i++)
+			{
+				for (int j = 0; j <= i; j++)
+				{
+					yield return new IntPoint(X - j, Y - i);
+					if (j != 0)
+						yield return new IntPoint(X + j, Y - i);
+
+					yield return new IntPoint(X + i, Y - j);
+					if (j != 0)
+						yield return new IntPoint(X + i, Y + j);
+
+					yield return new IntPoint(X + j, Y + i);
+					if (j != 0)
+						yield return new IntPoint(X - j, Y + i);
+
+					yield return new IntPoint(X - i, Y + j);
+					if (j != 0)
+						yield return new IntPoint(X - i, Y - j);
+				}
+			}
+		}
 	}
 }
