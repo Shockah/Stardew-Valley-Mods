@@ -26,6 +26,8 @@ namespace Shockah.XPView
 		private bool IsWalkOfLifeInstalled = false;
 		private int[] XPValues = null!;
 
+		private static readonly IList<Action> SkillsPageDrawQueuedDelegates = new List<Action>();
+
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
@@ -192,7 +194,29 @@ namespace Shockah.XPView
 				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `i` local - the currently drawn level index (0-9)
 				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `j` local - the skill index
 				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
+			});
+
+			// IL to find (2nd occurence):
+			// IL_08a7: ldarg.0
+			// IL_08a8: ldfld class [System.Collections]System.Collections.Generic.List`1<class StardewValley.Menus.ClickableTextureComponent> StardewValley.Menus.SkillsPage::skillBars
+			// IL_08ad: callvirt instance valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!0> class [System.Collections]System.Collections.Generic.List`1<class StardewValley.Menus.ClickableTextureComponent>::GetEnumerator()
+			var skillsPageSkillBarsField = AccessTools.Field(typeof(SkillsPage), nameof(SkillsPage.skillBars));
+			worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdarg(0),
+				i => i.LoadsField(skillsPageSkillBarsField),
+				i => i.Calls(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+			}, occurence: 2);
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Insert(1, new[]
+			{
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
 			});
 
 			return instructions;
@@ -231,7 +255,7 @@ namespace Shockah.XPView
 				new CodeInstruction(OpCodes.Ldloc, 7), // this *should* be the `i` local - the currently drawn level index (0-9)
 				new CodeInstruction(OpCodes.Ldc_I4, 5), // the skill index of the luck skill
 				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a "built-in" one
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 			});
 
 			return instructions;
@@ -270,7 +294,7 @@ namespace Shockah.XPView
 					new CodeInstruction(OpCodes.Ldloc, 8), // this *should* be the `levelIndex` local
 					new CodeInstruction(OpCodes.Ldloc, 9), // this *should* be the `skillIndex` local
 					new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 				});
 			}
 
@@ -303,14 +327,36 @@ namespace Shockah.XPView
 					new CodeInstruction(OpCodes.Ldloc, 19), // this *should* be the `levelIndex` local
 					new CodeInstruction(OpCodes.Ldloc_2), // this *should* be the `indexWithLuckSkill` local
 					new CodeInstruction(OpCodes.Ldloc, 17), // this *should* be the `skillName` local
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 				});
 			}
+
+			// IL to find (2nd occurence):
+			// IL_0dbc: ldarg.0
+			// IL_0dbd: ldfld class [System.Collections]System.Collections.Generic.List`1<class ['Stardew Valley']StardewValley.Menus.ClickableTextureComponent> SpaceCore.Interface.NewSkillsPage::skillBars
+			// IL_0dc2: callvirt instance valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!0> class [System.Collections]System.Collections.Generic.List`1<class ['Stardew Valley']StardewValley.Menus.ClickableTextureComponent>::GetEnumerator()
+			var skillsPageSkillBarsField = AccessTools.Field(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "skillBars");
+			worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdarg(0),
+				i => i.LoadsField(skillsPageSkillBarsField),
+				i => i.Calls(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+			}, occurence: 2);
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Insert(1, new[]
+			{
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
+			});
 
 			return instructions;
 		}
 
-		public static void SkillsPage_draw_Addition(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
+		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
 			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
 			if (currentLevel % 10 != levelIndex)
@@ -333,33 +379,46 @@ namespace Shockah.XPView
 			{
 				case ModConfig.Orientation.Horizontal:
 					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					b.Draw(
-						barTexture,
-						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
-						new Rectangle(
-							barTextureRectangle.Left,
-							barTextureRectangle.Top,
-							rectangleWidthPixels,
-							barTextureRectangle.Height
-						),
-						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-					);
+					SkillsPageDrawQueuedDelegates.Add(() =>
+					{
+						b.Draw(
+							barTexture,
+							new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
+							new Rectangle(
+								barTextureRectangle.Left,
+								barTextureRectangle.Top,
+								rectangleWidthPixels,
+								barTextureRectangle.Height
+							),
+							Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
+						);
+					});
 					break;
 				case ModConfig.Orientation.Vertical:
 					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					b.Draw(
-						barTexture,
-						new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale),
-						new Rectangle(
-							barTextureRectangle.Left,
-							barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
-							barTextureRectangle.Width,
-							rectangleHeightPixels
-						),
-						Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-					);
+					SkillsPageDrawQueuedDelegates.Add(() =>
+					{
+						b.Draw(
+							barTexture,
+							new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale),
+							new Rectangle(
+								barTextureRectangle.Left,
+								barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
+								barTextureRectangle.Width,
+								rectangleHeightPixels
+							),
+							Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
+						);
+					});
 					break;
 			}
+		}
+
+		public static void SkillsPage_draw_CallQueuedDelegates()
+		{
+			foreach (var @delegate in SkillsPageDrawQueuedDelegates)
+				@delegate();
+			SkillsPageDrawQueuedDelegates.Clear();
 		}
 
 		private static int GetUnmodifiedSkillLevel(int uiSkillIndex, string? spaceCoreSkillName)

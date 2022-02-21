@@ -20,7 +20,7 @@ namespace Shockah.CommonModCode
 			this.Length = length;
 		}
 
-		public static TranspileWorker? FindInstructions(IList<CodeInstruction> instructions, IList<Func<CodeInstruction, bool>> instructionsToFind, int startIndex = 0, int? endIndex = null)
+		public static TranspileWorker? FindInstructions(IList<CodeInstruction> instructions, IList<Func<CodeInstruction, bool>> instructionsToFind, int startIndex = 0, int? endIndex = null, int occurence = 1)
 		{
 			var maxIndex = (endIndex ?? instructions.Count) - instructionsToFind.Count;
 			for (int index = startIndex; index < maxIndex; index++)
@@ -31,7 +31,8 @@ namespace Shockah.CommonModCode
 						goto continueOuter;
 				}
 
-				return new TranspileWorker(instructions, index, instructionsToFind.Count);
+				if (--occurence == 0)
+					return new TranspileWorker(instructions, index, instructionsToFind.Count);
 				continueOuter:;
 			}
 			return null;
