@@ -6,6 +6,6 @@
 
 		public Orientation SmallBarOrientation { get; set; } = Orientation.Vertical;
 		public Orientation BigBarOrientation { get; set; } = Orientation.Horizontal;
-		public float Alpha { get; set; } = 1f;
+		public float Alpha { get; set; } = 0.6f;
 	}
 }
