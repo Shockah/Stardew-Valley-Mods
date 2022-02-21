@@ -238,8 +238,7 @@ namespace Shockah.XPView
 			});
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch Luck Skill" +
-					$" methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch Luck Skill methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
 			}
 
