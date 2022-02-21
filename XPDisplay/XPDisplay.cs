@@ -18,6 +18,7 @@ namespace Shockah.XPView
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 8, 9);
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 14, 9);
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
+		private static readonly string LuckSkillModQualifiedName = "LuckSkill.Mod, LuckSkill";
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
 		private static XPDisplay Instance = null!;
@@ -44,6 +45,14 @@ namespace Shockah.XPView
 					original: AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), new Type[] { typeof(SpriteBatch) }),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 				);
+
+				if (Helper.ModRegistry.IsLoaded("spacechase0.LuckSkill"))
+				{
+					harmony.Patch(
+						original: AccessTools.Method(AccessTools.TypeByName(LuckSkillModQualifiedName), "DrawLuckSkill", new Type[] { typeof(SkillsPage) }),
+						transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(LuckSkill_DrawLuckSkill_Transpiler))
+					);
+				}
 
 				if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 				{
@@ -118,6 +127,45 @@ namespace Shockah.XPView
 				new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `i` local - the currently drawn level index (0-9)
 				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `j` local - the skill index
 				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
+			});
+
+			return instructions;
+		}
+
+		private static IEnumerable<CodeInstruction> LuckSkill_DrawLuckSkill_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		{
+			var instructions = enumerableInstructions.ToList();
+
+			// IL to find:
+			// IL_0381: ldloc.s 7
+			// IL_0383: ldc.i4.s 9
+			// IL_0385: bne.un IL_044a
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdloc(),
+				i => i.IsLdcI4(9),
+				i => i.IsBneUn()
+			});
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch Luck Skill" +
+					$" methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Insert(1, new[]
+			{
+				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `sb` local (SpriteBatch)
+
+				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `num` local
+				new CodeInstruction(OpCodes.Ldloc, 6), // this *should* be the `num3` local
+				new CodeInstruction(OpCodes.Add),
+
+				new CodeInstruction(OpCodes.Ldloc, 5), // this *should* be the `y` local
+				new CodeInstruction(OpCodes.Ldloc, 7), // this *should* be the `i` local - the currently drawn level index (0-9)
+				new CodeInstruction(OpCodes.Ldc_I4, 5), // the skill index of the luck skill
+				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a "built-in" one
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_Addition)))
 			});
 
@@ -204,7 +252,7 @@ namespace Shockah.XPView
 			int nextLevelXP = GetLevelXP(levelIndex, spaceCoreSkillName);
 			int currentLevelXP = levelIndex == 0 ? 0 : GetLevelXP(levelIndex - 1, spaceCoreSkillName);
 			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
-			float nextLevelProgress = 1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP);
+			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
 			float scale = 4f;
 			if ((levelIndex + 1) % 5 == 0) // "big" levels (5 and 10)
