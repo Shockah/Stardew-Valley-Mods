@@ -24,7 +24,7 @@ namespace Shockah.FlexibleSprinklers
 		void RegisterSprinklerCoverageProvider(Func<SObject, Vector2[]> provider);
 
 		/// <summary>Activates a sprinkler, taking into account the Flexible Sprinklers mod behavior.</summary>
-		void ActivateSprinkler(SObject sprinkler, GameLocation location);
+		void ActivateIndependentSprinkler(SObject sprinkler, GameLocation location);
 
 		/// <summary>Returns the sprinkler's power after config modifications (that is, the number of tiles it will water).</summary>
 		int GetSprinklerPower(SObject sprinkler);

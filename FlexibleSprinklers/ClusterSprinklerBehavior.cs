@@ -18,6 +18,9 @@ namespace Shockah.FlexibleSprinklers
 			public Cluster()
 			{
 			}
+
+			public override string ToString()
+				=> $"Cluster{{Tiles = {Tiles.Count}, Sprinklers = {Sprinklers.Count}}}";
 		}
 
 		private readonly ClusterSprinklerBehaviorClusterOrdering ClusterOrdering;
@@ -53,19 +56,6 @@ namespace Shockah.FlexibleSprinklers
 					return null;
 				}
 
-				Cluster? GetClusterContainingSprinklerPosition(IntPoint point)
-				{
-					foreach (var cluster in clusters)
-						if (cluster.Sprinklers.Where(e => e.position == point).Any())
-							return cluster;
-					return null;
-				}
-
-				Cluster? GetClusterContainingTileOrSprinklerPosition(IntPoint point)
-				{
-					return GetClusterContainingTile(point) ?? GetClusterContainingSprinklerPosition(point);
-				}
-
 				void CombineClusters(Cluster clusterToRemove, Cluster clusterToMergeWith)
 				{
 					clusters.Remove(clusterToRemove);
@@ -82,26 +72,27 @@ namespace Shockah.FlexibleSprinklers
 				}
 
 				IDictionary<IntPoint, SprinklerInfo> sprinklerDictionary = new Dictionary<IntPoint, SprinklerInfo>();
+				IDictionary<IntPoint, ISet<IntPoint>> sprinklerStartingPoints = new Dictionary<IntPoint, ISet<IntPoint>>();
 				foreach (var (sprinklerPosition, info) in sprinklerCollection)
 				{
 					sprinklerDictionary[sprinklerPosition] = info;
-					foreach (var point in info.Layout)
+					var thisSprinklerStartingPoints = info.Layout
+					   .Select(p => new IntPoint((int)p.X, (int)p.Y))
+					   .Where(p => (Math.Abs(p.X) == 1 && p.Y == 0) || (Math.Abs(p.Y) == 1 && p.X == 0))
+					   .Select(p => sprinklerPosition + p)
+					   .Where(p => map[p] is SoilType.Dry or SoilType.Wet)
+					   .ToHashSet();
+					sprinklerStartingPoints[sprinklerPosition] = thisSprinklerStartingPoints;
+
+					foreach (var sprinklerStartingPoint in thisSprinklerStartingPoints)
 					{
-						if ((Math.Abs((int)point.X) == 1 && (int)point.Y == 0) || (Math.Abs((int)point.Y) == 1 && (int)point.X == 0))
+						var cluster = GetClusterContainingTile(sprinklerStartingPoint);
+						if (cluster is null)
 						{
-							var clusterStartingPoint = sprinklerPosition + new IntPoint((int)point.X, (int)point.Y);
-							var cluster = GetClusterContainingTile(clusterStartingPoint);
-							if (cluster is null)
-							{
-								cluster = new Cluster();
-								cluster.Tiles.Add(clusterStartingPoint);
-								clusters.Add(cluster);
-							}
-							else
-							{
-								toCheck.AddLast((clusterStartingPoint, cluster));
-							}
-							cluster.Sprinklers.Add((sprinklerPosition, info));
+							cluster = new Cluster();
+							cluster.Tiles.Add(sprinklerStartingPoint);
+							clusters.Add(cluster);
+							toCheck.AddLast((sprinklerStartingPoint, cluster));
 						}
 					}
 				}
@@ -110,34 +101,39 @@ namespace Shockah.FlexibleSprinklers
 				{
 					var (point, cluster) = toCheck.First!.Value;
 					toCheck.RemoveFirst();
-					if (@checked.Contains(point))
-						continue;
 					@checked.Add(point);
 
 					foreach (var neighbor in point.Neighbors)
 					{
-						var mapTile = map[neighbor];
-						switch (mapTile)
+						switch (map[neighbor])
 						{
 							case SoilType.Dry:
 							case SoilType.Wet:
-							case SoilType.Sprinkler:
-								var existingCluster = GetClusterContainingTileOrSprinklerPosition(neighbor);
-								if (existingCluster is not null)
+								var existingCluster = GetClusterContainingTile(neighbor);
+								if (existingCluster is not null && !ReferenceEquals(cluster, existingCluster))
 								{
 									CombineClusters(cluster, existingCluster);
 									continue;
 								}
-
-								if (mapTile == SoilType.Sprinkler)
-									cluster.Sprinklers.Add((neighbor, sprinklerDictionary[neighbor]));
-								else
-									cluster.Tiles.Add(neighbor);
+								if (@checked.Contains(neighbor))
+									continue;
+								cluster.Tiles.Add(neighbor);
+								toCheck.AddLast((neighbor, cluster));
 								break;
+							case SoilType.Sprinkler:
 							case SoilType.NonWaterable:
 							case SoilType.NonSoil:
 								break;
 						}
+					}
+				}
+
+				foreach (var (sprinklerPosition, thisSprinklerStartingPoints) in sprinklerStartingPoints)
+				{
+					foreach (var sprinklerStartingPoint in thisSprinklerStartingPoints)
+					{
+						var cluster = GetClusterContainingTile(sprinklerStartingPoint);
+						cluster?.Sprinklers.Add((sprinklerPosition, sprinklerDictionary[sprinklerPosition]));
 					}
 				}
 
@@ -307,6 +303,7 @@ namespace Shockah.FlexibleSprinklers
 					{
 						foreach (var (tilePosition, _, _) in stepTiles)
 							tilesToWater.Add(tilePosition);
+						totalTileCountToWater -= stepTiles.Count;
 					}
 					else
 					{
@@ -315,6 +312,7 @@ namespace Shockah.FlexibleSprinklers
 							case ClusterSprinklerBehaviorInClusterBalanceMode.Relaxed:
 								foreach (var (tilePosition, _, _) in stepTiles)
 									tilesToWater.Add(tilePosition);
+								totalTileCountToWater -= stepTiles.Count;
 								break;
 							case ClusterSprinklerBehaviorInClusterBalanceMode.Restrictive:
 								totalTileCountToWater = 0;

@@ -35,6 +35,7 @@ namespace Shockah.FlexibleSprinklers
 			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 
@@ -49,7 +50,7 @@ namespace Shockah.FlexibleSprinklers
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
-			ObjectPatches.Apply(harmony);
+			VanillaPatches.Apply(harmony);
 
 			LineSprinklersApi = Helper.ModRegistry.GetApi<ILineSprinklersApi>(LineSprinklersModID);
 			if (LineSprinklersApi != null)
@@ -62,6 +63,10 @@ namespace Shockah.FlexibleSprinklers
 			SetupConfig();
 		}
 
+		private void OnDayEnding(object? sender, DayEndingEventArgs e)
+		{
+		}
+
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			if (Config.ActivateOnPlacement)
@@ -69,15 +74,15 @@ namespace Shockah.FlexibleSprinklers
 			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
 				return;
 			foreach (var (_, sprinkler) in e.Added)
-				ActivateSprinkler(sprinkler, e.Location);
+				ActivateIndependentSprinkler(sprinkler, e.Location);
 		}
 
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
 			if (!Config.ActivateOnAction)
 				return;
-			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
-				return;
+			//if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			//	return;
 			if (!Context.IsPlayerFree)
 				return;
 			if (!e.Button.IsActionButton())
@@ -93,7 +98,16 @@ namespace Shockah.FlexibleSprinklers
 			if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
 				return;
 
-			ActivateSprinkler(@object, location);
+			// TODO: change after testing
+			if (SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			{
+				ActivateIndependentSprinkler(@object, location);
+			}
+			else
+			{
+				var sprinklers = location.Objects.Values.Where(o => o.IsSprinkler());
+				ActivateCollectiveSprinklers(sprinklers, location);
+			}
 		}
 
 		private void SetupConfig()
@@ -354,7 +368,41 @@ namespace Shockah.FlexibleSprinklers
 			};
 		}
 
-		public void ActivateSprinkler(SObject sprinkler, GameLocation location)
+		public void ActivateAllCollectiveSprinklers()
+		{
+			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
+				return;
+			foreach (GameLocation location in Game1.locations)
+				ActivateCollectiveSprinklersInLocation(location);
+		}
+
+		public void ActivateCollectiveSprinklersInLocation(GameLocation location)
+		{
+			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
+				return;
+			var sprinklers = location.Objects.Values.Where(o => o.IsSprinkler());
+			ActivateCollectiveSprinklers(sprinklers, location);
+		}
+
+		public void ActivateCollectiveSprinklers(IEnumerable<SObject> sprinklers, GameLocation location)
+		{
+			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
+				return;
+			var sprinklerEntries = sprinklers
+				.Where(s => s.IsSprinkler())
+				.Select(s => (sprinkler: s, position: new IntPoint((int)s.TileLocation.X, (int)s.TileLocation.Y), info: GetSprinklerInfo(s)))
+				.ToList();
+			if (sprinklerEntries.Count == 0)
+				return;
+			var anySprinkler = sprinklerEntries.First().sprinkler;
+			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location), sprinklerEntries.Select(e => (e.position, e.info)));
+			foreach (var sprinklerTile in sprinklerTiles)
+				anySprinkler.ApplySprinkler(location, new Vector2(sprinklerTile.X, sprinklerTile.Y));
+			foreach (var (sprinkler, _, _) in sprinklerEntries)
+				sprinkler.ApplySprinklerAnimation(location);
+		}
+
+		public void ActivateIndependentSprinkler(SObject sprinkler, GameLocation location)
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
@@ -437,11 +485,11 @@ namespace Shockah.FlexibleSprinklers
 
 		public Vector2[] GetModifiedSprinklerCoverage(SObject sprinkler, GameLocation location)
 		{
-			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;
-			ObjectPatches.IsVanillaQueryInProgress = false;
-			ObjectPatches.CurrentLocation = location;
+			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
+			VanillaPatches.IsVanillaQueryInProgress = false;
+			VanillaPatches.CurrentLocation = location;
 			var layout = sprinkler.GetSprinklerTiles().ToArray();
-			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return layout;
 		}
 
@@ -466,12 +514,12 @@ namespace Shockah.FlexibleSprinklers
 					return tilePositions.Where(t => t != Vector2.Zero).ToArray();
 			}
 
-			var wasVanillaQueryInProgress = ObjectPatches.IsVanillaQueryInProgress;
-			ObjectPatches.IsVanillaQueryInProgress = true;
+			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
+			VanillaPatches.IsVanillaQueryInProgress = true;
 			var layout = sprinkler.GetSprinklerTiles()
 				.Select(t => t - sprinkler.TileLocation)
 				.Where(t => t != Vector2.Zero).ToArray();
-			ObjectPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return layout;
 		}
 
