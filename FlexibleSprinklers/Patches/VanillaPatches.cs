@@ -115,7 +115,7 @@ namespace Shockah.FlexibleSprinklers
 			return true;
 		}
 
-		private static bool Object_IsInSprinklerRangeBoardphase_Result(Vector2 target)
+		private static bool Object_IsInSprinklerRangeBroadphase_Result(Vector2 target)
 		{
 			if (CurrentLocation == null)
 			{
@@ -134,7 +134,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return true;
-			__result = Object_IsInSprinklerRangeBoardphase_Result(target);
+			__result = Object_IsInSprinklerRangeBroadphase_Result(target);
 			return false;
 		}
 
@@ -142,7 +142,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return;
-			__result = Object_IsInSprinklerRangeBoardphase_Result(target);
+			__result = Object_IsInSprinklerRangeBroadphase_Result(target);
 		}
 
 		private static void Object_ApplySprinklerAnimation_Prefix(SObject __instance, GameLocation location)

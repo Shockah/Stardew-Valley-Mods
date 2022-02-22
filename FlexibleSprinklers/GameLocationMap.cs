@@ -23,7 +23,7 @@ namespace Shockah.FlexibleSprinklers
 			=> Location.GetHashCode();
 
 		public bool Equals(IMap? other)
-			=> other is GameLocationMap map && Location == map.Location;
+			=> other is GameLocationMap map && (ReferenceEquals(Location, map.Location) || Location == map.Location);
 
 		public SoilType this[IntPoint point]
 		{

@@ -5,7 +5,15 @@ namespace Shockah.FlexibleSprinklers
 	internal interface ISprinklerBehavior
 	{
 		bool AllowsIndependentSprinklerActivation { get; }
-		
+
+		void ClearCache()
+		{
+		}
+
+		void ClearCacheForMap(IMap map)
+		{
+		}
+
 		ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);
 
 		ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers);

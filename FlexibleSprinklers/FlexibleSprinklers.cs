@@ -35,8 +35,11 @@ namespace Shockah.FlexibleSprinklers
 			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
+			helper.Events.World.TerrainFeatureListChanged += OnTerrainFeatureListChanged;
+			helper.Events.World.LargeTerrainFeatureListChanged += OnLargeTerrainFeatureListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 
 			SetupSprinklerBehavior();
@@ -72,20 +75,36 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
+			SprinklerBehavior.ClearCache();
 			if (!Config.ActivateOnPlacement)
 				return;
 			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
 				return;
 			foreach (var (_, sprinkler) in e.Added)
-				ActivateIndependentSprinkler(sprinkler, e.Location);
+				ActivateSprinkler(sprinkler, e.Location);
+		}
+
+		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+		{
+			SprinklerBehavior.ClearCache();
+		}
+
+		private void OnTerrainFeatureListChanged(object? sender, TerrainFeatureListChangedEventArgs e)
+		{
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
+		}
+
+		private void OnLargeTerrainFeatureListChanged(object? sender, LargeTerrainFeatureListChangedEventArgs e)
+		{
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
 		}
 
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
 			if (!Config.ActivateOnAction)
 				return;
-			//if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
-			//	return;
+			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+				return;
 			if (!Context.IsPlayerFree)
 				return;
 			if (!e.Button.IsActionButton())
@@ -101,16 +120,7 @@ namespace Shockah.FlexibleSprinklers
 			if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
 				return;
 
-			// TODO: change after testing
-			if (SprinklerBehavior.AllowsIndependentSprinklerActivation)
-			{
-				ActivateIndependentSprinkler(@object, location);
-			}
-			else
-			{
-				var sprinklers = location.Objects.Values.Where(o => o.IsSprinkler());
-				ActivateCollectiveSprinklers(sprinklers, location);
-			}
+			ActivateSprinkler(@object, location);
 		}
 
 		private void SetupConfig()
@@ -414,8 +424,10 @@ namespace Shockah.FlexibleSprinklers
 				sprinkler.ApplySprinklerAnimation(location);
 		}
 
-		public void ActivateIndependentSprinkler(SObject sprinkler, GameLocation location)
+		public void ActivateSprinkler(SObject sprinkler, GameLocation location)
 		{
+			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+				return;
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
 			if (!sprinkler.IsSprinkler())
