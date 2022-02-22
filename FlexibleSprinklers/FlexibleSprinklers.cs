@@ -65,11 +65,14 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
+			if (!Config.ActivateBeforeSleep)
+				return;
+			ActivateAllCollectiveSprinklers();
 		}
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
-			if (Config.ActivateOnPlacement)
+			if (!Config.ActivateOnPlacement)
 				return;
 			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
 				return;
@@ -261,7 +264,15 @@ namespace Shockah.FlexibleSprinklers
 
 				configMenu?.AddBoolOption(
 					mod: ModManifest,
+					name: () => "Activate before sleep",
+					getValue: () => Config.ActivateBeforeSleep,
+					setValue: value => Config.ActivateBeforeSleep = value
+				);
+
+				configMenu?.AddBoolOption(
+					mod: ModManifest,
 					name: () => "Activate on placement",
+					tooltip: () => "Note: this does not work with Cluster behavior.",
 					getValue: () => Config.ActivateOnPlacement,
 					setValue: value => Config.ActivateOnPlacement = value
 				);
@@ -269,6 +280,7 @@ namespace Shockah.FlexibleSprinklers
 				configMenu?.AddBoolOption(
 					mod: ModManifest,
 					name: () => "Activate on action",
+					tooltip: () => "Note: this does not work with Cluster behavior.",
 					getValue: () => Config.ActivateOnAction,
 					setValue: value => Config.ActivateOnAction = value
 				);
