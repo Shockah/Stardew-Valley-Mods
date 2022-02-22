@@ -3,6 +3,7 @@ using StardewValley;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using System;
+using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
@@ -10,10 +11,12 @@ namespace Shockah.FlexibleSprinklers
 	internal class GameLocationMap: IMap
 	{
 		private readonly GameLocation Location;
+		private readonly IEnumerable<Func<GameLocation, Vector2, bool?>> CustomWaterableTileProviders;
 
-		internal GameLocationMap(GameLocation location)
+		internal GameLocationMap(GameLocation location, IEnumerable<Func<GameLocation, Vector2, bool?>> customWaterableTileProviders)
 		{
 			this.Location = location;
+			this.CustomWaterableTileProviders = customWaterableTileProviders;
 		}
 
 		public override bool Equals(object? obj)
@@ -32,13 +35,19 @@ namespace Shockah.FlexibleSprinklers
 				var tileVector = new Vector2(point.X, point.Y);
 				if (Location.Objects.TryGetValue(tileVector, out SObject @object) && @object.IsSprinkler())
 					return SoilType.Sprinkler;
+
+				foreach (var provider in CustomWaterableTileProviders)
+				{
+					bool? result = provider(Location, tileVector);
+					if (result.HasValue)
+						return result.Value ? SoilType.Waterable : SoilType.NonWaterable;
+				}
+
 				if (!Location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature) || feature is not HoeDirt)
-					return SoilType.NonSoil;
+					return SoilType.NonWaterable;
 				if (Location.doesTileHaveProperty(point.X, point.Y, "NoSprinklers", "Back")?.StartsWith("T", StringComparison.InvariantCultureIgnoreCase) == true)
 					return SoilType.NonWaterable;
-
-				var soil = (HoeDirt)feature;
-				return soil.state.Value == 0 ? SoilType.Dry : SoilType.Wet;
+				return SoilType.Waterable;
 			}
 		}
 

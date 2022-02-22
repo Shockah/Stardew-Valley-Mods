@@ -65,13 +65,11 @@ namespace Shockah.FlexibleSprinklers
 				{
 					switch (map[tileToWater])
 					{
-						case SoilType.Dry:
-						case SoilType.Wet:
+						case SoilType.Waterable:
 							WaterTile(tileToWater);
 							break;
 						case SoilType.NonWaterable:
 						case SoilType.Sprinkler:
-						case SoilType.NonSoil:
 							break;
 					}
 				}
@@ -137,15 +135,13 @@ namespace Shockah.FlexibleSprinklers
 
 				switch (map[tilePosition])
 				{
-					case SoilType.Dry:
-					case SoilType.Wet:
+					case SoilType.Waterable:
 						if (!wateredTiles.Contains(tilePosition))
 							waterableTiles.Add(tilePosition);
 						break;
 					case SoilType.Sprinkler:
 						otherSprinklers.Add(tilePosition);
 						continue;
-					case SoilType.NonSoil:
 					case SoilType.NonWaterable:
 						continue;
 				}

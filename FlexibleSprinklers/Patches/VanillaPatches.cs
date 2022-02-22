@@ -84,7 +84,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 
 			return FlexibleSprinklers.Instance.SprinklerBehavior.GetSprinklerTiles(
-				new GameLocationMap(CurrentLocation),
+				new GameLocationMap(CurrentLocation, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
 				new IntPoint((int)__instance.TileLocation.X, (int)__instance.TileLocation.Y),
 				FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
 			).Select(e => new Vector2(e.X, e.Y)).ToList();

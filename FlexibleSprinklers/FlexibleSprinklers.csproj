@@ -5,6 +5,7 @@
 		<TargetFramework>net5.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<WarningsAsErrors>Nullable</WarningsAsErrors>
 		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 	<ItemGroup>

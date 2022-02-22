@@ -26,8 +26,9 @@ namespace Shockah.FlexibleSprinklers
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
-		private readonly List<Func<SObject, int?>> SprinklerTierProviders = new();
-		private readonly List<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new();
+		private readonly IList<Func<SObject, int?>> SprinklerTierProviders = new List<Func<SObject, int?>>();
+		private readonly IList<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new List<Func<SObject, Vector2[]>>();
+		internal IList<Func<GameLocation, Vector2, bool?>> CustomWaterableTileProviders { get; private set; } = new List<Func<GameLocation, Vector2, bool?>>();
 		private float SprinklerCoverageAlpha = 0f;
 
 		internal ILineSprinklersApi? LineSprinklersApi { get; private set; }
@@ -48,6 +49,8 @@ namespace Shockah.FlexibleSprinklers
 			helper.Events.World.TerrainFeatureListChanged += OnTerrainFeatureListChanged;
 			helper.Events.World.LargeTerrainFeatureListChanged += OnLargeTerrainFeatureListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
+
+			RegisterCustomWaterableTileProvider((location, v) => (location is SlimeHutch && v.X == 16f && v.Y >= 6f && v.Y <= 9f) ? true : null);
 
 			SetupSprinklerBehavior();
 		}
@@ -89,7 +92,7 @@ namespace Shockah.FlexibleSprinklers
 			var sprinklers = location.Objects.Values
 				.Where(o => o.IsSprinkler())
 				.Select(o => (new IntPoint((int)o.TileLocation.X, (int)o.TileLocation.Y), GetSprinklerInfo(o)));
-			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location), sprinklers);
+			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location, CustomWaterableTileProviders), sprinklers);
 			foreach (var sprinklerTile in sprinklerTiles)
 			{
 				var position = new Vector2(sprinklerTile.X * Game1.tileSize, sprinklerTile.Y * Game1.tileSize);
@@ -116,7 +119,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
-			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
 
 			if (Config.ActivateOnPlacement && SprinklerBehavior.AllowsIndependentSprinklerActivation)
 			{
@@ -136,12 +139,12 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnTerrainFeatureListChanged(object? sender, TerrainFeatureListChangedEventArgs e)
 		{
-			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
 		}
 
 		private void OnLargeTerrainFeatureListChanged(object? sender, LargeTerrainFeatureListChangedEventArgs e)
 		{
-			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
 		}
 
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -502,7 +505,7 @@ namespace Shockah.FlexibleSprinklers
 			if (sprinklerEntries.Count == 0)
 				return;
 			var anySprinkler = sprinklerEntries.First().sprinkler;
-			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location), sprinklerEntries.Select(e => (e.position, e.info)));
+			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location, CustomWaterableTileProviders), sprinklerEntries.Select(e => (e.position, e.info)));
 			foreach (var sprinklerTile in sprinklerTiles)
 				anySprinkler.ApplySprinkler(location, new Vector2(sprinklerTile.X, sprinklerTile.Y));
 			foreach (var (sprinkler, _, _) in sprinklerEntries)
@@ -640,6 +643,11 @@ namespace Shockah.FlexibleSprinklers
 		public void RegisterSprinklerCoverageProvider(Func<SObject, Vector2[]> provider)
 		{
 			SprinklerCoverageProviders.Add(provider);
+		}
+
+		public void RegisterCustomWaterableTileProvider(Func<GameLocation, Vector2, bool?> provider)
+		{
+			CustomWaterableTileProviders.Add(provider);
 		}
 
 		public void DisplaySprinklerCoverage(float? seconds = null)

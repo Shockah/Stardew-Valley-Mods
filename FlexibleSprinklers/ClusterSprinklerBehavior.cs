@@ -101,7 +101,7 @@ namespace Shockah.FlexibleSprinklers
 					   .Select(p => new IntPoint((int)p.X, (int)p.Y))
 					   .Where(p => (Math.Abs(p.X) == 1 && p.Y == 0) || (Math.Abs(p.Y) == 1 && p.X == 0))
 					   .Select(p => sprinklerPosition + p)
-					   .Where(p => map[p] is SoilType.Dry or SoilType.Wet)
+					   .Where(p => map[p] == SoilType.Waterable)
 					   .ToHashSet();
 					sprinklerStartingPoints[sprinklerPosition] = thisSprinklerStartingPoints;
 
@@ -128,8 +128,7 @@ namespace Shockah.FlexibleSprinklers
 					{
 						switch (map[neighbor])
 						{
-							case SoilType.Dry:
-							case SoilType.Wet:
+							case SoilType.Waterable:
 								var existingCluster = GetClusterContainingTile(neighbor);
 								if (existingCluster is not null && !ReferenceEquals(cluster, existingCluster))
 								{
@@ -143,7 +142,6 @@ namespace Shockah.FlexibleSprinklers
 								break;
 							case SoilType.Sprinkler:
 							case SoilType.NonWaterable:
-							case SoilType.NonSoil:
 								break;
 						}
 					}
