@@ -12,13 +12,35 @@ namespace Shockah.FlexibleSprinklers
 		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
 		private readonly ISprinklerBehavior? VanillaBehavior;
 
+		private readonly IDictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>> Cache
+			= new Dictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>>();
+
 		public FlexibleSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior? vanillaBehavior)
 		{
 			this.TileWaterBalanceMode = tileWaterBalanceMode;
 			this.VanillaBehavior = vanillaBehavior;
 		}
 
+		void ISprinklerBehavior.ClearCache()
+		{
+			Cache.Clear();
+		}
+
+		void ISprinklerBehavior.ClearCacheForMap(IMap map)
+		{
+			Cache.Remove(map);
+		}
+
 		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+		{
+			if (!Cache.TryGetValue(map, out var sprinklerCache))
+				return GetUncachedSprinklerTiles(map, sprinklerPosition, info);
+			if (!sprinklerCache.TryGetValue((sprinklerPosition, info), out var cachedTiles))
+				return GetUncachedSprinklerTiles(map, sprinklerPosition, info);
+			return cachedTiles;
+		}
+
+		private ISet<IntPoint> GetUncachedSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{
 			var wateredTiles = new HashSet<IntPoint>();
 			var unwateredTileCount = info.Power;
@@ -55,7 +77,7 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 			if (unwateredTileCount <= 0)
-				return wateredTiles;
+				goto finish;
 
 			var sprinklerRange = FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(info.Power);
 			var waterableTiles = new HashSet<IntPoint>();
@@ -241,6 +263,13 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
+			finish:;
+			if (!Cache.TryGetValue(map, out var sprinklerCache))
+			{
+				sprinklerCache = new Dictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>();
+				Cache[map] = sprinklerCache;
+			}
+			sprinklerCache[(sprinklerPosition, info)] = wateredTiles;
 			return wateredTiles;
 		}
 	}
