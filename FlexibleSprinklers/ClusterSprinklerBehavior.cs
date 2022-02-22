@@ -56,7 +56,7 @@ namespace Shockah.FlexibleSprinklers
 			var sprinklersSet = sprinklers.ToHashSet();
 			if (!Cache.TryGetValue(map, out var cachedInfo))
 				return GetUncachedSprinklerTiles(map, sprinklersSet);
-			if (!cachedInfo.sprinklers.SequenceEqual(sprinklersSet))
+			if (!cachedInfo.sprinklers.SetEquals(sprinklersSet))
 				return GetUncachedSprinklerTiles(map, sprinklersSet);
 			return cachedInfo.tilesToWater;
 		}

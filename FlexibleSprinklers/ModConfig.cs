@@ -12,6 +12,10 @@
 		public bool ActivateOnPlacement { get; set; } = true;
 		public bool ActivateOnAction { get; set; } = true;
 		public bool ActivateBeforeSleep { get; set; } = true;
+		public float CoverageAlpha { get; set; } = 1;
+		public float CoverageTimeInSeconds { get; set; } = 5;
+		public bool ShowCoverageOnPlacement { get; set; } = true;
+		public bool ShowCoverageOnAction { get; set; } = true;
 		public int Tier1Power { get; set; } = 4;
 		public int Tier2Power { get; set; } = 3 * 3 - 1;
 		public int Tier3Power { get; set; } = 5 * 5 - 1;

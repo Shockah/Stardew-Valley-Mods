@@ -46,5 +46,9 @@ namespace Shockah.FlexibleSprinklers
 
 		/// <summary>Returns whether a given tile is in range of specified sprinklers.</summary>
 		bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation);
+
+		/// <summary>Displays the sprinkler coverage for the specified time.</summary>
+		/// <param name="seconds">The amount of seconds to display the coverage for. Pass `null` to use the value configured by the user.</param>
+		void DisplaySprinklerCoverage(float? seconds = null);
 	}
 }

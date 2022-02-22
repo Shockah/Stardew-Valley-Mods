@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -18,12 +19,16 @@ namespace Shockah.FlexibleSprinklers
 		internal static readonly string BetterSprinklersModID = "Speeder.BetterSprinklers";
 		internal static readonly string PrismaticToolsModID = "stokastic.PrismaticTools";
 
+		private const int FPS = 60;
+		private const float SprinklerCoverageAlphaDecrement = 1f / FPS; // 1f per second
+
 		public static FlexibleSprinklers Instance { get; private set; } = null!;
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
 		private readonly List<Func<SObject, int?>> SprinklerTierProviders = new();
 		private readonly List<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new();
+		private float SprinklerCoverageAlpha = 0f;
 
 		internal ILineSprinklersApi? LineSprinklersApi { get; private set; }
 		internal IBetterSprinklersApi? BetterSprinklersApi { get; private set; }
@@ -35,6 +40,8 @@ namespace Shockah.FlexibleSprinklers
 			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+			helper.Events.Display.RenderedWorld += OnRenderedWorld;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
@@ -66,6 +73,40 @@ namespace Shockah.FlexibleSprinklers
 			SetupConfig();
 		}
 
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		{
+			SprinklerCoverageAlpha = Math.Max(SprinklerCoverageAlpha - SprinklerCoverageAlphaDecrement, 0f);
+		}
+
+		private void OnRenderedWorld(object? sender, RenderedWorldEventArgs e)
+		{
+			if (SprinklerCoverageAlpha <= 0f)
+				return;
+			GameLocation location = Game1.currentLocation;
+			if (location is null)
+				return;
+
+			var sprinklers = location.Objects.Values
+				.Where(o => o.IsSprinkler())
+				.Select(o => (new IntPoint((int)o.TileLocation.X, (int)o.TileLocation.Y), GetSprinklerInfo(o)));
+			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location), sprinklers);
+			foreach (var sprinklerTile in sprinklerTiles)
+			{
+				var position = new Vector2(sprinklerTile.X * Game1.tileSize, sprinklerTile.Y * Game1.tileSize);
+				e.SpriteBatch.Draw(
+					Game1.mouseCursors,
+					Game1.GlobalToLocal(position),
+					new Rectangle(194, 388, 16, 16),
+					Color.White * Math.Clamp(SprinklerCoverageAlpha, 0f, 1f),
+					0.0f,
+					Vector2.Zero,
+					Game1.pixelZoom,
+					SpriteEffects.None,
+					0.01f
+				);
+			}
+		}
+
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
 			if (!Config.ActivateBeforeSleep)
@@ -76,17 +117,21 @@ namespace Shockah.FlexibleSprinklers
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location));
-			if (!Config.ActivateOnPlacement)
-				return;
-			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
-				return;
-			foreach (var (_, sprinkler) in e.Added)
-				ActivateSprinkler(sprinkler, e.Location);
+
+			if (Config.ActivateOnPlacement && SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			{
+				foreach (var (_, @object) in e.Added)
+					if (@object.IsSprinkler())
+						ActivateSprinkler(@object, e.Location);
+			}
+			if (Config.ShowCoverageOnPlacement)
+				DisplaySprinklerCoverage();
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			SprinklerBehavior.ClearCache();
+			SprinklerCoverageAlpha = 0f;
 		}
 
 		private void OnTerrainFeatureListChanged(object? sender, TerrainFeatureListChangedEventArgs e)
@@ -101,9 +146,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
-			if (!Config.ActivateOnAction)
-				return;
-			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			if (!Config.ActivateOnAction && !Config.ShowCoverageOnAction)
 				return;
 			if (!Context.IsPlayerFree)
 				return;
@@ -120,7 +163,10 @@ namespace Shockah.FlexibleSprinklers
 			if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
 				return;
 
-			ActivateSprinkler(@object, location);
+			if (Config.ActivateOnAction && SprinklerBehavior.AllowsIndependentSprinklerActivation)
+				ActivateSprinkler(@object, location);
+			if (Config.ShowCoverageOnAction)
+				DisplaySprinklerCoverage();
 		}
 
 		private void SetupConfig()
@@ -269,7 +315,7 @@ namespace Shockah.FlexibleSprinklers
 			{
 				configMenu?.AddSectionTitle(
 					mod: ModManifest,
-					text: () => "Activation options"
+					text: () => "Activation"
 				);
 
 				configMenu?.AddBoolOption(
@@ -293,6 +339,45 @@ namespace Shockah.FlexibleSprinklers
 					tooltip: () => "Note: this does not work with Cluster behavior.",
 					getValue: () => Config.ActivateOnAction,
 					setValue: value => Config.ActivateOnAction = value
+				);
+			}
+
+			{
+				configMenu?.AddSectionTitle(
+					mod: ModManifest,
+					text: () => "Coverage"
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Display time",
+					tooltip: () => "How many seconds to show the coverage display for.",
+					getValue: () => Config.CoverageTimeInSeconds,
+					setValue: value => Config.CoverageTimeInSeconds = value,
+					min: 1f
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Alpha",
+					tooltip: () => "Transparency of the coverage display.\n0: fully transparent\n1: fully opaque",
+					getValue: () => Config.CoverageAlpha,
+					setValue: value => Config.CoverageAlpha = value,
+					min: 0f, max: 1f, interval: 0.05f
+				);
+
+				configMenu?.AddBoolOption(
+					mod: ModManifest,
+					name: () => "Show on placement",
+					getValue: () => Config.ShowCoverageOnPlacement,
+					setValue: value => Config.ShowCoverageOnPlacement = value
+				);
+
+				configMenu?.AddBoolOption(
+					mod: ModManifest,
+					name: () => "Show on action",
+					getValue: () => Config.ShowCoverageOnAction,
+					setValue: value => Config.ShowCoverageOnAction = value
 				);
 			}
 
@@ -471,7 +556,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			var layout = GetUnmodifiedSprinklerCoverage(sprinkler);
 			var power = GetSprinklerPower(sprinkler, layout);
-			return new SprinklerInfo(layout, power);
+			return new SprinklerInfo(layout.ToHashSet(), power);
 		}
 
 		public int GetSprinklerPower(SObject sprinkler)
@@ -555,6 +640,11 @@ namespace Shockah.FlexibleSprinklers
 		public void RegisterSprinklerCoverageProvider(Func<SObject, Vector2[]> provider)
 		{
 			SprinklerCoverageProviders.Add(provider);
+		}
+
+		public void DisplaySprinklerCoverage(float? seconds = null)
+		{
+			SprinklerCoverageAlpha = SprinklerCoverageAlphaDecrement * FPS * (seconds ?? Config.CoverageTimeInSeconds);
 		}
 	}
 }
