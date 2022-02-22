@@ -66,6 +66,8 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (Config.ActivateOnPlacement)
 				return;
+			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+				return;
 			foreach (var (_, sprinkler) in e.Added)
 				ActivateSprinkler(sprinkler, e.Location);
 		}
@@ -73,6 +75,8 @@ namespace Shockah.FlexibleSprinklers
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
 			if (!Config.ActivateOnAction)
+				return;
+			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
 				return;
 			if (!Context.IsPlayerFree)
 				return;
@@ -107,20 +111,22 @@ namespace Shockah.FlexibleSprinklers
 				}
 			);
 
-			string TranslateBehavior(ModConfig.SprinklerBehaviorEnum behavior)
+			string TranslateBehavior(ModConfig.SprinklerBehaviorEnum e)
 			{
-				return behavior switch
+				return e switch
 				{
-					ModConfig.SprinklerBehaviorEnum.Flexible => "Flexible (vanilla > flood fill)",
+					ModConfig.SprinklerBehaviorEnum.Cluster => "Vanilla > Cluster",
+					ModConfig.SprinklerBehaviorEnum.ClusterWithoutVanilla => "Cluster",
+					ModConfig.SprinklerBehaviorEnum.Flexible => "Vanilla > Flood fill",
 					ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => "Flood fill",
 					ModConfig.SprinklerBehaviorEnum.Vanilla => "Vanilla",
 					_ => throw new ArgumentException(),
 				};
 			}
 
-			string TranslateFlexibleBehaviorTileWaterBalanceMode(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode)
+			string TranslateFlexibleBehaviorTileWaterBalanceMode(FlexibleSprinklerBehaviorTileWaterBalanceMode e)
 			{
-				return tileWaterBalanceMode switch
+				return e switch
 				{
 					FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed => "Relaxed",
 					FlexibleSprinklerBehaviorTileWaterBalanceMode.Exact => "Exact",
@@ -129,129 +135,50 @@ namespace Shockah.FlexibleSprinklers
 				};
 			}
 
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Watering options"
-			);
+			string TranslateClusterBehaviorClusterOrdering(ClusterSprinklerBehaviorClusterOrdering e)
+			{
+				return e switch
+				{
+					ClusterSprinklerBehaviorClusterOrdering.SmallerFirst => "Smaller clusters first",
+					ClusterSprinklerBehaviorClusterOrdering.BiggerFirst => "Bigger clusters first",
+					ClusterSprinklerBehaviorClusterOrdering.All => "Treat clusters equally",
+					_ => throw new ArgumentException(),
+				};
+			}
+
+			string TranslateClusterBehaviorBetweenClusterBalanceMode(ClusterSprinklerBehaviorBetweenClusterBalanceMode e)
+			{
+				return e switch
+				{
+					ClusterSprinklerBehaviorBetweenClusterBalanceMode.Relaxed => "Relaxed",
+					ClusterSprinklerBehaviorBetweenClusterBalanceMode.Restrictive => "Restrictive",
+					_ => throw new ArgumentException(),
+				};
+			}
+
+			string TranslateClusterBehaviorInClusterBalanceMode(ClusterSprinklerBehaviorInClusterBalanceMode e)
+			{
+				return e switch
+				{
+					ClusterSprinklerBehaviorInClusterBalanceMode.Relaxed => "Relaxed",
+					ClusterSprinklerBehaviorInClusterBalanceMode.Exact => "Exact",
+					ClusterSprinklerBehaviorInClusterBalanceMode.Restrictive => "Restrictive",
+					_ => throw new ArgumentException(),
+				};
+			}
 
 			configMenu?.AddTextOption(
 				mod: ModManifest,
 				name: () => "Sprinkler behavior",
-				tooltip: () => "> Flexible: Will water using vanilla behavior, and then flood fill for any tiles that failed.\n> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Does not change the sprinkler behavior.",
+				tooltip: () => "" +
+				"> Cluster: Groups sprinklers by nearby clustered tiles and tries to water as much as possible.\n" +
+				"   Note: Sprinklers will no longer be able to be activated manually.\n" +
+				"> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n" +
+				"   Will also change behavior if next to other sprinklers.\n" +
+				"> Vanilla: Uses the default game behavior.",
 				getValue: () => TranslateBehavior(Config.SprinklerBehavior),
 				setValue: value => Config.SprinklerBehavior = I18nEnum.GetFromTranslation<ModConfig.SprinklerBehaviorEnum>(value, TranslateBehavior)!,
 				allowedValues: I18nEnum.GetTranslations<ModConfig.SprinklerBehaviorEnum>(TranslateBehavior).ToArray()
-			);
-
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => "Flood fill balance mode",
-				tooltip: () => "Edge case handling for the flood fill behavior.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
-				getValue: () => TranslateFlexibleBehaviorTileWaterBalanceMode(Config.TileWaterBalanceMode),
-				setValue: value => Config.TileWaterBalanceMode = I18nEnum.GetFromTranslation<FlexibleSprinklerBehaviorTileWaterBalanceMode>(value, TranslateFlexibleBehaviorTileWaterBalanceMode)!,
-				allowedValues: I18nEnum.GetTranslations<FlexibleSprinklerBehaviorTileWaterBalanceMode>(TranslateFlexibleBehaviorTileWaterBalanceMode).ToArray()
-			);
-
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Activation options"
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Activate on placement",
-				getValue: () => Config.ActivateOnPlacement,
-				setValue: value => Config.ActivateOnPlacement = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Activate on action",
-				getValue: () => Config.ActivateOnAction,
-				setValue: value => Config.ActivateOnAction = value
-			);
-
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Sprinkler power",
-				tooltip: () => "The values below will only be used when watering via the flood fill method."
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 1 (Basic)",
-				tooltip: () => "How many tiles should tier 1 (Basic) sprinklers cover.",
-				getValue: () => Config.Tier1Power,
-				setValue: value => Config.Tier1Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 2 (Quality)",
-				tooltip: () => "How many tiles should tier 2 (Quality / Basic + Pressure Nozzle) sprinklers cover.",
-				getValue: () => Config.Tier2Power,
-				setValue: value => Config.Tier2Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 3 (Iridium)",
-				tooltip: () => "How many tiles should tier 3 (Iridium / Quality + Pressure Nozzle) sprinklers cover.",
-				getValue: () => Config.Tier3Power,
-				setValue: value => Config.Tier3Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 4 (Iridium + Nozzle)",
-				tooltip: () => "How many tiles should tier 4 (Iridium + Pressure Nozzle) sprinklers cover.",
-				getValue: () => Config.Tier4Power,
-				setValue: value => Config.Tier4Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 5",
-				tooltip: () => "How many tiles should tier 5 sprinklers (if you have mods with such a tier) cover.",
-				getValue: () => Config.Tier5Power,
-				setValue: value => Config.Tier5Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 6",
-				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
-				getValue: () => Config.Tier6Power,
-				setValue: value => Config.Tier6Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 7",
-				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
-				getValue: () => Config.Tier7Power,
-				setValue: value => Config.Tier7Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Tier 8",
-				tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
-				getValue: () => Config.Tier8Power,
-				setValue: value => Config.Tier8Power = value,
-				min: 0, interval: 1
-			);
-
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Other settings"
 			);
 
 			configMenu?.AddBoolOption(
@@ -261,12 +188,165 @@ namespace Shockah.FlexibleSprinklers
 				getValue: () => Config.CompatibilityMode,
 				setValue: value => Config.CompatibilityMode = value
 			);
+
+			{
+				configMenu?.AddSectionTitle(
+					mod: ModManifest,
+					text: () => "Cluster options"
+				);
+
+				configMenu?.AddTextOption(
+					mod: ModManifest,
+					name: () => "Cluster ordering",
+					tooltip: () => "Which clusters should each sprinkler prefer when choosing which one to water more.",
+					getValue: () => TranslateClusterBehaviorClusterOrdering(Config.ClusterBehaviorClusterOrdering),
+					setValue: value => Config.ClusterBehaviorClusterOrdering = I18nEnum.GetFromTranslation<ClusterSprinklerBehaviorClusterOrdering>(value, TranslateClusterBehaviorClusterOrdering)!,
+					allowedValues: I18nEnum.GetTranslations<ClusterSprinklerBehaviorClusterOrdering>(TranslateClusterBehaviorClusterOrdering).ToArray()
+				);
+
+				configMenu?.AddTextOption(
+					mod: ModManifest,
+					name: () => "Between cluster balance",
+					tooltip: () => "Edge case handling for choosing which cluster to water more.\n\n> Relaxed: May water more tiles\n> Restrictive: May water less tiles",
+					getValue: () => TranslateClusterBehaviorBetweenClusterBalanceMode(Config.ClusterBehaviorBetweenClusterBalanceMode),
+					setValue: value => Config.ClusterBehaviorBetweenClusterBalanceMode = I18nEnum.GetFromTranslation<ClusterSprinklerBehaviorBetweenClusterBalanceMode>(value, TranslateClusterBehaviorBetweenClusterBalanceMode)!,
+					allowedValues: I18nEnum.GetTranslations<ClusterSprinklerBehaviorBetweenClusterBalanceMode>(TranslateClusterBehaviorBetweenClusterBalanceMode).ToArray()
+				);
+
+				configMenu?.AddTextOption(
+					mod: ModManifest,
+					name: () => "In-cluster balance",
+					tooltip: () => "Edge case handling for choosing which tiles in a cluster to water.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
+					getValue: () => TranslateClusterBehaviorInClusterBalanceMode(Config.ClusterBehaviorInClusterBalanceMode),
+					setValue: value => Config.ClusterBehaviorInClusterBalanceMode = I18nEnum.GetFromTranslation<ClusterSprinklerBehaviorInClusterBalanceMode>(value, TranslateClusterBehaviorInClusterBalanceMode)!,
+					allowedValues: I18nEnum.GetTranslations<ClusterSprinklerBehaviorInClusterBalanceMode>(TranslateClusterBehaviorInClusterBalanceMode).ToArray()
+				);
+			}
+
+			{
+				configMenu?.AddSectionTitle(
+					mod: ModManifest,
+					text: () => "Flood fill options"
+				);
+
+				configMenu?.AddTextOption(
+					mod: ModManifest,
+					name: () => "Flood fill balance mode",
+					tooltip: () => "Edge case handling for choosing which tiles to water.\n\n> Relaxed: May water more tiles\n> Exact: Will water exactly as many tiles as it should, but those may be semi-random\n> Restrictive: May water less tiles",
+					getValue: () => TranslateFlexibleBehaviorTileWaterBalanceMode(Config.TileWaterBalanceMode),
+					setValue: value => Config.TileWaterBalanceMode = I18nEnum.GetFromTranslation<FlexibleSprinklerBehaviorTileWaterBalanceMode>(value, TranslateFlexibleBehaviorTileWaterBalanceMode)!,
+					allowedValues: I18nEnum.GetTranslations<FlexibleSprinklerBehaviorTileWaterBalanceMode>(TranslateFlexibleBehaviorTileWaterBalanceMode).ToArray()
+				);
+			}
+
+			{
+				configMenu?.AddSectionTitle(
+					mod: ModManifest,
+					text: () => "Activation options"
+				);
+
+				configMenu?.AddBoolOption(
+					mod: ModManifest,
+					name: () => "Activate on placement",
+					getValue: () => Config.ActivateOnPlacement,
+					setValue: value => Config.ActivateOnPlacement = value
+				);
+
+				configMenu?.AddBoolOption(
+					mod: ModManifest,
+					name: () => "Activate on action",
+					getValue: () => Config.ActivateOnAction,
+					setValue: value => Config.ActivateOnAction = value
+				);
+			}
+
+			{
+				configMenu?.AddSectionTitle(
+					mod: ModManifest,
+					text: () => "Sprinkler power",
+					tooltip: () => "The values below will only be used when watering via the flood fill method."
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 1 (Basic)",
+					tooltip: () => "How many tiles should tier 1 (Basic) sprinklers cover.",
+					getValue: () => Config.Tier1Power,
+					setValue: value => Config.Tier1Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 2 (Quality)",
+					tooltip: () => "How many tiles should tier 2 (Quality / Basic + Pressure Nozzle) sprinklers cover.",
+					getValue: () => Config.Tier2Power,
+					setValue: value => Config.Tier2Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 3 (Iridium)",
+					tooltip: () => "How many tiles should tier 3 (Iridium / Quality + Pressure Nozzle) sprinklers cover.",
+					getValue: () => Config.Tier3Power,
+					setValue: value => Config.Tier3Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 4 (Iridium + Nozzle)",
+					tooltip: () => "How many tiles should tier 4 (Iridium + Pressure Nozzle) sprinklers cover.",
+					getValue: () => Config.Tier4Power,
+					setValue: value => Config.Tier4Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 5",
+					tooltip: () => "How many tiles should tier 5 sprinklers (if you have mods with such a tier) cover.",
+					getValue: () => Config.Tier5Power,
+					setValue: value => Config.Tier5Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 6",
+					tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+					getValue: () => Config.Tier6Power,
+					setValue: value => Config.Tier6Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 7",
+					tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+					getValue: () => Config.Tier7Power,
+					setValue: value => Config.Tier7Power = value,
+					min: 0, interval: 1
+				);
+
+				configMenu?.AddNumberOption(
+					mod: ModManifest,
+					name: () => "Tier 8",
+					tooltip: () => "How many tiles should tier 6 sprinklers (if you have mods with such a tier) cover.",
+					getValue: () => Config.Tier8Power,
+					setValue: value => Config.Tier8Power = value,
+					min: 0, interval: 1
+				);
+			}
 		}
 
 		private void SetupSprinklerBehavior()
 		{
 			SprinklerBehavior = Config.SprinklerBehavior switch
 			{
+				ModConfig.SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode), // TODO: implement
+				ModConfig.SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode),
 				ModConfig.SprinklerBehaviorEnum.Flexible => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
 				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, null),
 				ModConfig.SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),

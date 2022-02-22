@@ -10,9 +10,9 @@ namespace Shockah.FlexibleSprinklers
 	internal class FlexibleSprinklerBehavior: ISprinklerBehavior.Independent
 	{
 		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
-		private readonly ISprinklerBehavior VanillaBehavior;
+		private readonly ISprinklerBehavior? VanillaBehavior;
 
-		public FlexibleSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior vanillaBehavior)
+		public FlexibleSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior? vanillaBehavior)
 		{
 			this.TileWaterBalanceMode = tileWaterBalanceMode;
 			this.VanillaBehavior = vanillaBehavior;
@@ -37,7 +37,7 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
-			if (VanillaBehavior != null)
+			if (VanillaBehavior is not null)
 			{
 				foreach (var tileToWater in VanillaBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
 				{
