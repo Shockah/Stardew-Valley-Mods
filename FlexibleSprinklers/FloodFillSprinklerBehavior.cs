@@ -7,18 +7,18 @@ namespace Shockah.FlexibleSprinklers
 {
 	internal enum FlexibleSprinklerBehaviorTileWaterBalanceMode { Relaxed, Exact, Restrictive }
 
-	internal class FlexibleSprinklerBehavior: ISprinklerBehavior.Independent
+	internal class FloodFillSprinklerBehavior: ISprinklerBehavior.Independent
 	{
 		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
-		private readonly ISprinklerBehavior? VanillaBehavior;
+		private readonly ISprinklerBehavior.Independent? PriorityBehavior;
 
 		private readonly IDictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>> Cache
 			= new Dictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>>();
 
-		public FlexibleSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior? vanillaBehavior)
+		public FloodFillSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior.Independent? priorityBehavior)
 		{
 			this.TileWaterBalanceMode = tileWaterBalanceMode;
-			this.VanillaBehavior = vanillaBehavior;
+			this.PriorityBehavior = priorityBehavior;
 		}
 
 		void ISprinklerBehavior.ClearCache()
@@ -59,9 +59,9 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
-			if (VanillaBehavior is not null)
+			if (PriorityBehavior is not null)
 			{
-				foreach (var tileToWater in VanillaBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
+				foreach (var tileToWater in PriorityBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
 				{
 					switch (map[tileToWater])
 					{

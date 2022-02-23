@@ -121,7 +121,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
 
-			if (Config.ActivateOnPlacement && SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			if (Config.ActivateOnPlacement && SprinklerBehavior.AllowsIndependentSprinklerActivation())
 			{
 				foreach (var (_, @object) in e.Added)
 					if (@object.IsSprinkler())
@@ -166,7 +166,7 @@ namespace Shockah.FlexibleSprinklers
 			if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
 				return;
 
-			if (Config.ActivateOnAction && SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			if (Config.ActivateOnAction && SprinklerBehavior.AllowsIndependentSprinklerActivation())
 				ActivateSprinkler(@object, location);
 			if (Config.ShowCoverageOnAction)
 				DisplaySprinklerCoverage();
@@ -326,10 +326,10 @@ namespace Shockah.FlexibleSprinklers
 		{
 			SprinklerBehavior = Config.SprinklerBehavior switch
 			{
-				ModConfig.SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode), // TODO: implement
-				ModConfig.SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode),
-				ModConfig.SprinklerBehaviorEnum.Flexible => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
-				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FlexibleSprinklerBehavior(Config.TileWaterBalanceMode, null),
+				ModConfig.SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, new VanillaSprinklerBehavior()),
+				ModConfig.SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, null),
+				ModConfig.SprinklerBehaviorEnum.Flexible => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
+				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, null),
 				ModConfig.SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
 				_ => throw new ArgumentException(),
 			};
@@ -371,7 +371,7 @@ namespace Shockah.FlexibleSprinklers
 
 		public void ActivateSprinkler(SObject sprinkler, GameLocation location)
 		{
-			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			if (!SprinklerBehavior.AllowsIndependentSprinklerActivation())
 				return;
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
@@ -412,6 +412,7 @@ namespace Shockah.FlexibleSprinklers
 				return tier.Value < powers.Length ? powers[tier.Value - 1] : layout.Length;
 			}
 		}
+
 		internal SprinklerInfo GetSprinklerInfo(SObject sprinkler)
 		{
 			var layout = GetUnmodifiedSprinklerCoverage(sprinkler);

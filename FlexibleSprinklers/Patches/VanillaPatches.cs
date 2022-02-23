@@ -156,12 +156,12 @@ namespace Shockah.FlexibleSprinklers
 			var locationField = __instance.GetType().GetTypeInfo().DeclaredFields.First(f => f.FieldType == typeof(GameLocation) && f.Name == "location");
 			CurrentLocation = (GameLocation?)locationField.GetValue(__instance);
 			IsVanillaQueryInProgress = false;
-			return FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation;
+			return FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation();
 		}
 
 		private static void Game1_handlePostFarmEventActions_Postfix()
 		{
-			if (!FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation)
+			if (!FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation())
 				FlexibleSprinklers.Instance.ActivateAllCollectiveSprinklers();
 		}
 	}
