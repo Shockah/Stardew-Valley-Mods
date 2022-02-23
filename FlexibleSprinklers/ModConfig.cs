@@ -14,6 +14,8 @@
 		public bool ActivateBeforeSleep { get; set; } = true;
 		public float CoverageAlpha { get; set; } = 1;
 		public float CoverageTimeInSeconds { get; set; } = 5;
+		public float CoverageAnimationInSeconds { get; set; } = 1;
+		public bool CoverageOverlayDuplicates { get; set; } = true;
 		public bool ShowCoverageOnPlacement { get; set; } = true;
 		public bool ShowCoverageOnAction { get; set; } = true;
 		public int Tier1Power { get; set; } = 4;

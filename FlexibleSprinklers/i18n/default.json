@@ -41,7 +41,11 @@
 
     "config.coverage.section.name": "Coverage",
     "config.coverage.displayTime.name": "Display time",
-    "config.coverage.displayTime.tooltip": "How many seconds to show the coverage display for.",
+    "config.coverage.displayTime.tooltip": "How long (in seconds) should the coverage be displayed for.",
+    "config.coverage.animationTime.name": "Animation time",
+    "config.coverage.animationTime.tooltip": "How long (in seconds) should the step-by-step animation play for.",
+    "config.coverage.overlayDuplicates.name": "Overlay duplicates",
+    "config.coverage.overlayDuplicates.tooltip": "Whether tiles watered by multiple sprinklers should be overlayed (or just shown once).",
     "config.coverage.alpha.name": "Alpha",
     "config.coverage.alpha.tooltip": "Transparency of the coverage display.\n0: fully transparent\n1: fully opaque",
     "config.coverage.onPlacement.name": "Show on placement",

@@ -30,6 +30,7 @@ namespace Shockah.FlexibleSprinklers
 		private readonly IList<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new List<Func<SObject, Vector2[]>>();
 		internal IList<Func<GameLocation, Vector2, bool?>> CustomWaterableTileProviders { get; private set; } = new List<Func<GameLocation, Vector2, bool?>>();
 		private float SprinklerCoverageAlpha = 0f;
+		private float SprinklerCoverageCurrentAnimationTime = 0f;
 
 		internal ILineSprinklersApi? LineSprinklersApi { get; private set; }
 		internal IBetterSprinklersApi? BetterSprinklersApi { get; private set; }
@@ -79,6 +80,7 @@ namespace Shockah.FlexibleSprinklers
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
 			SprinklerCoverageAlpha = Math.Max(SprinklerCoverageAlpha - SprinklerCoverageAlphaDecrement, 0f);
+			SprinklerCoverageCurrentAnimationTime = Math.Min(SprinklerCoverageCurrentAnimationTime + 1f / FPS, Config.CoverageAnimationInSeconds);
 		}
 
 		private void OnRenderedWorld(object? sender, RenderedWorldEventArgs e)
@@ -92,21 +94,34 @@ namespace Shockah.FlexibleSprinklers
 			var sprinklers = location.Objects.Values
 				.Where(o => o.IsSprinkler())
 				.Select(o => (new IntPoint((int)o.TileLocation.X, (int)o.TileLocation.Y), GetSprinklerInfo(o)));
-			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(new GameLocationMap(location, CustomWaterableTileProviders), sprinklers);
-			foreach (var sprinklerTile in sprinklerTiles)
+			var sprinklerTilesWithSteps = SprinklerBehavior.GetSprinklerTilesWithSteps(new GameLocationMap(location, CustomWaterableTileProviders), sprinklers);
+			var alreadyShown = new HashSet<IntPoint>();
+			foreach (var step in sprinklerTilesWithSteps)
 			{
-				var position = new Vector2(sprinklerTile.X * Game1.tileSize, sprinklerTile.Y * Game1.tileSize);
-				e.SpriteBatch.Draw(
-					Game1.mouseCursors,
-					Game1.GlobalToLocal(position),
-					new Rectangle(194, 388, 16, 16),
-					Color.White * Math.Clamp(SprinklerCoverageAlpha, 0f, 1f),
-					0.0f,
-					Vector2.Zero,
-					Game1.pixelZoom,
-					SpriteEffects.None,
-					0.01f
-				);
+				if (Config.CoverageAnimationInSeconds > 0f && step.Item2 * Config.CoverageAnimationInSeconds > SprinklerCoverageCurrentAnimationTime)
+					break;
+				foreach (var sprinklerTile in step.Item1)
+				{
+					if (!Config.CoverageOverlayDuplicates)
+					{
+						if (alreadyShown.Contains(sprinklerTile))
+							continue;
+						alreadyShown.Add(sprinklerTile);
+					}
+
+					var position = new Vector2(sprinklerTile.X * Game1.tileSize, sprinklerTile.Y * Game1.tileSize);
+					e.SpriteBatch.Draw(
+						Game1.mouseCursors,
+						Game1.GlobalToLocal(position),
+						new Rectangle(194, 388, 16, 16),
+						Color.White * Math.Clamp(SprinklerCoverageAlpha, 0f, 1f),
+						0.0f,
+						Vector2.Zero,
+						Game1.pixelZoom,
+						SpriteEffects.None,
+						0.01f
+					);
+				}
 			}
 		}
 
@@ -135,6 +150,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			SprinklerBehavior.ClearCache();
 			SprinklerCoverageAlpha = 0f;
+			SprinklerCoverageCurrentAnimationTime = 0f;
 		}
 
 		private void OnTerrainFeatureListChanged(object? sender, TerrainFeatureListChangedEventArgs e)
@@ -207,7 +223,9 @@ namespace Shockah.FlexibleSprinklers
 
 			helper.AddSectionTitle("config.coverage.section");
 			helper.AddNumberOption("config.coverage.displayTime", () => Config.CoverageTimeInSeconds, min: 1f);
+			helper.AddNumberOption("config.coverage.animationTime", () => Config.CoverageAnimationInSeconds, min: 0f);
 			helper.AddNumberOption("config.coverage.alpha", () => Config.CoverageAlpha, min: 0f, max: 1f, interval: 0.05f);
+			helper.AddBoolOption("config.coverage.overlayDuplicates", () => Config.CoverageOverlayDuplicates);
 			helper.AddBoolOption("config.coverage.onPlacement", () => Config.ShowCoverageOnPlacement);
 			helper.AddBoolOption("config.coverage.onAction", () => Config.ShowCoverageOnAction);
 
@@ -411,6 +429,7 @@ namespace Shockah.FlexibleSprinklers
 		public void DisplaySprinklerCoverage(float? seconds = null)
 		{
 			SprinklerCoverageAlpha = SprinklerCoverageAlphaDecrement * FPS * (seconds ?? Config.CoverageTimeInSeconds);
+			SprinklerCoverageCurrentAnimationTime = 0f;
 		}
 	}
 }
