@@ -9,8 +9,8 @@
 		public ClusterSprinklerBehaviorClusterOrdering ClusterBehaviorClusterOrdering { get; set; } = ClusterSprinklerBehaviorClusterOrdering.BiggerFirst;
 		public ClusterSprinklerBehaviorBetweenClusterBalanceMode ClusterBehaviorBetweenClusterBalanceMode { get; set; } = ClusterSprinklerBehaviorBetweenClusterBalanceMode.Relaxed;
 		public ClusterSprinklerBehaviorInClusterBalanceMode ClusterBehaviorInClusterBalanceMode { get; set; } = ClusterSprinklerBehaviorInClusterBalanceMode.Relaxed;
-		public bool ActivateOnPlacement { get; set; } = true;
-		public bool ActivateOnAction { get; set; } = true;
+		public bool ActivateOnPlacement { get; set; } = false;
+		public bool ActivateOnAction { get; set; } = false;
 		public bool ActivateBeforeSleep { get; set; } = true;
 		public float CoverageAlpha { get; set; } = 1;
 		public float CoverageTimeInSeconds { get; set; } = 5;
