@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -12,28 +13,35 @@ namespace Shockah.FlexibleSprinklers
 		{
 		}
 
-		ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);
+		ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+			=> GetSprinklerTilesWithSteps(map, sprinklerPosition, info).SelectMany(step => step.Item1).ToHashSet();
 
-		ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers);
+		ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+			=> GetSprinklerTilesWithSteps(map, sprinklers).SelectMany(step => step.Item1).ToHashSet();
+
+		IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);
+
+		IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers);
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface Independent: ISprinklerBehavior
 		{
-			ISet<IntPoint> ISprinklerBehavior.GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+			IList<(ISet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
 			{
-				var tiles = new HashSet<IntPoint>();
+				var results = new List<(ISet<IntPoint>, float)>();
 				foreach (var (sprinklerPosition, info) in sprinklers)
-					tiles.UnionWith(GetSprinklerTiles(map, sprinklerPosition, info));
-				return tiles;
+					foreach (var step in GetSprinklerTilesWithSteps(map, sprinklerPosition, info))
+						results.Add(step);
+				return results.OrderBy(step => step.Item2).ToList();
 			}
 		}
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface Collective: ISprinklerBehavior
 		{
-			ISet<IntPoint> ISprinklerBehavior.GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+			IList<(ISet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 			{
-				return GetSprinklerTiles(map, new[] { (sprinklerPosition, info) });
+				return GetSprinklerTilesWithSteps(map, new[] { (sprinklerPosition, info) });
 			}
 		}
 	}

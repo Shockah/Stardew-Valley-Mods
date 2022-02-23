@@ -12,8 +12,8 @@ namespace Shockah.FlexibleSprinklers
 		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
 		private readonly ISprinklerBehavior.Independent? PriorityBehavior;
 
-		private readonly IDictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>> Cache
-			= new Dictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>>();
+		private readonly IDictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), IList<(ISet<IntPoint>, float)>>> Cache
+			= new Dictionary<IMap, IDictionary<(IntPoint position, SprinklerInfo info), IList<(ISet<IntPoint>, float)>>>();
 
 		public FloodFillSprinklerBehavior(FlexibleSprinklerBehaviorTileWaterBalanceMode tileWaterBalanceMode, ISprinklerBehavior.Independent? priorityBehavior)
 		{
@@ -31,46 +31,53 @@ namespace Shockah.FlexibleSprinklers
 			Cache.Remove(map);
 		}
 
-		public ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+		public IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{
 			if (!Cache.TryGetValue(map, out var sprinklerCache))
-				return GetUncachedSprinklerTiles(map, sprinklerPosition, info);
+				return GetUncachedSprinklerTilesWithSteps(map, sprinklerPosition, info);
 			if (!sprinklerCache.TryGetValue((sprinklerPosition, info), out var cachedTiles))
-				return GetUncachedSprinklerTiles(map, sprinklerPosition, info);
+				return GetUncachedSprinklerTilesWithSteps(map, sprinklerPosition, info);
 			return cachedTiles;
 		}
 
-		private ISet<IntPoint> GetUncachedSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+		private IList<(ISet<IntPoint>, float)> GetUncachedSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
 		{
-			var wateredTiles = new HashSet<IntPoint>();
+			IList<(ISet<IntPoint>, float)> priorityWateredTilesSteps = new List<(ISet<IntPoint>, float)>();
+			IList<ISet<IntPoint>> wateredTilesSteps = new List<ISet<IntPoint>>();
+			ISet<IntPoint> currentWateredTiles = new HashSet<IntPoint>();
+			ISet<IntPoint> wateredTiles = new HashSet<IntPoint>();
 			var unwateredTileCount = info.Power;
+
+			void FinishWateringStep()
+			{
+				if (currentWateredTiles.Count == 0)
+					return;
+				wateredTilesSteps.Add(currentWateredTiles.ToHashSet());
+				currentWateredTiles.Clear();
+			}
 
 			void WaterTile(IntPoint tilePosition)
 			{
 				unwateredTileCount--;
+				currentWateredTiles.Add(tilePosition);
 				wateredTiles.Add(tilePosition);
 			}
 
 			void WaterTiles(IEnumerable<IntPoint> tilePositions)
 			{
 				foreach (var tilePosition in tilePositions)
-				{
 					WaterTile(tilePosition);
-				}
 			}
 
 			if (PriorityBehavior is not null)
 			{
-				foreach (var tileToWater in PriorityBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
+				if (PriorityBehavior is not null)
 				{
-					switch (map[tileToWater])
+					foreach (var step in PriorityBehavior.GetSprinklerTilesWithSteps(map, sprinklerPosition, info))
 					{
-						case SoilType.Waterable:
-							WaterTile(tileToWater);
-							break;
-						case SoilType.NonWaterable:
-						case SoilType.Sprinkler:
-							break;
+						var actuallyWaterableStepTiles = step.Item1.Where(t => map[t] == SoilType.Waterable).ToHashSet();
+						priorityWateredTilesSteps.Add((actuallyWaterableStepTiles, step.Item2));
+						unwateredTileCount -= actuallyWaterableStepTiles.Count;
 					}
 				}
 			}
@@ -92,22 +99,14 @@ namespace Shockah.FlexibleSprinklers
 			var costArrayBaseYIndex = maxDY;
 
 			for (int y = 0; y < costArray.GetLength(1); y++)
-			{
 				for (int x = 0; x < costArray.GetLength(0); x++)
-				{
 					costArray[x, y] = int.MaxValue;
-				}
-			}
 
 			int GetCost(IntPoint point)
-			{
-				return costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y];
-			}
+				=> costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y];
 
 			void SetCost(IntPoint point, int cost)
-			{
-				costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y] = cost;
-			}
+				=> costArray[costArrayBaseXIndex + point.X - sprinklerPosition.X, costArrayBaseYIndex + point.Y - sprinklerPosition.Y] = cost;
 
 			@checked.Add(sprinklerPosition);
 			SetCost(sprinklerPosition, 0);
@@ -225,6 +224,7 @@ namespace Shockah.FlexibleSprinklers
 				if (unwateredTileCount >= tileEntries.Count)
 				{
 					WaterTiles(tileEntries.Select(e => e.tilePosition));
+					FinishWateringStep();
 				}
 				else
 				{
@@ -232,6 +232,7 @@ namespace Shockah.FlexibleSprinklers
 					{
 						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed:
 							WaterTiles(tileEntries.Select(e => e.tilePosition));
+							FinishWateringStep();
 							break;
 						case FlexibleSprinklerBehaviorTileWaterBalanceMode.Restrictive:
 							unwateredTileCount = 0;
@@ -246,6 +247,7 @@ namespace Shockah.FlexibleSprinklers
 									if (tileEntry.tilePosition == spiralingTile)
 									{
 										WaterTile(tileEntry.tilePosition);
+										FinishWateringStep();
 										tileEntries.Remove(tileEntry);
 										if (unwateredTileCount <= 0)
 											goto done;
@@ -262,11 +264,16 @@ namespace Shockah.FlexibleSprinklers
 			finish:;
 			if (!Cache.TryGetValue(map, out var sprinklerCache))
 			{
-				sprinklerCache = new Dictionary<(IntPoint position, SprinklerInfo info), ISet<IntPoint>>();
+				sprinklerCache = new Dictionary<(IntPoint position, SprinklerInfo info), IList<(ISet<IntPoint>, float)>>();
 				Cache[map] = sprinklerCache;
 			}
-			sprinklerCache[(sprinklerPosition, info)] = wateredTiles;
-			return wateredTiles;
+
+			var results = priorityWateredTilesSteps
+				.Union(wateredTilesSteps.Select((step, index) => (step, (priorityWateredTilesSteps.Count == 0 ? 0f : 1f) + 1f * index / (wateredTilesSteps.Count - 1))))
+				.Select(step => priorityWateredTilesSteps.Count == 0 ? step : (step.Item1, step.Item2 / 2f))
+				.ToList();
+			sprinklerCache[(sprinklerPosition, info)] = results;
+			return results;
 		}
 	}
 }

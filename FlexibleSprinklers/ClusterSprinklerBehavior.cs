@@ -28,8 +28,8 @@ namespace Shockah.FlexibleSprinklers
 		private readonly ClusterSprinklerBehaviorInClusterBalanceMode InClusterBalanceMode;
 		private readonly ISprinklerBehavior.Independent? PriorityBehavior;
 
-		private readonly IDictionary<IMap, (ISet<(IntPoint position, SprinklerInfo info)> sprinklers, ISet<IntPoint> tilesToWater)> Cache
-			= new Dictionary<IMap, (ISet<(IntPoint position, SprinklerInfo info)> sprinklers, ISet<IntPoint> tilesToWater)>();
+		private readonly IDictionary<IMap, (ISet<(IntPoint position, SprinklerInfo info)> sprinklers, IList<(ISet<IntPoint>, float)> tilesToWater)> Cache
+			= new Dictionary<IMap, (ISet<(IntPoint position, SprinklerInfo info)> sprinklers, IList<(ISet<IntPoint>, float)> tilesToWater)>();
 
 		public ClusterSprinklerBehavior(
 			ClusterSprinklerBehaviorClusterOrdering clusterOrdering,
@@ -54,17 +54,17 @@ namespace Shockah.FlexibleSprinklers
 			Cache.Remove(map);
 		}
 
-		public ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+		public IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
 		{
 			var sprinklersSet = sprinklers.ToHashSet();
 			if (!Cache.TryGetValue(map, out var cachedInfo))
-				return GetUncachedSprinklerTiles(map, sprinklersSet);
+				return GetUncachedSprinklerTilesWithSteps(map, sprinklersSet);
 			if (!cachedInfo.sprinklers.SetEquals(sprinklersSet))
-				return GetUncachedSprinklerTiles(map, sprinklersSet);
+				return GetUncachedSprinklerTilesWithSteps(map, sprinklersSet);
 			return cachedInfo.tilesToWater;
 		}
 
-		private ISet<IntPoint> GetUncachedSprinklerTiles(IMap map, ISet<(IntPoint position, SprinklerInfo info)> sprinklers)
+		private IList<(ISet<IntPoint>, float)> GetUncachedSprinklerTilesWithSteps(IMap map, ISet<(IntPoint position, SprinklerInfo info)> sprinklers)
 		{
 			ICollection<Cluster> GetClusters()
 			{
@@ -228,20 +228,42 @@ namespace Shockah.FlexibleSprinklers
 			}
 
 			var clusters = GetClusters();
+			IList<(ISet<IntPoint>, float)> priorityTilesToWaterSteps = new List<(ISet<IntPoint>, float)>();
+			IList<ISet<IntPoint>> tilesToWaterSteps = new List<ISet<IntPoint>>();
+			ISet<IntPoint> currentTilesToWater = new HashSet<IntPoint>();
 			ISet<IntPoint> tilesToWater = new HashSet<IntPoint>();
+
+			void WaterTile(IntPoint tilePosition)
+			{
+				tilesToWater.Add(tilePosition);
+				currentTilesToWater.Add(tilePosition);
+			}
+
+			void WaterTiles(IEnumerable<IntPoint> tilePositions)
+			{
+				foreach (var tilePosition in tilePositions)
+					WaterTile(tilePosition);
+			}
+
+			void FinishWateringStep()
+			{
+				if (currentTilesToWater.Count == 0)
+					return;
+				tilesToWaterSteps.Add(currentTilesToWater.ToHashSet());
+				currentTilesToWater.Clear();
+			}
+
 			IDictionary<Cluster, IDictionary<IntPoint, int>> sprinklerTileCountToWaterPerCluster = new Dictionary<Cluster, IDictionary<IntPoint, int>>();
 			foreach (var (sprinklerPosition, info) in sprinklers)
 			{
 				int tileCountToWaterLeft = info.Power;
 				if (PriorityBehavior is not null)
 				{
-					foreach (var tileToWater in PriorityBehavior.GetSprinklerTiles(map, sprinklerPosition, info))
+					foreach (var step in PriorityBehavior.GetSprinklerTilesWithSteps(map, sprinklerPosition, info))
 					{
-						if (map[tileToWater] == SoilType.Waterable)
-						{
-							tilesToWater.Add(tileToWater);
-							tileCountToWaterLeft--;
-						}
+						var actuallyWaterableStepTiles = step.Item1.Where(t => map[t] == SoilType.Waterable).ToHashSet();
+						priorityTilesToWaterSteps.Add((actuallyWaterableStepTiles, step.Item2));
+						tileCountToWaterLeft -= actuallyWaterableStepTiles.Count;
 					}
 				}
 
@@ -307,7 +329,7 @@ namespace Shockah.FlexibleSprinklers
 
 				if (totalTileCountToWater >= totalTileCount && totalReachableTileCount == totalTileCount)
 				{
-					tilesToWater.UnionWith(cluster.Tiles);
+					WaterTiles(cluster.Tiles);
 					continue;
 				}
 
@@ -337,8 +359,9 @@ namespace Shockah.FlexibleSprinklers
 					if (totalTileCountToWater >= stepTiles.Count)
 					{
 						foreach (var (tilePosition, _, _) in stepTiles)
-							tilesToWater.Add(tilePosition);
+							WaterTile(tilePosition);
 						totalTileCountToWater -= stepTiles.Count;
+						FinishWateringStep();
 					}
 					else
 					{
@@ -346,8 +369,9 @@ namespace Shockah.FlexibleSprinklers
 						{
 							case ClusterSprinklerBehaviorInClusterBalanceMode.Relaxed:
 								foreach (var (tilePosition, _, _) in stepTiles)
-									tilesToWater.Add(tilePosition);
+									WaterTile(tilePosition);
 								totalTileCountToWater -= stepTiles.Count;
+								FinishWateringStep();
 								break;
 							case ClusterSprinklerBehaviorInClusterBalanceMode.Restrictive:
 								totalTileCountToWater = 0;
@@ -361,8 +385,9 @@ namespace Shockah.FlexibleSprinklers
 									{
 										if (tilePosition == spiralingTile)
 										{
-											tilesToWater.Add(tilePosition);
+											WaterTile(tilePosition);
 											totalTileCountToWater--;
+											FinishWateringStep();
 											if (totalTileCountToWater <= 0)
 												goto done;
 											break;
@@ -376,8 +401,12 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
-			Cache[map] = (sprinklers, tilesToWater);
-			return tilesToWater;
+			var results = priorityTilesToWaterSteps
+				.Union(tilesToWaterSteps.Select((step, index) => (step, (priorityTilesToWaterSteps.Count == 0 ? 0f : 1f) + 1f * index / (tilesToWaterSteps.Count - 1))))
+				.Select(step => priorityTilesToWaterSteps.Count == 0 ? step : (step.Item1, step.Item2 / 2f))
+				.ToList();
+			Cache[map] = (sprinklers, results);
+			return results;
 		}
 	}
 }
