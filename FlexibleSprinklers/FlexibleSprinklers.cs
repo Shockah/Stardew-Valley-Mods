@@ -174,9 +174,12 @@ namespace Shockah.FlexibleSprinklers
 
 		private void SetupConfig()
 		{
-			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			var helper = new GMCMI18nHelper(api, ModManifest, Helper.Translation);
 
-			configMenu?.Register(
+			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () =>
@@ -186,140 +189,37 @@ namespace Shockah.FlexibleSprinklers
 				}
 			);
 
-			configMenu?.AddEnumOption(
-				ModManifest, Helper.Translation, "config.sprinklerBehavior",
-				() => Config.SprinklerBehavior
-			);
+			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior);
+			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
-			configMenu?.AddBoolOption(
-				ModManifest, Helper.Translation, "config.compatibilityMode",
-				() => Config.CompatibilityMode
-			);
+			helper.AddSectionTitle("config.cluster.section");
+			helper.AddEnumOption("config.cluster.ordering", () => Config.ClusterBehaviorClusterOrdering);
+			helper.AddEnumOption("config.cluster.betweenClusterBalance", () => Config.ClusterBehaviorBetweenClusterBalanceMode);
+			helper.AddEnumOption("config.cluster.inClusterBalance", () => Config.ClusterBehaviorInClusterBalanceMode);
 
-			{
-				configMenu?.AddSectionTitle(ModManifest, Helper.Translation, "config.cluster.section");
+			helper.AddSectionTitle("config.floodFill.section");
+			helper.AddEnumOption("config.floodFill.balanceMode", () => Config.TileWaterBalanceMode);
 
-				configMenu?.AddEnumOption(
-					ModManifest, Helper.Translation, "config.cluster.ordering",
-					() => Config.ClusterBehaviorClusterOrdering
-				);
+			helper.AddSectionTitle("config.activation.section");
+			helper.AddBoolOption("config.activation.beforeSleep", () => Config.ActivateBeforeSleep);
+			helper.AddBoolOption("config.activation.onPlacement", () => Config.ActivateOnPlacement);
+			helper.AddBoolOption("config.activation.onAction", () => Config.ActivateOnAction);
 
-				configMenu?.AddEnumOption(
-					ModManifest, Helper.Translation, "config.cluster.betweenClusterBalance",
-					() => Config.ClusterBehaviorBetweenClusterBalanceMode
-				);
+			helper.AddSectionTitle("config.coverage.section");
+			helper.AddNumberOption("config.coverage.displayTime", () => Config.CoverageTimeInSeconds, min: 1f);
+			helper.AddNumberOption("config.coverage.alpha", () => Config.CoverageAlpha, min: 0f, max: 1f, interval: 0.05f);
+			helper.AddBoolOption("config.coverage.onPlacement", () => Config.ShowCoverageOnPlacement);
+			helper.AddBoolOption("config.coverage.onAction", () => Config.ShowCoverageOnAction);
 
-				configMenu?.AddEnumOption(
-					ModManifest, Helper.Translation, "config.cluster.inClusterBalance",
-					() => Config.ClusterBehaviorInClusterBalanceMode
-				);
-			}
-
-			{
-				configMenu?.AddSectionTitle(ModManifest, Helper.Translation, "config.floodFill.section");
-
-				configMenu?.AddEnumOption(
-					ModManifest, Helper.Translation, "config.floodFill.balanceMode",
-					() => Config.TileWaterBalanceMode
-				);
-			}
-
-			{
-				configMenu?.AddSectionTitle(ModManifest, Helper.Translation, "config.activation.section");
-
-				configMenu?.AddBoolOption(
-					ModManifest, Helper.Translation, "config.activation.beforeSleep",
-					() => Config.ActivateBeforeSleep
-				);
-
-				configMenu?.AddBoolOption(
-					ModManifest, Helper.Translation, "config.activation.onPlacement",
-					() => Config.ActivateOnPlacement
-				);
-
-				configMenu?.AddBoolOption(
-					ModManifest, Helper.Translation, "config.activation.onAction",
-					() => Config.ActivateOnAction
-				);
-			}
-
-			{
-				configMenu?.AddSectionTitle(ModManifest, Helper.Translation, "config.coverage.section");
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.coverage.displayTime",
-					() => Config.CoverageTimeInSeconds,
-					min: 1f
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.coverage.alpha",
-					() => Config.CoverageAlpha,
-					min: 0f, max: 1f, interval: 0.05f
-				);
-
-				configMenu?.AddBoolOption(
-					ModManifest, Helper.Translation, "config.coverage.onPlacement",
-					() => Config.ShowCoverageOnPlacement
-				);
-
-				configMenu?.AddBoolOption(
-					ModManifest, Helper.Translation, "config.coverage.onAction",
-					() => Config.ShowCoverageOnAction
-				);
-			}
-
-			{
-				configMenu?.AddSectionTitle(ModManifest, Helper.Translation, "config.sprinklerPower.section");
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier1",
-					() => Config.Tier1Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier2",
-					() => Config.Tier2Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier3",
-					() => Config.Tier3Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier4",
-					() => Config.Tier4Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier5",
-					() => Config.Tier5Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier6",
-					() => Config.Tier6Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier7",
-					() => Config.Tier7Power,
-					min: 0
-				);
-
-				configMenu?.AddNumberOption(
-					ModManifest, Helper.Translation, "config.sprinklerPower.tier8",
-					() => Config.Tier8Power,
-					min: 0
-				);
-			}
+			helper.AddSectionTitle("config.sprinklerPower.section");
+			helper.AddNumberOption("config.sprinklerPower.tier1", () => Config.Tier1Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier2", () => Config.Tier2Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier3", () => Config.Tier3Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier4", () => Config.Tier4Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier5", () => Config.Tier5Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier6", () => Config.Tier6Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier7", () => Config.Tier7Power, min: 0);
+			helper.AddNumberOption("config.sprinklerPower.tier8", () => Config.Tier8Power, min: 0);
 		}
 
 		private void SetupSprinklerBehavior()
