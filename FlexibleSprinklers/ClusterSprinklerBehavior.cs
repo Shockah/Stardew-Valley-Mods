@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
-	internal enum ClusterSprinklerBehaviorClusterOrdering { SmallerFirst, BiggerFirst, All }
+	internal enum ClusterSprinklerBehaviorClusterOrdering { SmallerFirst, BiggerFirst, Equally }
 	internal enum ClusterSprinklerBehaviorBetweenClusterBalanceMode { Relaxed, Restrictive }
 	internal enum ClusterSprinklerBehaviorInClusterBalanceMode { Relaxed, Exact, Restrictive }
 
@@ -264,7 +264,7 @@ namespace Shockah.FlexibleSprinklers
 						case ClusterSprinklerBehaviorClusterOrdering.BiggerFirst:
 							nextClustersEnumerable = nextClustersEnumerable.OrderByDescending(c => c.Tiles.Count);
 							break;
-						case ClusterSprinklerBehaviorClusterOrdering.All:
+						case ClusterSprinklerBehaviorClusterOrdering.Equally:
 							break;
 					}
 
