@@ -159,7 +159,7 @@ namespace Shockah.CommonModCode
 			);
 		}
 
-		public void AddEnumOption<EnumType>(string keyPrefix, Expression<Func<EnumType>> property, string? fieldId = null) where EnumType: struct, Enum
+		public void AddEnumOption<EnumType>(string keyPrefix, Expression<Func<EnumType>> property, string? valuePrefix = null, string? fieldId = null) where EnumType: struct, Enum
 		{
 			var getValue = property.Compile()!;
 			var setValue = CreateSetter(property).Compile()!;
@@ -170,12 +170,12 @@ namespace Shockah.CommonModCode
 				getValue: () => Enum.GetName(getValue())!,
 				setValue: value => setValue(Enum.Parse<EnumType>(value)),
 				allowedValues: Enum.GetNames<EnumType>(),
-				formatAllowedValue: value => Translations.Get($"{keyPrefix}.value.{value}"),
+				formatAllowedValue: value => Translations.Get($"{valuePrefix ?? keyPrefix}.value.{value}"),
 				fieldId: fieldId
 			);
 		}
 
-		public void AddEnumOption<EnumType>(string keyPrefix, Func<EnumType> getValue, Action<EnumType> setValue, string? fieldId = null) where EnumType: struct, Enum
+		public void AddEnumOption<EnumType>(string keyPrefix, Func<EnumType> getValue, Action<EnumType> setValue, string? valuePrefix = null, string? fieldId = null) where EnumType: struct, Enum
 		{
 			Api.AddTextOption(
 				mod: Mod,
@@ -184,7 +184,7 @@ namespace Shockah.CommonModCode
 				getValue: () => Enum.GetName(getValue())!,
 				setValue: value => setValue(Enum.Parse<EnumType>(value)),
 				allowedValues: Enum.GetNames<EnumType>(),
-				formatAllowedValue: value => Translations.Get($"{keyPrefix}.value.{value}"),
+				formatAllowedValue: value => Translations.Get($"{valuePrefix ?? keyPrefix}.value.{value}"),
 				fieldId: fieldId
 			);
 		}

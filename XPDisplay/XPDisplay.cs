@@ -78,61 +78,23 @@ namespace Shockah.XPView
 
 		private void SetupConfig()
 		{
-			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			var helper = new GMCMI18nHelper(api, ModManifest, Helper.Translation);
 
-			string Translate(ModConfig.Orientation orientation)
-			{
-				return orientation switch
-				{
-					ModConfig.Orientation.Horizontal => Helper.Translation.Get("config.orientation.horizontal"),
-					ModConfig.Orientation.Vertical => Helper.Translation.Get("config.orientation.vertical"),
-					_ => throw new ArgumentException(),
-				};
-			}
-
-			configMenu?.Register(
+			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () => Helper.WriteConfig(Config)
 			);
 
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => Helper.Translation.Get("config.orientation.section.text"),
-				tooltip: () => Helper.Translation.Get("config.orientation.section.tooltip")
-			);
+			helper.AddSectionTitle("config.orientation.section");
+			helper.AddEnumOption("config.orientation.smallBars", valuePrefix: "config.orientation", property: () => Config.SmallBarOrientation);
+			helper.AddEnumOption("config.orientation.bigBars", valuePrefix: "config.orientation", property: () => Config.BigBarOrientation);
 
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.orientation.smallBars.name"),
-				tooltip: () => Helper.Translation.Get("config.orientation.smallBars.tooltip"),
-				getValue: () => Translate(Config.SmallBarOrientation),
-				setValue: value => Config.SmallBarOrientation = I18nEnum.GetFromTranslation<ModConfig.Orientation>(value, Translate),
-				allowedValues: I18nEnum.GetTranslations<ModConfig.Orientation>(Translate).ToArray()
-			);
-
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.orientation.bigBars.name"),
-				tooltip: () => Helper.Translation.Get("config.orientation.bigBars.tooltip"),
-				getValue: () => Translate(Config.BigBarOrientation),
-				setValue: value => Config.BigBarOrientation = I18nEnum.GetFromTranslation<ModConfig.Orientation>(value, Translate),
-				allowedValues: I18nEnum.GetTranslations<ModConfig.Orientation>(Translate).ToArray()
-			);
-
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => Helper.Translation.Get("config.appearance.section.text")
-			);
-
-			configMenu?.AddNumberOption(
-				mod: ModManifest,
-				name: () => Helper.Translation.Get("config.appearance.alpha.name"),
-				tooltip: () => Helper.Translation.Get("config.appearance.alpha.tooltip"),
-				getValue: () => Config.Alpha,
-				setValue: value => Config.Alpha = value,
-				min: 0, max: 1, interval: 0.05f
-			);
+			helper.AddSectionTitle("config.appearance.section");
+			helper.AddNumberOption("config.appearance.alpha", () => Config.Alpha, min: 0f, max: 1f, interval: 0.05f);
 		}
 
 		private static IEnumerable<CodeInstruction> Farmer_checkForLevelGain_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
