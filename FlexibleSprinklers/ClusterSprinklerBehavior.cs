@@ -316,8 +316,19 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
+			var results = priorityTilesToWaterSteps.ToList();
 			foreach (var cluster in clusters)
 			{
+				IList<ISet<IntPoint>> clusterSteps = new List<ISet<IntPoint>>();
+
+				void FinishClusterWateringStep()
+				{
+					if (currentTilesToWater.Count == 0)
+						return;
+					clusterSteps.Add(currentTilesToWater.ToHashSet());
+					currentTilesToWater.Clear();
+				}
+
 				int minX = cluster.Tiles.Min(p => p.X);
 				int minY = cluster.Tiles.Min(p => p.Y);
 				var grid = GetTileSprinklersGridForCluster(cluster, clusters);
@@ -330,7 +341,7 @@ namespace Shockah.FlexibleSprinklers
 				if (totalTileCountToWater >= totalTileCount && totalReachableTileCount == totalTileCount)
 				{
 					WaterTiles(cluster.Tiles);
-					continue;
+					goto finishCluster;
 				}
 
 				var averageSprinklerX = cluster.Sprinklers.Select(e => e.position.X).Average();
@@ -361,7 +372,7 @@ namespace Shockah.FlexibleSprinklers
 						foreach (var (tilePosition, _, _) in stepTiles)
 							WaterTile(tilePosition);
 						totalTileCountToWater -= stepTiles.Count;
-						FinishWateringStep();
+						FinishClusterWateringStep();
 					}
 					else
 					{
@@ -371,7 +382,7 @@ namespace Shockah.FlexibleSprinklers
 								foreach (var (tilePosition, _, _) in stepTiles)
 									WaterTile(tilePosition);
 								totalTileCountToWater -= stepTiles.Count;
-								FinishWateringStep();
+								FinishClusterWateringStep();
 								break;
 							case ClusterSprinklerBehaviorInClusterBalanceMode.Restrictive:
 								totalTileCountToWater = 0;
@@ -387,7 +398,7 @@ namespace Shockah.FlexibleSprinklers
 										{
 											WaterTile(tilePosition);
 											totalTileCountToWater--;
-											FinishWateringStep();
+											FinishClusterWateringStep();
 											if (totalTileCountToWater <= 0)
 												goto done;
 											break;
@@ -399,12 +410,17 @@ namespace Shockah.FlexibleSprinklers
 						}
 					}
 				}
+
+				finishCluster:;
+				FinishClusterWateringStep();
+				results = results
+					.Union(clusterSteps.Select((step, index) => (step, (priorityTilesToWaterSteps.Count == 0 ? 0f : 1f) + 1f * index / (clusterSteps.Count - 1))))
+					.ToList();
 			}
 
-			FinishWateringStep();
-			var results = priorityTilesToWaterSteps
-				.Union(tilesToWaterSteps.Select((step, index) => (step, (priorityTilesToWaterSteps.Count == 0 ? 0f : 1f) + 1f * index / (tilesToWaterSteps.Count - 1))))
+			results = results
 				.Select(step => priorityTilesToWaterSteps.Count == 0 ? step : (step.Item1, step.Item2 / 2f))
+				.OrderBy(step => step.Item2)
 				.ToList();
 			Cache[map] = (sprinklers, results);
 			return results;
