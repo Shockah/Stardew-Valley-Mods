@@ -135,6 +135,8 @@ namespace Shockah.FlexibleSprinklers
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
+			if (!e.Added.Where(o => o.Value.IsSprinkler()).Any())
+				return;
 
 			if (Config.ActivateOnPlacement && SprinklerBehavior.AllowsIndependentSprinklerActivation())
 			{
