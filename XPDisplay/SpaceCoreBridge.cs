@@ -36,7 +36,7 @@ namespace Shockah.XPView
 			ExperienceCurveDelegate = (skill) => (int[])experienceCurveMethod.Invoke(skill, null)!;
 
 			MethodInfo getCustomSkillExperienceMethod = AccessTools.Method(skillExtensionsType, "GetCustomSkillExperience", new Type[] { typeof(Farmer), skillType });
-			GetCustomSkillExperienceDelegate = (farmer, skill) => (int)getCustomSkillLevelMethod.Invoke(null, new object[] { farmer, skill })!;
+			GetCustomSkillExperienceDelegate = (farmer, skill) => (int)getCustomSkillExperienceMethod.Invoke(null, new object[] { farmer, skill })!;
 
 			IsReflectionSetup = true;
 		}
@@ -52,7 +52,8 @@ namespace Shockah.XPView
 		{
 			SetupReflectionIfNeeded();
 			object skill = GetSkillDelegate(spaceCoreSkillName)!;
-			return ExperienceCurveDelegate(skill)[levelIndex];
+			int[] experienceCurve = ExperienceCurveDelegate(skill);
+			return experienceCurve.Length > levelIndex ? experienceCurve[levelIndex] : int.MaxValue;
 		}
 
 		internal static int GetCurrentXP(string spaceCoreSkillName)
