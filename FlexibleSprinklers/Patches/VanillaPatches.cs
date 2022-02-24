@@ -14,6 +14,7 @@ namespace Shockah.FlexibleSprinklers
 	{
 		internal static bool IsVanillaQueryInProgress = false;
 		internal static GameLocation? CurrentLocation;
+		internal static Vector2? SprinklerTileOverride;
 
 		internal static void Apply(Harmony harmony)
 		{
@@ -77,6 +78,13 @@ namespace Shockah.FlexibleSprinklers
 
 		private static List<Vector2> Object_GetSprinklerTiles_Result(SObject __instance)
 		{
+			if (SprinklerTileOverride is not null)
+			{
+				var result = new List<Vector2> { SprinklerTileOverride.Value };
+				SprinklerTileOverride = null;
+				return result;
+			}
+			
 			if (CurrentLocation is null)
 			{
 				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", LogLevel.Error);
@@ -132,9 +140,12 @@ namespace Shockah.FlexibleSprinklers
 
 			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
 			IsVanillaQueryInProgress = true;
-			var result = FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target)
-				&& Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y) <= FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(FlexibleSprinklers.Instance.GetSprinklerPower(__instance));
+			var manhattanDistance = Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y);
+			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(FlexibleSprinklers.Instance.GetSprinklerPower(__instance))
+				&& FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target);
 			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			if (result)
+				SprinklerTileOverride = target;
 			return result;
 		}
 
