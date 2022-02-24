@@ -115,7 +115,7 @@ namespace Shockah.FlexibleSprinklers
 			return true;
 		}
 
-		private static bool Object_IsInSprinklerRangeBroadphase_Result(Vector2 target)
+		private static bool Object_IsInSprinklerRangeBroadphase_Result(SObject __instance, Vector2 target)
 		{
 			if (CurrentLocation == null)
 			{
@@ -125,24 +125,25 @@ namespace Shockah.FlexibleSprinklers
 
 			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
 			IsVanillaQueryInProgress = true;
-			var result = FlexibleSprinklers.Instance.IsTileInRangeOfSprinklers(CurrentLocation.Objects.Values.Where(o => o.IsSprinkler()), CurrentLocation, target);
+			var result = FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target)
+				&& Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y) <= FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(FlexibleSprinklers.Instance.GetSprinklerPower(__instance));
 			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			return result;
 		}
 
-		private static bool Object_IsInSprinklerRangeBroadphase_Prefix(Vector2 target, ref bool __result)
+		private static bool Object_IsInSprinklerRangeBroadphase_Prefix(SObject __instance, Vector2 target, ref bool __result)
 		{
 			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return true;
-			__result = Object_IsInSprinklerRangeBroadphase_Result(target);
+			__result = Object_IsInSprinklerRangeBroadphase_Result(__instance, target);
 			return false;
 		}
 
-		private static void Object_IsInSprinklerRangeBroadphase_Postfix(Vector2 target, ref bool __result)
+		private static void Object_IsInSprinklerRangeBroadphase_Postfix(SObject __instance, Vector2 target, ref bool __result)
 		{
 			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
 				return;
-			__result = Object_IsInSprinklerRangeBroadphase_Result(target);
+			__result = Object_IsInSprinklerRangeBroadphase_Result(__instance, target);
 		}
 
 		private static void Object_ApplySprinklerAnimation_Prefix(SObject __instance, GameLocation location)

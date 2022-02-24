@@ -50,6 +50,9 @@ namespace Shockah.FlexibleSprinklers
 		/// <summary>Returns whether a given tile is in range of the specified sprinkler.</summary>
 		bool IsTileInRangeOfSprinkler(SObject sprinkler, GameLocation location, Vector2 tileLocation);
 
+		/// <summary>Returns whether a given tile is in range of any sprinkler in the location.</summary>
+		bool IsTileInRangeOfAnySprinkler(GameLocation location, Vector2 tileLocation);
+
 		/// <summary>Returns whether a given tile is in range of specified sprinklers.</summary>
 		bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation);
 

@@ -359,21 +359,44 @@ namespace Shockah.FlexibleSprinklers
 			var manhattanDistance = ((int)tileLocation.X - (int)sprinkler.TileLocation.X) + ((int)tileLocation.Y - (int)sprinkler.TileLocation.Y);
 			if (manhattanDistance > GetFloodFillSprinklerRange(info.Power))
 			{
-				if (!info.Layout.Contains(tileLocation - sprinkler.TileLocation))
+				if (!SprinklerBehavior.AllowsIndependentSprinklerActivation() || !info.Layout.Contains(tileLocation - sprinkler.TileLocation))
 					return false;
 			}
 			return GetModifiedSprinklerCoverage(sprinkler, location).Contains(tileLocation);
 		}
 
+		public bool IsTileInRangeOfAnySprinkler(GameLocation location, Vector2 tileLocation)
+		{
+			return IsTileInRangeOfSprinklers(location.Objects.Values.Where(o => o.IsSprinkler()), location, tileLocation);
+		}
+
 		public bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation)
 		{
-			var sortedSprinklers = sprinklers.OrderBy(s => (tileLocation - s.TileLocation).Length() * FlexibleSprinklers.Instance.GetSprinklerInfo(s).Power);
-			foreach (var sprinkler in sortedSprinklers)
+			var sprinklersList = sprinklers.ToList();
+			foreach (var sprinkler in sprinklersList)
 			{
-				if (IsTileInRangeOfSprinkler(sprinkler, location, tileLocation))
-					return true;
+				if (!sprinkler.IsSprinkler())
+					continue;
+
+				var info = GetSprinklerInfo(sprinkler);
+				var manhattanDistance = ((int)tileLocation.X - (int)sprinkler.TileLocation.X) + ((int)tileLocation.Y - (int)sprinkler.TileLocation.Y);
+				if (manhattanDistance > GetFloodFillSprinklerRange(info.Power))
+				{
+					if (!SprinklerBehavior.AllowsIndependentSprinklerActivation() || !info.Layout.Contains(tileLocation - sprinkler.TileLocation))
+						continue;
+				}
+				goto afterSimpleCheck;
 			}
+
 			return false;
+			afterSimpleCheck:;
+
+			return SprinklerBehavior.GetSprinklerTiles(
+				new GameLocationMap(location, CustomWaterableTileProviders),
+				sprinklersList
+					.Where(s => s.IsSprinkler())
+					.Select(s => (position: new IntPoint((int)s.TileLocation.X, (int)s.TileLocation.Y), info: GetSprinklerInfo(s)))
+			).Contains(new IntPoint((int)tileLocation.X, (int)tileLocation.Y));
 		}
 
 		public Vector2[] GetModifiedSprinklerCoverage(SObject sprinkler, GameLocation location)
