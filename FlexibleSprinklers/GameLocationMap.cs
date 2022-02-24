@@ -4,6 +4,7 @@ using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
@@ -62,6 +63,13 @@ namespace Shockah.FlexibleSprinklers
 				@object.performToolAction(can, Location);
 
 			// TODO: add animation, if needed
+		}
+
+		public IEnumerable<(IntPoint position, SprinklerInfo info)> GetAllSprinklers()
+		{
+			return Location.Objects.Values
+				.Where(o => o.IsSprinkler())
+				.Select(s => (position: new IntPoint((int)s.TileLocation.X, (int)s.TileLocation.Y), info: FlexibleSprinklers.Instance.GetSprinklerInfo(s)));
 		}
 	}
 }

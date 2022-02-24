@@ -83,11 +83,18 @@ namespace Shockah.FlexibleSprinklers
 				return new List<Vector2>();
 			}
 
-			return FlexibleSprinklers.Instance.SprinklerBehavior.GetSprinklerTiles(
-				new GameLocationMap(CurrentLocation, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
-				new IntPoint((int)__instance.TileLocation.X, (int)__instance.TileLocation.Y),
-				FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
-			).Select(e => new Vector2(e.X, e.Y)).ToList();
+			if (FlexibleSprinklers.Instance.SprinklerBehavior is ISprinklerBehavior.Independent independent)
+			{
+				return independent.GetSprinklerTiles(
+					new GameLocationMap(CurrentLocation, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
+					new IntPoint((int)__instance.TileLocation.X, (int)__instance.TileLocation.Y),
+					FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
+				).Select(e => new Vector2(e.X, e.Y)).ToList();
+			}
+			else
+			{
+				return new List<Vector2>();
+			}
 		}
 
 		private static bool Object_GetSprinklerTiles_Prefix(SObject __instance, ref List<Vector2> __result)
@@ -157,13 +164,13 @@ namespace Shockah.FlexibleSprinklers
 			var locationField = __instance.GetType().GetTypeInfo().DeclaredFields.First(f => f.FieldType == typeof(GameLocation) && f.Name == "location");
 			CurrentLocation = (GameLocation?)locationField.GetValue(__instance);
 			IsVanillaQueryInProgress = false;
-			return FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation();
+			return FlexibleSprinklers.Instance.SprinklerBehavior is ISprinklerBehavior.Independent;
 		}
 
 		private static void Game1_handlePostFarmEventActions_Postfix()
 		{
-			if (!FlexibleSprinklers.Instance.SprinklerBehavior.AllowsIndependentSprinklerActivation())
-				FlexibleSprinklers.Instance.ActivateAllCollectiveSprinklers();
+			if (FlexibleSprinklers.Instance.SprinklerBehavior is not ISprinklerBehavior.Independent)
+				FlexibleSprinklers.Instance.ActivateAllSprinklers();
 		}
 	}
 }

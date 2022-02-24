@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -9,5 +10,7 @@ namespace Shockah.FlexibleSprinklers
 		SoilType this[IntPoint point] { get; }
 
 		void WaterTile(IntPoint point);
+
+		IEnumerable<(IntPoint position, SprinklerInfo info)> GetAllSprinklers();
 	}
 }

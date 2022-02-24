@@ -13,20 +13,17 @@ namespace Shockah.FlexibleSprinklers
 		{
 		}
 
-		ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
-			=> GetSprinklerTilesWithSteps(map, sprinklerPosition, info).SelectMany(step => step.Item1).ToHashSet();
+		IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map);
 
-		ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
-			=> GetSprinklerTilesWithSteps(map, sprinklers).SelectMany(step => step.Item1).ToHashSet();
-
-		IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);
-
-		IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers);
+		ISet<IntPoint> GetSprinklerTiles(IMap map)
+			=> GetSprinklerTilesWithSteps(map).SelectMany(step => step.Item1).ToHashSet();
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface Independent: ISprinklerBehavior
 		{
-			IList<(ISet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+			IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);
+
+			IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
 			{
 				var results = new List<(ISet<IntPoint>, float)>();
 				foreach (var (sprinklerPosition, info) in sprinklers)
@@ -34,21 +31,15 @@ namespace Shockah.FlexibleSprinklers
 						results.Add(step);
 				return results.OrderBy(step => step.Item2).ToList();
 			}
-		}
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
-		public interface Collective: ISprinklerBehavior
-		{
-			IList<(ISet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
-			{
-				return GetSprinklerTilesWithSteps(map, new[] { (sprinklerPosition, info) });
-			}
-		}
-	}
+			IList<(ISet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap map)
+				=> GetSprinklerTilesWithSteps(map, map.GetAllSprinklers());
 
-	internal static class ISprinklerBehaviorExtensions
-	{
-		internal static bool AllowsIndependentSprinklerActivation(this ISprinklerBehavior self)
-			=> self is not ISprinklerBehavior.Collective;
+			ISet<IntPoint> GetSprinklerTiles(IMap map, IntPoint sprinklerPosition, SprinklerInfo info)
+				=> GetSprinklerTilesWithSteps(map, sprinklerPosition, info).SelectMany(step => step.Item1).ToHashSet();
+
+			ISet<IntPoint> GetSprinklerTiles(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+				=> GetSprinklerTilesWithSteps(map, sprinklers).SelectMany(step => step.Item1).ToHashSet();
+		}
 	}
 }

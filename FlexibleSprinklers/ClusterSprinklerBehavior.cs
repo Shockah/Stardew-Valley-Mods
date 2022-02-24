@@ -8,7 +8,7 @@ namespace Shockah.FlexibleSprinklers
 	internal enum ClusterSprinklerBehaviorBetweenClusterBalanceMode { Relaxed, Restrictive }
 	internal enum ClusterSprinklerBehaviorInClusterBalanceMode { Relaxed, Exact, Restrictive }
 
-	internal class ClusterSprinklerBehavior: ISprinklerBehavior.Collective
+	internal class ClusterSprinklerBehavior: ISprinklerBehavior
 	{
 		private class Cluster
 		{
@@ -54,9 +54,9 @@ namespace Shockah.FlexibleSprinklers
 			Cache.Remove(map);
 		}
 
-		public IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IEnumerable<(IntPoint position, SprinklerInfo info)> sprinklers)
+		public IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map)
 		{
-			var sprinklersSet = sprinklers.ToHashSet();
+			var sprinklersSet = map.GetAllSprinklers().ToHashSet();
 			if (!Cache.TryGetValue(map, out var cachedInfo))
 				return GetUncachedSprinklerTilesWithSteps(map, sprinklersSet);
 			if (!cachedInfo.sprinklers.SetEquals(sprinklersSet))
@@ -460,7 +460,6 @@ namespace Shockah.FlexibleSprinklers
 					}
 				}
 
-				finishCluster:;
 				FinishClusterWateringStep();
 				results = results
 					.Union(clusterSteps.Select((step, index) => (step, (priorityTilesToWaterSteps.Count == 0 ? 0f : 1f) + 1f * index / (clusterSteps.Count - 1))))

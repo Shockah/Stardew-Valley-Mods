@@ -9,6 +9,9 @@ namespace Shockah.FlexibleSprinklers
 	/// <summary>The API which provides access to Flexible Sprinklers for other mods.</summary>
 	public interface IFlexibleSprinklersApi
 	{
+		/// <summary>Returns whether the current configuration allows independent sprinkler activation.</summary>
+		bool IsSprinklerBehaviorIndependent { get; }
+
 		/// <summary>
 		/// Register a new sprinkler tier provider, to add support for Flexible Sprinklers for your custom tiered sprinklers in your mod or override existing ones.<br/>
 		/// This is only used for tiered sprinkler power config overrides (how many tiles they water).<br/>
@@ -29,10 +32,14 @@ namespace Shockah.FlexibleSprinklers
 		/// </summary>
 		void RegisterCustomWaterableTileProvider(Func<GameLocation, Vector2, bool?> provider);
 
-		/// <summary>Activates sprinklers in a collective way, taking into account the Flexible Sprinklers mod behavior.</summary>
-		void ActivateCollectiveSprinklersInLocation(GameLocation location);
+		/// <summary>Activates all sprinklers in a collective way, taking into account the Flexible Sprinklers mod behavior.</summary>
+		void ActivateAllSprinklers();
+
+		/// <summary>Activates sprinklers in specified location in a collective way, taking into account the Flexible Sprinklers mod behavior.</summary>
+		void ActivateSprinklersInLocation(GameLocation location);
 
 		/// <summary>Activates a sprinkler, taking into account the Flexible Sprinklers mod behavior.</summary>
+		/// <exception cref="InvalidOperationException">Thrown when the current sprinkler behavior does not allow independent sprinkler activation.</exception>
 		void ActivateSprinkler(SObject sprinkler, GameLocation location);
 
 		/// <summary>Returns the sprinkler's power after config modifications (that is, the number of tiles it will water).</summary>
@@ -45,15 +52,18 @@ namespace Shockah.FlexibleSprinklers
 		Vector2[] GetUnmodifiedSprinklerCoverage(SObject sprinkler);
 
 		/// <summary>Get the relative tile coverage by supported sprinkler ID, modified by the Flexible Sprinklers mod. This API takes into consideration the location and position. Note that sprinkler IDs may change after a save is loaded due to Json Assets reallocating IDs.</summary>
+		/// <exception cref="InvalidOperationException">Thrown when the current sprinkler behavior does not allow independent sprinkler activation.</exception>
 		Vector2[] GetModifiedSprinklerCoverage(SObject sprinkler, GameLocation location);
-
-		/// <summary>Returns whether a given tile is in range of the specified sprinkler.</summary>
-		bool IsTileInRangeOfSprinkler(SObject sprinkler, GameLocation location, Vector2 tileLocation);
 
 		/// <summary>Returns whether a given tile is in range of any sprinkler in the location.</summary>
 		bool IsTileInRangeOfAnySprinkler(GameLocation location, Vector2 tileLocation);
 
+		/// <summary>Returns whether a given tile is in range of the specified sprinkler.</summary>
+		/// <exception cref="InvalidOperationException">Thrown when the current sprinkler behavior does not allow independent sprinkler activation.</exception>
+		bool IsTileInRangeOfSprinkler(SObject sprinkler, GameLocation location, Vector2 tileLocation);
+
 		/// <summary>Returns whether a given tile is in range of specified sprinklers.</summary>
+		/// <exception cref="InvalidOperationException">Thrown when the current sprinkler behavior does not allow independent sprinkler activation.</exception>
 		bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation);
 
 		/// <summary>Displays the sprinkler coverage for the specified time.</summary>
