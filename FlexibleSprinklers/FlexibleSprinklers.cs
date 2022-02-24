@@ -266,6 +266,8 @@ namespace Shockah.FlexibleSprinklers
 
 		public void ActivateCollectiveSprinklersInLocation(GameLocation location)
 		{
+			if (location.IsOutdoors && Game1.IsRainingHere(location))
+				return;
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
 			var sprinklers = location.Objects.Values.Where(o => o.IsSprinkler());
