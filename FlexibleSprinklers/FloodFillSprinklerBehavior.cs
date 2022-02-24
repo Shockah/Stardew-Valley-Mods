@@ -268,6 +268,7 @@ namespace Shockah.FlexibleSprinklers
 				Cache[map] = sprinklerCache;
 			}
 
+			FinishWateringStep();
 			var results = priorityWateredTilesSteps
 				.Union(wateredTilesSteps.Select((step, index) => (step, (priorityWateredTilesSteps.Count == 0 ? 0f : 1f) + 1f * index / (wateredTilesSteps.Count - 1))))
 				.Select(step => priorityWateredTilesSteps.Count == 0 ? step : (step.Item1, step.Item2 / 2f))

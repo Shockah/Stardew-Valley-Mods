@@ -401,6 +401,7 @@ namespace Shockah.FlexibleSprinklers
 				}
 			}
 
+			FinishWateringStep();
 			var results = priorityTilesToWaterSteps
 				.Union(tilesToWaterSteps.Select((step, index) => (step, (priorityTilesToWaterSteps.Count == 0 ? 0f : 1f) + 1f * index / (tilesToWaterSteps.Count - 1))))
 				.Select(step => priorityTilesToWaterSteps.Count == 0 ? step : (step.Item1, step.Item2 / 2f))
