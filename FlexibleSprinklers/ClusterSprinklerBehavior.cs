@@ -221,58 +221,60 @@ namespace Shockah.FlexibleSprinklers
 					}
 				}
 
-				UpdateClusterSprinklers();
-
-				IList<Cluster> clustersToAdd = new List<Cluster>();
-				foreach (var cluster in clusters)
+				if (FlexibleSprinklers.Instance.Config.SplitDisconnectedClusters)
 				{
-					if (cluster.Tiles.Count == 0)
-						continue;
-					int minX = cluster.Tiles.Min(p => p.X);
-					int minY = cluster.Tiles.Min(p => p.Y);
-					var grid = GetTileSprinklersGridForCluster(cluster, clusters);
-
-					var reachableTiles = cluster.Tiles.Where(t => (grid[t.X - minX, t.Y - minY]?.Count ?? 0) != 0).ToHashSet();
-					if (reachableTiles.Count == cluster.Tiles.Count)
-						continue;
-					cluster.Tiles.Clear();
-					cluster.Tiles.UnionWith(reachableTiles);
-
-					while (reachableTiles.Count != 0)
+					UpdateClusterSprinklers();
+					IList<Cluster> clustersToAdd = new List<Cluster>();
+					foreach (var cluster in clusters)
 					{
-						var splitToCheck = new LinkedList<IntPoint>();
-						splitToCheck.AddLast(reachableTiles.First());
-						var thisClusterReachableTiles = new HashSet<IntPoint>();
+						if (cluster.Tiles.Count == 0)
+							continue;
+						int minX = cluster.Tiles.Min(p => p.X);
+						int minY = cluster.Tiles.Min(p => p.Y);
+						var grid = GetTileSprinklersGridForCluster(cluster, clusters);
 
-						while (splitToCheck.Count != 0)
+						var reachableTiles = cluster.Tiles.Where(t => (grid[t.X - minX, t.Y - minY]?.Count ?? 0) != 0).ToHashSet();
+						if (reachableTiles.Count == cluster.Tiles.Count)
+							continue;
+						cluster.Tiles.Clear();
+						cluster.Tiles.UnionWith(reachableTiles);
+
+						while (reachableTiles.Count != 0)
 						{
-							var point = splitToCheck.First!.Value;
-							splitToCheck.RemoveFirst();
-							thisClusterReachableTiles.Add(point);
-							reachableTiles.Remove(point);
+							var splitToCheck = new LinkedList<IntPoint>();
+							splitToCheck.AddLast(reachableTiles.First());
+							var thisClusterReachableTiles = new HashSet<IntPoint>();
 
-							foreach (var neighbor in point.Neighbors)
+							while (splitToCheck.Count != 0)
 							{
-								if (reachableTiles.Contains(neighbor) && !thisClusterReachableTiles.Contains(neighbor))
+								var point = splitToCheck.First!.Value;
+								splitToCheck.RemoveFirst();
+								thisClusterReachableTiles.Add(point);
+								reachableTiles.Remove(point);
+
+								foreach (var neighbor in point.Neighbors)
 								{
-									thisClusterReachableTiles.Add(neighbor);
-									splitToCheck.AddLast(neighbor);
+									if (reachableTiles.Contains(neighbor) && !thisClusterReachableTiles.Contains(neighbor))
+									{
+										thisClusterReachableTiles.Add(neighbor);
+										splitToCheck.AddLast(neighbor);
+									}
 								}
 							}
-						}
 
-						if (thisClusterReachableTiles.Count != 0 && thisClusterReachableTiles.Count != cluster.Tiles.Count)
-						{
-							var newCluster = new Cluster();
-							newCluster.Tiles.UnionWith(thisClusterReachableTiles);
-							clustersToAdd.Add(newCluster);
-							cluster.Tiles.ExceptWith(thisClusterReachableTiles);
+							if (thisClusterReachableTiles.Count != 0 && thisClusterReachableTiles.Count != cluster.Tiles.Count)
+							{
+								var newCluster = new Cluster();
+								newCluster.Tiles.UnionWith(thisClusterReachableTiles);
+								clustersToAdd.Add(newCluster);
+								cluster.Tiles.ExceptWith(thisClusterReachableTiles);
+							}
 						}
 					}
-				}
 
-				if (clustersToAdd.Count != 0)
-					clusters = clusters.Where(c => c.Tiles.Count != 0).Union(clustersToAdd).ToList();
+					if (clustersToAdd.Count != 0)
+						clusters = clusters.Where(c => c.Tiles.Count != 0).Union(clustersToAdd).ToList();
+				}
 
 				UpdateClusterSprinklers();
 				return clusters;

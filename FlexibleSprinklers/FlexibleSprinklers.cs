@@ -211,6 +211,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
 			helper.AddSectionTitle("config.cluster.section");
+			helper.AddBoolOption("config.cluster.splitDisconnected", () => Config.SplitDisconnectedClusters);
 			helper.AddEnumOption("config.cluster.ordering", () => Config.ClusterBehaviorClusterOrdering);
 			helper.AddEnumOption("config.cluster.betweenClusterBalance", () => Config.ClusterBehaviorBetweenClusterBalanceMode);
 			helper.AddEnumOption("config.cluster.inClusterBalance", () => Config.ClusterBehaviorInClusterBalanceMode);

@@ -6,6 +6,7 @@
 
 		public SprinklerBehaviorEnum SprinklerBehavior { get; set; } = SprinklerBehaviorEnum.Cluster;
 		public FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode { get; set; } = FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed;
+		public bool SplitDisconnectedClusters { get; set; } = true;
 		public ClusterSprinklerBehaviorClusterOrdering ClusterBehaviorClusterOrdering { get; set; } = ClusterSprinklerBehaviorClusterOrdering.BiggerFirst;
 		public ClusterSprinklerBehaviorBetweenClusterBalanceMode ClusterBehaviorBetweenClusterBalanceMode { get; set; } = ClusterSprinklerBehaviorBetweenClusterBalanceMode.Relaxed;
 		public ClusterSprinklerBehaviorInClusterBalanceMode ClusterBehaviorInClusterBalanceMode { get; set; } = ClusterSprinklerBehaviorInClusterBalanceMode.Relaxed;

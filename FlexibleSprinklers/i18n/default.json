@@ -10,6 +10,8 @@
     "config.compatibilityMode.tooltip": "Patch the game code in a more mod-compatible way, at the cost of some performance.",
 
     "config.cluster.section.name": "Cluster options",
+    "config.cluster.splitDisconnected.name": "Split disconneted clusters",
+    "config.cluster.splitDisconnected.tooltip": "Make another pass to split big clusters with disconnected parts into separate clusters.\nThis may come at some performance loss.",
     "config.cluster.ordering.name": "Cluster ordering",
     "config.cluster.ordering.tooltip": "Which clusters should each sprinkler prefer when choosing one to water more.",
     "config.cluster.ordering.value.SmallerFirst": "Smaller clusters first",
