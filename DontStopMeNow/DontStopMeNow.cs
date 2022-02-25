@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using Shockah.CommonModCode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Tools;
 using System;
@@ -23,6 +24,7 @@ namespace Shockah.DontStopMeNow
 		private readonly IList<Farmer> NotRunningPlayers = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
+		private readonly PerScreen<SButton?> LastToolButton = new(null);
 
 		public override void Entry(IModHelper helper)
 		{
@@ -31,9 +33,11 @@ namespace Shockah.DontStopMeNow
 			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
+			helper.Events.Input.ButtonReleased += OnButtonReleased;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			try
@@ -124,6 +128,11 @@ namespace Shockah.DontStopMeNow
 			SetupConfig();
 		}
 
+		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+		{
+			LastToolButton.Value = null;
+		}
+
 		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
 		{
 			if (!Context.IsPlayerFree)
@@ -133,21 +142,9 @@ namespace Shockah.DontStopMeNow
 			var player = Game1.player;
 			if (!player.UsingTool)
 				return;
-			if (player.toolHold <= 0 && player.toolPower <= 0)
-				return;
 
-			foreach (var useToolButton in Game1.options.useToolButton)
-			{
-				var sbutton = useToolButton.ToSButton();
-				if (sbutton.IsPressed())
-				{
-					if (sbutton.GetButtonType() == InputHelper.ButtonType.Gamepad ? Config.FixFacingOnController : Config.FixFacingOnMouse)
-					{
-						FixFacingDirection();
-						return;
-					}
-				}
-			}
+			if (ShouldFixFacing(player) && LastToolButton.Value is not null)
+				FixFacingDirectionIfNeeded();
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -183,11 +180,30 @@ namespace Shockah.DontStopMeNow
 			if (!(player.CurrentTool is MeleeWeapon ? Config.FixMeleeWeaponFacing : Config.FixToolFacing))
 				return;
 
-			if (e.Button.GetButtonType() == InputHelper.ButtonType.Gamepad ? Config.FixFacingOnController : Config.FixFacingOnMouse)
+			LastToolButton.Value = e.Button;
+			FixFacingDirectionIfNeeded();
+		}
+
+		private void OnButtonReleased(object? sender, ButtonReleasedEventArgs e)
+		{
+			if (!Context.IsPlayerFree)
+				return;
+			if (!e.Button.IsUseToolButton() && !e.Button.IsActionButton())
+				return;
+			if (LastToolButton.Value != e.Button)
+				return;
+			LastToolButton.Value = null;
+		}
+
+		private void FixFacingDirectionIfNeeded()
+		{
+			if (LastToolButton.Value is null)
+				return;
+			if (LastToolButton.Value.Value.GetButtonType() == InputHelper.ButtonType.Gamepad ? Config.FixFacingOnController : Config.FixFacingOnMouse)
 				FixFacingDirection();
 		}
 
-		private static void FixFacingDirection()
+		private void FixFacingDirection()
 		{
 			var player = Game1.player;
 			var cursor = new Vector2(Game1.viewport.X + Game1.getOldMouseX(), Game1.viewport.Y + Game1.getOldMouseY());
@@ -203,7 +219,7 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
-		private static bool? IsUsingPoweredUpOnHoldTool(Farmer player)
+		private bool? IsUsingPoweredUpOnHoldTool(Farmer player)
 		{
 			if (!player.UsingTool)
 				return false;
@@ -212,7 +228,7 @@ namespace Shockah.DontStopMeNow
 			return player.toolHold > 0 || player.toolPower > 0;
 		}
 
-		private static bool ShouldAllowMovement(Farmer player, bool isSecondTick = false)
+		private bool ShouldAllowMovement(Farmer player, bool isSecondTick = false)
 		{
 			if (player.CurrentTool is MeleeWeapon weapon)
 			{
@@ -236,10 +252,33 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
+		private bool ShouldFixFacing(Farmer player)
+		{
+			if (player.CurrentTool is MeleeWeapon weapon)
+			{
+				return !weapon.isOnSpecial && Config.FixMeleeWeaponFacing;
+			}
+			else if (player.CurrentTool is Slingshot)
+			{
+				return false;
+			}
+			else
+			{
+				switch (IsUsingPoweredUpOnHoldTool(player))
+				{
+					case true:
+						return Config.FixChargingToolFacing;
+					case false:
+					case null:
+						return Config.FixToolFacing;
+				}
+			}
+		}
+
 		private static bool Game1_UpdateControlInput_Transpiler_UsingToolReplacement()
 		{
 			var player = Game1.player;
-			return player.UsingTool && !ShouldAllowMovement(player);
+			return player.UsingTool && !Instance.ShouldAllowMovement(player);
 		}
 
 		private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -279,7 +318,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void Farmer_BeginUsingTool_Postfix(Farmer __instance)
 		{
-			if (!__instance.CanMove && ShouldAllowMovement(__instance))
+			if (!__instance.CanMove && Instance.ShouldAllowMovement(__instance))
 			{
 				__instance.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(__instance);
@@ -293,7 +332,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void MeleeWeapon_leftClick_Postfix(Farmer who)
 		{
-			if (!who.CanMove && ShouldAllowMovement(who))
+			if (!who.CanMove && Instance.ShouldAllowMovement(who))
 			{
 				who.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(who);
@@ -302,7 +341,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void MeleeWeapon_beginSpecialMove_Postfix(Farmer who)
 		{
-			if (!who.CanMove && ShouldAllowMovement(who))
+			if (!who.CanMove && Instance.ShouldAllowMovement(who))
 			{
 				who.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(who);
