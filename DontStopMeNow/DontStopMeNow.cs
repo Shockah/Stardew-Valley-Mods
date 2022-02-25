@@ -199,16 +199,54 @@ namespace Shockah.DontStopMeNow
 		{
 			if (LastToolButton.Value is null)
 				return;
-			if (LastToolButton.Value.Value.GetButtonType() == InputHelper.ButtonType.Gamepad ? Config.FixFacingOnController : Config.FixFacingOnMouse)
-				FixFacingDirection();
+			switch (LastToolButton.Value.Value.GetButtonType())
+			{
+				case InputHelper.ButtonType.Gamepad:
+					if (!Config.FixFacingOnController)
+						return;
+					FixControllerFacingDirection();
+					break;
+				case InputHelper.ButtonType.Keyboard:
+				case InputHelper.ButtonType.Mouse:
+					if (!Config.FixFacingOnMouse)
+						return;
+					FixMouseFacingDirection();
+					break;
+			}
 		}
 
-		private void FixFacingDirection()
+		private void FixControllerFacingDirection()
+		{
+			var thumbStickDirection = Game1.oldPadState.ThumbSticks.Left;
+			if (Math.Abs(thumbStickDirection.X) < 0.2)
+				thumbStickDirection.X = 0;
+			if (Math.Abs(thumbStickDirection.Y) < 0.2)
+				thumbStickDirection.Y = 0;
+			if (Game1.oldPadState.IsButtonDown(Buttons.DPadLeft))
+				thumbStickDirection.X = -1;
+			if (Game1.oldPadState.IsButtonDown(Buttons.DPadRight))
+				thumbStickDirection.X = 1;
+			if (Game1.oldPadState.IsButtonDown(Buttons.DPadUp))
+				thumbStickDirection.Y = 1;
+			if (Game1.oldPadState.IsButtonDown(Buttons.DPadDown))
+				thumbStickDirection.Y = -1;
+
+			thumbStickDirection.Y *= -1;
+			if (thumbStickDirection.LengthSquared() > 0.2f)
+				FixFacingDirection(thumbStickDirection);
+		}
+
+		private void FixMouseFacingDirection()
 		{
 			var player = Game1.player;
 			var cursor = new Vector2(Game1.viewport.X + Game1.getOldMouseX(), Game1.viewport.Y + Game1.getOldMouseY());
-			
 			var direction = cursor - player.GetBoundingBox().Center.ToVector2();
+			FixFacingDirection(direction);
+		}
+
+		private void FixFacingDirection(Vector2 direction)
+		{
+			var player = Game1.player;
 			if (Math.Abs(direction.X) > Math.Abs(direction.Y))
 			{
 				player.FacingDirection = direction.X >= 0 ? Game1.right : Game1.left;
