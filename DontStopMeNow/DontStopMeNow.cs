@@ -245,37 +245,26 @@ namespace Shockah.DontStopMeNow
 		private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
 		{
 			var instructions = enumerableInstructions.ToList();
-			
+
 			// IL to find:
 			// IL_15d5: call class StardewValley.Farmer StardewValley.Game1::get_player()
 			// IL_15da: callvirt instance bool StardewValley.Farmer::get_UsingTool()
 			// IL_15df: brtrue IL_17a0
-
-			var instructionsToFind = new List<Func<CodeInstruction, bool>> {
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
 				i => i.opcode == OpCodes.Call && (MethodInfo)i.operand == AccessTools.Method(typeof(Game1), "get_player"),
 				i => i.opcode == OpCodes.Callvirt && (MethodInfo)i.operand == AccessTools.Method(typeof(Farmer), "get_UsingTool"),
 				i => i.opcode == OpCodes.Brtrue
-			};
-
-			var maxIndex = instructions.Count - instructionsToFind.Count;
-			for (int index = 0; index < maxIndex; index++)
+			});
+			if (worker is null)
 			{
-				for (int toFindIndex = 0; toFindIndex < instructionsToFind.Count; toFindIndex++)
-				{
-					if (!instructionsToFind[toFindIndex](instructions[index + toFindIndex]))
-						goto continueOuter;
-				}
-
-				// got a matching set of instructions; replacing
-				instructions[index + 0] = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DontStopMeNow), nameof(Game1_UpdateControlInput_Transpiler_UsingToolReplacement)));
-				instructions[index + 1] = new CodeInstruction(OpCodes.Nop);
-				// instructions[index + 2]; // do nothing with instruction 2
-
+				Instance.Monitor.Log($"Could not patch methods - Don't Stop Me Now probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
-				continueOuter:;
 			}
 
-			Instance.Monitor.Log($"Could not patch methods - Don't Stop Me Now probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+			worker[0] = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DontStopMeNow), nameof(Game1_UpdateControlInput_Transpiler_UsingToolReplacement)));
+			worker[1] = new CodeInstruction(OpCodes.Nop);
+
 			return instructions;
 		}
 

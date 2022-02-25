@@ -6,10 +6,7 @@ namespace Shockah.DontStopMeNow
 {
 	internal static class InputHelper
 	{
-		public enum ButtonType
-		{
-			Mouse, Keyboard, Gamepad
-		}
+		public enum ButtonType { Mouse, Keyboard, Gamepad }
 
 		public static ButtonType? GetButtonType(this SButton button)
 		{
@@ -22,9 +19,9 @@ namespace Shockah.DontStopMeNow
 				case SButton.MouseX2:
 					return ButtonType.Mouse;
 				default:
-					if (button.TryGetKeyboard(out var key))
+					if (button.TryGetKeyboard(out _))
 						return ButtonType.Keyboard;
-					if (button.TryGetController(out var controllerButton))
+					if (button.TryGetController(out _))
 						return ButtonType.Gamepad;
 					return null;
 			}
