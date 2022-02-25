@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Shockah.CommonModCode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -15,9 +16,9 @@ namespace Shockah.DontStopMeNow
 {
 	public class DontStopMeNow: Mod
 	{
-		private static DontStopMeNow Instance { get; set; }
+		private static DontStopMeNow Instance { get; set; } = null!;
 
-		internal ModConfig Config { get; private set; }
+		internal ModConfig Config { get; private set; } = null!;
 
 		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
@@ -86,112 +87,38 @@ namespace Shockah.DontStopMeNow
 
 		private void SetupConfig()
 		{
-			// TODO: add translation support
-			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			var helper = new GMCMI18nHelper(api, ModManifest, Helper.Translation);
 
-			configMenu?.Register(
+			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () => Helper.WriteConfig(Config)
 			);
 
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Movement while swinging"
-			);
+			helper.AddSectionTitle("config.movement.section");
+			helper.AddBoolOption("config.movement.tools", () => Config.MoveWhileSwingingTools);
+			helper.AddBoolOption("config.movement.meleeWeapons", () => Config.MoveWhileSwingingMeleeWeapons);
+			helper.AddBoolOption("config.movement.special", () => Config.MoveWhileSpecial);
+			helper.AddBoolOption("config.movement.aimingSlingshot", () => Config.MoveWhileAimingSlingshot);
+			helper.AddBoolOption("config.movement.chargingTools", () => Config.MoveWhileChargingTools);
 
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Tools",
-				tooltip: () => "Allows movement while swinging non-charging tools.",
-				getValue: () => Config.MoveWhileSwingingTools,
-				setValue: value => Config.MoveWhileSwingingTools = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Melee weapons",
-				tooltip: () => "Allows movement while swinging a melee weapon.",
-				getValue: () => Config.MoveWhileSwingingMeleeWeapons,
-				setValue: value => Config.MoveWhileSwingingMeleeWeapons = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Special attacks",
-				tooltip: () => "Allows movement while using a special attack of a melee weapon.",
-				getValue: () => Config.MoveWhileSpecial,
-				setValue: value => Config.MoveWhileSpecial = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Aiming slingshots",
-				tooltip: () => "Allows movement while aiming a slingshot.",
-				getValue: () => Config.MoveWhileAimingSlingshot,
-				setValue: value => Config.MoveWhileAimingSlingshot = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Charging tools",
-				tooltip: () => "Allows movement while charging tools.",
-				getValue: () => Config.MoveWhileChargingTools,
-				setValue: value => Config.MoveWhileChargingTools = value
-			);
-
-			configMenu?.AddSectionTitle(
-				mod: ModManifest,
-				text: () => "Facing direction fixes"
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Tools",
-				tooltip: () => "Allows changing the facing direction while using tools.",
-				getValue: () => Config.FixToolFacing,
-				setValue: value => Config.FixToolFacing = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Melee weapons",
-				tooltip: () => "Allows changing the facing direction while using melee weapons.",
-				getValue: () => Config.FixMeleeWeaponFacing,
-				setValue: value => Config.FixMeleeWeaponFacing = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Charging tools",
-				tooltip: () => "Allows changing the facing direction while charging a tool.",
-				getValue: () => Config.FixChargingToolFacing,
-				setValue: value => Config.FixChargingToolFacing = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Mouse",
-				tooltip: () => "Face the direction of the mouse cursor when swinging.",
-				getValue: () => Config.FixFacingOnMouse,
-				setValue: value => Config.FixFacingOnMouse = value
-			);
-
-			configMenu?.AddBoolOption(
-				mod: ModManifest,
-				name: () => "Controller",
-				tooltip: () => "Face the direction of the cursor when swinging while playing using a controller.",
-				getValue: () => Config.FixFacingOnController,
-				setValue: value => Config.FixFacingOnController = value
-			);
+			helper.AddSectionTitle("config.facing.section");
+			helper.AddBoolOption("config.facing.tools", () => Config.FixToolFacing);
+			helper.AddBoolOption("config.facing.meleeWeapons", () => Config.FixMeleeWeaponFacing);
+			helper.AddBoolOption("config.facing.chargingTools", () => Config.FixChargingToolFacing);
+			helper.AddBoolOption("config.facing.mouse", () => Config.FixFacingOnMouse);
+			helper.AddBoolOption("config.facing.controller", () => Config.FixFacingOnController);
 		}
 
-		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			SetupConfig();
 		}
 
-		private void OnUpdateTicking(object sender, UpdateTickingEventArgs e)
+		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
 		{
 			if (!Context.IsPlayerFree)
 				return;
@@ -217,7 +144,7 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
-		private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
 			foreach (var playerToStopMoving in PlayersToStopMovingNextTick)
 			{
@@ -231,7 +158,7 @@ namespace Shockah.DontStopMeNow
 			PlayersToStopMovingInTwoTicks.Clear();
 		}
 
-		private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
+		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
 		{
 			if (!Context.IsPlayerFree)
 				return;

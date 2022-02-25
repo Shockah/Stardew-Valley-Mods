@@ -118,6 +118,16 @@ namespace Shockah.CommonModCode
 				return null;
 		}
 
+		public static bool IsBrtrue(this CodeInstruction instruction)
+		{
+			return instruction.opcode == OpCodes.Brtrue || instruction.opcode == OpCodes.Brtrue_S;
+		}
+
+		public static bool IsBrfalse(this CodeInstruction instruction)
+		{
+			return instruction.opcode == OpCodes.Brfalse || instruction.opcode == OpCodes.Brfalse_S;
+		}
+
 		public static bool IsBle(this CodeInstruction instruction)
 		{
 			return instruction.opcode == OpCodes.Ble || instruction.opcode == OpCodes.Ble_S;
