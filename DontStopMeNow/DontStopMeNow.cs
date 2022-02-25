@@ -20,6 +20,7 @@ namespace Shockah.DontStopMeNow
 
 		internal ModConfig Config { get; private set; } = null!;
 
+		private readonly IList<Farmer> NotRunningPlayers = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
 
@@ -37,6 +38,10 @@ namespace Shockah.DontStopMeNow
 			var harmony = new Harmony(ModManifest.UniqueID);
 			try
 			{
+				harmony.Patch(
+					original: AccessTools.Method(typeof(Farmer), nameof(Farmer.setRunning)),
+					postfix: new HarmonyMethod(typeof(DontStopMeNow), nameof(Farmer_setRunning_Postfix))
+				);
 				harmony.Patch(
 					original: AccessTools.Method(typeof(Farmer), nameof(Farmer.BeginUsingTool)),
 					postfix: new HarmonyMethod(typeof(DontStopMeNow), nameof(Farmer_BeginUsingTool_Postfix))
@@ -99,6 +104,7 @@ namespace Shockah.DontStopMeNow
 			);
 
 			helper.AddSectionTitle("config.movement.section");
+			helper.AddBoolOption("config.movement.slowMove", () => Config.SlowMove);
 			helper.AddBoolOption("config.movement.tools", () => Config.MoveWhileSwingingTools);
 			helper.AddBoolOption("config.movement.meleeWeapons", () => Config.MoveWhileSwingingMeleeWeapons);
 			helper.AddBoolOption("config.movement.special", () => Config.MoveWhileSpecial);
@@ -156,6 +162,15 @@ namespace Shockah.DontStopMeNow
 			foreach (var playerToStopMoving in PlayersToStopMovingInTwoTicks)
 				PlayersToStopMovingNextTick.Add(playerToStopMoving);
 			PlayersToStopMovingInTwoTicks.Clear();
+
+			foreach (var notRunningPlayer in NotRunningPlayers.ToList())
+			{
+				if (!notRunningPlayer.UsingTool)
+				{
+					NotRunningPlayers.Remove(notRunningPlayer);
+					notRunningPlayer.setRunning(true);
+				}
+			}
 		}
 
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -264,12 +279,26 @@ namespace Shockah.DontStopMeNow
 			return instructions;
 		}
 
+		private static void Farmer_setRunning_Postfix(Farmer __instance)
+		{
+			if (Instance.NotRunningPlayers.Contains(__instance))
+			{
+				__instance.running = false;
+				__instance.speed = 2;
+			}
+		}
+
 		private static void Farmer_BeginUsingTool_Postfix(Farmer __instance)
 		{
 			if (!__instance.CanMove && ShouldAllowMovement(__instance))
 			{
 				__instance.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(__instance);
+				if (Instance.Config.SlowMove)
+				{
+					__instance.setRunning(false);
+					Instance.NotRunningPlayers.Add(__instance);
+				}
 			}
 		}
 

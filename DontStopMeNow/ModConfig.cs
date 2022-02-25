@@ -2,6 +2,7 @@
 {
 	internal class ModConfig
 	{
+		public bool SlowMove { get; set; } = true;
 		public bool MoveWhileSwingingTools { get; set; } = false;
 		public bool MoveWhileSwingingMeleeWeapons { get; set; } = true;
 		public bool MoveWhileSpecial { get; set; } = true;
