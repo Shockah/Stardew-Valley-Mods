@@ -12,7 +12,10 @@ namespace Shockah.FlexibleSprinklers
 		public static readonly IntPoint Top = new(0, -1);
 		public static readonly IntPoint Bottom = new(0, 1);
 
-		public static readonly IEnumerable<IntPoint> NeighborOffsets = new[] { Left, Right, Top, Bottom };
+		private static readonly IntPoint[] NeighborOffsetsArray = new[] { Left, Right, Top, Bottom };
+
+		public static IEnumerable<IntPoint> NeighborOffsets
+			=> NeighborOffsetsArray;
 
 		public int X;
 		public int Y;
@@ -21,10 +24,8 @@ namespace Shockah.FlexibleSprinklers
 		{
 			get
 			{
-				foreach (var neighbor in NeighborOffsets)
-				{
-					yield return this + neighbor;
-				}
+				var self = this;
+				return Array.ConvertAll(NeighborOffsetsArray, n => self + n);
 			}
 		}
 
@@ -44,7 +45,7 @@ namespace Shockah.FlexibleSprinklers
 			=> X == other.X && Y == other.Y;
 
 		public override int GetHashCode()
-			=> (X, Y).GetHashCode();
+			=> (X * 256) ^ Y;
 
 		public static IntPoint operator +(IntPoint a, IntPoint b)
 			=> new(a.X + b.X, a.Y + b.Y);

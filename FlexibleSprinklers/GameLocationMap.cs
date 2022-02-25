@@ -9,10 +9,16 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
-	internal class GameLocationMap: IMap
+	internal class GameLocationMap: IMap.WithKnownSize
 	{
 		private readonly GameLocation Location;
 		private readonly IEnumerable<Func<GameLocation, Vector2, bool?>> CustomWaterableTileProviders;
+
+		public int Width
+			=> Location.Map.DisplayWidth / Game1.tileSize;
+
+		public int Height
+			=> Location.Map.DisplayHeight / Game1.tileSize;
 
 		internal GameLocationMap(GameLocation location, IEnumerable<Func<GameLocation, Vector2, bool?>> customWaterableTileProviders)
 		{
@@ -23,11 +29,11 @@ namespace Shockah.FlexibleSprinklers
 		public override bool Equals(object? obj)
 			=> obj is IMap other && Equals(other);
 
-		public override int GetHashCode()
-			=> Location.GetHashCode();
-
 		public bool Equals(IMap? other)
 			=> other is GameLocationMap map && (ReferenceEquals(Location, map.Location) || Location == map.Location);
+
+		public override int GetHashCode()
+			=> Location.GetHashCode();
 
 		public SoilType this[IntPoint point]
 		{

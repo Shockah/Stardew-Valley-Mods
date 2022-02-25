@@ -12,5 +12,12 @@ namespace Shockah.FlexibleSprinklers
 		void WaterTile(IntPoint point);
 
 		IEnumerable<(IntPoint position, SprinklerInfo info)> GetAllSprinklers();
+
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
+		public interface WithKnownSize: IMap
+		{
+			public int Width { get; }
+			public int Height { get; }
+		}
 	}
 }
