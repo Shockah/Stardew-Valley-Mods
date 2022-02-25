@@ -19,6 +19,9 @@ namespace Shockah.DontStopMeNow
 
 		internal ModConfig Config { get; private set; }
 
+		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
+		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
+
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
@@ -27,6 +30,7 @@ namespace Shockah.DontStopMeNow
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
@@ -213,6 +217,20 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
+		private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
+		{
+			foreach (var playerToStopMoving in PlayersToStopMovingNextTick)
+			{
+				if (playerToStopMoving.CanMove && !ShouldAllowMovement(playerToStopMoving, true))
+					playerToStopMoving.CanMove = false;
+			}
+			PlayersToStopMovingNextTick.Clear();
+
+			foreach (var playerToStopMoving in PlayersToStopMovingInTwoTicks)
+				PlayersToStopMovingNextTick.Add(playerToStopMoving);
+			PlayersToStopMovingInTwoTicks.Clear();
+		}
+
 		private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
 		{
 			if (!Context.IsPlayerFree)
@@ -243,12 +261,16 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
-		private static bool IsUsingPoweredUpOnHoldTool(Farmer player)
+		private static bool? IsUsingPoweredUpOnHoldTool(Farmer player)
 		{
-			return player.UsingTool && (player.toolHold > 0 || player.toolPower > 0);
+			if (!player.UsingTool)
+				return false;
+			if (player.toolHold == 0 && player.toolPower == 0)
+				return null;
+			return player.toolHold > 0 || player.toolPower > 0;
 		}
 
-		private static bool ShouldAllowMovement(Farmer player)
+		private static bool ShouldAllowMovement(Farmer player, bool isSecondTick = false)
 		{
 			if (player.CurrentTool is MeleeWeapon weapon)
 			{
@@ -260,7 +282,15 @@ namespace Shockah.DontStopMeNow
 			}
 			else
 			{
-				return IsUsingPoweredUpOnHoldTool(player) ? Instance.Config.MoveWhileChargingTools : Instance.Config.MoveWhileSwingingTools;
+				switch (IsUsingPoweredUpOnHoldTool(player))
+				{
+					case true:
+						return Instance.Config.MoveWhileChargingTools;
+					case false:
+						return Instance.Config.MoveWhileSwingingTools;
+					case null:
+						return isSecondTick ? Instance.Config.MoveWhileSwingingTools : Instance.Config.MoveWhileChargingTools || Instance.Config.MoveWhileSwingingTools;
+				}
 			}
 		}
 
@@ -310,19 +340,28 @@ namespace Shockah.DontStopMeNow
 		private static void Farmer_BeginUsingTool_Postfix(Farmer __instance)
 		{
 			if (!__instance.CanMove && ShouldAllowMovement(__instance))
+			{
 				__instance.CanMove = true;
+				Instance.PlayersToStopMovingInTwoTicks.Add(__instance);
+			}
 		}
 
 		private static void MeleeWeapon_leftClick_Postfix(Farmer who)
 		{
 			if (!who.CanMove && ShouldAllowMovement(who))
+			{
 				who.CanMove = true;
+				Instance.PlayersToStopMovingInTwoTicks.Add(who);
+			}
 		}
 
 		private static void MeleeWeapon_beginSpecialMove_Postfix(Farmer who)
 		{
 			if (!who.CanMove && ShouldAllowMovement(who))
+			{
 				who.CanMove = true;
+				Instance.PlayersToStopMovingInTwoTicks.Add(who);
+			}
 		}
 	}
 }
