@@ -1,0 +1,39 @@
+﻿{
+    "config.anchor.value.TopLeft": "Top-left",
+    "config.anchor.value.Top": "Top",
+    "config.anchor.value.TopRight": "Top-right",
+    "config.anchor.value.Left": "Left",
+    "config.anchor.value.Center": "Center",
+    "config.anchor.value.Right": "Right",
+    "config.anchor.value.BottomLeft": "Bottom-left",
+    "config.anchor.value.Bottom": "Bottom",
+    "config.anchor.value.BottomRight": "Bottom-right",
+
+    "config.anchor.screen.name": "Screen anchor",
+    "config.anchor.panel.name": "Panel anchor",
+    "config.anchor.inset.name": "   Inset",
+    "config.anchor.inset.tooltip": "Relative inset from the anchor.",
+    "config.anchor.x.name": "   X offset",
+    "config.anchor.x.tooltip": "Relative X offset from the anchor.",
+    "config.anchor.y.name": "   Y offset",
+    "config.anchor.y.tooltip": "Relative X offset from the anchor.",
+
+    "config.exceptions.name": "  Exceptions",
+
+    "config.group.byItem.name": "Group by item",
+    "config.group.byItemQuality.name": "Group by item quality",
+
+    "config.show.section.name": "Machines to show",
+    "config.show.ready.name": "Show ready to pickup",
+    "config.show.ready.exceptions.name": "Ready Exceptions",
+    "config.show.waiting.name": "Show waiting for item",
+    "config.show.waiting.exceptions.name": "Waiting Exceptions",
+    "config.show.busy.name": "Show busy (processing)",
+    "config.show.busy.exceptions.name": "Busy Exceptions",
+
+    "config.exceptions.manual.name": "Custom",
+    "config.exceptions.manual.tooltip": "Comma-separated machine names to make exceptions for.",
+    "config.machine.category.artisan.name": "Artisan",
+    "config.machine.category.refining.name": "Refining",
+    "config.machine.category.misc.name": "Misc"
+}

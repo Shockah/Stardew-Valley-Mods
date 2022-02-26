@@ -20,6 +20,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileWorker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LinqExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\UIAnchor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)GMCM\" />

@@ -241,6 +241,25 @@ namespace Shockah.CommonModCode.GMCM
 			);
 		}
 
+		public void AddPage(string pageId, string? keyPrefix = null)
+		{
+			Api.AddPage(
+				mod: Mod,
+				pageId: pageId,
+				pageTitle: keyPrefix is null ? null : () => Translations.Get($"{keyPrefix}.name")
+			);
+		}
+
+		public void AddPageLink(string pageId, string keyPrefix)
+		{
+			Api.AddPageLink(
+				mod: Mod,
+				pageId: pageId,
+				text: () => Translations.Get($"{keyPrefix}.name"),
+				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip")
+			);
+		}
+
 		private Func<string>? GetOptionalTranslatedStringDelegate(string key)
 		{
 			var translation = Translations.Get(key);
