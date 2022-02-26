@@ -9,6 +9,29 @@
     "config.anchor.value.Bottom": "Bottom",
     "config.anchor.value.BottomRight": "Bottom-right",
 
+    "config.flowDirection.value.LeftToRightAndTopToBottom": "L>R, T>B",
+    "config.flowDirection.value.RightToLeftAndTopToBottom": "R>L, T>B",
+    "config.flowDirection.value.LeftToRightAndBottomToTop": "L>R, B>T",
+    "config.flowDirection.value.RightToLeftAndBottomToTop": "R>L, B>T",
+    "config.flowDirection.value.TopToBottomAndLeftToRight": "T>B, L>R",
+    "config.flowDirection.value.BottomToTopAndLeftToRight": "B>T, L>R",
+    "config.flowDirection.value.TopToBottomAndRightToLeft": "T>B, R>L",
+    "config.flowDirection.value.BottomToTopAndRightToLeft": "B>T, R>L",
+
+    "config.sorting.value.None": "None",
+    "config.sorting.value.ByMachineAZ": "By machine, A>Z",
+    "config.sorting.value.ByMachineZA": "By machine, Z>A",
+    "config.sorting.value.ByDistanceAscending": "By distance, ascending",
+    "config.sorting.value.ByDistanceDescending": "By distance, descending",
+    "config.sorting.value.ByItemAZ": "By item, A>Z",
+    "config.sorting.value.ByItemZA": "By item, Z>A",
+    "config.sorting.value.ByItemQualityBest": "By item quality, best first",
+    "config.sorting.value.ByItemQualityWorst": "By item quality, worst first",
+
+    "config.appearance.section.name": "Appearance",
+    "config.groupingSorting.section.name": "Grouping & sorting",
+    "config.show.section.name": "Machines to show",
+
     "config.anchor.screen.name": "Screen anchor",
     "config.anchor.panel.name": "Panel anchor",
     "config.anchor.inset.name": "   Inset",
@@ -18,12 +41,21 @@
     "config.anchor.y.name": "   Y offset",
     "config.anchor.y.tooltip": "Relative X offset from the anchor.",
 
+    "config.appearance.flowDirection.name": "Flow direction",
+    "config.appearance.scale.name": "Scale",
+    "config.appearance.spacing.name": "Spacing",
+    "config.appearance.maxColumns.name": "Max columns",
+    "config.appearance.maxColumns.tooltip": "'0' is unlimited",
+
+    "config.groupingSorting.grouping.name": "Grouping",
+    "config.groupingSorting.grouping.value.None": "None",
+    "config.groupingSorting.grouping.value.ByMachine": "By machine",
+    "config.groupingSorting.grouping.value.ByMachineAndItem": "By machine + item",
+    "config.groupingSorting.grouping.value.ByMachineAndItemAndQuality": "By machine + item + quality",
+    "config.groupingSorting.sorting.name": "Sorting #{{Ordinal}}",
+
     "config.exceptions.name": "  Exceptions",
 
-    "config.group.byItem.name": "Group by item",
-    "config.group.byItemQuality.name": "Group by item quality",
-
-    "config.show.section.name": "Machines to show",
     "config.show.ready.name": "Show ready to pickup",
     "config.show.ready.exceptions.name": "Ready Exceptions",
     "config.show.waiting.name": "Show waiting for item",

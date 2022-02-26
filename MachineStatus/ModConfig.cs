@@ -7,17 +7,25 @@ namespace Shockah.MachineStatus
 	internal class ModConfig
 	{
 		public UIAnchorSide ScreenAnchorSide { get; set; } = UIAnchorSide.BottomLeft;
-		public int AnchorInset { get; set; } = 16;
-		public int AnchorOffsetX { get; set; } = 0;
-		public int AnchorOffsetY { get; set; } = 0;
+		public float AnchorInset { get; set; } = 16f;
+		public float AnchorOffsetX { get; set; } = 0f;
+		public float AnchorOffsetY { get; set; } = 0f;
 		public UIAnchorSide PanelAnchorSide { get; set; } = UIAnchorSide.BottomLeft;
 		[JsonIgnore] public UIAnchor Anchor => new(ScreenAnchorSide, AnchorInset, new(AnchorOffsetX, AnchorOffsetY), PanelAnchorSide);
 
-		public bool GroupByItem { get; set; } = true;
-		public IList<string> GroupByItemExceptions { get; set; } = new List<string>();
+		public FlowDirection FlowDirection { get; set; } = FlowDirection.LeftToRightAndBottomToTop;
+		public float Scale { get; set; } = 1f;
+		public float Spacing { get; set; } = 4f;
+		public int MaxColumns { get; set; } = 0;
 
-		public bool GroupByItemQuality { get; set; } = true;
-		public IList<string> GroupByItemQualityExceptions { get; set; } = new List<string>();
+		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.None;
+		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
+		{
+			MachineRenderingOptions.Sorting.ByMachineAZ,
+			MachineRenderingOptions.Sorting.ByItemAZ,
+			MachineRenderingOptions.Sorting.ByItemQualityBest,
+			MachineRenderingOptions.Sorting.None
+		};
 
 		public bool ShowReady { get; set; } = true;
 		public IList<string> ShowReadyExceptions { get; set; } = new List<string>();

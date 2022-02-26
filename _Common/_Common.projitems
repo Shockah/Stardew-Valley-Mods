@@ -21,6 +21,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileWorker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LinqExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\FlowDirection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Orientation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UIAnchor.cs" />
   </ItemGroup>
   <ItemGroup>

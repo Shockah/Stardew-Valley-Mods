@@ -180,21 +180,41 @@ namespace Shockah.MachineStatus
 				helper.AddPageLink(pageKey, "config.exceptions");
 			}
 
+			helper.AddSectionTitle("config.appearance.section");
 			helper.AddEnumOption("config.anchor.screen", valuePrefix: "config.anchor", property: () => Config.ScreenAnchorSide);
 			helper.AddEnumOption("config.anchor.panel", valuePrefix: "config.anchor", property: () => Config.PanelAnchorSide);
 			helper.AddNumberOption("config.anchor.inset", () => Config.AnchorInset);
 			helper.AddNumberOption("config.anchor.x", () => Config.AnchorOffsetX);
 			helper.AddNumberOption("config.anchor.y", () => Config.AnchorOffsetY);
 
-			helper.AddBoolOption("config.group.byItem", () => Config.GroupByItem);
-			helper.AddBoolOption("config.group.byItemQuality", () => Config.GroupByItemQuality);
+			helper.AddEnumOption("config.appearance.flowDirection", valuePrefix: "config.flowDirection", property: () => Config.FlowDirection);
+			helper.AddNumberOption("config.appearance.scale", () => Config.Scale, min: 0f, max: 12f, interval: 0.05f);
+			helper.AddNumberOption("config.appearance.spacing", () => Config.Spacing, min: -4f, max: 48f, interval: 0.25f);
+			helper.AddNumberOption("config.appearance.maxColumns", () => Config.MaxColumns, min: 0, max: 20);
+
+			helper.AddSectionTitle("config.groupingSorting.section");
+			helper.AddEnumOption("config.groupingSorting.grouping", () => Config.Grouping);
+			for (int i = 0; i < 4; i++)
+			{
+				int loopI = i;
+				helper.AddEnumOption(
+					"config.groupingSorting.sorting",
+					valuePrefix: "config.sorting",
+					tokens: new { Ordinal = loopI + 1 },
+					getValue: () => loopI < Config.Sorting.Count ? Config.Sorting[loopI] : MachineRenderingOptions.Sorting.None,
+					setValue: value =>
+					{
+						while (loopI >= Config.Sorting.Count)
+							Config.Sorting.Add(MachineRenderingOptions.Sorting.None);
+						Config.Sorting[loopI] = value;
+					}
+				);
+			}
 
 			helper.AddSectionTitle("config.show.section");
-
 			SetupStateConfig("config.show.ready", "config.show.ready.exceptions", () => Config.ShowReady);
 			SetupStateConfig("config.show.waiting", "config.show.waiting.exceptions", () => Config.ShowWaiting);
 			SetupStateConfig("config.show.busy", "config.show.busy.exceptions", () => Config.ShowBusy);
-
 			SetupExceptionsPage("config.show.ready.exceptions", Config.ShowReadyExceptions);
 			SetupExceptionsPage("config.show.waiting.exceptions", Config.ShowWaitingExceptions);
 			SetupExceptionsPage("config.show.busy.exceptions", Config.ShowBusyExceptions);
