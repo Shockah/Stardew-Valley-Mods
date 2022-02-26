@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.CommonModCode
+namespace Shockah.CommonModCode.IL
 {
 	public sealed class TranspileWorker
 	{

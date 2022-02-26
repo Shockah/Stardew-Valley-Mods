@@ -2,7 +2,7 @@
 using StardewModdingAPI.Utilities;
 using System;
 
-namespace Shockah.CommonModCode
+namespace Shockah.CommonModCode.GMCM
 {
 	public interface IGenericModConfigMenuApi
 	{

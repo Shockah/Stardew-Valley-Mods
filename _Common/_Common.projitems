@@ -15,10 +15,14 @@
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)GMCMI18nHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\GMCMI18nHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)I18nEnum.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IGenericModConfigMenuApi.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TranspileHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TranspileWorker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileWorker.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)GMCM\" />
+    <Folder Include="$(MSBuildThisFileDirectory)IL\" />
   </ItemGroup>
 </Project>

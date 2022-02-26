@@ -1,7 +1,8 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Shockah.CommonModCode;
+using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.IL;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;

@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using System.Reflection.Emit;
 
-namespace Shockah.CommonModCode
+namespace Shockah.CommonModCode.IL
 {
 	public static class TranspileHelper
 	{

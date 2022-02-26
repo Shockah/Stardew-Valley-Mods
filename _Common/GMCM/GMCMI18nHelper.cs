@@ -3,7 +3,7 @@ using StardewModdingAPI.Utilities;
 using System;
 using System.Linq.Expressions;
 
-namespace Shockah.CommonModCode
+namespace Shockah.CommonModCode.GMCM
 {
 	public class GMCMI18nHelper
 	{
