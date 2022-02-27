@@ -21,6 +21,10 @@ namespace Shockah.MachineStatus
 		[JsonIgnore] public Vector2 Spacing => new(XSpacing, YSpacing);
 		public int MaxColumns { get; set; } = 0;
 
+		public bool ShowItemBubble { get; set; } = true;
+		public float BubbleItemCycleTime { get; set; } = 2f;
+		public MachineRenderingOptions.BubbleSway BubbleSway { get; set; } = MachineRenderingOptions.BubbleSway.Wave;
+
 		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
 		{

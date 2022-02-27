@@ -11,5 +11,7 @@
 			ByItemAZ, ByItemZA,
 			ByItemQualityBest, ByItemQualityWorst
 		}
+
+		public enum BubbleSway { Static, Together, Wave }
 	}
 }

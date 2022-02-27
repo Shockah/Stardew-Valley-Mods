@@ -185,18 +185,22 @@ namespace Shockah.MachineStatus
 				helper.AddPageLink(pageKey, "config.exceptions");
 			}
 
-			helper.AddSectionTitle("config.appearance.section");
+			helper.AddSectionTitle("config.layout.section");
 			helper.AddEnumOption("config.anchor.screen", valuePrefix: "config.anchor", property: () => Config.ScreenAnchorSide);
 			helper.AddEnumOption("config.anchor.panel", valuePrefix: "config.anchor", property: () => Config.PanelAnchorSide);
 			helper.AddNumberOption("config.anchor.inset", () => Config.AnchorInset);
 			helper.AddNumberOption("config.anchor.x", () => Config.AnchorOffsetX);
 			helper.AddNumberOption("config.anchor.y", () => Config.AnchorOffsetY);
+			helper.AddEnumOption("config.layout.flowDirection", valuePrefix: "config.flowDirection", property: () => Config.FlowDirection);
+			helper.AddNumberOption("config.layout.scale", () => Config.Scale, min: 0f, max: 12f, interval: 0.05f);
+			helper.AddNumberOption("config.layout.xSpacing", () => Config.XSpacing, min: -16f, max: 64f, interval: 0.5f);
+			helper.AddNumberOption("config.layout.ySpacing", () => Config.YSpacing, min: -16f, max: 64f, interval: 0.5f);
+			helper.AddNumberOption("config.layout.maxColumns", () => Config.MaxColumns, min: 0, max: 20);
 
-			helper.AddEnumOption("config.appearance.flowDirection", valuePrefix: "config.flowDirection", property: () => Config.FlowDirection);
-			helper.AddNumberOption("config.appearance.scale", () => Config.Scale, min: 0f, max: 12f, interval: 0.05f);
-			helper.AddNumberOption("config.appearance.xSpacing", () => Config.XSpacing, min: -16f, max: 64f, interval: 0.5f);
-			helper.AddNumberOption("config.appearance.ySpacing", () => Config.YSpacing, min: -16f, max: 64f, interval: 0.5f);
-			helper.AddNumberOption("config.appearance.maxColumns", () => Config.MaxColumns, min: 0, max: 20);
+			helper.AddSectionTitle("config.bubble.section");
+			helper.AddBoolOption("config.bubble.showItem", () => Config.ShowItemBubble);
+			helper.AddNumberOption("config.bubble.itemCycleTime", () => Config.BubbleItemCycleTime, min: 0.2f, max: 5f, interval: 0.1f);
+			helper.AddEnumOption("config.bubble.sway", () => Config.BubbleSway);
 
 			helper.AddSectionTitle("config.groupingSorting.section");
 			helper.AddEnumOption("config.groupingSorting.grouping", () => Config.Grouping);
@@ -282,6 +286,17 @@ namespace Shockah.MachineStatus
 
 			foreach (var ((x, y), (_, machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
 			{
+				float GetBubbleSwayOffset()
+				{
+					return Config.BubbleSway switch
+					{
+						MachineRenderingOptions.BubbleSway.Static => 0f,
+						MachineRenderingOptions.BubbleSway.Together => 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250), 2),
+						MachineRenderingOptions.BubbleSway.Wave => 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2),
+						_ => throw new ArgumentException($"{nameof(Config.BubbleSway)} has an invalid value."),
+					};
+				}
+				
 				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
 				machine.drawInMenu(
@@ -292,31 +307,55 @@ namespace Shockah.MachineStatus
 					Color.White, drawShadow: false
 				);
 
-				if (machine.readyForHarvest.Value)
+				float timeVariableOffset = GetBubbleSwayOffset();
+
+				void DrawEmote(int emoteX, int emoteY)
 				{
-					float timeVariableOffset = 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2);
-					var bubbleRectangle = new Rectangle(141, 465, 20, 24);
-					float bubbleScale = 2f;
+					var xEmoteRectangle = new Rectangle(emoteX * 16, emoteY * 16, 16, 16);
+					float emoteScale = 2.5f;
 
 					e.SpriteBatch.Draw(
-						Game1.mouseCursors,
-						machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, -(bubbleRectangle.Height - timeVariableOffset) * bubbleScale * 0.5f) * Config.Scale,
-						bubbleRectangle,
+						Game1.emoteSpriteSheet,
+						machineLocation + new Vector2(SingleMachineSize.X * 0.5f - xEmoteRectangle.Width * emoteScale * 0.5f, timeVariableOffset - xEmoteRectangle.Height * emoteScale * 0.5f) * Config.Scale,
+						xEmoteRectangle,
 						Color.White * 0.75f,
-						0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
+						0f, Vector2.Zero, emoteScale * Config.Scale, SpriteEffects.None, 0.91f
 					);
-
-					if (heldItems.Count != 0)
+				}
+				
+				if (machine.readyForHarvest.Value && heldItems.Count != 0)
+				{
+					if (Config.ShowItemBubble)
 					{
-						int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 2000) % heldItems.Count;
+						var bubbleRectangle = new Rectangle(141, 465, 20, 24);
+						float bubbleScale = 2f;
+
+						e.SpriteBatch.Draw(
+							Game1.mouseCursors,
+							machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, timeVariableOffset - bubbleRectangle.Height * bubbleScale * 0.5f) * Config.Scale,
+							bubbleRectangle,
+							Color.White * 0.75f,
+							0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
+						);
+
+						int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / (1000.0 * Config.BubbleItemCycleTime)) % heldItems.Count;
 						heldItems[heldItemVariableIndex].drawInMenu(
 							e.SpriteBatch,
-							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, -(bubbleRectangle.Height - 4 - timeVariableOffset) * bubbleScale * 0.5f) * Config.Scale,
+							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, timeVariableOffset - (bubbleRectangle.Height - 4) * bubbleScale * 0.5f) * Config.Scale,
 							Config.Scale * 0.5f, 1f, 0.9f, StackDrawType.HideButShowQuality,
 							Color.White, drawShadow: false
 						);
 					}
+					else
+					{
+						DrawEmote(3, 0);
+					}
 				}
+				else if (machine.MinutesUntilReady <= 0 && heldItems.Count == 0)
+				{
+					DrawEmote(0, 4);
+				}
+
 				if (machine.Stack > 1)
 				{
 					Utility.drawTinyDigits(

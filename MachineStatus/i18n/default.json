@@ -28,7 +28,8 @@
     "config.sorting.value.ByItemQualityBest": "By item quality, best first",
     "config.sorting.value.ByItemQualityWorst": "By item quality, worst first",
 
-    "config.appearance.section.name": "Appearance",
+    "config.layout.section.name": "Layout",
+    "config.bubble.section.name": "Bubble",
     "config.groupingSorting.section.name": "Grouping & sorting",
     "config.show.section.name": "Machines to show",
 
@@ -41,12 +42,22 @@
     "config.anchor.y.name": "   Y offset",
     "config.anchor.y.tooltip": "Relative X offset from the anchor.",
 
-    "config.appearance.flowDirection.name": "Flow direction",
-    "config.appearance.scale.name": "Scale",
-    "config.appearance.xSpacing.name": "X spacing",
-    "config.appearance.ySpacing.name": "Y spacing",
-    "config.appearance.maxColumns.name": "Max columns",
-    "config.appearance.maxColumns.tooltip": "'0' is unlimited",
+    "config.layout.flowDirection.name": "Flow direction",
+    "config.layout.scale.name": "Scale",
+    "config.layout.xSpacing.name": "X spacing",
+    "config.layout.ySpacing.name": "Y spacing",
+    "config.layout.maxColumns.name": "Max columns",
+    "config.layout.maxColumns.tooltip": "'0' is unlimited",
+
+    "config.bubble.showItem.name": "Show item bubble",
+    "config.bubble.showItem.tooltip": "Whether to show an item bubble.\nDisabling it will show a generic bubble instead.",
+    "config.bubble.itemCycleTime.name": "Bubble item cycle time",
+    "config.bubble.itemCycleTime.tooltip": "Time (in seconds) for which each item in a grouped machine display will be displayed for.\nFor example, will be used if you have two Mushroom Boxes ready with a different mushroom each.",
+    "config.bubble.sway.name": "Bubble sway",
+    "config.bubble.sway.tooltip": "Static: Bubbles don't move\nTogether: Bubbles move together\nWave: Bubbles create a wave effect",
+    "config.bubble.sway.value.Static": "Static",
+    "config.bubble.sway.value.Together": "Together",
+    "config.bubble.sway.value.Wave": "Wave",
 
     "config.groupingSorting.grouping.name": "Grouping",
     "config.groupingSorting.grouping.value.None": "None",
