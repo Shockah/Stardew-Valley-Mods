@@ -341,7 +341,7 @@ namespace Shockah.MachineStatus
 				ItemRenderer.DrawItem(
 					e.SpriteBatch, machine,
 					machineLocation, SingleMachineSize * Config.Scale,
-					Color.White
+					Color.White * VisibilityAlpha
 				);
 
 				float timeVariableOffset = GetBubbleSwayOffset();
@@ -380,7 +380,7 @@ namespace Shockah.MachineStatus
 							e.SpriteBatch, heldItems[heldItemVariableIndex],
 							machineLocation + new Vector2(SingleMachineSize.X * 0.5f, timeVariableOffset - 4) * Config.Scale,
 							new Vector2(bubbleRectangle.Size.X, bubbleRectangle.Size.Y) * bubbleScale * 0.8f * Config.Scale,
-							Color.White,
+							Color.White * VisibilityAlpha,
 							rectAnchorSide: UIAnchorSide.Center
 						);
 					}
