@@ -30,6 +30,7 @@ namespace Shockah.MachineStatus
 			}
 		}
 
+		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
 		private static Vector2 SingleMachineSize => new(64, 64);
 		private static readonly (string titleKey, (int machineId, string machineName)[] machineNames)[] KnownMachineNames = new[]
@@ -345,20 +346,19 @@ namespace Shockah.MachineStatus
 					return Config.BubbleSway switch
 					{
 						MachineRenderingOptions.BubbleSway.Static => 0f,
-						MachineRenderingOptions.BubbleSway.Together => 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250), 2),
-						MachineRenderingOptions.BubbleSway.Wave => 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2),
+						MachineRenderingOptions.BubbleSway.Together => 2f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250), 2),
+						MachineRenderingOptions.BubbleSway.Wave => 2f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2),
 						_ => throw new ArgumentException($"{nameof(Config.BubbleSway)} has an invalid value."),
 					};
 				}
 				
 				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
-				machine.drawInMenu(
-					e.SpriteBatch,
-					machineLocation + new Vector2(32, 32) * (Config.Scale - 1f),
-					Config.Scale,
-					1f, 0.9f, StackDrawType.Hide,
-					Color.White * VisibilityAlpha, drawShadow: false
+
+				ItemRenderer.DrawItem(
+					e.SpriteBatch, machine,
+					machineLocation, SingleMachineSize * Config.Scale,
+					Color.White
 				);
 
 				float timeVariableOffset = GetBubbleSwayOffset();
@@ -393,11 +393,12 @@ namespace Shockah.MachineStatus
 						);
 
 						int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / (1000.0 * Config.BubbleItemCycleTime)) % heldItems.Count;
-						heldItems[heldItemVariableIndex].drawInMenu(
-							e.SpriteBatch,
-							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, timeVariableOffset - (bubbleRectangle.Height - 4) * bubbleScale * 0.5f) * Config.Scale,
-							Config.Scale * 0.5f, 1f, 0.9f, StackDrawType.HideButShowQuality,
-							Color.White * VisibilityAlpha, drawShadow: false
+						ItemRenderer.DrawItem(
+							e.SpriteBatch, heldItems[heldItemVariableIndex],
+							machineLocation + new Vector2(SingleMachineSize.X * 0.5f, timeVariableOffset - 4) * Config.Scale,
+							new Vector2(bubbleRectangle.Size.X, bubbleRectangle.Size.Y) * bubbleScale * 0.8f * Config.Scale,
+							Color.White,
+							rectAnchorSide: UIAnchorSide.Center
 						);
 					}
 					else
@@ -440,6 +441,7 @@ namespace Shockah.MachineStatus
 			{
 				var newMachine = (SObject)machine.getOne();
 				newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
+				newMachine.showNextIndex.Value = machine.showNextIndex.Value;
 				return newMachine;
 			}
 
@@ -487,8 +489,8 @@ namespace Shockah.MachineStatus
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
-								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
-								machine.heldObject.Value?.Name == result.heldObject.Value?.Name
+								machine.heldObject.Value?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value &&
+								machine.heldObject.Value?.Name == resultHeldItems.FirstOrDefault()?.Name
 							)
 							{
 								result.Stack++;
@@ -504,9 +506,9 @@ namespace Shockah.MachineStatus
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
-								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
-								machine.heldObject.Value?.Name == result.heldObject.Value?.Name &&
-								machine.heldObject.Value?.Quality == result.heldObject.Value?.Quality
+								machine.heldObject.Value?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value &&
+								machine.heldObject.Value?.Name == resultHeldItems.FirstOrDefault()?.Name &&
+								machine.heldObject.Value?.Quality == resultHeldItems.FirstOrDefault()?.Quality
 							)
 							{
 								result.Stack++;

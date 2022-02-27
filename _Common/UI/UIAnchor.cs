@@ -66,6 +66,23 @@ namespace Shockah.CommonModCode.UI
 
 	public static class UIAnchorSideExtensions
 	{
+		public static UIAnchorSide Opposite(this UIAnchorSide self)
+		{
+			return self switch
+			{
+				UIAnchorSide.TopLeft => UIAnchorSide.BottomRight,
+				UIAnchorSide.TopRight => UIAnchorSide.BottomLeft,
+				UIAnchorSide.BottomLeft => UIAnchorSide.TopRight,
+				UIAnchorSide.BottomRight => UIAnchorSide.TopLeft,
+				UIAnchorSide.Center => UIAnchorSide.Center,
+				UIAnchorSide.Top => UIAnchorSide.Bottom,
+				UIAnchorSide.Bottom => UIAnchorSide.Top,
+				UIAnchorSide.Left => UIAnchorSide.Right,
+				UIAnchorSide.Right => UIAnchorSide.Left,
+				_ => throw new ArgumentException($"Invalid `{nameof(self)}` value."),
+			};
+		}
+		
 		public static Vector2 GetAnchorPoint(this UIAnchorSide self, Vector2 location, Vector2 size)
 		{
 			return self switch
