@@ -302,6 +302,8 @@ namespace Shockah.MachineStatus
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
+			if (!Context.IsWorldReady || Game1.eventUp)
+				return;
 			if (DisplayedMachines.Count == 0)
 				return;
 			if (VisibilityAlpha <= 0f)
