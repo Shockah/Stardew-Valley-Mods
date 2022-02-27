@@ -281,7 +281,7 @@ namespace Shockah.MachineStatus
 		{
 			if (!Context.IsPlayerFree)
 				return;
-			if (!Config.VisibilityKeybind.Keybinds.Any(k => k.Buttons.Contains(e.Button)))
+			if (!Config.VisibilityKeybind.JustPressed())
 				return;
 
 			Visibility = Visibility switch
