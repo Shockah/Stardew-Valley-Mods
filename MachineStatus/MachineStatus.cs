@@ -249,9 +249,9 @@ namespace Shockah.MachineStatus
 			if (DisplayedMachines.Count == 0)
 				return;
 
-			var preparedMachines = SortMachines(GroupMachines(DisplayedMachines), Game1.player);
-			IList<((int column, int row) position, (GameLocation location, SObject machine) machine)> machineCoords
-				= new List<((int column, int row) position, (GameLocation location, SObject machine) machine)>();
+			var preparedMachines = GroupMachines(SortMachines(DisplayedMachines, Game1.player));
+			IList<((int column, int row) position, (GameLocation location, SObject machine, IList<SObject> heldItems) machine)> machineCoords
+				= new List<((int column, int row) position, (GameLocation location, SObject machine, IList<SObject> heldItems) machine)>();
 			int column = 0;
 			int row = 0;
 
@@ -280,7 +280,7 @@ namespace Shockah.MachineStatus
 			var panelSize = (SingleMachineSize * new Vector2(width, height) + Config.Spacing * new Vector2(width - 1, height - 1)) * Config.Scale;
 			var panelLocation = Config.Anchor.GetAnchoredPoint(Vector2.Zero, screenSize, panelSize);
 
-			foreach (var ((x, y), (_, machine)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
+			foreach (var ((x, y), (_, machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
 			{
 				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
@@ -294,7 +294,7 @@ namespace Shockah.MachineStatus
 
 				if (machine.readyForHarvest.Value)
 				{
-					float timeVariableOffset = 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250.0 + x + y), 2);
+					float timeVariableOffset = 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2);
 					var bubbleRectangle = new Rectangle(141, 465, 20, 24);
 					float bubbleScale = 2f;
 
@@ -306,9 +306,10 @@ namespace Shockah.MachineStatus
 						0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
 					);
 
-					if (machine.heldObject.Value is not null)
+					if (heldItems.Count != 0)
 					{
-						machine.heldObject.Value.drawInMenu(
+						int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 2000) % heldItems.Count;
+						heldItems[heldItemVariableIndex].drawInMenu(
 							e.SpriteBatch,
 							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, -(bubbleRectangle.Height - 4 - timeVariableOffset) * bubbleScale * 0.5f) * Config.Scale,
 							Config.Scale * 0.5f, 1f, 0.9f, StackDrawType.HideButShowQuality,
@@ -340,41 +341,56 @@ namespace Shockah.MachineStatus
 					UpdateMachineState(location, @object);
 		}
 
-		private IEnumerable<(GameLocation location, SObject machine)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
+		private IEnumerable<(GameLocation location, SObject machine, IList<SObject> heldItems)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
 		{
-			SObject CopyMachine(SObject machine, bool copyHeldObject, bool copyHeldObjectQuality)
+			SObject CopyMachine(SObject machine)
 			{
 				var newMachine = (SObject)machine.getOne();
 				newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
-				if (copyHeldObject && machine.heldObject.Value is not null)
-				{
-					newMachine.heldObject.Value = (SObject)machine.heldObject.Value.getOne();
-					newMachine.heldObject.Value.Quality = copyHeldObjectQuality ? machine.heldObject.Value.Quality : SObject.lowQuality;
-				}
 				return newMachine;
 			}
+
+			IList<SObject> CopyHeldItems(SObject machine)
+			{
+				var list = new List<SObject>();
+				if (machine.heldObject.Value is not null)
+					list.Add(machine.heldObject.Value);
+				return list;
+			}
+
+			void AddHeldItem(IList<SObject> heldItems, SObject newHeldItem)
+			{
+				foreach (var heldItem in heldItems)
+				{
+					if (heldItem.Name == newHeldItem.name && heldItem.Quality == newHeldItem.Quality)
+						return;
+				}
+				heldItems.Add(newHeldItem);
+			}
 			
-			IList<(GameLocation location, SObject machine)> results = new List<(GameLocation location, SObject machine)>();
+			IList<(GameLocation location, SObject machine, IList<SObject> heldItems)> results = new List<(GameLocation location, SObject machine, IList<SObject> heldItems)>();
 			foreach (var (location, machine) in machines)
 			{
 				switch (Config.Grouping)
 				{
 					case MachineRenderingOptions.Grouping.None:
-						results.Add((location, CopyMachine(machine, false, false)));
+						results.Add((location, CopyMachine(machine), new List<SObject>()));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachine:
-						foreach (var (_, result) in results)
+						foreach (var (_, result, resultHeldItems) in results)
 						{
 							if (machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value)
 							{
 								result.Stack++;
+								if (machine.heldObject.Value is not null)
+									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, CopyMachine(machine, false, false)));
+						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachineAndItem:
-						foreach (var (_, result) in results)
+						foreach (var (_, result, resultHeldItems) in results)
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
@@ -383,13 +399,15 @@ namespace Shockah.MachineStatus
 							)
 							{
 								result.Stack++;
+								if (machine.heldObject.Value is not null)
+									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, CopyMachine(machine, true, false)));
+						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachineAndItemAndQuality:
-						foreach (var (_, result) in results)
+						foreach (var (_, result, resultHeldItems) in results)
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
@@ -399,10 +417,12 @@ namespace Shockah.MachineStatus
 							)
 							{
 								result.Stack++;
+								if (machine.heldObject.Value is not null)
+									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, CopyMachine(machine, true, true)));
+						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
 						break;
 				}
 				machineLoopContinue:;
