@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace Shockah.CommonModCode.UI
 {
@@ -57,6 +58,29 @@ namespace Shockah.CommonModCode.UI
 					break;
 			}
 			return result;
+		}
+
+		public Vector2 GetAnchoredPoint(Vector2 fromLocation, Vector2 fromSize, Vector2 toSize)
+			=> From.GetAnchorPoint(fromLocation, fromSize) - To.GetAnchorPoint(Vector2.Zero, toSize) + Offset;
+	}
+
+	public static class UIAnchorSideExtensions
+	{
+		public static Vector2 GetAnchorPoint(this UIAnchorSide self, Vector2 location, Vector2 size)
+		{
+			return self switch
+			{
+				UIAnchorSide.TopLeft => location,
+				UIAnchorSide.TopRight => new(location.X + size.X, location.Y),
+				UIAnchorSide.BottomLeft => new(location.X, location.Y + size.Y),
+				UIAnchorSide.BottomRight => new(location.X + size.X, location.Y + size.Y),
+				UIAnchorSide.Center => new(location.X + size.X * 0.5f, location.Y + size.Y * 0.5f),
+				UIAnchorSide.Top => new(location.X + size.X * 0.5f, location.Y),
+				UIAnchorSide.Bottom => new(location.X + size.X * 0.5f, location.Y + size.Y),
+				UIAnchorSide.Left => new(location.X, location.Y + size.Y * 0.5f),
+				UIAnchorSide.Right => new(location.X + size.X, location.Y + size.Y * 0.5f),
+				_ => throw new ArgumentException($"Invalid `{nameof(self)}` value."),
+			};
 		}
 	}
 }

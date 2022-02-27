@@ -47,6 +47,9 @@ namespace Shockah.CommonModCode.UI
 		public static bool IsBottomToTop(this FlowDirection self)
 			=> self is FlowDirection.LeftToRightAndBottomToTop or FlowDirection.RightToLeftAndBottomToTop or FlowDirection.BottomToTopAndLeftToRight or FlowDirection.BottomToTopAndRightToLeft;
 
+		public static (int x, int y) GetXYPositionFromZeroOrigin(this FlowDirection self, (int column, int row) position)
+			=> self.GetXYPositionFromZeroOrigin(position.column, position.row);
+
 		public static (int x, int y) GetXYPositionFromZeroOrigin(this FlowDirection self, int column, int row)
 		{
 			int columnDirection = (self.IsHorizontalFirst() ? self.IsLeftToRight() : self.IsTopToBottom()) ? 1 : -1;

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.UI;
 using System.Collections.Generic;
 
@@ -15,10 +16,12 @@ namespace Shockah.MachineStatus
 
 		public FlowDirection FlowDirection { get; set; } = FlowDirection.LeftToRightAndBottomToTop;
 		public float Scale { get; set; } = 1f;
-		public float Spacing { get; set; } = 4f;
+		public float XSpacing { get; set; } = 4f;
+		public float YSpacing { get; set; } = 4f;
+		[JsonIgnore] public Vector2 Spacing => new(XSpacing, YSpacing);
 		public int MaxColumns { get; set; } = 0;
 
-		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.None;
+		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
 		{
 			MachineRenderingOptions.Sorting.ByMachineAZ,

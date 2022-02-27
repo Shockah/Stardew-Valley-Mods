@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -27,7 +29,9 @@ namespace Shockah.MachineStatus
 			}
 		}
 
-		private readonly (string titleKey, (int machineId, string machineName)[] machineNames)[] KnownMachineNames = new[]
+		private static readonly Vector2 DigitSize = new(5, 7);
+		private static Vector2 SingleMachineSize => new(64, 64);
+		private static readonly (string titleKey, (int machineId, string machineName)[] machineNames)[] KnownMachineNames = new[]
 		{
 			("config.machine.category.artisan", new (int machineId, string machineName)[]
 			{
@@ -73,7 +77,7 @@ namespace Shockah.MachineStatus
 		internal static MachineStatus Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
-		private readonly IList<(GameLocation location, SObject machine, Item? output)> DisplayedMachines = new List<(GameLocation location, SObject machine, Item? output)>();
+		private readonly IList<(GameLocation location, SObject machine)> DisplayedMachines = new List<(GameLocation location, SObject machine)>();
 		private readonly IDictionary<string, Regex> RegexCache = new Dictionary<string, Regex>();
 
 		public override void Entry(IModHelper helper)
@@ -189,7 +193,8 @@ namespace Shockah.MachineStatus
 
 			helper.AddEnumOption("config.appearance.flowDirection", valuePrefix: "config.flowDirection", property: () => Config.FlowDirection);
 			helper.AddNumberOption("config.appearance.scale", () => Config.Scale, min: 0f, max: 12f, interval: 0.05f);
-			helper.AddNumberOption("config.appearance.spacing", () => Config.Spacing, min: -4f, max: 48f, interval: 0.25f);
+			helper.AddNumberOption("config.appearance.xSpacing", () => Config.XSpacing, min: -16f, max: 64f, interval: 0.5f);
+			helper.AddNumberOption("config.appearance.ySpacing", () => Config.YSpacing, min: -16f, max: 64f, interval: 0.5f);
 			helper.AddNumberOption("config.appearance.maxColumns", () => Config.MaxColumns, min: 0, max: 20);
 
 			helper.AddSectionTitle("config.groupingSorting.section");
@@ -240,16 +245,177 @@ namespace Shockah.MachineStatus
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
+			if (DisplayedMachines.Count == 0)
+				return;
+
+			var preparedMachines = SortMachines(GroupMachines(DisplayedMachines), Game1.player);
+			IList<((int column, int row) position, (GameLocation location, SObject machine) machine)> machineCoords
+				= new List<((int column, int row) position, (GameLocation location, SObject machine) machine)>();
+			int column = 0;
+			int row = 0;
+
+			foreach (var entry in preparedMachines)
+			{
+				machineCoords.Add((position: (column++, row), machine: entry));
+				if (column == Config.MaxColumns)
+				{
+					column = 0;
+					row++;
+				}
+			}
+
+			var machineFlowCoords = machineCoords
+				.Select(e => (position: Config.FlowDirection.GetXYPositionFromZeroOrigin(e.position), machine: e.machine))
+				.ToList();
+			var minX = machineFlowCoords.Min(e => e.position.x);
+			var minY = machineFlowCoords.Min(e => e.position.y);
+			var maxX = machineFlowCoords.Max(e => e.position.x);
+			var maxY = machineFlowCoords.Max(e => e.position.y);
+			var width = maxX - minX + 1;
+			var height = maxY - minY + 1;
+
+			var viewportBounds = Game1.graphics.GraphicsDevice.Viewport.Bounds;
+			var screenSize = new Vector2(viewportBounds.Size.X, viewportBounds.Size.Y);
+			var panelSize = (SingleMachineSize * new Vector2(width, height) + Config.Spacing * new Vector2(width - 1, height - 1)) * Config.Scale;
+			var panelLocation = Config.Anchor.GetAnchoredPoint(Vector2.Zero, screenSize, panelSize);
+
+			foreach (var ((x, y), (_, machine)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
+			{
+				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
+				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
+				machine.drawInMenu(e.SpriteBatch, machineLocation + new Vector2(32, 32) * (Config.Scale - 1f), Config.Scale, 1f, 0.9f, StackDrawType.Hide);
+				if (machine.Stack > 1)
+				{
+					Utility.drawTinyDigits(
+						machine.Stack,
+						e.SpriteBatch,
+						machineLocation + SingleMachineSize * Config.Scale - DigitSize * new Vector2(((int)Math.Log10(machine.Stack) + 1), 1.2f) * 3 * Config.Scale,
+						3f * Config.Scale,
+						1f,
+						Color.White
+					);
+				}
+			}
 		}
 
 		private void ForceRefreshDisplayedMachines()
 		{
 			DisplayedMachines.Clear();
-			if (!Context.IsPlayerFree)
+			if (!Context.IsWorldReady || Game1.currentLocation is null)
 				return;
 			foreach (var location in Game1.locations)
 				foreach (var @object in location.Objects.Values)
 					UpdateMachineState(location, @object);
+		}
+
+		private IEnumerable<(GameLocation location, SObject machine)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
+		{
+			IList<(GameLocation location, SObject machine)> results = new List<(GameLocation location, SObject machine)>();
+			foreach (var (location, machine) in machines)
+			{
+				switch (Config.Grouping)
+				{
+					case MachineRenderingOptions.Grouping.None:
+						results.Add((location, (SObject)machine.getOne()));
+						break;
+					case MachineRenderingOptions.Grouping.ByMachine:
+						foreach (var (_, result) in results)
+						{
+							if (machine.ParentSheetIndex == result.ParentSheetIndex)
+							{
+								result.Stack++;
+								goto machineLoopContinue;
+							}
+						}
+						results.Add((location, (SObject)machine.getOne()));
+						break;
+					case MachineRenderingOptions.Grouping.ByMachineAndItem:
+						foreach (var (_, result) in results)
+						{
+							if (
+								machine.ParentSheetIndex == result.ParentSheetIndex &&
+								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
+								machine.heldObject.Value?.Name == result.heldObject.Value?.Name
+							)
+							{
+								result.Stack++;
+								goto machineLoopContinue;
+							}
+						}
+						results.Add((location, (SObject)machine.getOne()));
+						break;
+					case MachineRenderingOptions.Grouping.ByMachineAndItemAndQuality:
+						foreach (var (_, result) in results)
+						{
+							if (
+								machine.ParentSheetIndex == result.ParentSheetIndex &&
+								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
+								machine.heldObject.Value?.Name == result.heldObject.Value?.Name &&
+								machine.heldObject.Value?.Quality == result.heldObject.Value?.Quality
+							)
+							{
+								result.Stack++;
+								goto machineLoopContinue;
+							}
+						}
+						results.Add((location, (SObject)machine.getOne()));
+						break;
+				}
+				machineLoopContinue:;
+			}
+			return results;
+		}
+
+		private IEnumerable<(GameLocation location, SObject machine)> SortMachines(IEnumerable<(GameLocation location, SObject machine)> machines, Farmer player)
+		{
+			IEnumerable<(GameLocation location, SObject machine)> results = machines;
+
+			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine), T> keySelector) where T: IComparable<T>
+			{
+				results = results is IOrderedEnumerable<(GameLocation location, SObject machine)> ordered
+					? (ascending ? ordered.ThenBy(keySelector) : ordered.ThenByDescending(keySelector))
+					: (ascending ? results.OrderBy(keySelector) : results.OrderByDescending(keySelector));
+			}
+
+			foreach (var sorting in Config.Sorting)
+			{
+				switch (sorting)
+				{
+					case MachineRenderingOptions.Sorting.None:
+						break;
+					case MachineRenderingOptions.Sorting.ByMachineAZ:
+					case MachineRenderingOptions.Sorting.ByMachineZA:
+						SortResults(
+							sorting == MachineRenderingOptions.Sorting.ByMachineAZ,
+							e => e.machine.DisplayName
+						);
+						break;
+					case MachineRenderingOptions.Sorting.ByDistanceAscending:
+					case MachineRenderingOptions.Sorting.ByDistanceDescending:
+						SortResults(
+							sorting == MachineRenderingOptions.Sorting.ByDistanceAscending,
+							e => e.location == player.currentLocation ? (player.getTileLocation() - e.machine.TileLocation).Length() : float.PositiveInfinity
+						);
+						break;
+					case MachineRenderingOptions.Sorting.ByItemAZ:
+					case MachineRenderingOptions.Sorting.ByItemZA:
+						SortResults(
+							sorting == MachineRenderingOptions.Sorting.ByItemAZ,
+							e => e.machine.heldObject.Value?.DisplayName ?? ""
+						);
+						break;
+					case MachineRenderingOptions.Sorting.ByItemQualityBest:
+					case MachineRenderingOptions.Sorting.ByItemQualityWorst:
+						SortResults(
+							sorting == MachineRenderingOptions.Sorting.ByItemQualityWorst,
+							e => e.machine.heldObject.Value?.Quality ?? int.MinValue
+						);
+						break;
+					default:
+						throw new InvalidOperationException();
+				}
+			}
+			return results;
 		}
 
 		private bool MachineMatches(SObject machine, IList<string> list)
@@ -306,18 +472,18 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
-		private void SetMachineVisible(bool visible, GameLocation location, SObject machine, SObject? output = null)
+		private void SetMachineVisible(bool visible, GameLocation location, SObject machine)
 		{
 			if (visible)
-				ShowMachine(location, machine, output);
+				ShowMachine(location, machine);
 			else
 				HideMachine(location, machine);
 		}
 
-		private void ShowMachine(GameLocation location, SObject machine, SObject? output = null)
+		private void ShowMachine(GameLocation location, SObject machine)
 		{
 			HideMachine(location, machine);
-			DisplayedMachines.Add((location, machine, output ?? machine.heldObject.Value?.getOne()));
+			DisplayedMachines.Add((location, machine));
 		}
 
 		private void HideMachine(GameLocation location, SObject machine)
@@ -327,35 +493,35 @@ namespace Shockah.MachineStatus
 				DisplayedMachines.Remove(existingEntry.Value);
 		}
 
-		private void UpdateMachineState(GameLocation location, SObject machine, SObject? output = null)
+		private void UpdateMachineState(GameLocation location, SObject machine)
 		{
 			if (!IsMachine(location, machine))
 				return;
 
 			if (machine.readyForHarvest.Value)
-				SetMachineReadyForHarvest(location, machine, output ?? machine.heldObject.Value);
+				SetMachineReadyForHarvest(location, machine);
 			else if (machine.MinutesUntilReady > 0)
 				SetMachineBusy(location, machine);
 			else
 				SetMachineWaitingForInput(location, machine);
 		}
 
-		private void SetMachineReadyForHarvest(GameLocation location, SObject machine, SObject? output = null)
+		private void SetMachineReadyForHarvest(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions);
-			SetMachineVisible(shouldShow, location, machine, output);
+			SetMachineVisible(shouldShow, location, machine);
 		}
 
 		private void SetMachineWaitingForInput(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptions);
-			SetMachineVisible(shouldShow, location, machine, null);
+			SetMachineVisible(shouldShow, location, machine);
 		}
 
 		private void SetMachineBusy(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptions);
-			SetMachineVisible(shouldShow, location, machine, null);
+			SetMachineVisible(shouldShow, location, machine);
 		}
 
 		private static void Object_checkForAction_Prefix(SObject __instance, ref MachineState __state)

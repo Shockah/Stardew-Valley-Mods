@@ -43,7 +43,8 @@
 
     "config.appearance.flowDirection.name": "Flow direction",
     "config.appearance.scale.name": "Scale",
-    "config.appearance.spacing.name": "Spacing",
+    "config.appearance.xSpacing.name": "X spacing",
+    "config.appearance.ySpacing.name": "Y spacing",
     "config.appearance.maxColumns.name": "Max columns",
     "config.appearance.maxColumns.tooltip": "'0' is unlimited",
 
