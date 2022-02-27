@@ -80,6 +80,9 @@ namespace Shockah.MachineStatus
 
 		private readonly IList<(GameLocation location, SObject machine)> DisplayedMachines = new List<(GameLocation location, SObject machine)>();
 		private readonly IDictionary<string, Regex> RegexCache = new Dictionary<string, Regex>();
+		private MachineRenderingOptions.Visibility Visibility = MachineRenderingOptions.Visibility.Normal;
+		private float VisibilityAlpha = 1f;
+		private bool IsHoveredOver = false;
 
 		public override void Entry(IModHelper helper)
 		{
@@ -88,7 +91,9 @@ namespace Shockah.MachineStatus
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
+			helper.Events.Input.ButtonPressed += OnButtonPressed;
 			helper.Events.Display.RenderedHud += OnRenderedHud;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
@@ -202,6 +207,11 @@ namespace Shockah.MachineStatus
 			helper.AddNumberOption("config.bubble.itemCycleTime", () => Config.BubbleItemCycleTime, min: 0.2f, max: 5f, interval: 0.1f);
 			helper.AddEnumOption("config.bubble.sway", () => Config.BubbleSway);
 
+			helper.AddSectionTitle("config.appearance.section");
+			helper.AddKeybindList("config.appearance.visibilityKeybind", () => Config.VisibilityKeybind);
+			helper.AddNumberOption("config.appearance.alpha.focused", () => Config.FocusedAlpha, min: 0f, max: 1f, interval: 0.05f);
+			helper.AddNumberOption("config.appearance.alpha.normal", () => Config.NormalAlpha, min: 0f, max: 1f, interval: 0.05f);
+
 			helper.AddSectionTitle("config.groupingSorting.section");
 			helper.AddEnumOption("config.groupingSorting.grouping", () => Config.Grouping);
 			for (int i = 0; i < 4; i++)
@@ -233,11 +243,30 @@ namespace Shockah.MachineStatus
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			SetupConfig();
+			Visibility = MachineRenderingOptions.Visibility.Normal;
+			VisibilityAlpha = Config.NormalAlpha;
+			IsHoveredOver = false;
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			ForceRefreshDisplayedMachines();
+		}
+
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		{
+			var targetAlpha = Visibility switch
+			{
+				MachineRenderingOptions.Visibility.Hidden => 0f,
+				MachineRenderingOptions.Visibility.Normal => IsHoveredOver ? Config.FocusedAlpha : Config.NormalAlpha,
+				MachineRenderingOptions.Visibility.Focused => Config.FocusedAlpha,
+				_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
+			};
+			VisibilityAlpha += (targetAlpha - VisibilityAlpha) * 0.15f;
+			if (VisibilityAlpha <= 0.01f)
+				VisibilityAlpha = 0f;
+			else if (VisibilityAlpha >= 0.99f)
+				VisibilityAlpha = 1f;
 		}
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
@@ -248,9 +277,27 @@ namespace Shockah.MachineStatus
 				UpdateMachineState(e.Location, @object.Value);
 		}
 
+		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
+		{
+			if (!Context.IsPlayerFree)
+				return;
+			if (!Config.VisibilityKeybind.Keybinds.Any(k => k.Buttons.Contains(e.Button)))
+				return;
+
+			Visibility = Visibility switch
+			{
+				MachineRenderingOptions.Visibility.Hidden => Config.FocusedAlpha == Config.NormalAlpha ? MachineRenderingOptions.Visibility.Focused : MachineRenderingOptions.Visibility.Normal,
+				MachineRenderingOptions.Visibility.Normal => MachineRenderingOptions.Visibility.Focused,
+				MachineRenderingOptions.Visibility.Focused => MachineRenderingOptions.Visibility.Hidden,
+				_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
+			};
+		}
+
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
 			if (DisplayedMachines.Count == 0)
+				return;
+			if (VisibilityAlpha <= 0f)
 				return;
 
 			var preparedMachines = GroupMachines(SortMachines(DisplayedMachines, Game1.player));
@@ -284,6 +331,13 @@ namespace Shockah.MachineStatus
 			var panelSize = (SingleMachineSize * new Vector2(width, height) + Config.Spacing * new Vector2(width - 1, height - 1)) * Config.Scale;
 			var panelLocation = Config.Anchor.GetAnchoredPoint(Vector2.Zero, screenSize, panelSize);
 
+			var mouseLocation = Game1.getMousePosition();
+			IsHoveredOver =
+				mouseLocation.X >= panelLocation.X &&
+				mouseLocation.Y >= panelLocation.Y &&
+				mouseLocation.X < panelLocation.X + panelSize.X &&
+				mouseLocation.Y < panelLocation.Y + panelSize.Y;
+
 			foreach (var ((x, y), (_, machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
 			{
 				float GetBubbleSwayOffset()
@@ -304,7 +358,7 @@ namespace Shockah.MachineStatus
 					machineLocation + new Vector2(32, 32) * (Config.Scale - 1f),
 					Config.Scale,
 					1f, 0.9f, StackDrawType.Hide,
-					Color.White, drawShadow: false
+					Color.White * VisibilityAlpha, drawShadow: false
 				);
 
 				float timeVariableOffset = GetBubbleSwayOffset();
@@ -318,7 +372,7 @@ namespace Shockah.MachineStatus
 						Game1.emoteSpriteSheet,
 						machineLocation + new Vector2(SingleMachineSize.X * 0.5f - xEmoteRectangle.Width * emoteScale * 0.5f, timeVariableOffset - xEmoteRectangle.Height * emoteScale * 0.5f) * Config.Scale,
 						xEmoteRectangle,
-						Color.White * 0.75f,
+						Color.White * 0.75f * VisibilityAlpha,
 						0f, Vector2.Zero, emoteScale * Config.Scale, SpriteEffects.None, 0.91f
 					);
 				}
@@ -334,7 +388,7 @@ namespace Shockah.MachineStatus
 							Game1.mouseCursors,
 							machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, timeVariableOffset - bubbleRectangle.Height * bubbleScale * 0.5f) * Config.Scale,
 							bubbleRectangle,
-							Color.White * 0.75f,
+							Color.White * 0.75f * VisibilityAlpha,
 							0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
 						);
 
@@ -343,7 +397,7 @@ namespace Shockah.MachineStatus
 							e.SpriteBatch,
 							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, timeVariableOffset - (bubbleRectangle.Height - 4) * bubbleScale * 0.5f) * Config.Scale,
 							Config.Scale * 0.5f, 1f, 0.9f, StackDrawType.HideButShowQuality,
-							Color.White, drawShadow: false
+							Color.White * VisibilityAlpha, drawShadow: false
 						);
 					}
 					else
@@ -364,7 +418,7 @@ namespace Shockah.MachineStatus
 						machineLocation + SingleMachineSize * Config.Scale - DigitSize * new Vector2(((int)Math.Log10(machine.Stack) + 1), 1.2f) * 3 * Config.Scale,
 						3f * Config.Scale,
 						1f,
-						Color.White
+						Color.White * VisibilityAlpha
 					);
 				}
 			}

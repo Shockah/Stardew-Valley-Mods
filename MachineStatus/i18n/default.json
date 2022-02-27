@@ -30,6 +30,7 @@
 
     "config.layout.section.name": "Layout",
     "config.bubble.section.name": "Bubble",
+    "config.appearance.section.name": "Appearance",
     "config.groupingSorting.section.name": "Grouping & sorting",
     "config.show.section.name": "Machines to show",
 
@@ -58,6 +59,12 @@
     "config.bubble.sway.value.Static": "Static",
     "config.bubble.sway.value.Together": "Together",
     "config.bubble.sway.value.Wave": "Wave",
+
+    "config.appearance.visibilityKeybind.name": "Visibility hotkey",
+    "config.appearance.alpha.focused.name": "Focused alpha",
+    "config.appearance.alpha.focused.tooltip": "Transparency when the display is focused (when hovering over with a mouse cursor, or after pressing a hotkey).\n0: fully transparent\n1: fully opaque",
+    "config.appearance.alpha.normal.name": "Normal alpha",
+    "config.appearance.alpha.normal.tooltip": "Transparency when the display is not focused.\n0: fully transparent\n1: fully opaque",
 
     "config.groupingSorting.grouping.name": "Grouping",
     "config.groupingSorting.grouping.value.None": "None",

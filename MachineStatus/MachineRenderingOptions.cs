@@ -13,5 +13,7 @@
 		}
 
 		public enum BubbleSway { Static, Together, Wave }
+
+		public enum Visibility { Hidden, Normal, Focused }
 	}
 }

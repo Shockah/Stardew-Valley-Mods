@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using Shockah.CommonModCode.UI;
+using StardewModdingAPI;
+using StardewModdingAPI.Utilities;
 using System.Collections.Generic;
 
 namespace Shockah.MachineStatus
@@ -24,6 +26,10 @@ namespace Shockah.MachineStatus
 		public bool ShowItemBubble { get; set; } = true;
 		public float BubbleItemCycleTime { get; set; } = 2f;
 		public MachineRenderingOptions.BubbleSway BubbleSway { get; set; } = MachineRenderingOptions.BubbleSway.Wave;
+
+		public KeybindList VisibilityKeybind { get; set; } = new KeybindList();
+		public float FocusedAlpha { get; set; } = 1f;
+		public float NormalAlpha { get; set; } = 0.3f;
 
 		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
