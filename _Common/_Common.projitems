@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\GMCMI18nHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HarmonyExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)I18nEnum.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileHelper.cs" />

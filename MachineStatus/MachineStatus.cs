@@ -7,6 +7,8 @@ using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Locations;
+using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,18 +20,6 @@ namespace Shockah.MachineStatus
 {
 	public class MachineStatus: Mod
 	{
-		private readonly struct MachineState
-		{
-			public readonly bool ReadyForHarvest;
-			public readonly int MinutesUntilReady;
-
-			public MachineState(bool readyForHarvest, int minutesUntilReady)
-			{
-				this.ReadyForHarvest = readyForHarvest;
-				this.MinutesUntilReady = minutesUntilReady;
-			}
-		}
-
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
 		private static Vector2 SingleMachineSize => new(64, 64);
@@ -100,18 +90,33 @@ namespace Shockah.MachineStatus
 			var harmony = new Harmony(ModManifest.UniqueID);
 			try
 			{
-				harmony.Patch(
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.DayUpdate)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_DayUpdate_Postfix))
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.updateWhenCurrentLocation)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_updateWhenCurrentLocation_Postfix))
+				);
+				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
-					prefix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_checkForAction_Prefix)),
 					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_checkForAction_Postfix))
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_performObjectDropInAction_Postfix))
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.performDropDownAction)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_performDropDownAction_Postfix))
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.onReadyForHarvest)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_onReadyForHarvest_Postfix))
 				);
 				harmony.Patch(
 					original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.passTimeForObjects)),
 					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(GameLocation_passTimeForObjects_Postfix))
-				);
-				harmony.Patch(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.onReadyForHarvest)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_onReadyForHarvest_Postfix))
 				);
 			}
 			catch (Exception e)
@@ -310,8 +315,8 @@ namespace Shockah.MachineStatus
 				return;
 
 			var preparedMachines = GroupMachines(SortMachines(DisplayedMachines, Game1.player));
-			IList<((int column, int row) position, (GameLocation location, SObject machine, IList<SObject> heldItems) machine)> machineCoords
-				= new List<((int column, int row) position, (GameLocation location, SObject machine, IList<SObject> heldItems) machine)>();
+			IList<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)> machineCoords
+				= new List<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)>();
 			int column = 0;
 			int row = 0;
 
@@ -347,7 +352,7 @@ namespace Shockah.MachineStatus
 				mouseLocation.X < panelLocation.X + panelSize.X &&
 				mouseLocation.Y < panelLocation.Y + panelSize.Y;
 
-			foreach (var ((x, y), (_, machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
+			foreach (var ((x, y), (machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
 			{
 				float GetBubbleSwayOffset()
 				{
@@ -443,7 +448,7 @@ namespace Shockah.MachineStatus
 					UpdateMachineState(location, @object);
 		}
 
-		private IEnumerable<(GameLocation location, SObject machine, IList<SObject> heldItems)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
+		private IEnumerable<(SObject machine, IList<SObject> heldItems)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
 		{
 			SObject CopyMachine(SObject machine)
 			{
@@ -471,16 +476,16 @@ namespace Shockah.MachineStatus
 				heldItems.Add(newHeldItem);
 			}
 			
-			IList<(GameLocation location, SObject machine, IList<SObject> heldItems)> results = new List<(GameLocation location, SObject machine, IList<SObject> heldItems)>();
+			IList<(SObject machine, IList<SObject> heldItems)> results = new List<(SObject machine, IList<SObject> heldItems)>();
 			foreach (var (location, machine) in machines)
 			{
 				switch (Config.Grouping)
 				{
 					case MachineRenderingOptions.Grouping.None:
-						results.Add((location, CopyMachine(machine), new List<SObject>()));
+						results.Add((CopyMachine(machine), new List<SObject>()));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachine:
-						foreach (var (_, result, resultHeldItems) in results)
+						foreach (var (result, resultHeldItems) in results)
 						{
 							if (machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value)
 							{
@@ -490,10 +495,10 @@ namespace Shockah.MachineStatus
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
+						results.Add((CopyMachine(machine), CopyHeldItems(machine)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachineAndItem:
-						foreach (var (_, result, resultHeldItems) in results)
+						foreach (var (result, resultHeldItems) in results)
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
@@ -507,7 +512,7 @@ namespace Shockah.MachineStatus
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
+						results.Add((CopyMachine(machine), CopyHeldItems(machine)));
 						break;
 				}
 				machineLoopContinue:;
@@ -632,6 +637,19 @@ namespace Shockah.MachineStatus
 			return false;
 		}
 
+		private bool IsLocationAccessible(GameLocation location)
+		{
+			if (location is Cellar cellar)
+			{
+				var cellarIndex = Game1.locations.Where(l => l is Cellar).ToList().IndexOf(location);
+				var player = Game1.getAllFarmers().Skip(cellarIndex).FirstOrDefault();
+				if (player is null)
+					return false;
+				return player.HouseUpgradeLevel >= 3;
+			}
+			return true;
+		}
+
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
 			if (@object.IsSprinkler())
@@ -664,13 +682,18 @@ namespace Shockah.MachineStatus
 		{
 			if (!IsMachine(location, machine))
 				return;
+			if (!IsLocationAccessible(location))
+			{
+				HideMachine(location, machine);
+				return;
+			}
 
 			if (machine.readyForHarvest.Value)
 				SetMachineReadyForHarvest(location, machine);
-			else if (machine.MinutesUntilReady > 0)
-				SetMachineBusy(location, machine);
-			else
+			else if (machine.heldObject.Value is null)
 				SetMachineWaitingForInput(location, machine);
+			else
+				SetMachineBusy(location, machine);
 		}
 
 		private void SetMachineReadyForHarvest(GameLocation location, SObject machine)
@@ -691,16 +714,33 @@ namespace Shockah.MachineStatus
 			SetMachineVisible(shouldShow, location, machine);
 		}
 
-		private static void Object_checkForAction_Prefix(SObject __instance, ref MachineState __state)
+		private static void Object_DayUpdate_Postfix(SObject __instance, GameLocation __0 /* location */)
 		{
-			__state = new MachineState(__instance.readyForHarvest.Value, __instance.MinutesUntilReady);
+			Instance.UpdateMachineState(__0, __instance);
 		}
 
-		private static void Object_checkForAction_Postfix(SObject __instance, ref MachineState __state, Farmer who)
+		private static void Object_updateWhenCurrentLocation_Postfix(SObject __instance, GameLocation __1 /* environment */)
 		{
-			if (__instance.readyForHarvest.Value == __state.ReadyForHarvest && __instance.MinutesUntilReady == __state.MinutesUntilReady)
+			Instance.UpdateMachineState(__1, __instance);
+		}
+
+		private static void Object_checkForAction_Postfix(SObject __instance, Farmer __0 /* who */, bool __1 /* justCheckingForActivity */)
+		{
+			if (__1)
 				return;
-			Instance.UpdateMachineState(who.currentLocation, __instance);
+			Instance.UpdateMachineState(__0.currentLocation, __instance);
+		}
+
+		private static void Object_performObjectDropInAction_Postfix(SObject __instance, bool __0 /* probe */, Farmer __1 /* who */)
+		{
+			if (__0)
+				return;
+			Instance.UpdateMachineState(__1.currentLocation, __instance);
+		}
+
+		private static void Object_performDropDownAction_Postfix(SObject __instance, Farmer __0 /* who */)
+		{
+			Instance.UpdateMachineState(__0.currentLocation, __instance);
 		}
 
 		private static void GameLocation_passTimeForObjects_Postfix(GameLocation __instance)
