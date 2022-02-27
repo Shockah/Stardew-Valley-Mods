@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Shockah.CommonModCode;
+using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {

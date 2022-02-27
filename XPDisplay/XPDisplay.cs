@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.IL;
+using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -332,14 +333,14 @@ namespace Shockah.XPView
 			bool isBigLevel = (levelIndex + 1) % 5 == 0;
 			Texture2D barTexture = Game1.mouseCursors;
 			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
-			ModConfig.Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
+			Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
 
 			if (currentLevel >= 10 && Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
 				(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar() : WalkOfLifeBridge.GetExtendedSmallBar();
 
 			switch (orientation)
 			{
-				case ModConfig.Orientation.Horizontal:
+				case Orientation.Horizontal:
 					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
 					SkillsPageDrawQueuedDelegates.Add(() =>
 					{
@@ -356,7 +357,7 @@ namespace Shockah.XPView
 						);
 					});
 					break;
-				case ModConfig.Orientation.Vertical:
+				case Orientation.Vertical:
 					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
 					SkillsPageDrawQueuedDelegates.Add(() =>
 					{
