@@ -1,8 +1,10 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using StardewModdingAPI;
 using StardewValley;
 using System;
+using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
 namespace Shockah.MachineStatus
@@ -17,27 +19,33 @@ namespace Shockah.MachineStatus
 			{
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.DayUpdate)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_DayUpdate_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.updateWhenCurrentLocation)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_updateWhenCurrentLocation_Postfix))
+					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_DayUpdate_Postfix)),
+					monitor: Instance.Monitor
 				);
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_checkForAction_Postfix))
+					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_checkForAction_Postfix)),
+					monitor: Instance.Monitor
 				);
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_performObjectDropInAction_Postfix))
+					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_performObjectDropInAction_Postfix)),
+					monitor: Instance.Monitor
 				);
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.performDropDownAction)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_performDropDownAction_Postfix))
+					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_performDropDownAction_Postfix)),
+					monitor: Instance.Monitor
 				);
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.onReadyForHarvest)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_onReadyForHarvest_Postfix))
+					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_onReadyForHarvest_Postfix)),
+					monitor: Instance.Monitor
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.checkAction)),
+					postfix: new HarmonyMethod(typeof(Patches), nameof(GameLocation_checkAction_Postfix)),
+					monitor: Instance.Monitor
 				);
 				harmony.Patch(
 					original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.passTimeForObjects)),
@@ -55,11 +63,6 @@ namespace Shockah.MachineStatus
 			Instance.UpdateMachineState(__0, __instance);
 		}
 
-		private static void Object_updateWhenCurrentLocation_Postfix(SObject __instance, GameLocation __1 /* environment */)
-		{
-			Instance.UpdateMachineState(__1, __instance);
-		}
-
 		private static void Object_checkForAction_Postfix(SObject __instance, Farmer __0 /* who */, bool __1 /* justCheckingForActivity */)
 		{
 			if (__1)
@@ -67,11 +70,11 @@ namespace Shockah.MachineStatus
 			Instance.UpdateMachineState(__0.currentLocation, __instance);
 		}
 
-		private static void Object_performObjectDropInAction_Postfix(SObject __instance, bool __0 /* probe */, Farmer __1 /* who */)
+		private static void Object_performObjectDropInAction_Postfix(SObject __instance, bool __1 /* probe */, Farmer __2 /* who */)
 		{
-			if (__0)
+			if (__1)
 				return;
-			Instance.UpdateMachineState(__1.currentLocation, __instance);
+			Instance.UpdateMachineState(__2.currentLocation, __instance);
 		}
 
 		private static void Object_performDropDownAction_Postfix(SObject __instance, Farmer __0 /* who */)
@@ -82,6 +85,13 @@ namespace Shockah.MachineStatus
 		private static void Object_onReadyForHarvest_Postfix(SObject __instance, GameLocation __0 /* environment */)
 		{
 			Instance.UpdateMachineState(__0, __instance);
+		}
+
+		private static void GameLocation_checkAction_Postfix(GameLocation __instance, Location __0 /* tileLocation */)
+		{
+			Vector2 key = new Vector2(__0.X, __0.Y);
+			if (__instance.Objects.TryGetValue(key, out var @object))
+				Instance.UpdateMachineState(__instance, @object);
 		}
 
 		private static void GameLocation_passTimeForObjects_Postfix(GameLocation __instance)

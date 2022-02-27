@@ -95,9 +95,6 @@ namespace Shockah.MachineStatus
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 			helper.Events.Display.RenderedHud += OnRenderedHud;
-
-			var harmony = new Harmony(ModManifest.UniqueID);
-			Patches.Apply(harmony);
 		}
 
 		private void SetupConfig()
@@ -229,6 +226,9 @@ namespace Shockah.MachineStatus
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			var harmony = new Harmony(ModManifest.UniqueID);
+			Patches.Apply(harmony);
+
 			SetupConfig();
 			Visibility = MachineRenderingOptions.Visibility.Normal;
 			VisibilityAlpha = Config.NormalAlpha;
@@ -675,12 +675,20 @@ namespace Shockah.MachineStatus
 					return false;
 				return player.HouseUpgradeLevel >= 3;
 			}
+			else if (location is Farm)
+			{
+				return true;
+			}
+			else if (location is FarmCave)
+			{
+				return Game1.locations.Where(l => l is FarmCave).First() == location;
+			}
 			return true;
 		}
 
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
-			if (@object.IsSprinkler())
+			if (!@object.bigCraftable.Value)
 				return false;
 			return true;
 		}
@@ -722,11 +730,18 @@ namespace Shockah.MachineStatus
 				return HideMachine(location, machine);
 
 			if (machine.readyForHarvest.Value)
-				return SetMachineReadyForHarvest(location, machine);
-			else if (machine.heldObject.Value is null)
-				return SetMachineWaitingForInput(location, machine);
+			{
+				if (machine.heldObject.Value is not null)
+					return SetMachineReadyForHarvest(location, machine);
+			}
 			else
-				return SetMachineBusy(location, machine);
+			{
+				if (machine.MinutesUntilReady > 0 && machine.heldObject.Value is not null)
+					return SetMachineBusy(location, machine);
+				else
+					return SetMachineWaitingForInput(location, machine);
+			}
+			return false;
 		}
 
 		private bool SetMachineReadyForHarvest(GameLocation location, SObject machine)
