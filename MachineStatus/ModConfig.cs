@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using Shockah.CommonModCode.UI;
-using StardewModdingAPI;
 using StardewModdingAPI.Utilities;
 using System.Collections.Generic;
 
@@ -31,13 +30,14 @@ namespace Shockah.MachineStatus
 		public float FocusedAlpha { get; set; } = 1f;
 		public float NormalAlpha { get; set; } = 0.3f;
 
-		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
+		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachineAndItem;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
 		{
+			MachineRenderingOptions.Sorting.ReadyFirst,
+			MachineRenderingOptions.Sorting.WaitingFirst,
 			MachineRenderingOptions.Sorting.ByMachineAZ,
 			MachineRenderingOptions.Sorting.ByItemAZ,
-			MachineRenderingOptions.Sorting.ByItemQualityBest,
-			MachineRenderingOptions.Sorting.None
+			MachineRenderingOptions.Sorting.ByItemQualityBest
 		};
 
 		public bool ShowReady { get; set; } = true;

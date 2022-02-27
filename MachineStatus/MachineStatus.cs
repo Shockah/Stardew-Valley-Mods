@@ -132,6 +132,10 @@ namespace Shockah.MachineStatus
 				reset: () => Config = new ModConfig(),
 				save: () =>
 				{
+					var newSortingOptions = Config.Sorting.Where(o => o != MachineRenderingOptions.Sorting.None).ToList();
+					Config.Sorting.Clear();
+					foreach (var sortingOption in newSortingOptions)
+						Config.Sorting.Add(sortingOption);
 					Helper.WriteConfig(Config);
 					ForceRefreshDisplayedMachines();
 				}
@@ -215,7 +219,7 @@ namespace Shockah.MachineStatus
 
 			helper.AddSectionTitle("config.groupingSorting.section");
 			helper.AddEnumOption("config.groupingSorting.grouping", () => Config.Grouping);
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < Math.Max(Config.Sorting.Count + 1, 3); i++)
 			{
 				int loopI = i;
 				helper.AddEnumOption(
@@ -228,6 +232,8 @@ namespace Shockah.MachineStatus
 						while (loopI >= Config.Sorting.Count)
 							Config.Sorting.Add(MachineRenderingOptions.Sorting.None);
 						Config.Sorting[loopI] = value;
+						while (Config.Sorting.Count > 0 && Config.Sorting.Last() == MachineRenderingOptions.Sorting.None)
+							Config.Sorting.RemoveAt(Config.Sorting.Count - 1);
 					}
 				);
 			}
@@ -501,24 +507,6 @@ namespace Shockah.MachineStatus
 						}
 						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
 						break;
-					case MachineRenderingOptions.Grouping.ByMachineAndItemAndQuality:
-						foreach (var (_, result, resultHeldItems) in results)
-						{
-							if (
-								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
-								machine.heldObject.Value?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value &&
-								machine.heldObject.Value?.Name == resultHeldItems.FirstOrDefault()?.Name &&
-								machine.heldObject.Value?.Quality == resultHeldItems.FirstOrDefault()?.Quality
-							)
-							{
-								result.Stack++;
-								if (machine.heldObject.Value is not null)
-									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
-								goto machineLoopContinue;
-							}
-						}
-						results.Add((location, CopyMachine(machine), CopyHeldItems(machine)));
-						break;
 				}
 				machineLoopContinue:;
 			}
@@ -547,6 +535,24 @@ namespace Shockah.MachineStatus
 						SortResults(
 							sorting == MachineRenderingOptions.Sorting.ByMachineAZ,
 							e => e.machine.DisplayName
+						);
+						break;
+					case MachineRenderingOptions.Sorting.ReadyFirst:
+						SortResults(
+							false,
+							e => e.machine.readyForHarvest.Value
+						);
+						break;
+					case MachineRenderingOptions.Sorting.WaitingFirst:
+						SortResults(
+							false,
+							e => e.machine.heldObject.Value is null && e.machine.MinutesUntilReady <= 0
+						);
+						break;
+					case MachineRenderingOptions.Sorting.BusyFirst:
+						SortResults(
+							false,
+							e => e.machine.MinutesUntilReady > 0
 						);
 						break;
 					case MachineRenderingOptions.Sorting.ByDistanceAscending:

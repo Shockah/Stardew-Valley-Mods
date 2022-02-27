@@ -21,6 +21,9 @@
     "config.sorting.value.None": "None",
     "config.sorting.value.ByMachineAZ": "By machine, A>Z",
     "config.sorting.value.ByMachineZA": "By machine, Z>A",
+    "config.sorting.value.ReadyFirst": "Ready machines",
+    "config.sorting.value.WaitingFirst": "Waiting machines",
+    "config.sorting.value.BusyFirst": "Busy machines",
     "config.sorting.value.ByDistanceAscending": "By distance, ascending",
     "config.sorting.value.ByDistanceDescending": "By distance, descending",
     "config.sorting.value.ByItemAZ": "By item, A>Z",
@@ -32,6 +35,7 @@
     "config.bubble.section.name": "Bubble",
     "config.appearance.section.name": "Appearance",
     "config.groupingSorting.section.name": "Grouping & sorting",
+    "config.groupingSorting.section.tooltip": "If you want more sort fields, re-open the config menu.",
     "config.show.section.name": "Machines to show",
 
     "config.anchor.screen.name": "Screen anchor",

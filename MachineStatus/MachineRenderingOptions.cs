@@ -2,11 +2,12 @@
 {
 	internal static class MachineRenderingOptions
 	{
-		public enum Grouping { None, ByMachine, ByMachineAndItem, ByMachineAndItemAndQuality }
+		public enum Grouping { None, ByMachine, ByMachineAndItem }
 
 		public enum Sorting {
 			None,
 			ByMachineAZ, ByMachineZA,
+			ReadyFirst, WaitingFirst, BusyFirst,
 			ByDistanceAscending, ByDistanceDescending,
 			ByItemAZ, ByItemZA,
 			ByItemQualityBest, ByItemQualityWorst
