@@ -9,8 +9,7 @@
 			ByMachineAZ, ByMachineZA,
 			ReadyFirst, WaitingFirst, BusyFirst,
 			ByDistanceAscending, ByDistanceDescending,
-			ByItemAZ, ByItemZA,
-			ByItemQualityBest, ByItemQualityWorst
+			ByItemAZ, ByItemZA
 		}
 
 		public enum BubbleSway { Static, Together, Wave }

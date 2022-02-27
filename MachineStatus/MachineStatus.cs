@@ -134,7 +134,7 @@ namespace Shockah.MachineStatus
 					setValue: value =>
 					{
 						var vanillaValues = exceptions.Where(ex => KnownMachineNames.Any(section => section.machineNames.Any(machineName => $"*|{machineName}" == ex)));
-						var customValues = value.Split(',').Select(s => s.Trim());
+						var customValues = value.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0);
 						exceptions.Clear();
 						foreach (var vanillaValue in vanillaValues)
 							exceptions.Add(vanillaValue);
@@ -603,13 +603,6 @@ namespace Shockah.MachineStatus
 						SortResults(
 							sorting == MachineRenderingOptions.Sorting.ByItemAZ,
 							e => e.machine.heldObject.Value?.DisplayName ?? ""
-						);
-						break;
-					case MachineRenderingOptions.Sorting.ByItemQualityBest:
-					case MachineRenderingOptions.Sorting.ByItemQualityWorst:
-						SortResults(
-							sorting == MachineRenderingOptions.Sorting.ByItemQualityWorst,
-							e => e.machine.heldObject.Value?.Quality ?? int.MinValue
 						);
 						break;
 					default:

@@ -28,8 +28,6 @@
     "config.sorting.value.ByDistanceDescending": "By distance, descending",
     "config.sorting.value.ByItemAZ": "By item, A>Z",
     "config.sorting.value.ByItemZA": "By item, Z>A",
-    "config.sorting.value.ByItemQualityBest": "By item quality, best first",
-    "config.sorting.value.ByItemQualityWorst": "By item quality, worst first",
 
     "config.layout.section.name": "Layout",
     "config.bubble.section.name": "Bubble",
@@ -66,7 +64,7 @@
 
     "config.appearance.visibilityKeybind.name": "Visibility hotkey",
     "config.appearance.alpha.focused.name": "Focused alpha",
-    "config.appearance.alpha.focused.tooltip": "Transparency when the display is focused (when hovering over with a mouse cursor, or after pressing a hotkey).\n0: fully transparent\n1: fully opaque",
+    "config.appearance.alpha.focused.tooltip": "Transparency when the display is focused\n(when hovering over with a mouse cursor, or after pressing a hotkey).\n0: fully transparent\n1: fully opaque",
     "config.appearance.alpha.normal.name": "Normal alpha",
     "config.appearance.alpha.normal.tooltip": "Transparency when the display is not focused.\n0: fully transparent\n1: fully opaque",
 
@@ -76,6 +74,7 @@
     "config.groupingSorting.grouping.value.ByMachineAndItem": "By machine + item",
     "config.groupingSorting.grouping.value.ByMachineAndItemAndQuality": "By machine + item + quality",
     "config.groupingSorting.sorting.name": "Sorting #{{Ordinal}}",
+    "config.groupingSorting.sorting.tooltip": "Note: sorting by distance requires additional calculations.",
 
     "config.exceptions.name": "  Exceptions",
 

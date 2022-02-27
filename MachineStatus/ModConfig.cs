@@ -36,8 +36,7 @@ namespace Shockah.MachineStatus
 			MachineRenderingOptions.Sorting.ReadyFirst,
 			MachineRenderingOptions.Sorting.WaitingFirst,
 			MachineRenderingOptions.Sorting.ByMachineAZ,
-			MachineRenderingOptions.Sorting.ByItemAZ,
-			MachineRenderingOptions.Sorting.ByItemQualityBest
+			MachineRenderingOptions.Sorting.ByItemAZ
 		};
 
 		public bool ShowReady { get; set; } = true;
