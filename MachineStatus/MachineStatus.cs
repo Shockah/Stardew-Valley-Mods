@@ -6,9 +6,9 @@ using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Locations;
-using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,8 @@ namespace Shockah.MachineStatus
 	{
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
-		private static Vector2 SingleMachineSize => new(64, 64);
+		private static readonly Vector2 SingleMachineSize = new(64, 64);
+
 		private static readonly (string titleKey, (int machineId, string machineName)[] machineNames)[] KnownMachineNames = new[]
 		{
 			("config.machine.category.artisan", new (int machineId, string machineName)[]
@@ -69,7 +70,15 @@ namespace Shockah.MachineStatus
 		internal static MachineStatus Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
-		private readonly IList<(GameLocation location, SObject machine)> DisplayedMachines = new List<(GameLocation location, SObject machine)>();
+		private readonly IList<(GameLocation location, SObject machine)> RawMachines = new List<(GameLocation location, SObject machine)>();
+		private readonly IList<(GameLocation location, SObject machine)> SortedMachines = new List<(GameLocation location, SObject machine)>();
+		private readonly IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines = new List<(SObject machine, IList<SObject> heldItems)>();
+		private readonly IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines = new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>();
+		private bool AreSortedMachinesDirty = false;
+		private bool AreGroupedMachinesDirty = false;
+		private bool AreFlowMachinesDirty = false;
+		private readonly PerScreen<(GameLocation, Vector2)?> LastPlayerTileLocation = new();
+
 		private readonly IDictionary<string, Regex> RegexCache = new Dictionary<string, Regex>();
 		private MachineRenderingOptions.Visibility Visibility = MachineRenderingOptions.Visibility.Normal;
 		private float VisibilityAlpha = 1f;
@@ -88,41 +97,7 @@ namespace Shockah.MachineStatus
 			helper.Events.Display.RenderedHud += OnRenderedHud;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
-			try
-			{
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.DayUpdate)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_DayUpdate_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.updateWhenCurrentLocation)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_updateWhenCurrentLocation_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_checkForAction_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_performObjectDropInAction_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.performDropDownAction)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_performDropDownAction_Postfix))
-				);
-				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.onReadyForHarvest)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(Object_onReadyForHarvest_Postfix))
-				);
-				harmony.Patch(
-					original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.passTimeForObjects)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(GameLocation_passTimeForObjects_Postfix))
-				);
-			}
-			catch (Exception e)
-			{
-				Monitor.Log($"Could not patch methods - Machine Status probably won't work.\nReason: {e}", LogLevel.Error);
-			}
+			Patches.Apply(harmony);
 		}
 
 		private void SetupConfig()
@@ -262,6 +237,7 @@ namespace Shockah.MachineStatus
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
+			LastPlayerTileLocation.ResetAllScreens();
 			ForceRefreshDisplayedMachines();
 		}
 
@@ -274,11 +250,23 @@ namespace Shockah.MachineStatus
 				MachineRenderingOptions.Visibility.Focused => Config.FocusedAlpha,
 				_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
 			};
+
 			VisibilityAlpha += (targetAlpha - VisibilityAlpha) * 0.15f;
 			if (VisibilityAlpha <= 0.01f)
 				VisibilityAlpha = 0f;
 			else if (VisibilityAlpha >= 0.99f)
 				VisibilityAlpha = 1f;
+
+			if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
+			{
+				var player = Game1.player;
+				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
+				if (LastPlayerTileLocation.Value is null || LastPlayerTileLocation.Value != newPlayerLocation)
+				{
+					LastPlayerTileLocation.Value = newPlayerLocation;
+					SortMachines(player);
+				}
+			}
 		}
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
@@ -309,34 +297,16 @@ namespace Shockah.MachineStatus
 		{
 			if (!Context.IsWorldReady || Game1.eventUp)
 				return;
-			if (DisplayedMachines.Count == 0)
+			if (RawMachines.Count == 0)
 				return;
 			if (VisibilityAlpha <= 0f)
 				return;
 
-			var preparedMachines = GroupMachines(SortMachines(DisplayedMachines, Game1.player));
-			IList<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)> machineCoords
-				= new List<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)>();
-			int column = 0;
-			int row = 0;
-
-			foreach (var entry in preparedMachines)
-			{
-				machineCoords.Add((position: (column++, row), machine: entry));
-				if (column == Config.MaxColumns)
-				{
-					column = 0;
-					row++;
-				}
-			}
-
-			var machineFlowCoords = machineCoords
-				.Select(e => (position: Config.FlowDirection.GetXYPositionFromZeroOrigin(e.position), machine: e.machine))
-				.ToList();
-			var minX = machineFlowCoords.Min(e => e.position.x);
-			var minY = machineFlowCoords.Min(e => e.position.y);
-			var maxX = machineFlowCoords.Max(e => e.position.x);
-			var maxY = machineFlowCoords.Max(e => e.position.y);
+			UpdateFlowMachinesIfNeeded(Game1.player);
+			var minX = FlowMachines.Min(e => e.position.X);
+			var minY = FlowMachines.Min(e => e.position.Y);
+			var maxX = FlowMachines.Max(e => e.position.X);
+			var maxY = FlowMachines.Max(e => e.position.Y);
 			var width = maxX - minX + 1;
 			var height = maxY - minY + 1;
 
@@ -352,7 +322,7 @@ namespace Shockah.MachineStatus
 				mouseLocation.X < panelLocation.X + panelSize.X &&
 				mouseLocation.Y < panelLocation.Y + panelSize.Y;
 
-			foreach (var ((x, y), (machine, heldItems)) in machineFlowCoords.OrderBy(e => e.position.y).ThenByDescending(e => e.position.x))
+			foreach (var ((x, y), (machine, heldItems)) in FlowMachines)
 			{
 				float GetBubbleSwayOffset()
 				{
@@ -440,7 +410,12 @@ namespace Shockah.MachineStatus
 
 		private void ForceRefreshDisplayedMachines()
 		{
-			DisplayedMachines.Clear();
+			RawMachines.Clear();
+			SortedMachines.Clear();
+			GroupedMachines.Clear();
+			AreSortedMachinesDirty = false;
+			AreGroupedMachinesDirty = false;
+
 			if (!Context.IsWorldReady || Game1.currentLocation is null)
 				return;
 			foreach (var location in Game1.locations)
@@ -448,7 +423,49 @@ namespace Shockah.MachineStatus
 					UpdateMachineState(location, @object);
 		}
 
-		private IEnumerable<(SObject machine, IList<SObject> heldItems)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
+		private void UpdateFlowMachinesIfNeeded(Farmer player)
+		{
+			GroupMachinesIfNeeded(player);
+			if (AreFlowMachinesDirty)
+				UpdateFlowMachines();
+		}
+
+		private void UpdateFlowMachines()
+		{
+			IList<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)> machineCoords
+				= new List<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)>();
+			int column = 0;
+			int row = 0;
+
+			foreach (var entry in GroupedMachines)
+			{
+				machineCoords.Add((position: (column++, row), machine: entry));
+				if (column == Config.MaxColumns)
+				{
+					column = 0;
+					row++;
+				}
+			}
+
+			var machineFlowCoords = machineCoords
+				.Select(e => (position: Config.FlowDirection.GetXYPositionFromZeroOrigin(e.position), machine: e.machine))
+				.Select(e => (position: new IntPoint(e.position.x, e.position.y), machine: e.machine))
+				.OrderBy(e => e.position.Y)
+				.ThenByDescending(e => e.position.X);
+			FlowMachines.Clear();
+			foreach (var entry in machineFlowCoords)
+				FlowMachines.Add(entry);
+			AreFlowMachinesDirty = false;
+		}
+
+		private void GroupMachinesIfNeeded(Farmer player)
+		{
+			SortMachinesIfNeeded(player);
+			if (AreGroupedMachinesDirty)
+				GroupMachines();
+		}
+
+		private void GroupMachines()
 		{
 			SObject CopyMachine(SObject machine)
 			{
@@ -477,7 +494,7 @@ namespace Shockah.MachineStatus
 			}
 			
 			IList<(SObject machine, IList<SObject> heldItems)> results = new List<(SObject machine, IList<SObject> heldItems)>();
-			foreach (var (location, machine) in machines)
+			foreach (var (location, machine) in SortedMachines)
 			{
 				switch (Config.Grouping)
 				{
@@ -517,12 +534,24 @@ namespace Shockah.MachineStatus
 				}
 				machineLoopContinue:;
 			}
-			return results;
+
+			var copy = GroupedMachines.ToList();
+			GroupedMachines.Clear();
+			foreach (var entry in results)
+				GroupedMachines.Add(entry);
+			AreGroupedMachinesDirty = false;
+			AreFlowMachinesDirty = !copy.SequenceEqual(GroupedMachines);
 		}
 
-		private IEnumerable<(GameLocation location, SObject machine)> SortMachines(IEnumerable<(GameLocation location, SObject machine)> machines, Farmer player)
+		private void SortMachinesIfNeeded(Farmer player)
 		{
-			IEnumerable<(GameLocation location, SObject machine)> results = machines;
+			if (AreSortedMachinesDirty)
+				SortMachines(player);
+		}
+
+		private void SortMachines(Farmer player)
+		{
+			IEnumerable<(GameLocation location, SObject machine)> results = RawMachines;
 
 			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine), T> keySelector) where T: IComparable<T>
 			{
@@ -587,7 +616,13 @@ namespace Shockah.MachineStatus
 						throw new InvalidOperationException();
 				}
 			}
-			return results;
+
+			var copy = SortedMachines.ToList();
+			SortedMachines.Clear();
+			foreach (var entry in results)
+				SortedMachines.Add(entry);
+			AreSortedMachinesDirty = false;
+			AreGroupedMachinesDirty = !copy.SequenceEqual(SortedMachines);
 		}
 
 		private bool MachineMatches(SObject machine, IList<string> list)
@@ -657,101 +692,66 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
-		private void SetMachineVisible(bool visible, GameLocation location, SObject machine)
+		private bool SetMachineVisible(bool visible, GameLocation location, SObject machine)
 		{
 			if (visible)
-				ShowMachine(location, machine);
+				return ShowMachine(location, machine);
 			else
-				HideMachine(location, machine);
+				return HideMachine(location, machine);
 		}
 
-		private void ShowMachine(GameLocation location, SObject machine)
+		private bool ShowMachine(GameLocation location, SObject machine)
 		{
-			HideMachine(location, machine);
-			DisplayedMachines.Add((location, machine));
-		}
-
-		private void HideMachine(GameLocation location, SObject machine)
-		{
-			var existingEntry = DisplayedMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
-				DisplayedMachines.Remove(existingEntry.Value);
+				return false;
+			RawMachines.Add((location, machine));
+			AreSortedMachinesDirty = true;
+			return true;
 		}
 
-		private void UpdateMachineState(GameLocation location, SObject machine)
+		private bool HideMachine(GameLocation location, SObject machine)
+		{
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			if (existingEntry is not null)
+			{
+				RawMachines.Remove(existingEntry.Value);
+				AreSortedMachinesDirty = true;
+			}
+			return existingEntry is not null;
+		}
+
+		internal bool UpdateMachineState(GameLocation location, SObject machine)
 		{
 			if (!IsMachine(location, machine))
-				return;
+				return false;
 			if (!IsLocationAccessible(location))
-			{
-				HideMachine(location, machine);
-				return;
-			}
+				return HideMachine(location, machine);
 
 			if (machine.readyForHarvest.Value)
-				SetMachineReadyForHarvest(location, machine);
+				return SetMachineReadyForHarvest(location, machine);
 			else if (machine.heldObject.Value is null)
-				SetMachineWaitingForInput(location, machine);
+				return SetMachineWaitingForInput(location, machine);
 			else
-				SetMachineBusy(location, machine);
+				return SetMachineBusy(location, machine);
 		}
 
-		private void SetMachineReadyForHarvest(GameLocation location, SObject machine)
+		private bool SetMachineReadyForHarvest(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions);
-			SetMachineVisible(shouldShow, location, machine);
+			return SetMachineVisible(shouldShow, location, machine);
 		}
 
-		private void SetMachineWaitingForInput(GameLocation location, SObject machine)
+		private bool SetMachineWaitingForInput(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptions);
-			SetMachineVisible(shouldShow, location, machine);
+			return SetMachineVisible(shouldShow, location, machine);
 		}
 
-		private void SetMachineBusy(GameLocation location, SObject machine)
+		private bool SetMachineBusy(GameLocation location, SObject machine)
 		{
 			bool shouldShow = Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptions);
-			SetMachineVisible(shouldShow, location, machine);
-		}
-
-		private static void Object_DayUpdate_Postfix(SObject __instance, GameLocation __0 /* location */)
-		{
-			Instance.UpdateMachineState(__0, __instance);
-		}
-
-		private static void Object_updateWhenCurrentLocation_Postfix(SObject __instance, GameLocation __1 /* environment */)
-		{
-			Instance.UpdateMachineState(__1, __instance);
-		}
-
-		private static void Object_checkForAction_Postfix(SObject __instance, Farmer __0 /* who */, bool __1 /* justCheckingForActivity */)
-		{
-			if (__1)
-				return;
-			Instance.UpdateMachineState(__0.currentLocation, __instance);
-		}
-
-		private static void Object_performObjectDropInAction_Postfix(SObject __instance, bool __0 /* probe */, Farmer __1 /* who */)
-		{
-			if (__0)
-				return;
-			Instance.UpdateMachineState(__1.currentLocation, __instance);
-		}
-
-		private static void Object_performDropDownAction_Postfix(SObject __instance, Farmer __0 /* who */)
-		{
-			Instance.UpdateMachineState(__0.currentLocation, __instance);
-		}
-
-		private static void GameLocation_passTimeForObjects_Postfix(GameLocation __instance)
-		{
-			foreach (var @object in __instance.Objects.Values)
-				Instance.UpdateMachineState(__instance, @object);
-		}
-
-		private static void Object_onReadyForHarvest_Postfix(SObject __instance, GameLocation environment)
-		{
-			Instance.UpdateMachineState(environment, __instance);
+			return SetMachineVisible(shouldShow, location, machine);
 		}
 	}
 }
