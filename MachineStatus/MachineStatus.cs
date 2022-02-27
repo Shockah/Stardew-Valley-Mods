@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.UI;
@@ -283,7 +284,38 @@ namespace Shockah.MachineStatus
 			{
 				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
-				machine.drawInMenu(e.SpriteBatch, machineLocation + new Vector2(32, 32) * (Config.Scale - 1f), Config.Scale, 1f, 0.9f, StackDrawType.Hide);
+				machine.drawInMenu(
+					e.SpriteBatch,
+					machineLocation + new Vector2(32, 32) * (Config.Scale - 1f),
+					Config.Scale,
+					1f, 0.9f, StackDrawType.Hide,
+					Color.White, drawShadow: false
+				);
+
+				if (machine.readyForHarvest.Value)
+				{
+					float timeVariableOffset = 4f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250.0 + x + y), 2);
+					var bubbleRectangle = new Rectangle(141, 465, 20, 24);
+					float bubbleScale = 2f;
+
+					e.SpriteBatch.Draw(
+						Game1.mouseCursors,
+						machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, -(bubbleRectangle.Height - timeVariableOffset) * bubbleScale * 0.5f) * Config.Scale,
+						bubbleRectangle,
+						Color.White * 0.75f,
+						0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
+					);
+
+					if (machine.heldObject.Value is not null)
+					{
+						machine.heldObject.Value.drawInMenu(
+							e.SpriteBatch,
+							machineLocation + new Vector2(SingleMachineSize.X * 0.26f, -(bubbleRectangle.Height - 4 - timeVariableOffset) * bubbleScale * 0.5f) * Config.Scale,
+							Config.Scale * 0.5f, 1f, 0.9f, StackDrawType.HideButShowQuality,
+							Color.White, drawShadow: false
+						);
+					}
+				}
 				if (machine.Stack > 1)
 				{
 					Utility.drawTinyDigits(
@@ -310,30 +342,42 @@ namespace Shockah.MachineStatus
 
 		private IEnumerable<(GameLocation location, SObject machine)> GroupMachines(IEnumerable<(GameLocation location, SObject machine)> machines)
 		{
+			SObject CopyMachine(SObject machine, bool copyHeldObject, bool copyHeldObjectQuality)
+			{
+				var newMachine = (SObject)machine.getOne();
+				newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
+				if (copyHeldObject && machine.heldObject.Value is not null)
+				{
+					newMachine.heldObject.Value = (SObject)machine.heldObject.Value.getOne();
+					newMachine.heldObject.Value.Quality = copyHeldObjectQuality ? machine.heldObject.Value.Quality : SObject.lowQuality;
+				}
+				return newMachine;
+			}
+			
 			IList<(GameLocation location, SObject machine)> results = new List<(GameLocation location, SObject machine)>();
 			foreach (var (location, machine) in machines)
 			{
 				switch (Config.Grouping)
 				{
 					case MachineRenderingOptions.Grouping.None:
-						results.Add((location, (SObject)machine.getOne()));
+						results.Add((location, CopyMachine(machine, false, false)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachine:
 						foreach (var (_, result) in results)
 						{
-							if (machine.ParentSheetIndex == result.ParentSheetIndex)
+							if (machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value)
 							{
 								result.Stack++;
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, (SObject)machine.getOne()));
+						results.Add((location, CopyMachine(machine, false, false)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachineAndItem:
 						foreach (var (_, result) in results)
 						{
 							if (
-								machine.ParentSheetIndex == result.ParentSheetIndex &&
+								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
 								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
 								machine.heldObject.Value?.Name == result.heldObject.Value?.Name
 							)
@@ -342,13 +386,13 @@ namespace Shockah.MachineStatus
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, (SObject)machine.getOne()));
+						results.Add((location, CopyMachine(machine, true, false)));
 						break;
 					case MachineRenderingOptions.Grouping.ByMachineAndItemAndQuality:
 						foreach (var (_, result) in results)
 						{
 							if (
-								machine.ParentSheetIndex == result.ParentSheetIndex &&
+								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
 								machine.heldObject.Value?.bigCraftable.Value == result.heldObject.Value?.bigCraftable.Value &&
 								machine.heldObject.Value?.Name == result.heldObject.Value?.Name &&
 								machine.heldObject.Value?.Quality == result.heldObject.Value?.Quality
@@ -358,7 +402,7 @@ namespace Shockah.MachineStatus
 								goto machineLoopContinue;
 							}
 						}
-						results.Add((location, (SObject)machine.getOne()));
+						results.Add((location, CopyMachine(machine, true, true)));
 						break;
 				}
 				machineLoopContinue:;
