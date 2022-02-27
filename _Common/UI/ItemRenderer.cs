@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.Objects;
 using System;
 using SObject = StardewValley.Object;
 
@@ -10,6 +11,9 @@ namespace Shockah.CommonModCode.UI
 	{
 		private Texture2D GetItemTexture(SObject @object)
 		{
+			if (@object.ParentSheetIndex < 0)
+				return Game1.mouseCursors;
+
 			if (@object.bigCraftable.Value)
 				return Game1.bigCraftableSpriteSheet;
 			else
@@ -19,7 +23,24 @@ namespace Shockah.CommonModCode.UI
 		private Rectangle GetItemSourceRectangle(SObject @object)
 		{
 			var index = @object.ParentSheetIndex;
+			if (index < 0)
+				return new(322, 498, 12, 12);
+
 			if (@object.showNextIndex.Value)
+				index++;
+			if (@object.bigCraftable.Value)
+				return SObject.getSourceRectForBigCraftable(index);
+			else
+				return Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, index, 16, 16);
+		}
+
+		private Rectangle GetColoredItemSourceRectangle(ColoredObject @object)
+		{
+			var index = @object.ParentSheetIndex;
+			if (index < 0)
+				return new(322, 498, 12, 12);
+
+			if (!@object.ColorSameIndexAsParentSheetIndex)
 				index++;
 			if (@object.bigCraftable.Value)
 				return SObject.getSourceRectForBigCraftable(index);
@@ -48,6 +69,8 @@ namespace Shockah.CommonModCode.UI
 			);
 			var scale = itemSize.X / sourceRectangle.Width;
 			batch.Draw(texture, itemPosition, sourceRectangle, color, 0f, Vector2.Zero, scale, SpriteEffects.None, layerDepth);
+			if (@object is ColoredObject coloredObject)
+				batch.Draw(texture, itemPosition, GetColoredItemSourceRectangle(coloredObject), Color.Lerp(color, coloredObject.color.Value, 0.5f), 0f, Vector2.Zero, scale, SpriteEffects.None, layerDepth);
 		}
 	}
 }
