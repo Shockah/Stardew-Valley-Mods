@@ -11,6 +11,10 @@
         {
             "UniqueID": "aedenthorn.CustomObjectProduction",
             "IsRequired": false
+        },
+        {
+            "UniqueID": "Digus.ProducerFrameworkMod",
+            "IsRequired": false
         }
     ]
 }

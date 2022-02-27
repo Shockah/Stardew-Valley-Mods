@@ -20,6 +20,8 @@ namespace Shockah.MachineStatus
 {
 	public class MachineStatus: Mod
 	{
+		private enum MachineState { Ready, Waiting, Busy }
+		
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
 		private static readonly Vector2 SingleMachineSize = new(64, 64);
@@ -70,8 +72,8 @@ namespace Shockah.MachineStatus
 		internal static MachineStatus Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
-		private readonly IList<(GameLocation location, SObject machine)> RawMachines = new List<(GameLocation location, SObject machine)>();
-		private readonly IList<(GameLocation location, SObject machine)> SortedMachines = new List<(GameLocation location, SObject machine)>();
+		private readonly IList<(GameLocation location, SObject machine, MachineState state)> RawMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
+		private readonly IList<(GameLocation location, SObject machine, MachineState state)> SortedMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
 		private readonly IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines = new List<(SObject machine, IList<SObject> heldItems)>();
 		private readonly IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines = new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>();
 		private bool AreSortedMachinesDirty = false;
@@ -494,7 +496,7 @@ namespace Shockah.MachineStatus
 			}
 			
 			IList<(SObject machine, IList<SObject> heldItems)> results = new List<(SObject machine, IList<SObject> heldItems)>();
-			foreach (var (location, machine) in SortedMachines)
+			foreach (var (location, machine, state) in SortedMachines)
 			{
 				switch (Config.Grouping)
 				{
@@ -551,11 +553,11 @@ namespace Shockah.MachineStatus
 
 		private void SortMachines(Farmer player)
 		{
-			IEnumerable<(GameLocation location, SObject machine)> results = RawMachines;
+			IEnumerable<(GameLocation location, SObject machine, MachineState state)> results = RawMachines;
 
-			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine), T> keySelector) where T: IComparable<T>
+			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine, MachineState state), T> keySelector) where T: IComparable<T>
 			{
-				results = results is IOrderedEnumerable<(GameLocation location, SObject machine)> ordered
+				results = results is IOrderedEnumerable<(GameLocation location, SObject machine, MachineState state)> ordered
 					? (ascending ? ordered.ThenBy(keySelector) : ordered.ThenByDescending(keySelector))
 					: (ascending ? results.OrderBy(keySelector) : results.OrderByDescending(keySelector));
 			}
@@ -693,6 +695,16 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
+		private MachineState GetMachineState(SObject machine)
+		{
+			if (machine.readyForHarvest.Value)
+				return MachineState.Ready;
+			else if(machine.MinutesUntilReady > 0 && machine.heldObject.Value is not null)
+				return MachineState.Busy;
+			else
+				return MachineState.Waiting;
+		}
+
 		private bool SetMachineVisible(bool visible, GameLocation location, SObject machine)
 		{
 			if (visible)
@@ -703,10 +715,16 @@ namespace Shockah.MachineStatus
 
 		private bool ShowMachine(GameLocation location, SObject machine)
 		{
+			var state = GetMachineState(machine);
 			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
-				return false;
-			RawMachines.Add((location, machine));
+			{
+				if (existingEntry.Value.state == state)
+					return false;
+				else
+					RawMachines.Remove(existingEntry.Value);
+			}
+			RawMachines.Add((location, machine, state));
 			AreSortedMachinesDirty = true;
 			return true;
 		}
