@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.Stardew;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -536,11 +537,11 @@ namespace Shockah.MachineStatus
 				machineLoopContinue:;
 			}
 
-			var copy = GroupedMachines.ToList();
-			if (!copy.SequenceEqual(GroupedMachines))
+			var final = results.ToList();
+			if (!final.SequenceEqual(GroupedMachines))
 			{
 				GroupedMachines.Clear();
-				foreach (var entry in results)
+				foreach (var entry in final)
 					GroupedMachines.Add(entry);
 				AreFlowMachinesDirty = true;
 			}
@@ -605,11 +606,11 @@ namespace Shockah.MachineStatus
 				}
 			}
 
-			var copy = SortedMachines.ToList();
-			if (!copy.SequenceEqual(SortedMachines))
+			var final = results.ToList();
+			if (!results.SequenceEqual(SortedMachines))
 			{
 				SortedMachines.Clear();
-				foreach (var entry in results)
+				foreach (var entry in final)
 					SortedMachines.Add(entry);
 				AreGroupedMachinesDirty = true;
 			}
@@ -668,11 +669,10 @@ namespace Shockah.MachineStatus
 		{
 			if (location is Cellar cellar)
 			{
-				var cellarIndex = Game1.locations.Where(l => l is Cellar).ToList().IndexOf(location);
-				var player = Game1.getAllFarmers().Skip(cellarIndex).FirstOrDefault();
-				if (player is null)
+				var farmHouse = cellar.GetFarmHouse();
+				if (farmHouse is null)
 					return false;
-				return player.HouseUpgradeLevel >= 3;
+				return farmHouse.owner.HouseUpgradeLevel >= 3;
 			}
 			else if (location is FarmCave)
 			{
