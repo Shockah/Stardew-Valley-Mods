@@ -18,6 +18,7 @@ namespace Shockah.CommonModCode.GMCM
 		private const float Margin = 16f;
 		private static readonly string ClickSoundName = "drumkit6";
 
+		private readonly Func<T, bool> GetValue;
 		private readonly Action<T> AddValue;
 		private readonly Action<T> RemoveValue;
 		private readonly Func<string> Name;
@@ -32,8 +33,8 @@ namespace Shockah.CommonModCode.GMCM
 		private readonly Lazy<Texture2D> UncheckedTexture = new(() => Game1.mouseCursors);
 		private readonly Lazy<Rectangle> UncheckedTextureSourceRect = new(() => OptionsCheckbox.sourceRectUnchecked);
 
-		private readonly Lazy<ISet<T>> OriginalValues;
-		private readonly Lazy<ISet<T>> CurrentValues;
+		private ISet<T> OriginalValues = new HashSet<T>();
+		private ISet<T> CurrentValues = new HashSet<T>();
 		private readonly Lazy<int> ActualColumns;
 		private bool LastMouseLeftPressed = false;
 
@@ -49,6 +50,7 @@ namespace Shockah.CommonModCode.GMCM
 			Action? afterValuesUpdated = null
 		)
 		{
+			this.GetValue = getValue;
 			this.AddValue = addValue;
 			this.RemoveValue = removeValue;
 			this.Name = name;
@@ -58,9 +60,13 @@ namespace Shockah.CommonModCode.GMCM
 			this.FormatAllowedValue = formatAllowedValue;
 			this.AfterValuesUpdated = afterValuesUpdated;
 
-			OriginalValues = new(() => allowedValues.Where(v => getValue(v)).ToHashSet());
-			CurrentValues = new(() => OriginalValues.Value.ToHashSet());
 			ActualColumns = new(() => Columns(GetGMCMSize().X));
+		}
+
+		private void Initialize()
+		{
+			OriginalValues = AllowedValues.Where(v => GetValue(v)).ToHashSet();
+			CurrentValues = OriginalValues.ToHashSet();
 		}
 
 		internal void AddToGMCM(IGenericModConfigMenuApi api, IManifest mod)
@@ -71,25 +77,34 @@ namespace Shockah.CommonModCode.GMCM
 				tooltip: Tooltip,
 				draw: (b, position) => Draw(b, position),
 				height: () => GetHeight(),
-				beforeSave: () => BeforeSave()
+				beforeMenuOpened: () => Initialize(),
+				beforeMenuClosed: () => Initialize(),
+				beforeSave: () => BeforeSave(),
+				afterReset: () => Initialize()
 			);
 		}
 
 		private void BeforeSave()
 		{
+			bool hasAnyChange = false;
 			foreach (var allowedValue in AllowedValues)
 			{
-				bool wasSet = OriginalValues.Value.Contains(allowedValue);
-				bool isSet = CurrentValues.Value.Contains(allowedValue);
+				bool wasSet = OriginalValues.Contains(allowedValue);
+				bool isSet = CurrentValues.Contains(allowedValue);
 				if (wasSet != isSet)
 				{
 					if (isSet)
 						AddValue(allowedValue);
 					else
 						RemoveValue(allowedValue);
+					hasAnyChange = true;
 				}
 			}
-			AfterValuesUpdated?.Invoke();
+			if (hasAnyChange)
+			{
+				OriginalValues = CurrentValues.ToHashSet();
+				AfterValuesUpdated?.Invoke();
+			}
 		}
 
 		private Vector2 GetGMCMSize()
@@ -127,7 +142,7 @@ namespace Shockah.CommonModCode.GMCM
 			foreach (T allowedValue in AllowedValues)
 			{
 				Vector2 valuePosition = new(gmcmPosition.X + Margin + (valueSize.X + ColumnSpacing) * column, basePosition.Y + valueSize.Y * row);
-				bool isChecked = CurrentValues.Value.Contains(allowedValue);
+				bool isChecked = CurrentValues.Contains(allowedValue);
 				Texture2D texture = isChecked ? CheckedTexture.Value : UncheckedTexture.Value;
 				Rectangle textureSourceRect = isChecked ? CheckedTextureSourceRect.Value : UncheckedTextureSourceRect.Value;
 				string text = FormatAllowedValue is null ? $"{allowedValue}" : FormatAllowedValue(allowedValue);
@@ -138,10 +153,10 @@ namespace Shockah.CommonModCode.GMCM
 				bool hoverCheckbox = mouseX >= valuePosition.X && mouseY >= valuePosition.Y && mouseX < valuePosition.X + textureSourceRect.Width * CheckboxScale && mouseY < valuePosition.Y + textureSourceRect.Height * CheckboxScale;
 				if (hoverGMCM && hoverCheckbox && didClick)
 				{
-					if (CurrentValues.Value.Contains(allowedValue))
-						CurrentValues.Value.Remove(allowedValue);
+					if (CurrentValues.Contains(allowedValue))
+						CurrentValues.Remove(allowedValue);
 					else
-						CurrentValues.Value.Add(allowedValue);
+						CurrentValues.Add(allowedValue);
 					Game1.playSound(ClickSoundName);
 				}
 

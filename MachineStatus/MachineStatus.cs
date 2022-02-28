@@ -132,14 +132,21 @@ namespace Shockah.MachineStatus
 					getValue: () => exceptions.Where(ex => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex))).Join(delimiter: ", "),
 					setValue: value =>
 					{
-						var vanillaValues = exceptions.Where(ex => KnownMachineNames.Any(section => section.machineNames.Any(machineName => $"*|{machineName}" == ex)));
-						var customValues = value.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0);
+						var existingVanillaValues = exceptions
+							.Where(ex => KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex)))
+							.ToList();
+						var customInputValues = value
+							.Split(',')
+							.Select(s => s.Trim())
+							.Where(s => s.Length > 0)
+							.Where(s => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == s)))
+							.ToList();
+
 						exceptions.Clear();
-						foreach (var vanillaValue in vanillaValues)
-							exceptions.Add(vanillaValue);
-						foreach (var customValue in customValues)
-							if (!exceptions.Contains(customValue))
-								exceptions.Add(customValue);
+						foreach (var existingVanillaValue in existingVanillaValues)
+							exceptions.Add(existingVanillaValue);
+						foreach (var customInputValue in customInputValues)
+							exceptions.Add(customInputValue);
 					}
 				);
 
@@ -295,6 +302,8 @@ namespace Shockah.MachineStatus
 				return;
 
 			UpdateFlowMachinesIfNeeded(Game1.player);
+			if (FlowMachines.Count == 0)
+				return;
 			var minX = FlowMachines.Min(e => e.position.X);
 			var minY = FlowMachines.Min(e => e.position.Y);
 			var maxX = FlowMachines.Max(e => e.position.X);
