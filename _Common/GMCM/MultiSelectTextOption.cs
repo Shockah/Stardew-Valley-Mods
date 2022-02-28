@@ -78,8 +78,8 @@ namespace Shockah.CommonModCode.GMCM
 				draw: (b, position) => Draw(b, position),
 				height: () => GetHeight(),
 				beforeMenuOpened: () => Initialize(),
-				beforeMenuClosed: () => Initialize(),,
-				afterReset: () => Initialize()
+				beforeMenuClosed: () => Initialize(),
+				afterReset: () => Initialize(),
 				beforeSave: () => BeforeSave()
 			);
 		}
@@ -147,7 +147,7 @@ namespace Shockah.CommonModCode.GMCM
 				Rectangle textureSourceRect = isChecked ? CheckedTextureSourceRect.Value : UncheckedTextureSourceRect.Value;
 				string text = FormatAllowedValue is null ? $"{allowedValue}" : FormatAllowedValue(allowedValue);
 
-				b.Draw(texture, valuePosition, textureSourceRect, Color.White, 0, Vector2.Zero, CheckboxScale, SpriteEffects.None, 0);
+				b.Draw(texture, valuePosition + new Vector2(0, 3), textureSourceRect, Color.White, 0, Vector2.Zero, CheckboxScale, SpriteEffects.None, 0);
 				Utility.drawTextWithShadow(b, text, Game1.dialogueFont, valuePosition + new Vector2(textureSourceRect.Width * CheckboxScale + 8, 0), Game1.textColor, 1f);
 
 				bool hoverCheckbox = mouseX >= valuePosition.X && mouseY >= valuePosition.Y && mouseX < valuePosition.X + textureSourceRect.Width * CheckboxScale && mouseY < valuePosition.Y + textureSourceRect.Height * CheckboxScale;
