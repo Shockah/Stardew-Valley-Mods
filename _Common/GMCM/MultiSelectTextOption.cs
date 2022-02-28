@@ -78,9 +78,9 @@ namespace Shockah.CommonModCode.GMCM
 				draw: (b, position) => Draw(b, position),
 				height: () => GetHeight(),
 				beforeMenuOpened: () => Initialize(),
-				beforeMenuClosed: () => Initialize(),
-				beforeSave: () => BeforeSave(),
+				beforeMenuClosed: () => Initialize(),,
 				afterReset: () => Initialize()
+				beforeSave: () => BeforeSave()
 			);
 		}
 
