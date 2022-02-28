@@ -51,6 +51,10 @@ namespace Shockah.MachineStatus
 					original: AccessTools.Method(typeof(GameLocation), nameof(GameLocation.passTimeForObjects)),
 					postfix: new HarmonyMethod(typeof(Patches), nameof(GameLocation_passTimeForObjects_Postfix))
 				);
+				harmony.Patch(
+					original: AccessTools.Method(typeof(AnimalHouse), nameof(AnimalHouse.addNewHatchedAnimal)),
+					postfix: new HarmonyMethod(typeof(Patches), nameof(AnimalHouse_addNewHatchedAnimal_Postfix))
+				);
 			}
 			catch (Exception e)
 			{
@@ -94,6 +98,12 @@ namespace Shockah.MachineStatus
 		}
 
 		private static void GameLocation_passTimeForObjects_Postfix(GameLocation __instance)
+		{
+			foreach (var @object in __instance.Objects.Values)
+				Instance.UpdateMachineState(__instance, @object);
+		}
+
+		private static void AnimalHouse_addNewHatchedAnimal_Postfix(AnimalHouse __instance)
 		{
 			foreach (var @object in __instance.Objects.Values)
 				Instance.UpdateMachineState(__instance, @object);

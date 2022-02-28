@@ -48,7 +48,7 @@ namespace Shockah.CommonModCode.UI
 				return Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, index, 16, 16);
 		}
 
-		public void DrawItem(SpriteBatch batch, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, UIAnchorSide rectAnchorSide = UIAnchorSide.TopLeft, float layerDepth = 0f)
+		public void DrawItem(SpriteBatch batch, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, UIAnchorSide rectAnchorSide = UIAnchorSide.TopLeft, Vector2? scale = null, float layerDepth = 0f)
 		{
 			var texture = GetItemTexture(@object);
 			var sourceRectangle = GetItemSourceRectangle(@object);
@@ -67,10 +67,11 @@ namespace Shockah.CommonModCode.UI
 				),
 				-rectSize
 			);
-			var scale = itemSize.X / sourceRectangle.Width;
-			batch.Draw(texture, itemPosition, sourceRectangle, color, 0f, Vector2.Zero, scale, SpriteEffects.None, layerDepth);
+			var finalScale = itemSize.X / sourceRectangle.Width;
+			var origin = new Vector2(sourceRectangle.Width * 0.5f, sourceRectangle.Height);
+			batch.Draw(texture, itemPosition + origin * finalScale, sourceRectangle, color, 0f, origin, finalScale * (scale ?? Vector2.One), SpriteEffects.None, layerDepth);
 			if (@object is ColoredObject coloredObject)
-				batch.Draw(texture, itemPosition, GetColoredItemSourceRectangle(coloredObject), Color.Lerp(color, coloredObject.color.Value, 0.5f), 0f, Vector2.Zero, scale, SpriteEffects.None, layerDepth);
+				batch.Draw(texture, itemPosition + origin * finalScale, GetColoredItemSourceRectangle(coloredObject), Color.Lerp(color, coloredObject.color.Value, 0.5f), 0f, origin, finalScale * (scale ?? Vector2.One), SpriteEffects.None, layerDepth);
 		}
 	}
 }

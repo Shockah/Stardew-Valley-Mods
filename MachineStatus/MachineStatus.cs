@@ -62,6 +62,7 @@ namespace Shockah.MachineStatus
 			{
 				(246, "Coffee Maker", MachineType.Generator),
 				(265, "Deconstructor", MachineType.Processor),
+				(101, "Incubator", MachineType.Processor),
 				(128, "Mushroom Box", MachineType.Generator),
 				(254, "Ostrich Incubator", MachineType.Processor),
 				(156, "Slime Incubator", MachineType.Processor),
@@ -273,15 +274,31 @@ namespace Shockah.MachineStatus
 			else if (VisibilityAlpha >= 0.99f)
 				VisibilityAlpha = 1f;
 
-			if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
+			var player = Game1.player;
+
 			{
-				var player = Game1.player;
-				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
-				if (LastPlayerTileLocation.Value is null || LastPlayerTileLocation.Value != newPlayerLocation)
+				GameLocation? lastPlayerLocation = LastPlayerTileLocation.Value?.Item1;
+				var newPlayerLocation = player.currentLocation;
+				if (lastPlayerLocation != newPlayerLocation)
 				{
-					LastPlayerTileLocation.Value = newPlayerLocation;
-					SortMachines(player);
+					if (lastPlayerLocation is not null)
+						foreach (var @object in lastPlayerLocation.Objects.Values)
+							UpdateMachineState(lastPlayerLocation, @object);
+					foreach (var @object in newPlayerLocation.Objects.Values)
+						UpdateMachineState(newPlayerLocation, @object);
 				}
+			}
+
+			{
+				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
+				if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
+				{
+					if (LastPlayerTileLocation.Value is null || LastPlayerTileLocation.Value != newPlayerLocation)
+					{
+						SortMachines(player);
+					}
+				}
+				LastPlayerTileLocation.Value = newPlayerLocation;
 			}
 		}
 
@@ -339,11 +356,15 @@ namespace Shockah.MachineStatus
 				
 				var machineUnscaledOffset = new Vector2(x - minX, y - minY) * SingleMachineSize + new Vector2(x - minX, y - minY) * Config.Spacing;
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
+				var machineState = GetMachineState(machine);
 
+				Vector2 scaleFactor = (SingleMachineSize + machine.getScale()) / SingleMachineSize;
+				scaleFactor = new Vector2(scaleFactor.X, 1f / scaleFactor.Y);
 				ItemRenderer.DrawItem(
 					e.SpriteBatch, machine,
 					machineLocation, SingleMachineSize * Config.Scale,
-					Color.White * VisibilityAlpha
+					Color.White * VisibilityAlpha,
+					scale: machineState == MachineState.Busy ? scaleFactor : Vector2.One
 				);
 
 				float timeVariableOffset = GetBubbleSwayOffset();
@@ -361,8 +382,8 @@ namespace Shockah.MachineStatus
 						0f, Vector2.Zero, emoteScale * Config.Scale, SpriteEffects.None, 0.91f
 					);
 				}
-				
-				if (machine.readyForHarvest.Value && heldItems.Count != 0)
+
+				if (machineState == MachineState.Ready)
 				{
 					if (Config.ShowItemBubble)
 					{
@@ -391,7 +412,7 @@ namespace Shockah.MachineStatus
 						DrawEmote(3, 0);
 					}
 				}
-				else if (machine.MinutesUntilReady <= 0 && heldItems.Count == 0)
+				else if (machineState == MachineState.Waiting)
 				{
 					DrawEmote(0, 4);
 				}
@@ -420,7 +441,7 @@ namespace Shockah.MachineStatus
 
 			if (!Context.IsWorldReady || Game1.currentLocation is null)
 				return;
-			foreach (var location in Game1.locations)
+			foreach (var location in GameExtensions.GetAllLocations())
 				foreach (var @object in location.Objects.Values)
 					UpdateMachineState(location, @object);
 		}
@@ -469,14 +490,6 @@ namespace Shockah.MachineStatus
 
 		private void GroupMachines()
 		{
-			SObject CopyMachine(SObject machine)
-			{
-				var newMachine = (SObject)machine.getOne();
-				newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
-				newMachine.showNextIndex.Value = machine.showNextIndex.Value;
-				return newMachine;
-			}
-
 			IList<SObject> CopyHeldItems(SObject machine)
 			{
 				var list = new List<SObject>();
@@ -665,6 +678,16 @@ namespace Shockah.MachineStatus
 			return false;
 		}
 
+		private SObject CopyMachine(SObject machine)
+		{
+			var newMachine = (SObject)machine.getOne();
+			newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
+			newMachine.showNextIndex.Value = machine.showNextIndex.Value;
+			newMachine.heldObject.Value = machine.heldObject?.Value?.getOne() as SObject;
+			newMachine.MinutesUntilReady = machine.MinutesUntilReady;
+			return newMachine;
+		}
+
 		private bool IsLocationAccessible(GameLocation location)
 		{
 			if (location is Cellar cellar)
@@ -676,7 +699,7 @@ namespace Shockah.MachineStatus
 			}
 			else if (location is FarmCave)
 			{
-				return Game1.locations.Where(l => l is FarmCave).First() == location;
+				return GameExtensions.GetAllLocations().Where(l => l is FarmCave).First() == location;
 			}
 			return true;
 		}
@@ -705,9 +728,9 @@ namespace Shockah.MachineStatus
 
 		private MachineState GetMachineState(SObject machine)
 		{
-			if (machine.readyForHarvest.Value)
+			if (machine.readyForHarvest.Value || (machine.heldObject.Value is not null && machine.MinutesUntilReady <= 0))
 				return MachineState.Ready;
-			else if(machine.MinutesUntilReady > 0 && machine.heldObject.Value is not null)
+			else if (machine.MinutesUntilReady > 0)
 				return MachineState.Busy;
 			else
 				return MachineState.Waiting;
@@ -724,7 +747,7 @@ namespace Shockah.MachineStatus
 		private bool ShowMachine(GameLocation location, SObject machine)
 		{
 			var state = GetMachineState(machine);
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine.TileLocation == machine.TileLocation && e.machine.Name == machine.Name);
 			if (existingEntry is not null)
 			{
 				if (existingEntry.Value.state == state)
@@ -739,7 +762,7 @@ namespace Shockah.MachineStatus
 
 		private bool HideMachine(GameLocation location, SObject machine)
 		{
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine.TileLocation == machine.TileLocation && e.machine.Name == machine.Name);
 			if (existingEntry is not null)
 			{
 				RawMachines.Remove(existingEntry.Value);
@@ -754,37 +777,14 @@ namespace Shockah.MachineStatus
 				return false;
 			if (!IsLocationAccessible(location))
 				return HideMachine(location, machine);
-
-			if (machine.readyForHarvest.Value)
+			var state = GetMachineState(machine);
+			var shouldShow = state switch
 			{
-				if (machine.heldObject.Value is not null)
-					return SetMachineReadyForHarvest(location, machine);
-			}
-			else
-			{
-				if (machine.MinutesUntilReady > 0 && machine.heldObject.Value is not null)
-					return SetMachineBusy(location, machine);
-				else if (GetMachineType(machine) == MachineType.Processor)
-					return SetMachineWaitingForInput(location, machine);
-			}
-			return false;
-		}
-
-		private bool SetMachineReadyForHarvest(GameLocation location, SObject machine)
-		{
-			bool shouldShow = Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions);
-			return SetMachineVisible(shouldShow, location, machine);
-		}
-
-		private bool SetMachineWaitingForInput(GameLocation location, SObject machine)
-		{
-			bool shouldShow = Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptions);
-			return SetMachineVisible(shouldShow, location, machine);
-		}
-
-		private bool SetMachineBusy(GameLocation location, SObject machine)
-		{
-			bool shouldShow = Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptions);
+				MachineState.Ready => Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions),
+				MachineState.Waiting => Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptions),
+				MachineState.Busy => Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptions),
+				_ => throw new InvalidOperationException(),
+			};
 			return SetMachineVisible(shouldShow, location, machine);
 		}
 	}

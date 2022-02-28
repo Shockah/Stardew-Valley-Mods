@@ -16,7 +16,7 @@ namespace Shockah.CommonModCode.Stardew
 	{
 		public static FarmHouse? GetFarmHouse(this Cellar cellar)
 		{
-			return Game1.locations.OfType<FarmHouse>().FirstOrDefault(fh => fh.GetCellarName() == cellar.Name);
+			return GameExtensions.GetAllLocations().OfType<FarmHouse>().FirstOrDefault(fh => fh.GetCellarName() == cellar.Name);
 		}
 	}
 }

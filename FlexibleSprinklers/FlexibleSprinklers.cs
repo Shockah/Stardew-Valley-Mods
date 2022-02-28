@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -261,7 +262,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
-			foreach (GameLocation location in Game1.locations)
+			foreach (GameLocation location in GameExtensions.GetAllLocations())
 				ActivateSprinklersInLocation(location);
 		}
 
