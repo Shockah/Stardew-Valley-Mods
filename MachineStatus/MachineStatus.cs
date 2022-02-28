@@ -178,6 +178,8 @@ namespace Shockah.MachineStatus
 				helper.AddPageLink(pageKey, "config.exceptions");
 			}
 
+			helper.AddBoolOption("config.misc.ignoreUnknownItems", () => Config.IgnoreUnknownItems);
+
 			helper.AddSectionTitle("config.layout.section");
 			helper.AddEnumOption("config.anchor.screen", valuePrefix: "config.anchor", property: () => Config.ScreenAnchorSide);
 			helper.AddEnumOption("config.anchor.panel", valuePrefix: "config.anchor", property: () => Config.PanelAnchorSide);
@@ -387,25 +389,32 @@ namespace Shockah.MachineStatus
 				{
 					if (Config.ShowItemBubble)
 					{
-						var bubbleRectangle = new Rectangle(141, 465, 20, 24);
-						float bubbleScale = 2f;
+						if (heldItems.Count == 0)
+						{
+							DrawEmote(43, 0);
+						}
+						else
+						{
+							var bubbleRectangle = new Rectangle(141, 465, 20, 24);
+							float bubbleScale = 2f;
 
-						e.SpriteBatch.Draw(
-							Game1.mouseCursors,
-							machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, timeVariableOffset - bubbleRectangle.Height * bubbleScale * 0.5f) * Config.Scale,
-							bubbleRectangle,
-							Color.White * 0.75f * VisibilityAlpha,
-							0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
-						);
+							e.SpriteBatch.Draw(
+								Game1.mouseCursors,
+								machineLocation + new Vector2(SingleMachineSize.X * 0.5f - bubbleRectangle.Width * bubbleScale * 0.5f, timeVariableOffset - bubbleRectangle.Height * bubbleScale * 0.5f) * Config.Scale,
+								bubbleRectangle,
+								Color.White * 0.75f * VisibilityAlpha,
+								0f, Vector2.Zero, bubbleScale * Config.Scale, SpriteEffects.None, 0.91f
+							);
 
-						int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / (1000.0 * Config.BubbleItemCycleTime)) % heldItems.Count;
-						ItemRenderer.DrawItem(
-							e.SpriteBatch, heldItems[heldItemVariableIndex],
-							machineLocation + new Vector2(SingleMachineSize.X * 0.5f, timeVariableOffset - 4) * Config.Scale,
-							new Vector2(bubbleRectangle.Size.X, bubbleRectangle.Size.Y) * bubbleScale * 0.8f * Config.Scale,
-							Color.White * VisibilityAlpha,
-							rectAnchorSide: UIAnchorSide.Center
-						);
+							int heldItemVariableIndex = (int)(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / (1000.0 * Config.BubbleItemCycleTime)) % heldItems.Count;
+							ItemRenderer.DrawItem(
+								e.SpriteBatch, heldItems[heldItemVariableIndex],
+								machineLocation + new Vector2(SingleMachineSize.X * 0.5f, timeVariableOffset - 4) * Config.Scale,
+								new Vector2(bubbleRectangle.Size.X, bubbleRectangle.Size.Y) * bubbleScale * 0.8f * Config.Scale,
+								Color.White * VisibilityAlpha,
+								rectAnchorSide: UIAnchorSide.Center
+							);
+						}
 					}
 					else
 					{
@@ -462,6 +471,9 @@ namespace Shockah.MachineStatus
 
 			foreach (var entry in GroupedMachines)
 			{
+				if (entry.machine.ParentSheetIndex < 0 && Config.IgnoreUnknownItems)
+					continue;
+
 				machineCoords.Add((position: (column++, row), machine: entry));
 				if (column == Config.MaxColumns)
 				{
@@ -490,16 +502,10 @@ namespace Shockah.MachineStatus
 
 		private void GroupMachines()
 		{
-			IList<SObject> CopyHeldItems(SObject machine)
-			{
-				var list = new List<SObject>();
-				if (machine.heldObject.Value is not null)
-					list.Add(machine.heldObject.Value);
-				return list;
-			}
-
 			void AddHeldItem(IList<SObject> heldItems, SObject newHeldItem)
 			{
+				if (newHeldItem.ParentSheetIndex < 0 && Config.IgnoreUnknownItems)
+					return;
 				foreach (var heldItem in heldItems)
 				{
 					if (heldItem.Name == newHeldItem.name)
@@ -507,7 +513,15 @@ namespace Shockah.MachineStatus
 				}
 				heldItems.Add(newHeldItem);
 			}
-			
+
+			IList<SObject> CopyHeldItems(SObject machine)
+			{
+				var list = new List<SObject>();
+				if (machine.heldObject.Value is not null)
+					AddHeldItem(list, machine.heldObject.Value);
+				return list;
+			}
+
 			IList<(SObject machine, IList<SObject> heldItems)> results = new List<(SObject machine, IList<SObject> heldItems)>();
 			foreach (var (location, machine, state) in SortedMachines)
 			{
