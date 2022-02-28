@@ -536,11 +536,14 @@ namespace Shockah.MachineStatus
 			}
 
 			var copy = GroupedMachines.ToList();
-			GroupedMachines.Clear();
-			foreach (var entry in results)
-				GroupedMachines.Add(entry);
+			if (!copy.SequenceEqual(GroupedMachines))
+			{
+				GroupedMachines.Clear();
+				foreach (var entry in results)
+					GroupedMachines.Add(entry);
+				AreFlowMachinesDirty = true;
+			}
 			AreGroupedMachinesDirty = false;
-			AreFlowMachinesDirty = !copy.SequenceEqual(GroupedMachines);
 		}
 
 		private void SortMachinesIfNeeded(Farmer player)
@@ -602,11 +605,14 @@ namespace Shockah.MachineStatus
 			}
 
 			var copy = SortedMachines.ToList();
-			SortedMachines.Clear();
-			foreach (var entry in results)
-				SortedMachines.Add(entry);
+			if (!copy.SequenceEqual(SortedMachines))
+			{
+				SortedMachines.Clear();
+				foreach (var entry in results)
+					SortedMachines.Add(entry);
+				AreGroupedMachinesDirty = true;
+			}
 			AreSortedMachinesDirty = false;
-			AreGroupedMachinesDirty = !copy.SequenceEqual(SortedMachines);
 		}
 
 		private bool MachineMatches(SObject machine, IList<string> list)
