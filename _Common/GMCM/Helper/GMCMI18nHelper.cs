@@ -7,9 +7,9 @@ namespace Shockah.CommonModCode.GMCM
 {
 	public class GMCMI18nHelper
 	{
-		private readonly IGenericModConfigMenuApi Api;
-		private readonly IManifest Mod;
-		private readonly ITranslationHelper Translations;
+		public readonly IGenericModConfigMenuApi Api;
+		public readonly IManifest Mod;
+		public readonly ITranslationHelper Translations;
 
 		public GMCMI18nHelper(IGenericModConfigMenuApi api, IManifest mod, ITranslationHelper translations)
 		{
@@ -260,13 +260,13 @@ namespace Shockah.CommonModCode.GMCM
 			);
 		}
 
-		private Func<string>? GetOptionalTranslatedStringDelegate(string key, object? tokens = null)
+		public Func<string>? GetOptionalTranslatedStringDelegate(string key, object? tokens = null)
 		{
 			var translation = Translations.Get(key, tokens);
 			return translation.HasValue() ? () => translation : null;
 		}
 
-		private static Expression<Action<T>> CreateSetter<T>(Expression<Func<T>> getter)
+		public static Expression<Action<T>> CreateSetter<T>(Expression<Func<T>> getter)
 		{
 			var parameter = Expression.Parameter(typeof(T), "value");
 			var body = Expression.Assign(getter.Body, parameter);

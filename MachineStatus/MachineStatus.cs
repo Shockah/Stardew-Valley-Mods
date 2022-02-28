@@ -44,7 +44,7 @@ namespace Shockah.MachineStatus
 			{
 				(90, "Bone Mill", MachineType.Processor),
 				(114, "Charcoal Kiln", MachineType.Processor),
-				(21, "Crystalarium", MachineType.Processor),
+				(21, "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
 				(13, "Furnace", MachineType.Processor),
 				(182, "Geode Crusher", MachineType.Processor),
 				(264, "Heavy Tapper", MachineType.Generator),
@@ -145,29 +145,21 @@ namespace Shockah.MachineStatus
 
 				foreach (var (titleKey, machines) in KnownMachineNames)
 				{
-					helper.AddSectionTitle(titleKey);
-					foreach (var (machineId, machineName, machineType) in machines)
-					{
-						if (machineType == MachineType.Generator && state == MachineState.Waiting)
-							continue;
-
-						var machineKey = BuiltInMachineSyntax(machineName);
-						var localizedMachineName = machineName;
-						if (Game1.bigCraftablesInformation.TryGetValue(machineId, out string? info))
-							localizedMachineName = info.Split('/')[0];
-
-						api!.AddBoolOption(
-							mod: ModManifest,
-							name: () => localizedMachineName,
-							getValue: () => exceptions.Contains(machineKey),
-							setValue: value =>
-							{
-								exceptions.Remove(machineKey);
-								if (value)
-									exceptions.Add(machineKey);
-							}
-						);
-					}
+					helper.AddMultiSelectTextOption(
+						titleKey,
+						getValue: v => exceptions.Contains(BuiltInMachineSyntax(v.machineName)),
+						addValue: v => exceptions.Add(BuiltInMachineSyntax(v.machineName)),
+						removeValue: v => exceptions.Remove(BuiltInMachineSyntax(v.machineName)),
+						columns: _ => 2,
+						allowedValues: machines.Where(m => !(m.type == MachineType.Generator && state == MachineState.Waiting)).ToArray(),
+						formatAllowedValue: v =>
+						{
+							var localizedMachineName = v.machineName;
+							if (Game1.bigCraftablesInformation.TryGetValue(v.machineId, out string? info))
+								localizedMachineName = info.Split('/')[0];
+							return localizedMachineName;
+						}
+					);
 				}
 			}
 

@@ -15,7 +15,9 @@
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)GMCM\GMCMI18nHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\GMCMI18nHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiSelectTextOptionForHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\MultiSelectTextOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HarmonyExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)I18nEnum.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />
@@ -29,7 +31,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\UIAnchor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)GMCM\" />
     <Folder Include="$(MSBuildThisFileDirectory)IL\" />
   </ItemGroup>
 </Project>
