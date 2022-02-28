@@ -89,8 +89,7 @@ namespace Shockah.MachineStatus
 
 		private static void GameLocation_checkAction_Postfix(GameLocation __instance, Location __0 /* tileLocation */)
 		{
-			Vector2 key = new Vector2(__0.X, __0.Y);
-			if (__instance.Objects.TryGetValue(key, out var @object))
+			if (__instance.Objects.TryGetValue(new Vector2(__0.X, __0.Y), out var @object))
 				Instance.UpdateMachineState(__instance, @object);
 		}
 

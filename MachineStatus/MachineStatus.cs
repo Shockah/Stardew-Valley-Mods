@@ -95,7 +95,6 @@ namespace Shockah.MachineStatus
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
-			helper.Events.Input.ButtonPressed += OnButtonPressed;
 			helper.Events.Display.RenderedHud += OnRenderedHud;
 		}
 
@@ -245,6 +244,17 @@ namespace Shockah.MachineStatus
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
+			if (Context.IsPlayerFree && Config.VisibilityKeybind.JustPressed())
+			{
+				Visibility = Visibility switch
+				{
+					MachineRenderingOptions.Visibility.Hidden => Config.FocusedAlpha == Config.NormalAlpha ? MachineRenderingOptions.Visibility.Focused : MachineRenderingOptions.Visibility.Normal,
+					MachineRenderingOptions.Visibility.Normal => MachineRenderingOptions.Visibility.Focused,
+					MachineRenderingOptions.Visibility.Focused => MachineRenderingOptions.Visibility.Hidden,
+					_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
+				};
+			}
+
 			var targetAlpha = Visibility switch
 			{
 				MachineRenderingOptions.Visibility.Hidden => 0f,
@@ -277,22 +287,6 @@ namespace Shockah.MachineStatus
 				HideMachine(e.Location, @object.Value);
 			foreach (var @object in e.Added)
 				UpdateMachineState(e.Location, @object.Value);
-		}
-
-		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
-		{
-			if (!Context.IsPlayerFree)
-				return;
-			if (!Config.VisibilityKeybind.JustPressed())
-				return;
-
-			Visibility = Visibility switch
-			{
-				MachineRenderingOptions.Visibility.Hidden => Config.FocusedAlpha == Config.NormalAlpha ? MachineRenderingOptions.Visibility.Focused : MachineRenderingOptions.Visibility.Normal,
-				MachineRenderingOptions.Visibility.Normal => MachineRenderingOptions.Visibility.Focused,
-				MachineRenderingOptions.Visibility.Focused => MachineRenderingOptions.Visibility.Hidden,
-				_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
-			};
 		}
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
@@ -576,22 +570,13 @@ namespace Shockah.MachineStatus
 						);
 						break;
 					case MachineRenderingOptions.Sorting.ReadyFirst:
-						SortResults(
-							false,
-							e => e.machine.readyForHarvest.Value
-						);
+						SortResults(false, e => e.state == MachineState.Ready);
 						break;
 					case MachineRenderingOptions.Sorting.WaitingFirst:
-						SortResults(
-							false,
-							e => e.machine.heldObject.Value is null && e.machine.MinutesUntilReady <= 0
-						);
+						SortResults(false, e => e.state == MachineState.Waiting);
 						break;
 					case MachineRenderingOptions.Sorting.BusyFirst:
-						SortResults(
-							false,
-							e => e.machine.MinutesUntilReady > 0
-						);
+						SortResults(false, e => e.state == MachineState.Busy);
 						break;
 					case MachineRenderingOptions.Sorting.ByDistanceAscending:
 					case MachineRenderingOptions.Sorting.ByDistanceDescending:
@@ -631,15 +616,16 @@ namespace Shockah.MachineStatus
 			
 			foreach (string entry in list)
 			{
+				string trimmedEntry = entry.Trim();
 				if (RegexCache.TryGetValue(entry, out var regex))
 				{
 					if (RegexMatches(regex, machine))
 						return true;
 				}
-				else if (entry.Contains('*') || entry.Contains('?') || entry.Contains('|'))
+				else if (trimmedEntry.Contains('*') || trimmedEntry.Contains('?') || trimmedEntry.Contains('|'))
 				{
 					string pattern = "";
-					foreach (string part in Regex.Split(entry, "(\\*+|[\\?\\|])"))
+					foreach (string part in Regex.Split(trimmedEntry, "(\\*+|[\\?\\|])"))
 					{
 						if (part.Length == 0)
 							continue;
@@ -652,15 +638,15 @@ namespace Shockah.MachineStatus
 						};
 					}
 					regex = new Regex($"^{pattern}$");
-					RegexCache[entry] = regex;
+					RegexCache[trimmedEntry] = regex;
 					if (RegexMatches(regex, machine))
 						return true;
 				}
 				else
 				{
-					if (machine.Name.Trim().Equals(entry, StringComparison.InvariantCultureIgnoreCase))
+					if (machine.Name.Trim().Equals(trimmedEntry, StringComparison.InvariantCultureIgnoreCase))
 						return true;
-					if (machine.DisplayName.Trim().Equals(entry, StringComparison.InvariantCultureIgnoreCase))
+					if (machine.DisplayName.Trim().Equals(trimmedEntry, StringComparison.InvariantCultureIgnoreCase))
 						return true;
 				}
 			}
@@ -677,10 +663,6 @@ namespace Shockah.MachineStatus
 					return false;
 				return player.HouseUpgradeLevel >= 3;
 			}
-			else if (location is Farm)
-			{
-				return true;
-			}
 			else if (location is FarmCave)
 			{
 				return Game1.locations.Where(l => l is FarmCave).First() == location;
@@ -691,6 +673,8 @@ namespace Shockah.MachineStatus
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
 			if (!@object.bigCraftable.Value)
+				return false;
+			if (@object.IsSprinkler())
 				return false;
 			return true;
 		}
