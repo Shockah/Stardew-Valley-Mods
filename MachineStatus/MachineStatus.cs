@@ -20,52 +20,53 @@ namespace Shockah.MachineStatus
 {
 	public class MachineStatus: Mod
 	{
+		private enum MachineType { Generator, Processor }
 		private enum MachineState { Ready, Waiting, Busy }
 		
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
 		private static readonly Vector2 SingleMachineSize = new(64, 64);
 
-		private static readonly (string titleKey, (int machineId, string machineName)[] machineNames)[] KnownMachineNames = new[]
+		private static readonly (string titleKey, (int machineId, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
 		{
-			("config.machine.category.artisan", new (int machineId, string machineName)[]
+			("config.machine.category.artisan", new (int machineId, string machineName, MachineType type)[]
 			{
-				(10, "Bee House"),
-				(163, "Cask"),
-				(16, "Cheese Press"),
-				(12, "Keg"),
-				(17, "Loom"),
-				(24, "Mayonnaise Machine"),
-				(19, "Oil Maker"),
-				(15, "Preserves Jar")
+				(10, "Bee House", MachineType.Generator),
+				(163, "Cask", MachineType.Processor),
+				(16, "Cheese Press", MachineType.Processor),
+				(12, "Keg", MachineType.Processor),
+				(17, "Loom", MachineType.Processor),
+				(24, "Mayonnaise Machine", MachineType.Processor),
+				(19, "Oil Maker", MachineType.Processor),
+				(15, "Preserves Jar", MachineType.Processor)
 			}),
-			("config.machine.category.refining", new (int machineId, string machineName)[]
+			("config.machine.category.refining", new (int machineId, string machineName, MachineType type)[]
 			{
-				(90, "Bone Mill"),
-				(114, "Charcoal Kiln"),
-				(21, "Crystalarium"),
-				(13, "Furnace"),
-				(182, "Geode Crusher"),
-				(264, "Heavy Tapper"),
-				(9, "Lightning Rod"),
-				(20, "Recycling Machine"),
-				(25, "Seed Maker"),
-				(158, "Slime Egg-Press"),
-				(231, "Solar Panel"),
-				(105, "Tapper"),
-				(211, "Wood Chipper"),
-				(154, "Worm Bin")
+				(90, "Bone Mill", MachineType.Processor),
+				(114, "Charcoal Kiln", MachineType.Processor),
+				(21, "Crystalarium", MachineType.Processor),
+				(13, "Furnace", MachineType.Processor),
+				(182, "Geode Crusher", MachineType.Processor),
+				(264, "Heavy Tapper", MachineType.Generator),
+				(9, "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
+				(20, "Recycling Machine", MachineType.Processor),
+				(25, "Seed Maker", MachineType.Processor),
+				(158, "Slime Egg-Press", MachineType.Processor),
+				(231, "Solar Panel", MachineType.Generator),
+				(105, "Tapper", MachineType.Generator),
+				(211, "Wood Chipper", MachineType.Processor),
+				(154, "Worm Bin", MachineType.Generator)
 			}),
-			("config.machine.category.misc", new (int machineId, string machineName)[]
+			("config.machine.category.misc", new (int machineId, string machineName, MachineType type)[]
 			{
-				(246, "Coffee Maker"),
-				(265, "Deconstructor"),
-				(128, "Mushroom Box"),
-				(254, "Ostrich Incubator"),
-				(156, "Slime Incubator"),
-				(127, "Statue of Endless Fortune"),
-				(160, "Statue of Perfection"),
-				(280, "Statue of True Perfection")
+				(246, "Coffee Maker", MachineType.Generator),
+				(265, "Deconstructor", MachineType.Processor),
+				(128, "Mushroom Box", MachineType.Generator),
+				(254, "Ostrich Incubator", MachineType.Processor),
+				(156, "Slime Incubator", MachineType.Processor),
+				(127, "Statue of Endless Fortune", MachineType.Generator),
+				(160, "Statue of Perfection", MachineType.Generator),
+				(280, "Statue of True Perfection", MachineType.Generator)
 			}),
 		};
 
@@ -122,7 +123,7 @@ namespace Shockah.MachineStatus
 			string BuiltInMachineSyntax(string machineName)
 				=> $"*|{machineName}";
 
-			void SetupExceptionsPage(string typeKey, IList<string> exceptions)
+			void SetupExceptionsPage(string typeKey, MachineState state, IList<string> exceptions)
 			{
 				helper.AddPage(typeKey, typeKey);
 
@@ -145,8 +146,11 @@ namespace Shockah.MachineStatus
 				foreach (var (titleKey, machines) in KnownMachineNames)
 				{
 					helper.AddSectionTitle(titleKey);
-					foreach (var (machineId, machineName) in machines)
+					foreach (var (machineId, machineName, machineType) in machines)
 					{
+						if (machineType == MachineType.Generator && state == MachineState.Waiting)
+							continue;
+
 						var machineKey = BuiltInMachineSyntax(machineName);
 						var localizedMachineName = machineName;
 						if (Game1.bigCraftablesInformation.TryGetValue(machineId, out string? info))
@@ -220,9 +224,9 @@ namespace Shockah.MachineStatus
 			SetupStateConfig("config.show.ready", "config.show.ready.exceptions", () => Config.ShowReady);
 			SetupStateConfig("config.show.waiting", "config.show.waiting.exceptions", () => Config.ShowWaiting);
 			SetupStateConfig("config.show.busy", "config.show.busy.exceptions", () => Config.ShowBusy);
-			SetupExceptionsPage("config.show.ready.exceptions", Config.ShowReadyExceptions);
-			SetupExceptionsPage("config.show.waiting.exceptions", Config.ShowWaitingExceptions);
-			SetupExceptionsPage("config.show.busy.exceptions", Config.ShowBusyExceptions);
+			SetupExceptionsPage("config.show.ready.exceptions", MachineState.Ready, Config.ShowReadyExceptions);
+			SetupExceptionsPage("config.show.waiting.exceptions", MachineState.Waiting, Config.ShowWaitingExceptions);
+			SetupExceptionsPage("config.show.busy.exceptions", MachineState.Busy, Config.ShowBusyExceptions);
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -679,6 +683,19 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
+		private MachineType GetMachineType(SObject @object)
+		{
+			foreach (var (_, machineEntries) in KnownMachineNames)
+			{
+				foreach (var (machineId, _, machineType) in machineEntries)
+				{
+					if (@object.ParentSheetIndex == machineId)
+						return machineType;
+				}
+			}
+			return MachineType.Processor;
+		}
+
 		private MachineState GetMachineState(SObject machine)
 		{
 			if (machine.readyForHarvest.Value)
@@ -740,7 +757,7 @@ namespace Shockah.MachineStatus
 			{
 				if (machine.MinutesUntilReady > 0 && machine.heldObject.Value is not null)
 					return SetMachineBusy(location, machine);
-				else
+				else if (GetMachineType(machine) == MachineType.Processor)
 					return SetMachineWaitingForInput(location, machine);
 			}
 			return false;
