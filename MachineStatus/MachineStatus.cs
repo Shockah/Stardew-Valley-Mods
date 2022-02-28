@@ -487,7 +487,7 @@ namespace Shockah.MachineStatus
 			{
 				foreach (var heldItem in heldItems)
 				{
-					if (heldItem.Name == newHeldItem.name && heldItem.Quality == newHeldItem.Quality)
+					if (heldItem.Name == newHeldItem.name)
 						return;
 				}
 				heldItems.Add(newHeldItem);
