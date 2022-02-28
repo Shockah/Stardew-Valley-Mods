@@ -358,7 +358,7 @@ namespace Shockah.MachineStatus
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
 				var machineState = GetMachineState(machine);
 
-				Vector2 scaleFactor = (SingleMachineSize + machine.getScale()) / SingleMachineSize;
+				Vector2 scaleFactor = (SingleMachineSize + machine.getScale() * new Vector2(3f, 1f)) / SingleMachineSize;
 				scaleFactor = new Vector2(scaleFactor.X, 1f / scaleFactor.Y);
 				ItemRenderer.DrawItem(
 					e.SpriteBatch, machine,
@@ -747,7 +747,7 @@ namespace Shockah.MachineStatus
 		private bool ShowMachine(GameLocation location, SObject machine)
 		{
 			var state = GetMachineState(machine);
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine.TileLocation == machine.TileLocation && e.machine.Name == machine.Name);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
 			{
 				if (existingEntry.Value.state == state)
@@ -762,7 +762,7 @@ namespace Shockah.MachineStatus
 
 		private bool HideMachine(GameLocation location, SObject machine)
 		{
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine.TileLocation == machine.TileLocation && e.machine.Name == machine.Name);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
 			{
 				RawMachines.Remove(existingEntry.Value);

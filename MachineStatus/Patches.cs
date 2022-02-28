@@ -33,11 +33,6 @@ namespace Shockah.MachineStatus
 					monitor: Instance.Monitor
 				);
 				harmony.PatchVirtual(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.performDropDownAction)),
-					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_performDropDownAction_Postfix)),
-					monitor: Instance.Monitor
-				);
-				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.onReadyForHarvest)),
 					postfix: new HarmonyMethod(typeof(Patches), nameof(Object_onReadyForHarvest_Postfix)),
 					monitor: Instance.Monitor
@@ -79,11 +74,6 @@ namespace Shockah.MachineStatus
 			if (__1)
 				return;
 			Instance.UpdateMachineState(__2.currentLocation, __instance);
-		}
-
-		private static void Object_performDropDownAction_Postfix(SObject __instance, Farmer __0 /* who */)
-		{
-			Instance.UpdateMachineState(__0.currentLocation, __instance);
 		}
 
 		private static void Object_onReadyForHarvest_Postfix(SObject __instance, GameLocation __0 /* environment */)
