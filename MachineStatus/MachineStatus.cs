@@ -78,10 +78,12 @@ namespace Shockah.MachineStatus
 		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
 		private readonly ConditionalWeakTable<SObject, GameLocation> AttachedMachineLocations = new();
 		private readonly ISet<(GameLocation location, SObject machine)> QueuedMachineUpdates = new HashSet<(GameLocation location, SObject machine)>();
-		private readonly IList<(GameLocation location, SObject machine, MachineState state)> RawMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
+		private readonly IList<(GameLocation location, SObject machine)> AllMachines = new List<(GameLocation location, SObject machine)>();
+		private readonly IList<(GameLocation location, SObject machine, MachineState state)> VisibleMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
 		private readonly IList<(GameLocation location, SObject machine, MachineState state)> SortedMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
 		private readonly IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines = new List<(SObject machine, IList<SObject> heldItems)>();
 		private readonly IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines = new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>();
+		private bool AreVisibleMachinesDirty = false;
 		private bool AreSortedMachinesDirty = false;
 		private bool AreGroupedMachinesDirty = false;
 		private bool AreFlowMachinesDirty = false;
@@ -315,7 +317,7 @@ namespace Shockah.MachineStatus
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			foreach (var @object in e.Removed)
-				HideMachine(e.Location, @object.Value);
+				RemoveMachine(e.Location, @object.Value);
 			foreach (var @object in e.Added)
 				StartTrackingMachine(e.Location, @object.Value);
 		}
@@ -324,7 +326,7 @@ namespace Shockah.MachineStatus
 		{
 			if (!Context.IsWorldReady || Game1.eventUp)
 				return;
-			if (RawMachines.Count == 0)
+			if (AllMachines.Count == 0)
 				return;
 			if (VisibilityAlpha <= 0f)
 				return;
@@ -450,9 +452,11 @@ namespace Shockah.MachineStatus
 
 		private void ForceRefreshDisplayedMachines()
 		{
-			RawMachines.Clear();
+			AllMachines.Clear();
+			VisibleMachines.Clear();
 			SortedMachines.Clear();
 			GroupedMachines.Clear();
+			AreVisibleMachinesDirty = false;
 			AreSortedMachinesDirty = false;
 			AreGroupedMachinesDirty = false;
 
@@ -585,13 +589,14 @@ namespace Shockah.MachineStatus
 
 		private void SortMachinesIfNeeded(Farmer player)
 		{
+			UpdateVisibleMachinesIfNeeded();
 			if (AreSortedMachinesDirty)
 				SortMachines(player);
 		}
 
 		private void SortMachines(Farmer player)
 		{
-			IEnumerable<(GameLocation location, SObject machine, MachineState state)> results = RawMachines;
+			IEnumerable<(GameLocation location, SObject machine, MachineState state)> results = VisibleMachines;
 
 			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine, MachineState state), T> keySelector) where T: IComparable<T>
 			{
@@ -642,7 +647,7 @@ namespace Shockah.MachineStatus
 			}
 
 			var final = results.ToList();
-			if (!results.SequenceEqual(SortedMachines))
+			if (!final.SequenceEqual(SortedMachines))
 			{
 				SortedMachines.Clear();
 				foreach (var entry in final)
@@ -650,6 +655,37 @@ namespace Shockah.MachineStatus
 				AreGroupedMachinesDirty = true;
 			}
 			AreSortedMachinesDirty = false;
+		}
+
+		private void UpdateVisibleMachinesIfNeeded()
+		{
+			if (AreVisibleMachinesDirty)
+				UpdateVisibleMachines();
+		}
+
+		private void UpdateVisibleMachines()
+		{
+			var final = AllMachines
+				.Select(e => (location: e.location, machine: e.machine, state: GetMachineState(e.machine)))
+				.Where(e =>
+				{
+					return e.state switch
+					{
+						MachineState.Ready => Config.ShowReady != MachineMatches(e.machine, Config.ShowReadyExceptions),
+						MachineState.Waiting => Config.ShowWaiting != MachineMatches(e.machine, Config.ShowWaitingExceptions),
+						MachineState.Busy => Config.ShowBusy != MachineMatches(e.machine, Config.ShowBusyExceptions),
+						_ => throw new InvalidOperationException(),
+					};
+				})
+				.ToList();
+			if (!final.SequenceEqual(VisibleMachines))
+			{
+				VisibleMachines.Clear();
+				foreach (var entry in final)
+					VisibleMachines.Add(entry);
+				AreSortedMachinesDirty = true;
+			}
+			AreVisibleMachinesDirty = false;
 		}
 
 		private bool MachineMatches(SObject machine, IList<string> list)
@@ -748,37 +784,35 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
-		private bool SetMachineVisible(bool visible, GameLocation location, SObject machine)
+		private bool UpsertMachine(GameLocation location, SObject machine)
 		{
-			if (visible)
-				return ShowMachine(location, machine);
-			else
-				return HideMachine(location, machine);
-		}
-
-		private bool ShowMachine(GameLocation location, SObject machine)
-		{
-			var state = GetMachineState(machine);
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var existingEntry = AllMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
 			{
-				if (existingEntry.Value.state == state)
-					return false;
-				else
-					RawMachines.Remove(existingEntry.Value);
+				var existingVisibleEntry = VisibleMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+				if (existingVisibleEntry is not null)
+				{
+					var newState = GetMachineState(machine);
+					if (newState != existingVisibleEntry.Value.state)
+					{
+						AreVisibleMachinesDirty = true;
+						return true;
+					}
+				}
+				return false;
 			}
-			RawMachines.Add((location, machine, state));
-			AreSortedMachinesDirty = true;
+			AllMachines.Add((location, machine));
+			AreVisibleMachinesDirty = true;
 			return true;
 		}
 
-		private bool HideMachine(GameLocation location, SObject machine)
+		private bool RemoveMachine(GameLocation location, SObject machine)
 		{
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var existingEntry = AllMachines.FirstOrNull(e => e.location == location && e.machine == machine);
 			if (existingEntry is not null)
 			{
-				RawMachines.Remove(existingEntry.Value);
-				AreSortedMachinesDirty = true;
+				AllMachines.Remove(existingEntry.Value);
+				AreVisibleMachinesDirty = true;
 			}
 			return existingEntry is not null;
 		}
@@ -795,19 +829,8 @@ namespace Shockah.MachineStatus
 			if (!IsMachine(location, machine))
 				return false;
 			if (!IsLocationAccessible(location))
-				return HideMachine(location, machine);
-			var state = GetMachineState(machine);
-			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
-			if (existingEntry is not null && existingEntry.Value.state == state)
-				return false;
-			var shouldShow = state switch
-			{
-				MachineState.Ready => Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions),
-				MachineState.Waiting => Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptions),
-				MachineState.Busy => Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptions),
-				_ => throw new InvalidOperationException(),
-			};
-			return SetMachineVisible(shouldShow, location, machine);
+				return RemoveMachine(location, machine);
+			return UpsertMachine(location, machine);
 		}
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
