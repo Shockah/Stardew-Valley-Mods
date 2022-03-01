@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
@@ -14,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using SObject = StardewValley.Object;
 
@@ -75,6 +75,9 @@ namespace Shockah.MachineStatus
 		internal static MachineStatus Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
+		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
+		private readonly ConditionalWeakTable<SObject, GameLocation> AttachedMachineLocations = new();
+		private readonly ISet<(GameLocation location, SObject machine)> QueuedMachineUpdates = new HashSet<(GameLocation location, SObject machine)>();
 		private readonly IList<(GameLocation location, SObject machine, MachineState state)> RawMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
 		private readonly IList<(GameLocation location, SObject machine, MachineState state)> SortedMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
 		private readonly IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines = new List<(SObject machine, IList<SObject> heldItems)>();
@@ -131,7 +134,7 @@ namespace Shockah.MachineStatus
 
 				helper.AddTextOption(
 					keyPrefix: "config.exceptions.manual",
-					getValue: () => exceptions.Where(ex => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex))).Join(delimiter: ", "),
+					getValue: () => string.Join(", ", exceptions.Where(ex => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex)))),
 					setValue: value =>
 					{
 						var existingVanillaValues = exceptions
@@ -234,9 +237,6 @@ namespace Shockah.MachineStatus
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			var harmony = new Harmony(ModManifest.UniqueID);
-			Patches.Apply(harmony);
-
 			SetupConfig();
 			Visibility = MachineRenderingOptions.Visibility.Normal;
 			VisibilityAlpha = Config.NormalAlpha;
@@ -245,12 +245,20 @@ namespace Shockah.MachineStatus
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
+			QueuedMachineUpdates.Clear();
 			LastPlayerTileLocation.ResetAllScreens();
 			ForceRefreshDisplayedMachines();
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
+			if (!Context.IsWorldReady)
+				return;
+
+			foreach (var (location, machine) in QueuedMachineUpdates)
+				UpdateMachine(location, machine);
+			QueuedMachineUpdates.Clear();
+
 			if (Context.IsPlayerFree && Config.VisibilityKeybind.JustPressed())
 			{
 				Visibility = Visibility switch
@@ -285,9 +293,9 @@ namespace Shockah.MachineStatus
 				{
 					if (lastPlayerLocation is not null)
 						foreach (var @object in lastPlayerLocation.Objects.Values)
-							UpdateMachineState(lastPlayerLocation, @object);
+							UpdateMachine(lastPlayerLocation, @object);
 					foreach (var @object in newPlayerLocation.Objects.Values)
-						UpdateMachineState(newPlayerLocation, @object);
+						UpdateMachine(newPlayerLocation, @object);
 				}
 			}
 
@@ -309,7 +317,7 @@ namespace Shockah.MachineStatus
 			foreach (var @object in e.Removed)
 				HideMachine(e.Location, @object.Value);
 			foreach (var @object in e.Added)
-				UpdateMachineState(e.Location, @object.Value);
+				StartTrackingMachine(e.Location, @object.Value);
 		}
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
@@ -452,7 +460,7 @@ namespace Shockah.MachineStatus
 				return;
 			foreach (var location in GameExtensions.GetAllLocations())
 				foreach (var @object in location.Objects.Values)
-					UpdateMachineState(location, @object);
+					StartTrackingMachine(location, @object);
 		}
 
 		private void UpdateFlowMachinesIfNeeded(Farmer player)
@@ -718,6 +726,19 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
+		private MachineState GetMachineState(SObject machine)
+			=> GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.heldObject.Value);
+
+		private MachineState GetMachineState(bool readyForHarvest, int minutesUntilReady, SObject? heldObject)
+		{
+			if (readyForHarvest || (heldObject is not null && minutesUntilReady <= 0))
+				return MachineState.Ready;
+			else if (minutesUntilReady > 0)
+				return MachineState.Busy;
+			else
+				return MachineState.Waiting;
+		}
+
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
 			if (!@object.bigCraftable.Value)
@@ -725,29 +746,6 @@ namespace Shockah.MachineStatus
 			if (@object.IsSprinkler())
 				return false;
 			return true;
-		}
-
-		private MachineType GetMachineType(SObject @object)
-		{
-			foreach (var (_, machineEntries) in KnownMachineNames)
-			{
-				foreach (var (machineId, _, machineType) in machineEntries)
-				{
-					if (@object.ParentSheetIndex == machineId)
-						return machineType;
-				}
-			}
-			return MachineType.Processor;
-		}
-
-		private MachineState GetMachineState(SObject machine)
-		{
-			if (machine.readyForHarvest.Value || (machine.heldObject.Value is not null && machine.MinutesUntilReady <= 0))
-				return MachineState.Ready;
-			else if (machine.MinutesUntilReady > 0)
-				return MachineState.Busy;
-			else
-				return MachineState.Waiting;
 		}
 
 		private bool SetMachineVisible(bool visible, GameLocation location, SObject machine)
@@ -785,13 +783,23 @@ namespace Shockah.MachineStatus
 			return existingEntry is not null;
 		}
 
-		internal bool UpdateMachineState(GameLocation location, SObject machine)
+		internal bool UpdateMachine(SObject machine)
+		{
+			if (!AttachedMachineLocations.TryGetValue(machine, out var location))
+				return false;
+			return UpdateMachine(location, machine);
+		}
+
+		internal bool UpdateMachine(GameLocation location, SObject machine)
 		{
 			if (!IsMachine(location, machine))
 				return false;
 			if (!IsLocationAccessible(location))
 				return HideMachine(location, machine);
 			var state = GetMachineState(machine);
+			var existingEntry = RawMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			if (existingEntry is not null && existingEntry.Value.state == state)
+				return false;
 			var shouldShow = state switch
 			{
 				MachineState.Ready => Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptions),
@@ -800,6 +808,39 @@ namespace Shockah.MachineStatus
 				_ => throw new InvalidOperationException(),
 			};
 			return SetMachineVisible(shouldShow, location, machine);
+		}
+
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
+		internal void StartTrackingMachine(GameLocation location, SObject machine)
+		{
+			UpdateMachine(location, machine);
+			if (TrackedMachines.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
+				return;
+
+			machine.readyForHarvest.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
+			{
+				var oldState = GetMachineState(oldValue, machine.MinutesUntilReady, machine.heldObject.Value);
+				var newState = GetMachineState(newValue, machine.MinutesUntilReady, machine.heldObject.Value);
+				if (newState != oldState)
+					QueuedMachineUpdates.Add((location, machine));
+			};
+			machine.minutesUntilReady.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
+			{
+				var oldState = GetMachineState(machine.readyForHarvest.Value, oldValue, machine.heldObject.Value);
+				var newState = GetMachineState(machine.readyForHarvest.Value, newValue, machine.heldObject.Value);
+				if (newState != oldState)
+					QueuedMachineUpdates.Add((location, machine));
+			};
+			machine.heldObject.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
+			{
+				var oldState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, oldValue);
+				var newState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, newValue);
+				if (newState != oldState)
+					QueuedMachineUpdates.Add((location, machine));
+			};
+
+			TrackedMachines.Add(new(machine));
+			AttachedMachineLocations.Add(machine, location);
 		}
 	}
 }

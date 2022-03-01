@@ -13,15 +13,20 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XPDisplay", "XPDisplay\XPDi
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "_Common", "_Common\_Common.shproj", "{5755B5E3-AC9D-4A3E-9C01-2731828B9CAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachineStatus", "MachineStatus\MachineStatus.csproj", "{2FCB0A9C-FBE0-480D-A896-72300866BFBE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStatus", "MachineStatus\MachineStatus.csproj", "{2FCB0A9C-FBE0-480D-A896-72300866BFBE}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "_CommonWithHarmony", "_CommonWithHarmony\_CommonWithHarmony.shproj", "{D9B27087-1AAA-4459-81EC-8C2F80D2E5FC}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		_Common\_Common.projitems*{2270e272-3de2-4e0d-8907-29e32ecf68fe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{2fcb0a9c-fbe0-480d-a896-72300866bfbe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{5755b5e3-ac9d-4a3e-9c01-2731828b9caa}*SharedItemsImports = 13
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{5ae05c77-966b-49a8-8000-2fb2486dd82f}*SharedItemsImports = 5
 		_Common\_Common.projitems*{5ae05c77-966b-49a8-8000-2fb2486dd82f}*SharedItemsImports = 5
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{d49f8392-3b72-43d5-ab06-206fb71eeea4}*SharedItemsImports = 5
 		_Common\_Common.projitems*{d49f8392-3b72-43d5-ab06-206fb71eeea4}*SharedItemsImports = 5
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{d9b27087-1aaa-4459-81ec-8c2f80d2e5fc}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

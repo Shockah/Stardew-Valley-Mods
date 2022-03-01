@@ -18,11 +18,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\GMCMI18nHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiSelectTextOptionForHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\MultiSelectTextOption.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)HarmonyExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)I18nEnum.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IL\TranspileWorker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IntPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LinqExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\FarmHouseExtensions.cs" />
@@ -31,8 +28,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\ItemRenderer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Orientation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UIAnchor.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)IL\" />
   </ItemGroup>
 </Project>
