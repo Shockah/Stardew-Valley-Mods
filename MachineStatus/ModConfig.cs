@@ -1,8 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using Shockah.CommonModCode;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI.Utilities;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.MachineStatus
 {
@@ -49,5 +51,26 @@ namespace Shockah.MachineStatus
 
 		public bool ShowBusy { get; set; } = false;
 		public IList<string> ShowBusyExceptions { get; set; } = new List<string>();
+
+		[JsonIgnore]
+		public IReadOnlyList<IWildcardPattern> ShowReadyExceptionPatterns
+		{
+			get => ShowReadyExceptions.Select(WildcardPatterns.Parse).ToList();
+			set => ShowReadyExceptions = value.Select(p => p.Pattern).ToList();
+		}
+
+		[JsonIgnore]
+		public IReadOnlyList<IWildcardPattern> ShowWaitingExceptionPatterns
+		{
+			get => ShowWaitingExceptions.Select(WildcardPatterns.Parse).ToList();
+			set => ShowWaitingExceptions = value.Select(p => p.Pattern).ToList();
+		}
+
+		[JsonIgnore]
+		public IReadOnlyList<IWildcardPattern> ShowBusyExceptionPatterns
+		{
+			get => ShowBusyExceptions.Select(WildcardPatterns.Parse).ToList();
+			set => ShowBusyExceptions = value.Select(p => p.Pattern).ToList();
+		}
 	}
 }

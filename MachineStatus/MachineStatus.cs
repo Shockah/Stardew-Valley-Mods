@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using SObject = StardewValley.Object;
 
 namespace Shockah.MachineStatus
@@ -89,7 +88,6 @@ namespace Shockah.MachineStatus
 		private bool AreFlowMachinesDirty = false;
 		private readonly PerScreen<(GameLocation, Vector2)?> LastPlayerTileLocation = new();
 
-		private readonly IDictionary<string, Regex> RegexCache = new Dictionary<string, Regex>();
 		private MachineRenderingOptions.Visibility Visibility = MachineRenderingOptions.Visibility.Normal;
 		private float VisibilityAlpha = 1f;
 		private bool IsHoveredOver = false;
@@ -671,9 +669,9 @@ namespace Shockah.MachineStatus
 				{
 					return e.state switch
 					{
-						MachineState.Ready => Config.ShowReady != MachineMatches(e.machine, Config.ShowReadyExceptions),
-						MachineState.Waiting => Config.ShowWaiting != MachineMatches(e.machine, Config.ShowWaitingExceptions),
-						MachineState.Busy => Config.ShowBusy != MachineMatches(e.machine, Config.ShowBusyExceptions),
+						MachineState.Ready => Config.ShowReady != MachineMatches(e.machine, Config.ShowReadyExceptionPatterns),
+						MachineState.Waiting => Config.ShowWaiting != MachineMatches(e.machine, Config.ShowWaitingExceptionPatterns),
+						MachineState.Busy => Config.ShowBusy != MachineMatches(e.machine, Config.ShowBusyExceptionPatterns),
 						_ => throw new InvalidOperationException(),
 					};
 				})
@@ -688,53 +686,8 @@ namespace Shockah.MachineStatus
 			AreVisibleMachinesDirty = false;
 		}
 
-		private bool MachineMatches(SObject machine, IList<string> list)
-		{
-			static bool RegexMatches(Regex regex, SObject machine)
-			{
-				if (regex.IsMatch(machine.Name) || regex.IsMatch(machine.DisplayName))
-					return true;
-				return false;
-			}
-			
-			foreach (string entry in list)
-			{
-				string trimmedEntry = entry.Trim();
-				if (RegexCache.TryGetValue(entry, out var regex))
-				{
-					if (RegexMatches(regex, machine))
-						return true;
-				}
-				else if (trimmedEntry.Contains('*') || trimmedEntry.Contains('?') || trimmedEntry.Contains('|'))
-				{
-					string pattern = "";
-					foreach (string part in Regex.Split(trimmedEntry, "(\\*+|[\\?\\|])"))
-					{
-						if (part.Length == 0)
-							continue;
-						pattern += part[0] switch
-						{
-							'*' => ".*",
-							'?' => "\\w+",
-							'|' => "\\b",
-							_ => Regex.Escape(part),
-						};
-					}
-					regex = new Regex($"^{pattern}$");
-					RegexCache[trimmedEntry] = regex;
-					if (RegexMatches(regex, machine))
-						return true;
-				}
-				else
-				{
-					if (machine.Name.Trim().Equals(trimmedEntry, StringComparison.InvariantCultureIgnoreCase))
-						return true;
-					if (machine.DisplayName.Trim().Equals(trimmedEntry, StringComparison.InvariantCultureIgnoreCase))
-						return true;
-				}
-			}
-			return false;
-		}
+		private bool MachineMatches(SObject machine, IEnumerable<IWildcardPattern> patterns)
+			=> patterns.Any(p => p.Matches(machine.Name) || p.Matches(machine.DisplayName));
 
 		private SObject CopyMachine(SObject machine)
 		{

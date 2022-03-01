@@ -28,5 +28,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\ItemRenderer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Orientation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UIAnchor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WildcardPattern.cs" />
   </ItemGroup>
 </Project>
