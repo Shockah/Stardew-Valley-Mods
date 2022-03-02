@@ -18,6 +18,10 @@
     "config.flowDirection.value.TopToBottomAndRightToLeft": "T>B, R>L",
     "config.flowDirection.value.BottomToTopAndRightToLeft": "B>T, R>L",
 
+    "config.splitScreenScreens.value.First": "First",
+    "config.splitScreenScreens.value.Last": "Last",
+    "config.splitScreenScreens.value.All": "All",
+
     "config.sorting.value.None": "None",
     "config.sorting.value.ByMachineAZ": "By machine, A>Z",
     "config.sorting.value.ByMachineZA": "By machine, Z>A",
@@ -65,6 +69,8 @@
     "config.bubble.sway.value.Together": "Together",
     "config.bubble.sway.value.Wave": "Wave",
 
+    "config.appearance.splitScreenScreens.name": "Split screen screens",
+    "config.appearance.splitScreenScreens.tooltip": "Which screens to display the machine status on while in split screen mode.",
     "config.appearance.visibilityKeybind.name": "Visibility hotkey",
     "config.appearance.alpha.focused.name": "Focused alpha",
     "config.appearance.alpha.focused.tooltip": "Transparency when the display is focused\n(when hovering over with a mouse cursor, or after pressing a hotkey).\n0: fully transparent\n1: fully opaque",

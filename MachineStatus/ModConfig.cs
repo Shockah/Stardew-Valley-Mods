@@ -20,16 +20,18 @@ namespace Shockah.MachineStatus
 		[JsonIgnore] public UIAnchor Anchor => new(ScreenAnchorSide, AnchorInset, new(AnchorOffsetX, AnchorOffsetY), PanelAnchorSide);
 
 		public FlowDirection FlowDirection { get; set; } = FlowDirection.LeftToRightAndBottomToTop;
-		public float Scale { get; set; } = 1f;
+		public float Scale { get; set; } = 2f;
 		public float XSpacing { get; set; } = 4f;
 		public float YSpacing { get; set; } = 4f;
 		[JsonIgnore] public Vector2 Spacing => new(XSpacing, YSpacing);
-		public int MaxColumns { get; set; } = 0;
+		public int MaxColumns { get; set; } = 6;
+
 
 		public bool ShowItemBubble { get; set; } = true;
 		public float BubbleItemCycleTime { get; set; } = 2f;
 		public MachineRenderingOptions.BubbleSway BubbleSway { get; set; } = MachineRenderingOptions.BubbleSway.Wave;
 
+		public SplitScreenScreens SplitScreenScreens { get; set; } = SplitScreenScreens.First;
 		public KeybindList VisibilityKeybind { get; set; } = new KeybindList();
 		public float FocusedAlpha { get; set; } = 1f;
 		public float NormalAlpha { get; set; } = 0.3f;

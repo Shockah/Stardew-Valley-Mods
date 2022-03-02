@@ -219,6 +219,7 @@ namespace Shockah.MachineStatus
 			helper.AddEnumOption("config.bubble.sway", () => Config.BubbleSway);
 
 			helper.AddSectionTitle("config.appearance.section");
+			helper.AddEnumOption("config.appearance.splitScreenScreens", valuePrefix: "config.splitScreenScreens", property: () => Config.SplitScreenScreens);
 			helper.AddKeybindList("config.appearance.visibilityKeybind", () => Config.VisibilityKeybind);
 			helper.AddNumberOption("config.appearance.alpha.focused", () => Config.FocusedAlpha, min: 0f, max: 1f, interval: 0.05f);
 			helper.AddNumberOption("config.appearance.alpha.normal", () => Config.NormalAlpha, min: 0f, max: 1f, interval: 0.05f);
@@ -328,12 +329,8 @@ namespace Shockah.MachineStatus
 			{
 				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
 				if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
-				{
 					if (LastPlayerTileLocation is null || LastPlayerTileLocation.Value != newPlayerLocation)
-					{
 						SortMachines(player);
-					}
-				}
 				LastPlayerTileLocation = newPlayerLocation;
 			}
 		}
@@ -352,6 +349,8 @@ namespace Shockah.MachineStatus
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
 			if (!Context.IsWorldReady || Game1.eventUp)
+				return;
+			if (!Config.SplitScreenScreens.MatchesCurrentScreen())
 				return;
 			if (HostMachines.Count == 0 && ClientMachines.Count == 0)
 				return;
