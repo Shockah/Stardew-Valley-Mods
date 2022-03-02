@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
@@ -14,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using SObject = StardewValley.Object;
 
 namespace Shockah.MachineStatus
@@ -75,7 +75,7 @@ namespace Shockah.MachineStatus
 		internal ModConfig Config { get; private set; } = null!;
 
 		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
-		private readonly ConditionalWeakTable<SObject, GameLocation> AttachedMachineLocations = new();
+		private readonly IList<SObject> IgnoredMachinesForUpdates = new List<SObject>();
 		private readonly ISet<(GameLocation location, SObject machine)> QueuedMachineUpdates = new HashSet<(GameLocation location, SObject machine)>();
 
 		private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenHostMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
@@ -260,11 +260,33 @@ namespace Shockah.MachineStatus
 			Visibility = MachineRenderingOptions.Visibility.Normal;
 			VisibilityAlpha = Config.NormalAlpha;
 			IsHoveredOver = false;
+
+			var harmony = new Harmony(ModManifest.UniqueID);
+			try
+			{
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
+					prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Prefix)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Postfix)),
+					monitor: Monitor
+				);
+				harmony.PatchVirtual(
+					original: AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
+					prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Prefix)),
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Postfix)),
+					monitor: Monitor
+				);
+			}
+			catch (Exception ex)
+			{
+				Monitor.Log($"Could not patch methods - Machine Status probably won't work.\nReason: {ex}", LogLevel.Error);
+			}
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			QueuedMachineUpdates.Clear();
+			IgnoredMachinesForUpdates.Clear();
 			LastPlayerTileLocation = null;
 			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
 			{
@@ -312,27 +334,11 @@ namespace Shockah.MachineStatus
 				VisibilityAlpha = 1f;
 
 			var player = Game1.player;
-
-			{
-				GameLocation? lastPlayerLocation = LastPlayerTileLocation?.Item1;
-				var newPlayerLocation = player.currentLocation;
-				if (lastPlayerLocation != newPlayerLocation)
-				{
-					if (lastPlayerLocation is not null)
-						foreach (var @object in lastPlayerLocation.Objects.Values)
-							UpdateMachine(lastPlayerLocation, @object);
-					foreach (var @object in newPlayerLocation.Objects.Values)
-						UpdateMachine(newPlayerLocation, @object);
-				}
-			}
-
-			{
-				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
-				if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
-					if (LastPlayerTileLocation is null || LastPlayerTileLocation.Value != newPlayerLocation)
-						SortMachines(player);
-				LastPlayerTileLocation = newPlayerLocation;
-			}
+			var newPlayerLocation = (player.currentLocation, player.getTileLocation());
+			if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
+				if (LastPlayerTileLocation is null || LastPlayerTileLocation.Value != newPlayerLocation)
+					SortMachines(player);
+			LastPlayerTileLocation = newPlayerLocation;
 		}
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
@@ -820,7 +826,7 @@ namespace Shockah.MachineStatus
 
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
-			if (!@object.bigCraftable.Value)
+			if (!@object.bigCraftable.Value || @object.Category != SObject.BigCraftableCategory)
 				return false;
 			if (@object.IsSprinkler())
 				return false;
@@ -831,7 +837,7 @@ namespace Shockah.MachineStatus
 		{
 			var newState = GetMachineState(machine);
 			var locationDescriptor = LocationDescriptor.Create(location);
-			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine == machine);
+			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine.Name == machine.Name && e.machine.TileLocation == machine.TileLocation);
 			if (existingEntry is not null)
 			{
 				if (existingEntry.Value.state == newState)
@@ -850,7 +856,7 @@ namespace Shockah.MachineStatus
 		private bool RemoveMachine(GameLocation location, SObject machine)
 		{
 			var locationDescriptor = LocationDescriptor.Create(location);
-			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine == machine);
+			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine.Name == machine.Name && e.machine.TileLocation == machine.TileLocation);
 			if (existingEntry is not null)
 			{
 				HostMachines.Remove(existingEntry.Value);
@@ -861,13 +867,6 @@ namespace Shockah.MachineStatus
 				AreVisibleMachinesDirty = true;
 			}
 			return existingEntry is not null;
-		}
-
-		internal bool UpdateMachine(SObject machine)
-		{
-			if (!AttachedMachineLocations.TryGetValue(machine, out var location))
-				return false;
-			return UpdateMachine(location, machine);
 		}
 
 		internal bool UpdateMachine(GameLocation location, SObject machine)
@@ -886,11 +885,15 @@ namespace Shockah.MachineStatus
 				return;
 
 			UpdateMachine(location, machine);
+			foreach (var refToRemove in TrackedMachines.Where(r => r.TryGetTarget(out _)).ToList())
+				TrackedMachines.Remove(refToRemove);
 			if (TrackedMachines.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
 				return;
 
 			machine.readyForHarvest.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
 			{
+				if (IgnoredMachinesForUpdates.Contains(machine))
+					return;
 				var oldState = GetMachineState(oldValue, machine.MinutesUntilReady, machine.heldObject.Value);
 				var newState = GetMachineState(newValue, machine.MinutesUntilReady, machine.heldObject.Value);
 				if (newState != oldState)
@@ -898,6 +901,8 @@ namespace Shockah.MachineStatus
 			};
 			machine.minutesUntilReady.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
 			{
+				if (IgnoredMachinesForUpdates.Contains(machine))
+					return;
 				var oldState = GetMachineState(machine.readyForHarvest.Value, oldValue, machine.heldObject.Value);
 				var newState = GetMachineState(machine.readyForHarvest.Value, newValue, machine.heldObject.Value);
 				if (newState != oldState)
@@ -905,6 +910,8 @@ namespace Shockah.MachineStatus
 			};
 			machine.heldObject.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
 			{
+				if (IgnoredMachinesForUpdates.Contains(machine))
+					return;
 				var oldState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, oldValue);
 				var newState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, newValue);
 				if (newState != oldState)
@@ -912,7 +919,30 @@ namespace Shockah.MachineStatus
 			};
 
 			TrackedMachines.Add(new(machine));
-			AttachedMachineLocations.Add(machine, location);
+		}
+
+		private static void SObject_performObjectDropInAction_Prefix(SObject __instance, bool __1 /* probe */)
+		{
+			if (__1)
+				Instance.IgnoredMachinesForUpdates.Add(__instance);
+		}
+
+		private static void SObject_performObjectDropInAction_Postfix(SObject __instance, bool __1 /* probe */)
+		{
+			if (__1)
+				Instance.IgnoredMachinesForUpdates.Remove(__instance);
+		}
+
+		private static void SObject_checkForAction_Prefix(SObject __instance, bool __1 /* justCheckingForActivity */)
+		{
+			if (__1)
+				Instance.IgnoredMachinesForUpdates.Add(__instance);
+		}
+
+		private static void SObject_checkForAction_Postfix(SObject __instance, bool __1 /* justCheckingForActivity */)
+		{
+			if (__1)
+				Instance.IgnoredMachinesForUpdates.Remove(__instance);
 		}
 	}
 }

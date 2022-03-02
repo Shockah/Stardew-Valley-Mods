@@ -35,7 +35,7 @@ namespace Shockah.MachineStatus
 		public float FocusedAlpha { get; set; } = 1f;
 		public float NormalAlpha { get; set; } = 0.3f;
 
-		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachineAndItem;
+		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
 		{
 			MachineRenderingOptions.Sorting.ReadyFirst,

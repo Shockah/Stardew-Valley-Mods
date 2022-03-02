@@ -6,9 +6,11 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>Nullable</WarningsAsErrors>
+		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
 	</ItemGroup>
 	<Import Project="..\_Common\_Common.projitems" Label="Shared" />
+	<Import Project="..\_CommonWithHarmony\_CommonWithHarmony.projitems" Label="Shared" />
 </Project>
