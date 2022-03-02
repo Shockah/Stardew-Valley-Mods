@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.SMAPI;
 using Shockah.CommonModCode.Stardew;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
@@ -21,7 +22,6 @@ namespace Shockah.MachineStatus
 	public class MachineStatus: Mod
 	{
 		private enum MachineType { Generator, Processor }
-		private enum MachineState { Ready, Waiting, Busy }
 		
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
@@ -77,20 +77,36 @@ namespace Shockah.MachineStatus
 		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
 		private readonly ConditionalWeakTable<SObject, GameLocation> AttachedMachineLocations = new();
 		private readonly ISet<(GameLocation location, SObject machine)> QueuedMachineUpdates = new HashSet<(GameLocation location, SObject machine)>();
-		private readonly IList<(GameLocation location, SObject machine)> AllMachines = new List<(GameLocation location, SObject machine)>();
-		private readonly IList<(GameLocation location, SObject machine, MachineState state)> VisibleMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
-		private readonly IList<(GameLocation location, SObject machine, MachineState state)> SortedMachines = new List<(GameLocation location, SObject machine, MachineState state)>();
-		private readonly IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines = new List<(SObject machine, IList<SObject> heldItems)>();
-		private readonly IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines = new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>();
-		private bool AreVisibleMachinesDirty = false;
-		private bool AreSortedMachinesDirty = false;
-		private bool AreGroupedMachinesDirty = false;
-		private bool AreFlowMachinesDirty = false;
-		private readonly PerScreen<(GameLocation, Vector2)?> LastPlayerTileLocation = new();
 
-		private MachineRenderingOptions.Visibility Visibility = MachineRenderingOptions.Visibility.Normal;
-		private float VisibilityAlpha = 1f;
-		private bool IsHoveredOver = false;
+		private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenHostMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
+		private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenClientMachines = new (() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
+		private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenVisibleMachines = new (() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
+		private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenSortedMachines = new (() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
+		private readonly PerScreen<IList<(SObject machine, IList<SObject> heldItems)>> PerScreenGroupedMachines = new(() => new List<(SObject machine, IList<SObject> heldItems)>());
+		private readonly PerScreen<IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>> PerScreenFlowMachines = new (() => new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>());
+		private readonly PerScreen<bool> PerScreenAreVisibleMachinesDirty = new(() => true);
+		private readonly PerScreen<bool> PerScreenAreSortedMachinesDirty = new(() => true);
+		private readonly PerScreen<bool> PerScreenAreGroupedMachinesDirty = new(() => true);
+		private readonly PerScreen<bool> PerScreenAreFlowMachinesDirty = new(() => true);
+		private readonly PerScreen<(GameLocation, Vector2)?> PerScreenLastPlayerTileLocation = new();
+		private readonly PerScreen<MachineRenderingOptions.Visibility> PerScreenVisibility = new(() => MachineRenderingOptions.Visibility.Normal);
+		private readonly PerScreen<float> PerScreenVisibilityAlpha = new(() => 1f);
+		private readonly PerScreen<bool> PerScreenIsHoveredOver = new(() => false);
+
+		private IList<(LocationDescriptor location, SObject machine, MachineState state)> HostMachines => PerScreenHostMachines.Value;
+		private IList<(LocationDescriptor location, SObject machine, MachineState state)> ClientMachines => PerScreenClientMachines.Value;
+		private IList<(LocationDescriptor location, SObject machine, MachineState state)> VisibleMachines => PerScreenVisibleMachines.Value;
+		private IList<(LocationDescriptor location, SObject machine, MachineState state)> SortedMachines => PerScreenSortedMachines.Value;
+		private IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines => PerScreenGroupedMachines.Value;
+		private IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines => PerScreenFlowMachines.Value;
+		private bool AreVisibleMachinesDirty { get => PerScreenAreVisibleMachinesDirty.Value; set => PerScreenAreVisibleMachinesDirty.Value = value; }
+		private bool AreSortedMachinesDirty { get => PerScreenAreSortedMachinesDirty.Value; set => PerScreenAreSortedMachinesDirty.Value = value; }
+		private bool AreGroupedMachinesDirty { get => PerScreenAreGroupedMachinesDirty.Value; set => PerScreenAreGroupedMachinesDirty.Value = value; }
+		private bool AreFlowMachinesDirty { get => PerScreenAreFlowMachinesDirty.Value; set => PerScreenAreFlowMachinesDirty.Value = value; }
+		private (GameLocation, Vector2)? LastPlayerTileLocation { get => PerScreenLastPlayerTileLocation.Value; set => PerScreenLastPlayerTileLocation.Value = value; }
+		private MachineRenderingOptions.Visibility Visibility { get => PerScreenVisibility.Value; set => PerScreenVisibility.Value = value; }
+		private float VisibilityAlpha { get => PerScreenVisibilityAlpha.Value; set => PerScreenVisibilityAlpha.Value = value; }
+		private bool IsHoveredOver { get => PerScreenIsHoveredOver.Value; set => PerScreenIsHoveredOver.Value = value; }
 
 		public override void Entry(IModHelper helper)
 		{
@@ -102,6 +118,8 @@ namespace Shockah.MachineStatus
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
 			helper.Events.Display.RenderedHud += OnRenderedHud;
+			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
+			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
 		}
 
 		private void SetupConfig()
@@ -246,8 +264,13 @@ namespace Shockah.MachineStatus
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			QueuedMachineUpdates.Clear();
-			LastPlayerTileLocation.ResetAllScreens();
-			ForceRefreshDisplayedMachines();
+			LastPlayerTileLocation = null;
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
+			{
+				HostMachines.Clear();
+				ClientMachines.Clear();
+				ForceRefreshDisplayedMachines();
+			}
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -255,9 +278,12 @@ namespace Shockah.MachineStatus
 			if (!Context.IsWorldReady)
 				return;
 
-			foreach (var (location, machine) in QueuedMachineUpdates)
-				UpdateMachine(location, machine);
-			QueuedMachineUpdates.Clear();
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
+			{
+				foreach (var (location, machine) in QueuedMachineUpdates)
+					UpdateMachine(location, machine);
+				QueuedMachineUpdates.Clear();
+			}
 
 			if (Context.IsPlayerFree && Config.VisibilityKeybind.JustPressed())
 			{
@@ -287,7 +313,7 @@ namespace Shockah.MachineStatus
 			var player = Game1.player;
 
 			{
-				GameLocation? lastPlayerLocation = LastPlayerTileLocation.Value?.Item1;
+				GameLocation? lastPlayerLocation = LastPlayerTileLocation?.Item1;
 				var newPlayerLocation = player.currentLocation;
 				if (lastPlayerLocation != newPlayerLocation)
 				{
@@ -303,17 +329,20 @@ namespace Shockah.MachineStatus
 				var newPlayerLocation = (player.currentLocation, player.getTileLocation());
 				if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
 				{
-					if (LastPlayerTileLocation.Value is null || LastPlayerTileLocation.Value != newPlayerLocation)
+					if (LastPlayerTileLocation is null || LastPlayerTileLocation.Value != newPlayerLocation)
 					{
 						SortMachines(player);
 					}
 				}
-				LastPlayerTileLocation.Value = newPlayerLocation;
+				LastPlayerTileLocation = newPlayerLocation;
 			}
 		}
 
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
+			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
+				return;
+
 			foreach (var @object in e.Removed)
 				RemoveMachine(e.Location, @object.Value);
 			foreach (var @object in e.Added)
@@ -324,7 +353,7 @@ namespace Shockah.MachineStatus
 		{
 			if (!Context.IsWorldReady || Game1.eventUp)
 				return;
-			if (AllMachines.Count == 0)
+			if (HostMachines.Count == 0 && ClientMachines.Count == 0)
 				return;
 			if (VisibilityAlpha <= 0f)
 				return;
@@ -448,19 +477,81 @@ namespace Shockah.MachineStatus
 			}
 		}
 
+		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
+		{
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Server)
+				return;
+			if (e.Peer.GetMod(ModManifest.UniqueID) is null)
+				return;
+			foreach (var (location, machine, state) in HostMachines)
+				Helper.Multiplayer.SendMessage(
+					NetMessage.MachineUpsert.Create(location, machine, state),
+					new[] { ModManifest.UniqueID },
+					new[] { e.Peer.PlayerID }
+				);
+		}
+
+		private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)
+		{
+			if (e.FromModID != ModManifest.UniqueID)
+				return;
+
+			if (e.Type == typeof(NetMessage.MachineUpsert).FullName)
+			{
+				var message = e.ReadAs<NetMessage.MachineUpsert>();
+				var existingEntry = ClientMachines.FirstOrNull(e => message.Location == e.location && message.MatchesMachine(e.machine));
+				if (existingEntry is not null)
+				{
+					static bool IsHeldObjectEqual(SObject? @object, NetMessage.Entity.SObject? message)
+					{
+						if (@object is null && message is null)
+							return true;
+						if (@object is null != message is null)
+							return false;
+						return message!.Value.Matches(@object!);
+					}
+
+					if (existingEntry.Value.state == message.State && IsHeldObjectEqual(existingEntry.Value.machine.heldObject.Value, message.HeldObject))
+						return;
+					ClientMachines.Remove(existingEntry.Value);
+					AreVisibleMachinesDirty = true;
+				}
+
+				var recreatedMachine = message.RetrieveMachine();
+				ClientMachines.Add((message.Location, recreatedMachine, message.State));
+				AreVisibleMachinesDirty = true;
+			}
+			else if (e.Type == typeof(NetMessage.MachineRemove).FullName)
+			{
+				var message = e.ReadAs<NetMessage.MachineRemove>();
+				var existingEntry = ClientMachines.FirstOrNull(e => message.Location == e.location && message.MatchesMachine(e.machine));
+				if (existingEntry is not null)
+				{
+					ClientMachines.Remove(existingEntry.Value);
+					AreVisibleMachinesDirty = true;
+				}
+			}
+			else
+			{
+				Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
+			}
+		}
+
 		private void ForceRefreshDisplayedMachines()
 		{
-			AllMachines.Clear();
-			VisibleMachines.Clear();
-			SortedMachines.Clear();
-			GroupedMachines.Clear();
-			AreVisibleMachinesDirty = false;
-			AreSortedMachinesDirty = false;
-			AreGroupedMachinesDirty = false;
+			PerScreenVisibleMachines.ResetAllScreens();
+			PerScreenSortedMachines.ResetAllScreens();
+			PerScreenGroupedMachines.ResetAllScreens();
+			PerScreenFlowMachines.ResetAllScreens();
 
-			if (!Context.IsWorldReady || Game1.currentLocation is null)
+			PerScreenAreVisibleMachinesDirty.ResetAllScreens();
+			PerScreenAreSortedMachinesDirty.ResetAllScreens();
+			PerScreenAreGroupedMachinesDirty.ResetAllScreens();
+			PerScreenAreFlowMachinesDirty.ResetAllScreens();
+
+			if (!Context.IsWorldReady || Game1.currentLocation is null || GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 				return;
-			foreach (var location in GameExtensions.GetAllLocations())
+			foreach (var location in GameExt.GetAllLocations())
 				foreach (var @object in location.Objects.Values)
 					StartTrackingMachine(location, @object);
 		}
@@ -594,11 +685,11 @@ namespace Shockah.MachineStatus
 
 		private void SortMachines(Farmer player)
 		{
-			IEnumerable<(GameLocation location, SObject machine, MachineState state)> results = VisibleMachines;
+			IEnumerable<(LocationDescriptor location, SObject machine, MachineState state)> results = VisibleMachines;
 
-			void SortResults<T>(bool ascending, Func<(GameLocation location, SObject machine, MachineState state), T> keySelector) where T: IComparable<T>
+			void SortResults<T>(bool ascending, Func<(LocationDescriptor location, SObject machine, MachineState state), T> keySelector) where T: IComparable<T>
 			{
-				results = results is IOrderedEnumerable<(GameLocation location, SObject machine, MachineState state)> ordered
+				results = results is IOrderedEnumerable<(LocationDescriptor location, SObject machine, MachineState state)> ordered
 					? (ascending ? ordered.ThenBy(keySelector) : ordered.ThenByDescending(keySelector))
 					: (ascending ? results.OrderBy(keySelector) : results.OrderByDescending(keySelector));
 			}
@@ -629,7 +720,7 @@ namespace Shockah.MachineStatus
 					case MachineRenderingOptions.Sorting.ByDistanceDescending:
 						SortResults(
 							sorting == MachineRenderingOptions.Sorting.ByDistanceAscending,
-							e => e.location == player.currentLocation ? (player.getTileLocation() - e.machine.TileLocation).Length() : float.PositiveInfinity
+							e => e.location == LocationDescriptor.Create(player.currentLocation) ? (player.getTileLocation() - e.machine.TileLocation).Length() : float.PositiveInfinity
 						);
 						break;
 					case MachineRenderingOptions.Sorting.ByItemAZ:
@@ -663,18 +754,8 @@ namespace Shockah.MachineStatus
 
 		private void UpdateVisibleMachines()
 		{
-			var final = AllMachines
-				.Select(e => (location: e.location, machine: e.machine, state: GetMachineState(e.machine)))
-				.Where(e =>
-				{
-					return e.state switch
-					{
-						MachineState.Ready => Config.ShowReady != MachineMatches(e.machine, Config.ShowReadyExceptionPatterns),
-						MachineState.Waiting => Config.ShowWaiting != MachineMatches(e.machine, Config.ShowWaitingExceptionPatterns),
-						MachineState.Busy => Config.ShowBusy != MachineMatches(e.machine, Config.ShowBusyExceptionPatterns),
-						_ => throw new InvalidOperationException(),
-					};
-				})
+			var final = (GameExt.GetMultiplayerMode() == MultiplayerMode.Client ? ClientMachines : HostMachines)
+				.Where(e => ShouldShowMachine(e.machine, e.state))
 				.ToList();
 			if (!final.SequenceEqual(VisibleMachines))
 			{
@@ -692,6 +773,7 @@ namespace Shockah.MachineStatus
 		private SObject CopyMachine(SObject machine)
 		{
 			var newMachine = (SObject)machine.getOne();
+			newMachine.TileLocation = machine.TileLocation;
 			newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
 			newMachine.showNextIndex.Value = machine.showNextIndex.Value;
 			newMachine.heldObject.Value = machine.heldObject?.Value?.getOne() as SObject;
@@ -710,13 +792,22 @@ namespace Shockah.MachineStatus
 			}
 			else if (location is FarmCave)
 			{
-				return GameExtensions.GetAllLocations().Where(l => l is FarmCave).First() == location;
+				return GameExt.GetAllLocations().Where(l => l is FarmCave).First() == location;
 			}
 			return true;
 		}
 
 		private MachineState GetMachineState(SObject machine)
 			=> GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.heldObject.Value);
+
+		private bool ShouldShowMachine(SObject machine, MachineState state)
+			=> state switch
+			{
+				MachineState.Ready => Config.ShowReady != MachineMatches(machine, Config.ShowReadyExceptionPatterns),
+				MachineState.Waiting => Config.ShowWaiting != MachineMatches(machine, Config.ShowWaitingExceptionPatterns),
+				MachineState.Busy => Config.ShowBusy != MachineMatches(machine, Config.ShowBusyExceptionPatterns),
+				_ => throw new InvalidOperationException(),
+			};
 
 		private MachineState GetMachineState(bool readyForHarvest, int minutesUntilReady, SObject? heldObject)
 		{
@@ -739,32 +830,35 @@ namespace Shockah.MachineStatus
 
 		private bool UpsertMachine(GameLocation location, SObject machine)
 		{
-			var existingEntry = AllMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var newState = GetMachineState(machine);
+			var locationDescriptor = LocationDescriptor.Create(location);
+			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine == machine);
 			if (existingEntry is not null)
 			{
-				var existingVisibleEntry = VisibleMachines.FirstOrNull(e => e.location == location && e.machine == machine);
-				if (existingVisibleEntry is not null)
-				{
-					var newState = GetMachineState(machine);
-					if (newState != existingVisibleEntry.Value.state)
-					{
-						AreVisibleMachinesDirty = true;
-						return true;
-					}
-				}
-				return false;
+				if (existingEntry.Value.state == newState)
+					return false;
+				HostMachines.Remove(existingEntry.Value);
 			}
-			AllMachines.Add((location, machine));
+			HostMachines.Add((locationDescriptor, machine, newState));
 			AreVisibleMachinesDirty = true;
+			Helper.Multiplayer.SendMessageInMultiplayer(
+				() => NetMessage.MachineUpsert.Create(locationDescriptor, machine, newState),
+				new[] { ModManifest.UniqueID }
+			);
 			return true;
 		}
 
 		private bool RemoveMachine(GameLocation location, SObject machine)
 		{
-			var existingEntry = AllMachines.FirstOrNull(e => e.location == location && e.machine == machine);
+			var locationDescriptor = LocationDescriptor.Create(location);
+			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine == machine);
 			if (existingEntry is not null)
 			{
-				AllMachines.Remove(existingEntry.Value);
+				HostMachines.Remove(existingEntry.Value);
+				Helper.Multiplayer.SendMessageInMultiplayer(
+					() => NetMessage.MachineRemove.Create(location, machine),
+					new[] { ModManifest.UniqueID }
+				);
 				AreVisibleMachinesDirty = true;
 			}
 			return existingEntry is not null;
@@ -789,6 +883,9 @@ namespace Shockah.MachineStatus
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
 		internal void StartTrackingMachine(GameLocation location, SObject machine)
 		{
+			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
+				return;
+
 			UpdateMachine(location, machine);
 			if (TrackedMachines.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
 				return;

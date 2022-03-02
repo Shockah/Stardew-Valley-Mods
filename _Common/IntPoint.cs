@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace Shockah.CommonModCode
 {
-	public readonly struct IntPoint: IEquatable<IntPoint>
+	public struct IntPoint: IEquatable<IntPoint>
 	{
 		public static readonly IntPoint Zero = new(0, 0);
 		public static readonly IntPoint One = new(1, 1);
@@ -17,9 +18,10 @@ namespace Shockah.CommonModCode
 		public static IEnumerable<IntPoint> NeighborOffsets
 			=> NeighborOffsetsArray;
 
-		public readonly int X;
-		public readonly int Y;
+		public int X { get; set; }
+		public int Y { get; set; }
 
+		[JsonIgnore]
 		public IEnumerable<IntPoint> Neighbors
 		{
 			get
@@ -29,14 +31,14 @@ namespace Shockah.CommonModCode
 			}
 		}
 
-		public IntPoint(int v): this(v, v)
-		{
-		}
-
-		public IntPoint(int x, int y): this()
+		public IntPoint(int x, int y) : this()
 		{
 			this.X = x;
 			this.Y = y;
+		}
+
+		public IntPoint(int v): this(v, v)
+		{
 		}
 
 		public override string ToString()

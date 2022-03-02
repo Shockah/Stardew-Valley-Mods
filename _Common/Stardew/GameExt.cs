@@ -5,8 +5,13 @@ using System.Collections.Generic;
 
 namespace Shockah.CommonModCode.Stardew
 {
-	public static class GameExtensions
+	public enum MultiplayerMode { SinglePlayer, Client, Server }
+	
+	public static class GameExt
 	{
+		public static MultiplayerMode GetMultiplayerMode()
+			=> (MultiplayerMode)Game1.multiplayerMode;
+		
 		public static IEnumerable<GameLocation> GetAllLocations()
 		{
 			IEnumerable<GameLocation> GetLocationAndSublocations(GameLocation location)
