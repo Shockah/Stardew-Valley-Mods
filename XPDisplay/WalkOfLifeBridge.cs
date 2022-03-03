@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Reflection;
 
-namespace Shockah.XPView
+namespace Shockah.XPDisplay
 {
 	internal static class WalkOfLifeBridge
 	{

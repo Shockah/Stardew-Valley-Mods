@@ -3,7 +3,7 @@ using StardewValley;
 using System;
 using System.Reflection;
 
-namespace Shockah.XPView
+namespace Shockah.XPDisplay
 {
 	internal static class SpaceCoreBridge
 	{

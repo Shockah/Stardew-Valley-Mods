@@ -1,6 +1,6 @@
 ﻿using Shockah.CommonModCode.UI;
 
-namespace Shockah.XPView
+namespace Shockah.XPDisplay
 {
 	internal class ModConfig
 	{

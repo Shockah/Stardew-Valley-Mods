@@ -251,13 +251,9 @@ namespace Shockah.DontStopMeNow
 		{
 			var player = Game1.player;
 			if (Math.Abs(direction.X) > Math.Abs(direction.Y))
-			{
 				player.FacingDirection = direction.X >= 0 ? Game1.right : Game1.left;
-			}
 			else
-			{
 				player.FacingDirection = direction.Y >= 0 ? Game1.down : Game1.up;
-			}
 		}
 
 		private bool? IsUsingPoweredUpOnHoldTool(Farmer player)

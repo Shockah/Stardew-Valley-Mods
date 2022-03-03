@@ -262,7 +262,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
-			foreach (GameLocation location in GameExtensions.GetAllLocations())
+			foreach (GameLocation location in GameExt.GetAllLocations())
 				ActivateSprinklersInLocation(location);
 		}
 

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 
-namespace Shockah.XPView
+namespace Shockah.XPDisplay
 {
 	public class XPDisplay: Mod
 	{

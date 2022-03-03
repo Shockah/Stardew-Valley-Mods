@@ -172,12 +172,12 @@ namespace Shockah.MachineStatus
 			}
 		}
 
-		public readonly struct MachineRemove
+		public struct MachineRemove
 		{
-			public readonly LocationDescriptor Location { get; }
-			public readonly IntPoint TileLocation { get; }
-			public readonly int MachineParentSheetIndex { get; }
-			public readonly string MachineName { get; }
+			public LocationDescriptor Location { get; set; }
+			public IntPoint TileLocation { get; set; }
+			public int MachineParentSheetIndex { get; set; }
+			public string MachineName { get; set; }
 
 			public MachineRemove(LocationDescriptor location, IntPoint tileLocation, int machineParentSheetIndex, string machineName)
 			{

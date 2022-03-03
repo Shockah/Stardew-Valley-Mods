@@ -6,6 +6,10 @@
 		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="Brokenevent.ILStrip.CLI" Version="1.1.4" />
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ILStripEntryPoints Include="Shockah.PredictableRetainingSoil.PredictableRetainingSoil" />
 	</ItemGroup>
 </Project>
