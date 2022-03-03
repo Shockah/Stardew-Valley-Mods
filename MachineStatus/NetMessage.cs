@@ -1,10 +1,17 @@
 ﻿using Shockah.CommonModCode;
+using Shockah.CommonModCode.Stardew;
+using StardewValley.Objects;
+using GameLocation = StardewValley.GameLocation;
+using SVObject = StardewValley.Object;
+using Vector2 = Microsoft.Xna.Framework.Vector2;
 using XnaColor = Microsoft.Xna.Framework.Color;
 
 namespace Shockah.MachineStatus
 {
 	internal static class NetMessage
 	{
+		private const int CrabPotID = 710;
+
 		public static class Entity
 		{
 			public readonly struct Color
@@ -48,11 +55,11 @@ namespace Shockah.MachineStatus
 					this.ColorSameIndexAsParentSheetIndex = colorSameIndexAsParentSheetIndex;
 				}
 
-				public static SObject Create(StardewValley.Object @object)
+				public static SObject Create(SVObject @object)
 				{
 					Color? color = null;
 					bool colorSameIndexAsParentSheetIndex = false;
-					if (@object is StardewValley.Objects.ColoredObject colored)
+					if (@object is ColoredObject colored)
 					{
 						color = colored.color.Value;
 						colorSameIndexAsParentSheetIndex = colored.ColorSameIndexAsParentSheetIndex;
@@ -68,18 +75,28 @@ namespace Shockah.MachineStatus
 					);
 				}
 
-				public bool Matches(StardewValley.Object @object)
+				public bool Matches(SVObject @object)
 					=> ParentSheetIndex == @object.ParentSheetIndex && BigCraftable == @object.bigCraftable.Value && Name == @object.Name;
 
-				public StardewValley.Object Retrieve(IntPoint? tileLocation)
+				public SVObject Retrieve(IntPoint? tileLocation)
 				{
-					var result = tileLocation.HasValue
-						? new StardewValley.Object(new Microsoft.Xna.Framework.Vector2(tileLocation.Value.X, tileLocation.Value.Y), ParentSheetIndex, 1)
-						: (Color.HasValue ? new StardewValley.Objects.ColoredObject(ParentSheetIndex, 1, Color.Value) : new StardewValley.Object(ParentSheetIndex, 1));
+					SVObject result;
+					if (tileLocation is null)
+					{
+						result = Color.HasValue ? new ColoredObject(ParentSheetIndex, 1, Color.Value) : new SVObject(ParentSheetIndex, 1);
+					}
+					else
+					{
+						if (!BigCraftable && ParentSheetIndex == CrabPotID)
+							result = new CrabPot(new Vector2(tileLocation.Value.X, tileLocation.Value.Y));
+						else
+							result = new SVObject(new Vector2(tileLocation.Value.X, tileLocation.Value.Y), ParentSheetIndex, 1);
+					}
+
 					result.Name = Name;
 					result.bigCraftable.Value = BigCraftable;
 					result.showNextIndex.Value = ShowNextIndex;
-					if (result is StardewValley.Objects.ColoredObject colored)
+					if (result is ColoredObject colored)
 						colored.ColorSameIndexAsParentSheetIndex = ColorSameIndexAsParentSheetIndex;
 					return result;
 				}
@@ -118,11 +135,11 @@ namespace Shockah.MachineStatus
 				this.State = state;
 			}
 
-			public static MachineUpsert Create(LocationDescriptor location, StardewValley.Object machine, MachineState state)
+			public static MachineUpsert Create(LocationDescriptor location, SVObject machine, MachineState state)
 			{
 				Entity.SObject? heldObject = null;
-				if (machine.heldObject.Value is not null)
-					heldObject = Entity.SObject.Create(machine.heldObject.Value);
+				if (machine.TryGetAnyHeldObject(out var machineHeldObject))
+					heldObject = Entity.SObject.Create(machineHeldObject);
 				return new(
 					location,
 					new IntPoint((int)machine.TileLocation.X, (int)machine.TileLocation.Y),
@@ -134,15 +151,21 @@ namespace Shockah.MachineStatus
 				);
 			}
 
-			public bool MatchesMachine(StardewValley.Object machine)
+			public bool MatchesMachine(SVObject machine)
 				=> Machine.Matches(machine) && TileLocation.X == (int)machine.TileLocation.X && TileLocation.Y == (int)machine.TileLocation.Y;
 
-			public StardewValley.Object RetrieveMachine()
+			public SVObject RetrieveMachine()
 			{
 				var machine = Machine.Retrieve(TileLocation);
-				machine.TileLocation = new Microsoft.Xna.Framework.Vector2(TileLocation.X, TileLocation.Y);
+				machine.TileLocation = new Vector2(TileLocation.X, TileLocation.Y);
 				if (HeldObject is not null)
-					machine.heldObject.Value = HeldObject.Value.Retrieve(null);
+				{
+					var retrievedHeldObject = HeldObject.Value.Retrieve(null);
+					if (machine is CrabPot crabPot && retrievedHeldObject.Category == SVObject.baitCategory)
+						crabPot.bait.Value = retrievedHeldObject;
+					else
+						machine.heldObject.Value = retrievedHeldObject;
+				}
 				machine.readyForHarvest.Value = ReadyForHarvest;
 				machine.MinutesUntilReady = MinutesUntilReady;
 				return machine;
@@ -164,7 +187,7 @@ namespace Shockah.MachineStatus
 				this.MachineName = machineName;
 			}
 
-			public static MachineRemove Create(StardewValley.GameLocation location, StardewValley.Object machine)
+			public static MachineRemove Create(GameLocation location, SVObject machine)
 				=> new(
 					LocationDescriptor.Create(location),
 					new IntPoint((int)machine.TileLocation.X, (int)machine.TileLocation.Y),
@@ -172,7 +195,7 @@ namespace Shockah.MachineStatus
 					machine.Name
 				);
 
-			public bool MatchesMachine(StardewValley.Object machine)
+			public bool MatchesMachine(SVObject machine)
 				=> MachineParentSheetIndex == machine.ParentSheetIndex && MachineName == machine.Name &&
 				TileLocation.X == (int)machine.TileLocation.X && TileLocation.Y == (int)machine.TileLocation.Y;
 		}

@@ -11,8 +11,10 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using SObject = StardewValley.Object;
@@ -26,48 +28,51 @@ namespace Shockah.MachineStatus
 		private static readonly ItemRenderer ItemRenderer = new();
 		private static readonly Vector2 DigitSize = new(5, 7);
 		private static readonly Vector2 SingleMachineSize = new(64, 64);
+		private static readonly Vector2 RealSingleMachineSize = new(32, 64);
 
-		private static readonly (string titleKey, (int machineId, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
+		private static readonly (string titleKey, (int machineId, bool bigCraftable, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
 		{
-			("config.machine.category.artisan", new (int machineId, string machineName, MachineType type)[]
+			("config.machine.category.artisan", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
 			{
-				(10, "Bee House", MachineType.Generator),
-				(163, "Cask", MachineType.Processor),
-				(16, "Cheese Press", MachineType.Processor),
-				(12, "Keg", MachineType.Processor),
-				(17, "Loom", MachineType.Processor),
-				(24, "Mayonnaise Machine", MachineType.Processor),
-				(19, "Oil Maker", MachineType.Processor),
-				(15, "Preserves Jar", MachineType.Processor)
+				(10, true, "Bee House", MachineType.Generator),
+				(163, true, "Cask", MachineType.Processor),
+				(16, true, "Cheese Press", MachineType.Processor),
+				(12, true, "Keg", MachineType.Processor),
+				(17, true, "Loom", MachineType.Processor),
+				(24, true, "Mayonnaise Machine", MachineType.Processor),
+				(19, true, "Oil Maker", MachineType.Processor),
+				(15, true, "Preserves Jar", MachineType.Processor)
 			}),
-			("config.machine.category.refining", new (int machineId, string machineName, MachineType type)[]
+			("config.machine.category.refining", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
 			{
-				(90, "Bone Mill", MachineType.Processor),
-				(114, "Charcoal Kiln", MachineType.Processor),
-				(21, "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
-				(13, "Furnace", MachineType.Processor),
-				(182, "Geode Crusher", MachineType.Processor),
-				(264, "Heavy Tapper", MachineType.Generator),
-				(9, "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
-				(20, "Recycling Machine", MachineType.Processor),
-				(25, "Seed Maker", MachineType.Processor),
-				(158, "Slime Egg-Press", MachineType.Processor),
-				(231, "Solar Panel", MachineType.Generator),
-				(105, "Tapper", MachineType.Generator),
-				(211, "Wood Chipper", MachineType.Processor),
-				(154, "Worm Bin", MachineType.Generator)
+				(90, true, "Bone Mill", MachineType.Processor),
+				(114, true, "Charcoal Kiln", MachineType.Processor),
+				(21, true, "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
+				(13, true, "Furnace", MachineType.Processor),
+				(182, true, "Geode Crusher", MachineType.Processor),
+				(264, true, "Heavy Tapper", MachineType.Generator),
+				(9, true, "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
+				(20, true, "Recycling Machine", MachineType.Processor),
+				(25, true, "Seed Maker", MachineType.Processor),
+				(158, true, "Slime Egg-Press", MachineType.Processor),
+				(231, true, "Solar Panel", MachineType.Generator),
+				(105, true, "Tapper", MachineType.Generator),
+				(211, true, "Wood Chipper", MachineType.Processor),
+				(154, true, "Worm Bin", MachineType.Generator)
 			}),
-			("config.machine.category.misc", new (int machineId, string machineName, MachineType type)[]
+			("config.machine.category.misc", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
 			{
-				(246, "Coffee Maker", MachineType.Generator),
-				(265, "Deconstructor", MachineType.Processor),
-				(101, "Incubator", MachineType.Processor),
-				(128, "Mushroom Box", MachineType.Generator),
-				(254, "Ostrich Incubator", MachineType.Processor),
-				(156, "Slime Incubator", MachineType.Processor),
-				(127, "Statue of Endless Fortune", MachineType.Generator),
-				(160, "Statue of Perfection", MachineType.Generator),
-				(280, "Statue of True Perfection", MachineType.Generator)
+				(246, true, "Coffee Maker", MachineType.Generator),
+				(710, false, "Crab Pot", MachineType.Processor),
+				(265, true, "Deconstructor", MachineType.Processor),
+				(101, true, "Incubator", MachineType.Processor),
+				(128, true, "Mushroom Box", MachineType.Generator),
+				(254, true, "Ostrich Incubator", MachineType.Processor),
+				(156, true, "Slime Incubator", MachineType.Processor),
+				(117, true, "Soda Machine", MachineType.Generator),
+				(127, true, "Statue of Endless Fortune", MachineType.Generator),
+				(160, true, "Statue of Perfection", MachineType.Generator),
+				(280, true, "Statue of True Perfection", MachineType.Generator)
 			}),
 		};
 
@@ -185,8 +190,16 @@ namespace Shockah.MachineStatus
 						formatAllowedValue: v =>
 						{
 							var localizedMachineName = v.machineName;
-							if (Game1.bigCraftablesInformation.TryGetValue(v.machineId, out string? info))
-								localizedMachineName = info.Split('/')[0];
+							if (v.bigCraftable)
+							{
+								if (Game1.bigCraftablesInformation.TryGetValue(v.machineId, out string? info))
+									localizedMachineName = info.Split('/')[8];
+							}
+							else
+							{
+								if (Game1.objectInformation.TryGetValue(v.machineId, out string? info))
+									localizedMachineName = info.Split('/')[4];
+							}
 							return localizedMachineName;
 						}
 					);
@@ -288,12 +301,9 @@ namespace Shockah.MachineStatus
 			QueuedMachineUpdates.Clear();
 			IgnoredMachinesForUpdates.Clear();
 			LastPlayerTileLocation = null;
-			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
-			{
-				HostMachines.Clear();
-				ClientMachines.Clear();
-				ForceRefreshDisplayedMachines();
-			}
+
+			HostMachines.Clear();
+			ForceRefreshDisplayedMachines();
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -406,7 +416,7 @@ namespace Shockah.MachineStatus
 				scaleFactor = new Vector2(scaleFactor.X, 1f / scaleFactor.Y);
 				ItemRenderer.DrawItem(
 					e.SpriteBatch, machine,
-					machineLocation, SingleMachineSize * Config.Scale,
+					machineLocation + new Vector2((SingleMachineSize.X - RealSingleMachineSize.X) / 2, 0) * Config.Scale, RealSingleMachineSize * Config.Scale,
 					Color.White * VisibilityAlpha,
 					scale: machineState == MachineState.Busy ? scaleFactor : Vector2.One
 				);
@@ -516,7 +526,7 @@ namespace Shockah.MachineStatus
 						return message!.Value.Matches(@object!);
 					}
 
-					if (existingEntry.Value.state == message.State && IsHeldObjectEqual(existingEntry.Value.machine.heldObject.Value, message.HeldObject))
+					if (existingEntry.Value.state == message.State && IsHeldObjectEqual(existingEntry.Value.machine.GetAnyHeldObject(), message.HeldObject))
 						return;
 					ClientMachines.Remove(existingEntry.Value);
 					AreVisibleMachinesDirty = true;
@@ -623,8 +633,8 @@ namespace Shockah.MachineStatus
 			IList<SObject> CopyHeldItems(SObject machine)
 			{
 				var list = new List<SObject>();
-				if (machine.heldObject.Value is not null)
-					AddHeldItem(list, machine.heldObject.Value);
+				if (machine.TryGetAnyHeldObject(out var heldObject))
+					AddHeldItem(list, heldObject);
 				return list;
 			}
 
@@ -639,11 +649,14 @@ namespace Shockah.MachineStatus
 					case MachineRenderingOptions.Grouping.ByMachine:
 						foreach (var (result, resultHeldItems) in results)
 						{
-							if (machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value)
+							if (
+								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
+								machine.GetAnyHeldObject()?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value
+							)
 							{
 								result.Stack++;
-								if (machine.heldObject.Value is not null)
-									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
+								if (machine.TryGetAnyHeldObject(out var heldObject))
+									AddHeldItem(resultHeldItems, GetOne(heldObject));
 								goto machineLoopContinue;
 							}
 						}
@@ -654,13 +667,13 @@ namespace Shockah.MachineStatus
 						{
 							if (
 								machine.Name == result.Name && machine.readyForHarvest.Value == result.readyForHarvest.Value &&
-								machine.heldObject.Value?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value &&
-								machine.heldObject.Value?.Name == resultHeldItems.FirstOrDefault()?.Name
+								machine.GetAnyHeldObject()?.bigCraftable.Value == resultHeldItems.FirstOrDefault()?.bigCraftable.Value &&
+								machine.GetAnyHeldObject()?.Name == resultHeldItems.FirstOrDefault()?.Name
 							)
 							{
 								result.Stack++;
-								if (machine.heldObject.Value is not null)
-									AddHeldItem(resultHeldItems, (SObject)machine.heldObject.Value.getOne());
+								if (machine.TryGetAnyHeldObject(out var heldObject))
+									AddHeldItem(resultHeldItems, GetOne(heldObject));
 								goto machineLoopContinue;
 							}
 						}
@@ -732,7 +745,7 @@ namespace Shockah.MachineStatus
 					case MachineRenderingOptions.Sorting.ByItemZA:
 						SortResults(
 							sorting == MachineRenderingOptions.Sorting.ByItemAZ,
-							e => e.machine.heldObject.Value?.DisplayName ?? ""
+							e => e.machine.GetAnyHeldObject()?.DisplayName ?? ""
 						);
 						break;
 					default:
@@ -775,13 +788,24 @@ namespace Shockah.MachineStatus
 		private bool MachineMatches(SObject machine, IEnumerable<IWildcardPattern> patterns)
 			=> patterns.Any(p => p.Matches(machine.Name) || p.Matches(machine.DisplayName));
 
+		[return: NotNullIfNotNull("object")]
+		private SObject? GetOne(SObject? @object)
+		{
+			if (@object is CrabPot crabPot)
+				return new CrabPot(crabPot.TileLocation);
+			else
+				return @object?.getOne() as SObject;
+		}
+
 		private SObject CopyMachine(SObject machine)
 		{
-			var newMachine = (SObject)machine.getOne();
+			var newMachine = GetOne(machine);
 			newMachine.TileLocation = machine.TileLocation;
 			newMachine.readyForHarvest.Value = machine.readyForHarvest.Value;
 			newMachine.showNextIndex.Value = machine.showNextIndex.Value;
-			newMachine.heldObject.Value = machine.heldObject?.Value?.getOne() as SObject;
+			newMachine.heldObject.Value = GetOne(machine.heldObject?.Value);
+			if (newMachine is CrabPot newCrabPot && machine is CrabPot crabPot)
+				newCrabPot.bait.Value = GetOne(crabPot.bait?.Value);
 			newMachine.MinutesUntilReady = machine.MinutesUntilReady;
 			return newMachine;
 		}
@@ -803,7 +827,12 @@ namespace Shockah.MachineStatus
 		}
 
 		private MachineState GetMachineState(SObject machine)
-			=> GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.heldObject.Value);
+		{
+			if (machine is CrabPot crabPot)
+				if (crabPot.bait.Value is not null && crabPot.heldObject.Value is null)
+					return MachineState.Busy;
+			return GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.GetAnyHeldObject());
+		}
 
 		private bool ShouldShowMachine(SObject machine, MachineState state)
 			=> state switch
@@ -826,7 +855,7 @@ namespace Shockah.MachineStatus
 
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
-			if (!@object.bigCraftable.Value || @object.Category != SObject.BigCraftableCategory)
+			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory && @object is not CrabPot)
 				return false;
 			if (@object.IsSprinkler())
 				return false;
@@ -878,14 +907,16 @@ namespace Shockah.MachineStatus
 			return UpsertMachine(location, machine);
 		}
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
+		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
 		internal void StartTrackingMachine(GameLocation location, SObject machine)
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 				return;
+			if (!IsMachine(location, machine))
+				return;
 
 			UpdateMachine(location, machine);
-			foreach (var refToRemove in TrackedMachines.Where(r => r.TryGetTarget(out _)).ToList())
+			foreach (var refToRemove in TrackedMachines.Where(r => !r.TryGetTarget(out _)).ToList())
 				TrackedMachines.Remove(refToRemove);
 			if (TrackedMachines.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
 				return;
@@ -894,8 +925,8 @@ namespace Shockah.MachineStatus
 			{
 				if (IgnoredMachinesForUpdates.Contains(machine))
 					return;
-				var oldState = GetMachineState(oldValue, machine.MinutesUntilReady, machine.heldObject.Value);
-				var newState = GetMachineState(newValue, machine.MinutesUntilReady, machine.heldObject.Value);
+				var oldState = GetMachineState(oldValue, machine.MinutesUntilReady, machine.GetAnyHeldObject());
+				var newState = GetMachineState(newValue, machine.MinutesUntilReady, machine.GetAnyHeldObject());
 				if (newState != oldState)
 					QueuedMachineUpdates.Add((location, machine));
 			};
@@ -903,8 +934,8 @@ namespace Shockah.MachineStatus
 			{
 				if (IgnoredMachinesForUpdates.Contains(machine))
 					return;
-				var oldState = GetMachineState(machine.readyForHarvest.Value, oldValue, machine.heldObject.Value);
-				var newState = GetMachineState(machine.readyForHarvest.Value, newValue, machine.heldObject.Value);
+				var oldState = GetMachineState(machine.readyForHarvest.Value, oldValue, machine.GetAnyHeldObject());
+				var newState = GetMachineState(machine.readyForHarvest.Value, newValue, machine.GetAnyHeldObject());
 				if (newState != oldState)
 					QueuedMachineUpdates.Add((location, machine));
 			};
@@ -917,6 +948,15 @@ namespace Shockah.MachineStatus
 				if (newState != oldState)
 					QueuedMachineUpdates.Add((location, machine));
 			};
+			if (machine is CrabPot crabPot)
+			{
+				crabPot.bait.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
+				{
+					if (IgnoredMachinesForUpdates.Contains(machine))
+						return;
+					QueuedMachineUpdates.Add((location, machine));
+				};
+			}
 
 			TrackedMachines.Add(new(machine));
 		}

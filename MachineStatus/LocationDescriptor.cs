@@ -23,7 +23,9 @@ namespace Shockah.MachineStatus
 		{
 			var selfName = location.NameOrUniqueName ?? "";
 			var rootName = location.Root?.Value?.NameOrUniqueName ?? "";
-			if (selfName == "" && rootName == "")
+			if (selfName == rootName)
+				return selfName;
+			else if (selfName == "" && rootName == "")
 				return "";
 			else if (selfName == "" && rootName != "")
 				return $"<unknown> @ {rootName}";
