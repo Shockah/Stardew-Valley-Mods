@@ -48,7 +48,7 @@ namespace Shockah.MachineStatus
 		public IList<string> ShowReadyExceptions { get; set; } = new List<string>();
 
 		public bool ShowWaiting { get; set; } = false;
-		public IList<string> ShowWaitingExceptions { get; set; } = new List<string> { "*|Cask", "*|Keg", "*|Preserves Jar" };
+		public IList<string> ShowWaitingExceptions { get; set; } = new List<string> { "*|Cask", "*|Keg", "*|Preserves Jar", "*|Crab Pot" };
 
 		public bool ShowBusy { get; set; } = false;
 		public IList<string> ShowBusyExceptions { get; set; } = new List<string>();
