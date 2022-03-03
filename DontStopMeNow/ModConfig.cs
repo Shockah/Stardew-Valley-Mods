@@ -11,6 +11,7 @@
 		public bool FixToolFacing { get; set; } = true;
 		public bool FixMeleeWeaponFacing { get; set; } = true;
 		public bool FixChargingToolFacing { get; set; } = true;
+		public bool FixFishingRodFacing { get; set; } = true;
 		public bool FixFacingOnMouse { get; set; } = true;
 		public bool FixFacingOnController { get; set; } = false;
 	}

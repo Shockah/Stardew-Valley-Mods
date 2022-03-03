@@ -120,6 +120,7 @@ namespace Shockah.DontStopMeNow
 			helper.AddBoolOption("config.facing.tools", () => Config.FixToolFacing);
 			helper.AddBoolOption("config.facing.meleeWeapons", () => Config.FixMeleeWeaponFacing);
 			helper.AddBoolOption("config.facing.chargingTools", () => Config.FixChargingToolFacing);
+			helper.AddBoolOption("config.facing.fishingRod", () => Config.FixFishingRodFacing);
 			helper.AddBoolOption("config.facing.mouse", () => Config.FixFacingOnMouse);
 			helper.AddBoolOption("config.facing.controller", () => Config.FixFacingOnController);
 		}
@@ -182,7 +183,8 @@ namespace Shockah.DontStopMeNow
 				return;
 
 			LastToolButton.Value = e.Button;
-			FixFacingDirectionIfNeeded();
+			if (ShouldFixFacing(player))
+				FixFacingDirectionIfNeeded();
 		}
 
 		private void OnButtonReleased(object? sender, ButtonReleasedEventArgs e)
@@ -300,6 +302,10 @@ namespace Shockah.DontStopMeNow
 			else if (player.CurrentTool is Slingshot)
 			{
 				return false;
+			}
+			else if (player.CurrentTool is FishingRod)
+			{
+				return Config.FixFishingRodFacing;
 			}
 			else
 			{
