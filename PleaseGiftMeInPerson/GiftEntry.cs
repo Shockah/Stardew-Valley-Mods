@@ -7,7 +7,7 @@ namespace Shockah.PleaseGiftMeInPerson
 {
 	internal enum GiftMethod { InPerson, ByMail }
 	
-	internal struct GiftEntry
+	internal struct GiftEntry: IEquatable<GiftEntry>
 	{
 		public int Year { get; set; }
 		public int SeasonIndex { get; set; }
@@ -36,5 +36,14 @@ namespace Shockah.PleaseGiftMeInPerson
 			: this(date.Year, date.SeasonIndex, date.DayOfMonth, giftTaste, giftMethod)
 		{
 		}
+
+		public bool Equals(GiftEntry other)
+			=> Year == other.Year && SeasonIndex == other.SeasonIndex && DayOfMonth == other.DayOfMonth && GiftTaste == other.GiftTaste && GiftMethod == other.GiftMethod;
+
+		public override bool Equals(object? obj)
+			=> obj is GiftEntry entry && Equals(entry);
+
+		public override int GetHashCode()
+			=> (Year, SeasonIndex, DayOfMonth, GiftTaste, GiftMethod).GetHashCode();
 	}
 }

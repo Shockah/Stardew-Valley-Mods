@@ -36,7 +36,7 @@ namespace Shockah.CommonModCode.GMCM
 		private ISet<T> OriginalValues = new HashSet<T>();
 		private ISet<T> CurrentValues = new HashSet<T>();
 		private readonly Lazy<int> ActualColumns;
-		private bool LastMouseLeftPressed = false;
+		private bool? LastMouseLeftPressed;
 
 		public MultiSelectTextOption(
 			Func<T, bool> getValue,
@@ -125,7 +125,7 @@ namespace Shockah.CommonModCode.GMCM
 		private void Draw(SpriteBatch b, Vector2 basePosition)
 		{
 			bool mouseLeftPressed = Game1.input.GetMouseState().LeftButton == ButtonState.Pressed;
-			bool didClick = mouseLeftPressed && !LastMouseLeftPressed;
+			bool didClick = mouseLeftPressed && LastMouseLeftPressed == false;
 			LastMouseLeftPressed = mouseLeftPressed;
 			int mouseX = Constants.TargetPlatform == GamePlatform.Android ? Game1.getMouseX() : Game1.getOldMouseX();
 			int mouseY = Constants.TargetPlatform == GamePlatform.Android ? Game1.getMouseY() : Game1.getOldMouseY();

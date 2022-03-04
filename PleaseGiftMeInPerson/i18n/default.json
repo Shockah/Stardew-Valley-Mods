@@ -1,0 +1,16 @@
+﻿{
+	"config.giftsToRemember.name": "Gifts to remember",
+	"config.giftsToRemember.tooltip": "How many gifts should an NPC remember.",
+	"config.daysToRemember.name": "Days to remember",
+	"config.daysToRemember.tooltip": "How many days should an NPC remember a gift for.",
+	"config.mailsUntilDislike.name": "Mails until dislike",
+	"config.mailsUntilDislike.tooltip": "How many mailed gifts does it take for an NPC to start disliking gifts.\n-1: never\n0: right away",
+	"config.mailsUntilHate.name": "Mails until hate",
+	"config.mailsUntilHate.tooltip": "How many mailed gifts does it take for an NPC to start hating gifts.\n-1: never\n0: right away",
+	"config.mailsUntilLike.name": "Mails until like",
+	"config.mailsUntilLike.tooltip": "How many mailed gifts does it take for an NPC to start liking gifts.\n-1: never\n0: right away",
+	"config.mailsUntilLove.name": "Mails until love",
+	"config.mailsUntilLove.tooltip": "How many mailed gifts does it take for an NPC to start loving gifts.\n-1: never\n0: right away",
+
+	"config.npcOverrides.name": "NPC-specific overrides"
+}

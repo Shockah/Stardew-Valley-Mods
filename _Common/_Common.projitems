@@ -16,7 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\GMCMI18nHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiPageLinkOptionForHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiSelectTextOptionForHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GMCM\MultiPageLinkOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\MultiSelectTextOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)I18nEnum.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\IGenericModConfigMenuApi.cs" />

@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
 	internal class ModConfig
 	{
-		internal struct Entry
+		internal class Entry: IEquatable<Entry>
 		{
 			public int GiftsToRemember { get; set; }
 			public int DaysToRemember { get; set; }
@@ -13,6 +15,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			public int MailsUntilLike { get; set; }
 			public int MailsUntilLove { get; set; }
 
+			[JsonConstructor]
 			public Entry(
 				int giftsToRemember,
 				int daysToRemember,
@@ -29,6 +32,48 @@ namespace Shockah.PleaseGiftMeInPerson
 				this.MailsUntilLike = mailsUntilLike;
 				this.MailsUntilLove = mailsUntilLove;
 			}
+
+			public Entry(Entry other): this(
+				giftsToRemember: other.GiftsToRemember,
+				daysToRemember: other.DaysToRemember,
+				mailsUntilDislike: other.MailsUntilDislike,
+				mailsUntilHate: other.MailsUntilHate,
+				mailsUntilLike: other.MailsUntilLike,
+				mailsUntilLove: other.MailsUntilLove
+			)
+			{
+			}
+
+			public void CopyFrom(Entry other)
+			{
+				this.GiftsToRemember = other.GiftsToRemember;
+				this.DaysToRemember = other.DaysToRemember;
+				this.MailsUntilDislike = other.MailsUntilDislike;
+				this.MailsUntilHate = other.MailsUntilHate;
+				this.MailsUntilLike = other.MailsUntilLike;
+				this.MailsUntilLove = other.MailsUntilLove;
+			}
+
+			public bool Equals(Entry? other)
+				=> other is not null
+				&& GiftsToRemember == other.GiftsToRemember
+				&& DaysToRemember == other.DaysToRemember
+				&& MailsUntilDislike == other.MailsUntilDislike
+				&& MailsUntilHate == other.MailsUntilHate
+				&& MailsUntilLike == other.MailsUntilLike
+				&& MailsUntilLove == other.MailsUntilLove;
+
+			public override bool Equals(object? obj)
+				=> obj is Entry entry && Equals(entry);
+
+			public override int GetHashCode()
+				=> (GiftsToRemember, DaysToRemember, MailsUntilDislike, MailsUntilHate, MailsUntilLike, MailsUntilLove).GetHashCode();
+
+			public static bool operator ==(Entry lhs, Entry rhs)
+				=> lhs.Equals(rhs);
+
+			public static bool operator !=(Entry lhs, Entry rhs)
+				=> !lhs.Equals(rhs);
 		}
 
 		public Entry Default { get; set; } = new(
@@ -39,5 +84,23 @@ namespace Shockah.PleaseGiftMeInPerson
 		);
 
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
+
+		public ModConfig()
+		{
+		}
+
+		public ModConfig(ModConfig other) : this()
+		{
+			Default.CopyFrom(other.Default);
+			foreach (var (name, entry) in other.PerNPC)
+				PerNPC[name] = new(entry);
+		}
+
+		public Entry GetForNPC(string npcName)
+		{
+			if (!PerNPC.TryGetValue(npcName, out var entry))
+				entry = Default;
+			return entry;
+		}
 	}
 }

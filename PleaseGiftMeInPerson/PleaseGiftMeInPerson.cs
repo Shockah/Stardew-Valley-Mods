@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.GMCM.Helper;
 using Shockah.CommonModCode.SMAPI;
 using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
@@ -19,10 +21,14 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
+		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
 		private Farmer? CurrentPlayerGiftingViaMail;
 		private int OriginalGiftTaste;
 		private int ModifiedGiftTaste;
+		private int TicksUntilConfigSetup = 5;
+
+		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
 
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
 
@@ -30,8 +36,25 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
+			LastDefaultConfigEntry = new(Config.Default);
+
+			Characters = new(() =>
+			{
+				var npcDispositions = Game1.content.Load<Dictionary<string, string>>("Data/NPCDispositions");
+				var antiSocialNpcs = Helper.ModRegistry.IsLoaded("SuperAardvark.AntiSocial")
+					? Game1.content.Load<Dictionary<string, string>>("Data/AntiSocialNPCs")
+					: new();
+
+				var characters = npcDispositions
+					.Select(c => (name: c.Key, displayName: c.Value.Split('/')[11]))
+					.Where(c => !antiSocialNpcs.ContainsKey(c.name))
+					.OrderBy(c => c.displayName)
+					.ToArray();
+				return characters;
+			});
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
 			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
@@ -59,6 +82,16 @@ namespace Shockah.PleaseGiftMeInPerson
 			);
 		}
 
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		{
+			if (--TicksUntilConfigSetup > 0)
+				return;
+
+			PopulateConfig(Config);
+			SetupConfig();
+			Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+		}
+
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
@@ -71,6 +104,8 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 				return;
+
+			CleanUpGiftEntries();
 			Helper.Data.WriteSaveData(GiftEntriesKey, GiftEntries);
 		}
 
@@ -107,6 +142,107 @@ namespace Shockah.PleaseGiftMeInPerson
 			else
 			{
 				Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
+			}
+		}
+
+		private void PopulateConfig(ModConfig config)
+		{
+			foreach (var (name, _) in Characters.Value)
+				if (!config.PerNPC.ContainsKey(name))
+					config.PerNPC[name] = new(Config.Default);
+		}
+
+		private void SetupConfig()
+		{
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			GMCMI18nHelper helper = new(api, ModManifest, Helper.Translation);
+
+			api.Register(
+				ModManifest,
+				reset: () =>
+				{
+					Config = new();
+					PopulateConfig(Config);
+					LastDefaultConfigEntry = new(Config.Default);
+				},
+				save: () =>
+				{
+					if (Config.Default != LastDefaultConfigEntry)
+					{
+						foreach (var (_, entry) in Config.PerNPC)
+							if (entry == LastDefaultConfigEntry)
+								entry.CopyFrom(Config.Default);
+					}
+
+					ModConfig copy = new(Config);
+					var toRemove = new List<string>();
+					foreach (var (npcName, entry) in copy.PerNPC)
+						if (entry == copy.Default || entry == LastDefaultConfigEntry)
+							toRemove.Add(npcName);
+
+					foreach (var npcName in toRemove)
+						copy.PerNPC.Remove(npcName);
+					Helper.WriteConfig(copy);
+					LastDefaultConfigEntry = new(Config.Default);
+				}
+			);
+
+			void SetupConfigEntryMenu(Func<ModConfig.Entry> entry)
+			{
+				helper.AddNumberOption("config.giftsToRemember", () => entry().GiftsToRemember, v => entry().GiftsToRemember = v, min: 0);
+				helper.AddNumberOption("config.daysToRemember", () => entry().DaysToRemember, v => entry().DaysToRemember = v, min: 0);
+				helper.AddNumberOption("config.mailsUntilDislike", () => entry().MailsUntilDislike, v => entry().MailsUntilDislike = v, min: -1);
+				helper.AddNumberOption("config.mailsUntilHate", () => entry().MailsUntilHate, v => entry().MailsUntilHate = v, min: -1);
+				helper.AddNumberOption("config.mailsUntilLike", () => entry().MailsUntilLike, v => entry().MailsUntilLike = v, min: -1);
+				helper.AddNumberOption("config.mailsUntilLove", () => entry().MailsUntilLove, v => entry().MailsUntilLove = v, min: -1);
+			}
+
+			SetupConfigEntryMenu(() => Config.Default);
+
+			helper.AddMultiPageLinkOption(
+				keyPrefix: "config.npcOverrides",
+				columns: _ => 3,
+				pageID: character => $"character_{character.name}",
+				pageName: character => character.displayName,
+				pageValues: Characters.Value.ToArray()
+			);
+
+			foreach (var (name, displayName) in Characters.Value)
+			{
+				api.AddPage(ModManifest, $"character_{name}", () => displayName);
+				SetupConfigEntryMenu(() => Config.PerNPC[name]);
+			}
+		}
+
+		private void CleanUpGiftEntries()
+		{
+			WorldDate newDate = new(Game1.Date);
+			foreach (var (playerID, allGiftEntries) in GiftEntries)
+			{
+				foreach (var (npcName, giftEntries) in allGiftEntries)
+				{
+					var configEntry = Config.GetForNPC(npcName);
+					var toRemove = new HashSet<GiftEntry>();
+					toRemove.UnionWith(giftEntries.Where(e => newDate.TotalDays - e.Date.TotalDays > configEntry.DaysToRemember));
+					toRemove.UnionWith(giftEntries.Take(Math.Max(giftEntries.Count - configEntry.GiftsToRemember, 0)));
+					foreach (var entry in toRemove)
+						giftEntries.Remove(entry);
+				}
+			}
+
+			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
+			{
+				Helper.Multiplayer.SendMessage(
+				GiftEntries,
+				GiftEntriesMessageType,
+				new[] { ModManifest.UniqueID },
+				Game1.getAllFarmers()
+					.Where(p => p.UniqueMultiplayerID != GameExt.GetHostPlayer().UniqueMultiplayerID)
+					.Select(p => p.UniqueMultiplayerID)
+					.ToArray()
+				);
 			}
 		}
 
@@ -159,9 +295,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
-
-			if (!Config.PerNPC.TryGetValue(npcName, out var configEntry))
-				configEntry = Config.Default;
+			var configEntry = Config.GetForNPC(npcName);
 			(GiftTaste taste, int mails)[] sorted = new[]
 			{
 				(taste: GiftTaste.Hate, mails: configEntry.MailsUntilHate),
