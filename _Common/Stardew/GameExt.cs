@@ -2,6 +2,7 @@
 using StardewValley.Buildings;
 using StardewValley.Locations;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.CommonModCode.Stardew
 {
@@ -11,7 +12,10 @@ namespace Shockah.CommonModCode.Stardew
 	{
 		public static MultiplayerMode GetMultiplayerMode()
 			=> (MultiplayerMode)Game1.multiplayerMode;
-		
+
+		public static Farmer GetHostPlayer()
+			=> Game1.getAllFarmers().First(p => p.slotCanHost);
+
 		public static IEnumerable<GameLocation> GetAllLocations()
 		{
 			IEnumerable<GameLocation> GetLocationAndSublocations(GameLocation location)

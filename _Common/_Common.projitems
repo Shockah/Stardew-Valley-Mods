@@ -25,6 +25,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)ReflectionExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SMAPI\MultiplayerHelperExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\FarmHouseExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stardew\GiftTaste.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stardew\Season.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\SObjectExt.cs" />
     <Compile Include="..\_Common\UI\SplitScreenScreens.cs" />
     <Compile Include="..\_Common\Stardew\GameExt.cs" />

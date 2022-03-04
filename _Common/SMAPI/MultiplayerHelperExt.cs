@@ -1,6 +1,9 @@
 ﻿using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
 using System;
+using System.Linq;
 
 namespace Shockah.CommonModCode.SMAPI
 {
@@ -20,5 +23,8 @@ namespace Shockah.CommonModCode.SMAPI
 		public static void SendMessageInMultiplayer<TMessage>(this IMultiplayerHelper self, Func<TMessage> message, string[]? modIDs = null, long[]? playerIDs = null)
 			where TMessage: notnull
 			=> self.SendMessageInMultiplayer(message, typeof(TMessage).GetBestName(), modIDs, playerIDs);
+
+		public static Farmer GetPlayer(this ModMessageReceivedEventArgs args)
+			=> Game1.getAllFarmers().First(p => p.UniqueMultiplayerID == args.FromPlayerID);
 	}
 }

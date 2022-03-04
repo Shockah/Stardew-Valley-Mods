@@ -1,0 +1,16 @@
+﻿{
+	"Name": "Please Gift Me In Person",
+	"Author": "Shockah",
+	"Version": "1.0.0",
+	"Description": "TODO",
+	"UniqueID": "Shockah.PleaseGiftMeInPerson",
+	"EntryDll": "PleaseGiftMeInPerson.dll",
+	"MinimumApiVersion": "3.0.0",
+	"UpdateKeys": [ "Nexus:0" ],
+	"Dependencies": [
+		{
+			"UniqueID": "Digus.MailServicesMod",
+			"IsRequired": true
+		}
+	]
+}

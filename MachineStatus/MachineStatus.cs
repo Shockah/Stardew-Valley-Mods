@@ -279,15 +279,15 @@ namespace Shockah.MachineStatus
 			{
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
+					monitor: Monitor,
 					prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Prefix)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Postfix)),
-					monitor: Monitor
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Postfix))
 				);
 				harmony.PatchVirtual(
 					original: AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
+					monitor: Monitor,
 					prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Prefix)),
-					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Postfix)),
-					monitor: Monitor
+					postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Postfix))
 				);
 			}
 			catch (Exception ex)

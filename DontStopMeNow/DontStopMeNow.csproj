@@ -9,11 +9,7 @@
 		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Brokenevent.ILStrip.CLI" Version="1.1.4" />
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<ILStripEntryPoints Include="Shockah.DontStopMeNow.DontStopMeNow" />
 	</ItemGroup>
 	<Import Project="..\_CommonWithHarmony\_CommonWithHarmony.projitems" Label="Shared" />
 	<Import Project="..\_Common\_Common.projitems" Label="Shared" />
