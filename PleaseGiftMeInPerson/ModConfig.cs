@@ -6,7 +6,9 @@ namespace Shockah.PleaseGiftMeInPerson
 {
 	internal class ModConfig
 	{
-		internal class Entry: IEquatable<Entry>
+		public enum ReturningBehavior { Never, NormallyLiked, Always }
+
+		public class Entry: IEquatable<Entry>
 		{
 			public int GiftsToRemember { get; set; }
 			public int DaysToRemember { get; set; }
@@ -84,6 +86,8 @@ namespace Shockah.PleaseGiftMeInPerson
 		);
 
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
+
+		public ReturningBehavior ReturnUnlikedItems { get; set; } = ReturningBehavior.NormallyLiked;
 
 		public ModConfig()
 		{

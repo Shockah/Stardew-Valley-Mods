@@ -12,5 +12,14 @@
 	"config.mailsUntilLove.name": "Mails until love",
 	"config.mailsUntilLove.tooltip": "How many mailed gifts does it take for an NPC to start loving gifts.\n-1: never\n0: right away",
 
-	"config.npcOverrides.name": "NPC-specific overrides"
+	"config.returnUnlikedItems.name": "Return unliked items",
+	"config.returnUnlikedItems.tooltip": "Specifies whether items unliked by NPCs should be returned via mail the next day.",
+	"config.returnUnlikedItems.value.Never": "Never",
+	"config.returnUnlikedItems.value.NormallyLiked": "Normally liked items",
+	"config.returnUnlikedItems.value.Always": "Always",
+
+	"config.npcOverrides.name": "NPC-specific overrides",
+
+	"returnMailTemplate.unknown": "Dear @,^^Your package could not be delivered, as they refused to receive its contents.^You can find the original package contents's in this package.^^Sincerely,^Pelican Town Postal Service",
+	"returnMailTemplate.known": "Dear @,^^Your package could not be delivered to {{NpcName}}, as they refused to receive its contents.^You can find the original package's contents in this package.^^Sincerely,^Pelican Town Postal Service"
 }

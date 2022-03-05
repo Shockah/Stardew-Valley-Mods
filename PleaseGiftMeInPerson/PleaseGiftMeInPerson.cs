@@ -10,27 +10,33 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
+using SObject = StardewValley.Object;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
 	public class PleaseGiftMeInPerson: Mod
 	{
 		private static readonly string MailServicesMod_GiftShipmentController_QualifiedName = "MailServicesMod.GiftShipmentController, MailServicesMod";
-		private static readonly string GiftEntriesKey = "GiftEntries";
+		private static readonly string GiftEntriesSaveDataKey = "GiftEntries";
 		private static readonly string GiftEntriesMessageType = "GiftEntries";
+		private static readonly string ReturnedItemMailType = "ReturnedItem";
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
+		private IMailPersistenceFrameworkApi? MailPersistenceFrameworkApi;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
 		private Farmer? CurrentPlayerGiftingViaMail;
-		private int OriginalGiftTaste;
-		private int ModifiedGiftTaste;
+		private GiftTaste OriginalGiftTaste;
+		private GiftTaste ModifiedGiftTaste;
 		private int TicksUntilConfigSetup = 5;
 
+		private readonly XmlSerializer itemSerializer = new(typeof(Item));
 		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
 
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
+		private IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -63,6 +69,12 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			MailPersistenceFrameworkApi = Helper.ModRegistry.GetApi<IMailPersistenceFrameworkApi>("Shockah.MailPersistenceFramework");
+			MailPersistenceFrameworkApi?.RegisterModOverrides(
+				mod: ModManifest,
+				text: MailTextOverride
+			);
+
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "GiftToNpc"),
@@ -94,10 +106,11 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
-			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
-				return;
-			GiftEntries = Helper.Data.ReadSaveData<IDictionary<long, IDictionary<string, IList<GiftEntry>>>>(GiftEntriesKey)
-				?? new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
+			{
+				GiftEntries = Helper.Data.ReadSaveData<IDictionary<long, IDictionary<string, IList<GiftEntry>>>>(GiftEntriesSaveDataKey)
+					?? new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
+			}
 		}
 
 		private void OnSaving(object? sender, SavingEventArgs e)
@@ -106,7 +119,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				return;
 
 			CleanUpGiftEntries();
-			Helper.Data.WriteSaveData(GiftEntriesKey, GiftEntries);
+			Helper.Data.WriteSaveData(GiftEntriesSaveDataKey, GiftEntries);
 		}
 
 		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
@@ -115,6 +128,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				return;
 			if (e.Peer.GetMod(ModManifest.UniqueID) is null)
 				return;
+
 			Helper.Multiplayer.SendMessage(
 				GiftEntries,
 				GiftEntriesMessageType,
@@ -200,6 +214,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 
 			SetupConfigEntryMenu(() => Config.Default);
+			if (MailPersistenceFrameworkApi is not null)
+				helper.AddEnumOption("config.returnUnlikedItems", () => Config.ReturnUnlikedItems);
 
 			helper.AddMultiPageLinkOption(
 				keyPrefix: "config.npcOverrides",
@@ -238,7 +254,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				GiftEntries,
 				GiftEntriesMessageType,
 				new[] { ModManifest.UniqueID },
-				Game1.getAllFarmers()
+				Game1.getOnlineFarmers()
 					.Where(p => p.UniqueMultiplayerID != GameExt.GetHostPlayer().UniqueMultiplayerID)
 					.Select(p => p.UniqueMultiplayerID)
 					.ToArray()
@@ -273,7 +289,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			{
 				long[] playerIDsToSendTo;
 				if (GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
-					playerIDsToSendTo = Game1.getAllFarmers()
+					playerIDsToSendTo = Game1.getOnlineFarmers()
 						.Where(p => p != player && p.UniqueMultiplayerID != GameExt.GetHostPlayer().UniqueMultiplayerID)
 						.Select(p => p.UniqueMultiplayerID)
 						.ToArray();
@@ -307,6 +323,65 @@ namespace Shockah.PleaseGiftMeInPerson
 			return (int)taste;
 		}
 
+		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
+		{
+			if (MailPersistenceFrameworkApi is null)
+				return;
+			if ((int)Instance.ModifiedGiftTaste > (int)GiftTaste.Dislike)
+				return;
+
+			var returnItem = Instance.Config.ReturnUnlikedItems switch
+			{
+				ModConfig.ReturningBehavior.Never => false,
+				ModConfig.ReturningBehavior.NormallyLiked => (int)originalGiftTaste >= (int)GiftTaste.Neutral,
+				ModConfig.ReturningBehavior.Always => true,
+				_ => throw new ArgumentException($"{nameof(ModConfig.ReturningBehavior)} has an invalid value."),
+			};
+			if (!returnItem)
+				return;
+
+			MailPersistenceFrameworkApi?.SendMailToLocalPlayer(
+				mod: ModManifest,
+				attributes: new Dictionary<int, object?>
+				{
+					{
+						(int)MailApiAttribute.Tags,
+						new
+						{
+							MailType = ReturnedItemMailType,
+							NpcName = originalAddresseeNpcName
+						}
+					},
+					{ (int)MailApiAttribute.Text, "text" },
+					{ (int)MailApiAttribute.Items, item.getOne() }
+				}
+			);
+		}
+
+		private void MailTextOverride(string modUniqueID, string mailID, string text, Action<string> @override)
+		{
+			if (modUniqueID != ModManifest.UniqueID)
+				return;
+			var tags = MailPersistenceFrameworkApi!.GetMailTags(modUniqueID, mailID);
+			if (!tags.TryGetValue("MailType", out var mailType))
+			{
+				Monitor.Log($"Received a mail without a type.", LogLevel.Warn);
+				return;
+			}
+
+			if (mailType == ReturnedItemMailType)
+			{
+				if (tags.TryGetValue("NpcName", out var npcName))
+					@override(Helper.Translation.Get("returnMailTemplate.known", new { NpcName = npcName })); 
+				else
+					@override(Helper.Translation.Get("returnMailTemplate.unknown"));
+			}
+			else
+			{
+				Monitor.Log($"Unknown mail type {mailType}.", LogLevel.Warn);
+			}
+		}
+
 		private static void GiftShipmentController_GiftToNpc_Prefix()
 		{
 			Instance.CurrentPlayerGiftingViaMail = Game1.player;
@@ -319,26 +394,29 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private static void NPC_getGiftTasteForThisItem_Postfix(NPC __instance, ref int __result)
 		{
-			Instance.OriginalGiftTaste = __result;
+			Instance.OriginalGiftTaste = GiftTasteExt.From(__result);
 			Farmer? player = Instance.CurrentPlayerGiftingViaMail;
 			if (player is not null)
-				__result = GiftTasteExt.From(__result)
+				__result = Instance.OriginalGiftTaste
 					.GetModified(Instance.GetMailGiftTasteModifier(player, __instance.Name))
 					.GetStardewValue();
-			Instance.ModifiedGiftTaste = __result;
+			Instance.ModifiedGiftTaste = GiftTasteExt.From(__result);
 		}
 
-		private static void NPC_receiveGift_Postfix(NPC __instance, Farmer giver)
+		private static void NPC_receiveGift_Postfix(NPC __instance, SObject o, Farmer giver)
 		{
 			Instance.RecordGiftEntryForNPC(
 				giver,
 				__instance.Name,
 				new(
 					new WorldDate(Game1.Date),
-					GiftTasteExt.From(Instance.OriginalGiftTaste),
+					Instance.OriginalGiftTaste,
 					Instance.CurrentPlayerGiftingViaMail == giver ? GiftMethod.ByMail : GiftMethod.InPerson
 				)
 			);
+
+			if (Instance.CurrentPlayerGiftingViaMail == giver)
+				Instance.ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
 		}
 	}
 }
