@@ -15,7 +15,7 @@ namespace Shockah.CommonModCode.UI
 				SplitScreenScreens.First => Context.ScreenId == 0,
 				SplitScreenScreens.Last => GameRunner.instance.gameInstances.Count > 0 && Context.ScreenId == GameRunner.instance.gameInstances[^1].instanceId,
 				SplitScreenScreens.All => true,
-				_ => throw new ArgumentException($"Invalid `{nameof(self)}` value."),
+				_ => throw new ArgumentException($"{nameof(SplitScreenScreens)} has an invalid value."),
 			};
 		}
 	}

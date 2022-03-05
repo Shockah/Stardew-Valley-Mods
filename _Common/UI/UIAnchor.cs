@@ -56,6 +56,8 @@ namespace Shockah.CommonModCode.UI
 					break;
 				case UIAnchorSide.Center:
 					break;
+				default:
+					throw new ArgumentException($"{nameof(UIAnchorSide)} has an invalid value.");
 			}
 			return result;
 		}
@@ -79,7 +81,7 @@ namespace Shockah.CommonModCode.UI
 				UIAnchorSide.Bottom => UIAnchorSide.Top,
 				UIAnchorSide.Left => UIAnchorSide.Right,
 				UIAnchorSide.Right => UIAnchorSide.Left,
-				_ => throw new ArgumentException($"Invalid `{nameof(self)}` value."),
+				_ => throw new ArgumentException($"{nameof(UIAnchorSide)} has an invalid value."),
 			};
 		}
 		
@@ -96,7 +98,7 @@ namespace Shockah.CommonModCode.UI
 				UIAnchorSide.Bottom => new(location.X + size.X * 0.5f, location.Y + size.Y),
 				UIAnchorSide.Left => new(location.X, location.Y + size.Y * 0.5f),
 				UIAnchorSide.Right => new(location.X + size.X, location.Y + size.Y * 0.5f),
-				_ => throw new ArgumentException($"Invalid `{nameof(self)}` value."),
+				_ => throw new ArgumentException($"{nameof(UIAnchorSide)} has an invalid value."),
 			};
 		}
 	}

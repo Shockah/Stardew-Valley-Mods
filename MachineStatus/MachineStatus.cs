@@ -325,7 +325,7 @@ namespace Shockah.MachineStatus
 					MachineRenderingOptions.Visibility.Hidden => Config.FocusedAlpha == Config.NormalAlpha ? MachineRenderingOptions.Visibility.Focused : MachineRenderingOptions.Visibility.Normal,
 					MachineRenderingOptions.Visibility.Normal => MachineRenderingOptions.Visibility.Focused,
 					MachineRenderingOptions.Visibility.Focused => MachineRenderingOptions.Visibility.Hidden,
-					_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
+					_ => throw new ArgumentException($"{nameof(MachineRenderingOptions.Visibility)} has an invalid value."),
 				};
 			}
 
@@ -334,7 +334,7 @@ namespace Shockah.MachineStatus
 				MachineRenderingOptions.Visibility.Hidden => 0f,
 				MachineRenderingOptions.Visibility.Normal => IsHoveredOver ? Config.FocusedAlpha : Config.NormalAlpha,
 				MachineRenderingOptions.Visibility.Focused => Config.FocusedAlpha,
-				_ => throw new ArgumentException($"{nameof(Visibility)} has an invalid value."),
+				_ => throw new ArgumentException($"{nameof(MachineRenderingOptions.Visibility)} has an invalid value."),
 			};
 
 			VisibilityAlpha += (targetAlpha - VisibilityAlpha) * 0.15f;
@@ -404,7 +404,7 @@ namespace Shockah.MachineStatus
 						MachineRenderingOptions.BubbleSway.Static => 0f,
 						MachineRenderingOptions.BubbleSway.Together => 2f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250), 2),
 						MachineRenderingOptions.BubbleSway.Wave => 2f * (float)Math.Round(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250 + x + y), 2),
-						_ => throw new ArgumentException($"{nameof(Config.BubbleSway)} has an invalid value."),
+						_ => throw new ArgumentException($"{nameof(MachineRenderingOptions.BubbleSway)} has an invalid value."),
 					};
 				}
 				
@@ -679,6 +679,8 @@ namespace Shockah.MachineStatus
 						}
 						results.Add((CopyMachine(machine), CopyHeldItems(machine)));
 						break;
+					default:
+						throw new ArgumentException($"{nameof(MachineRenderingOptions.Grouping)} has an invalid value.");
 				}
 				machineLoopContinue:;
 			}
@@ -749,7 +751,7 @@ namespace Shockah.MachineStatus
 						);
 						break;
 					default:
-						throw new InvalidOperationException();
+						throw new ArgumentException($"{nameof(MachineRenderingOptions.Sorting)} has an invalid value.");
 				}
 			}
 

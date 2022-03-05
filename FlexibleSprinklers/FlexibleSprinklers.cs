@@ -254,7 +254,7 @@ namespace Shockah.FlexibleSprinklers
 				ModConfig.SprinklerBehaviorEnum.Flexible => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
 				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, null),
 				ModConfig.SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
-				_ => throw new ArgumentException(),
+				_ => throw new ArgumentException($"{nameof(ModConfig.SprinklerBehaviorEnum)} has an invalid value."),
 			};
 		}
 

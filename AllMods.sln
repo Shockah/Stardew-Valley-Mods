@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStatus", "MachineSta
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "_CommonWithHarmony", "_CommonWithHarmony\_CommonWithHarmony.shproj", "{D9B27087-1AAA-4459-81EC-8C2F80D2E5FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PleaseGiftMeInPerson", "PleaseGiftMeInPerson\PleaseGiftMeInPerson.csproj", "{99E6295D-7903-48C2-9855-1C5A21FA5717}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PleaseGiftMeInPerson", "PleaseGiftMeInPerson\PleaseGiftMeInPerson.csproj", "{99E6295D-7903-48C2-9855-1C5A21FA5717}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailPersistenceFramework", "MailPersistenceFramework\MailPersistenceFramework.csproj", "{B108B66C-902D-4515-83B9-59249014D784}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -29,6 +31,7 @@ Global
 		_Common\_Common.projitems*{5ae05c77-966b-49a8-8000-2fb2486dd82f}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{99e6295d-7903-48c2-9855-1c5a21fa5717}*SharedItemsImports = 5
 		_Common\_Common.projitems*{99e6295d-7903-48c2-9855-1c5a21fa5717}*SharedItemsImports = 5
+		_Common\_Common.projitems*{b108b66c-902d-4515-83b9-59249014d784}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{d49f8392-3b72-43d5-ab06-206fb71eeea4}*SharedItemsImports = 5
 		_Common\_Common.projitems*{d49f8392-3b72-43d5-ab06-206fb71eeea4}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{d9b27087-1aaa-4459-81ec-8c2f80d2e5fc}*SharedItemsImports = 13
@@ -62,6 +65,10 @@ Global
 		{99E6295D-7903-48C2-9855-1C5A21FA5717}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99E6295D-7903-48C2-9855-1C5A21FA5717}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99E6295D-7903-48C2-9855-1C5A21FA5717}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B108B66C-902D-4515-83B9-59249014D784}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B108B66C-902D-4515-83B9-59249014D784}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B108B66C-902D-4515-83B9-59249014D784}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B108B66C-902D-4515-83B9-59249014D784}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -24,6 +24,9 @@ namespace Shockah.CommonModCode.SMAPI
 			where TMessage: notnull
 			=> self.SendMessageInMultiplayer(message, typeof(TMessage).GetBestName(), modIDs, playerIDs);
 
+		public static Farmer GetPlayer(this IMultiplayerPeer peer)
+			=> Game1.getAllFarmers().First(p => p.UniqueMultiplayerID == peer.PlayerID);
+
 		public static Farmer GetPlayer(this ModMessageReceivedEventArgs args)
 			=> Game1.getAllFarmers().First(p => p.UniqueMultiplayerID == args.FromPlayerID);
 	}

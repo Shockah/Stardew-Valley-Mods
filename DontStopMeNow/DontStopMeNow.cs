@@ -215,6 +215,8 @@ namespace Shockah.DontStopMeNow
 						return;
 					FixMouseFacingDirection();
 					break;
+				default:
+					throw new ArgumentException($"{nameof(InputHelper.ButtonType)} has an invalid value.");
 			}
 		}
 

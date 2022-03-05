@@ -353,6 +353,8 @@ namespace Shockah.FlexibleSprinklers
 							break;
 						case ClusterSprinklerBehaviorClusterOrdering.Equally:
 							break;
+						default:
+							throw new ArgumentException($"{nameof(ClusterSprinklerBehaviorClusterOrdering)} has an invalid value.");
 					}
 
 					var nextClusters = nextClustersEnumerable.ToList();
@@ -459,6 +461,8 @@ namespace Shockah.FlexibleSprinklers
 								}
 								done:;
 								break;
+							default:
+								throw new ArgumentException($"{nameof(ClusterSprinklerBehaviorInClusterBalanceMode)} has an invalid value.");
 						}
 					}
 				}

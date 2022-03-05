@@ -374,6 +374,8 @@ namespace Shockah.XPDisplay
 						);
 					});
 					break;
+				default:
+					throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
 			}
 		}
 
