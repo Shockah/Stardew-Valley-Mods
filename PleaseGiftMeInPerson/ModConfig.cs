@@ -79,8 +79,8 @@ namespace Shockah.PleaseGiftMeInPerson
 		}
 
 		public Entry Default { get; set; } = new(
-			giftsToRemember: 10,
-			daysToRemember: 28,
+			giftsToRemember: 5,
+			daysToRemember: 14,
 			mailsUntilDislike: 2,
 			mailsUntilHate: 3
 		);
