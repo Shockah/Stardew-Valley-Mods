@@ -2,6 +2,7 @@
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.GMCM.Helper;
+using Shockah.CommonModCode.IL;
 using Shockah.CommonModCode.SMAPI;
 using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
@@ -10,6 +11,7 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Xml.Serialization;
 using SObject = StardewValley.Object;
 
@@ -74,6 +76,11 @@ namespace Shockah.PleaseGiftMeInPerson
 				Monitor,
 				prefix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_GiftToNpc_Prefix)),
 				postfix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_GiftToNpc_Postfix))
+			);
+			harmony.TryPatch(
+				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "CreateResponsePage"),
+				Monitor,
+				transpiler: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Transpiler))
 			);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.getGiftTasteForThisItem)),
@@ -298,7 +305,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
-		private int GetMailGiftTasteModifier(Farmer player, string npcName)
+		private GiftTaste GetMailGiftTasteModifier(Farmer player, string npcName)
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
@@ -310,8 +317,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				(taste: GiftTaste.Like, mails: configEntry.MailsUntilLike),
 				(taste: GiftTaste.Love, mails: configEntry.MailsUntilLove)
 			}.Where(e => e.mails >= 0).OrderBy(e => e.mails).ToArray();
-			var taste = sorted.LastOrNull(e => e.mails <= viaMail)?.taste ?? GiftTaste.Neutral;
-			return (int)taste;
+			return sorted.LastOrNull(e => e.mails <= viaMail)?.taste ?? GiftTaste.Neutral;
 		}
 
 		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
@@ -342,13 +348,62 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance.CurrentPlayerGiftingViaMail = null;
 		}
 
+		private static IEnumerable<CodeInstruction> GiftShipmentController_CreateResponsePage_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		{
+			var instructions = enumerableInstructions.ToList();
+
+			// IL to find:
+			// IL_0117: ldloc.0
+			// IL_0118: ldloc.3
+			// IL_0119: callvirt instance string['Stardew Valley'] StardewValley.Character::get_Name()
+			// IL_011e: ldloc.3
+			// IL_011f: callvirt instance string['Stardew Valley'] StardewValley.Character::get_displayName()
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdloc(),
+				i => i.IsLdloc(),
+				i => i.Calls(AccessTools.PropertyGetter(typeof(Character), nameof(Character.Name))),
+				i => i.IsLdloc(),
+				i => i.Calls(AccessTools.PropertyGetter(typeof(Character), nameof(Character.displayName)))
+			});
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch methods - Please Gift Me In Person probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Postfix(new[]
+			{
+				new CodeInstruction(worker[1]), // ldloc.3
+				new CodeInstruction(worker[2]), // callvirt instance string['Stardew Valley'] StardewValley.Character::get_Name()
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Transpiler_ModifyDisplayName)))
+			});
+
+			return instructions;
+		}
+
+		public static string GiftShipmentController_CreateResponsePage_Transpiler_ModifyDisplayName(string displayName, string npcName)
+		{
+			var mailGiftTasteModifier = Instance.GetMailGiftTasteModifier(Game1.player, npcName);
+			var translationKey = mailGiftTasteModifier switch
+			{
+				GiftTaste.Hate => "mailGift.hateTier",
+				GiftTaste.Dislike => "mailGift.dislikeTier",
+				GiftTaste.Neutral => "mailGift.neutralTier",
+				GiftTaste.Like => "mailGift.likeTier",
+				GiftTaste.Love => "mailGift.loveTier",
+				_ => throw new ArgumentException($"Invalid mail gift taste modifier {mailGiftTasteModifier}."),
+			};
+			return Instance.Helper.Translation.Get(translationKey, new { Name = displayName });
+		}
+
 		private static void NPC_getGiftTasteForThisItem_Postfix(NPC __instance, ref int __result)
 		{
 			Instance.OriginalGiftTaste = GiftTasteExt.From(__result);
-			Farmer? player = Instance.CurrentPlayerGiftingViaMail;
+			var player = Instance.CurrentPlayerGiftingViaMail;
 			if (player is not null)
 				__result = Instance.OriginalGiftTaste
-					.GetModified(Instance.GetMailGiftTasteModifier(player, __instance.Name))
+					.GetModified((int)Instance.GetMailGiftTasteModifier(player, __instance.Name))
 					.GetStardewValue();
 			Instance.ModifiedGiftTaste = GiftTasteExt.From(__result);
 		}

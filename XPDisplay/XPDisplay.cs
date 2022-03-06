@@ -142,7 +142,7 @@ namespace Shockah.XPDisplay
 			});
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
 			}
 
@@ -174,7 +174,7 @@ namespace Shockah.XPDisplay
 			}, occurence: 2);
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
 			}
 
@@ -202,7 +202,7 @@ namespace Shockah.XPDisplay
 			});
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch Luck Skill methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch Luck Skill methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
 			}
 
@@ -240,7 +240,7 @@ namespace Shockah.XPDisplay
 			});
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 			}
 			else
 			{
@@ -273,7 +273,7 @@ namespace Shockah.XPDisplay
 			}, startIndex: worker?.EndIndex ?? 0);
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 			}
 			else
 			{
@@ -307,7 +307,7 @@ namespace Shockah.XPDisplay
 			}, occurence: 2);
 			if (worker is null)
 			{
-				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP View probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
 				return instructions;
 			}
 

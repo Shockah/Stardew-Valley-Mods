@@ -22,6 +22,12 @@
 
 	"config.npcOverrides.name": "NPC-specific overrides",
 
+	"mailGift.loveTier": "{{Name}} :D",
+	"mailGift.likeTier": "{{Name}} :)",
+	"mailGift.neutralTier": "{{Name}}",
+	"mailGift.dislikeTier": "{{Name}} :|",
+	"mailGift.hateTier": "{{Name}} :/",
+
 	"unused.returnMailTemplate.title": "Package return",
 	"unused.returnMailTemplate.text.unknown": "Dear @,^^Your package could not be delivered, as they refused to receive its contents.^You can find the original package contents's in this package.^^Sincerely,^Pelican Town Postal Service",
 	"unused.returnMailTemplate.text.known": "Dear @,^^Your package could not be delivered to {{NpcName}}, as they refused to receive its contents.^You can find the original package's contents in this package.^^Sincerely,^Pelican Town Postal Service"
