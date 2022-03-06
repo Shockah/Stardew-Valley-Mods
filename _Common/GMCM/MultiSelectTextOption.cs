@@ -77,7 +77,11 @@ namespace Shockah.CommonModCode.GMCM
 				tooltip: Tooltip,
 				draw: (b, position) => Draw(b, position),
 				height: () => GetHeight(),
-				beforeMenuOpened: () => Initialize(),
+				beforeMenuOpened: () =>
+				{
+					LastMouseLeftPressed = null;
+					Initialize();
+				},
 				beforeMenuClosed: () => Initialize(),
 				afterReset: () => Initialize(),
 				beforeSave: () => BeforeSave()
