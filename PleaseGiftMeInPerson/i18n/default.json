@@ -17,9 +17,12 @@
 	"config.returnUnlikedItems.value.Never": "Never",
 	"config.returnUnlikedItems.value.NormallyLiked": "Normally liked items",
 	"config.returnUnlikedItems.value.Always": "Always",
+	"config.returnMailsInCollection.name": "Put return mails in collection",
+	"config.returnMailsInCollection.tooltip": "Whether package return mails should be displayed in the collection menu.\nNote: This only affects new mails.",
 
 	"config.npcOverrides.name": "NPC-specific overrides",
 
-	"returnMailTemplate.unknown": "Dear @,^^Your package could not be delivered, as they refused to receive its contents.^You can find the original package contents's in this package.^^Sincerely,^Pelican Town Postal Service",
-	"returnMailTemplate.known": "Dear @,^^Your package could not be delivered to {{NpcName}}, as they refused to receive its contents.^You can find the original package's contents in this package.^^Sincerely,^Pelican Town Postal Service"
+	"returnMailTemplate.title": "Package return",
+	"returnMailTemplate.text.unknown": "Dear @,^^Your package could not be delivered, as they refused to receive its contents.^You can find the original package contents's in this package.^^Sincerely,^Pelican Town Postal Service",
+	"returnMailTemplate.text.known": "Dear @,^^Your package could not be delivered to {{NpcName}}, as they refused to receive its contents.^You can find the original package's contents in this package.^^Sincerely,^Pelican Town Postal Service"
 }

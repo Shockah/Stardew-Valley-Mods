@@ -32,40 +32,97 @@ namespace Shockah.PleaseGiftMeInPerson
 		/// Custom tags for a given mail, which can be used to determine the mail type and override some of its attributes at runtime.
 		/// </summary>
 		/// <remarks>
-		/// The value is of type <see cref="IReadOnlyDictionary{TKey, TValue}"/> (where both <c>TKey</c> and <c>TValue</c> are <see cref="string"/>).<br/>
-		/// On input, <see cref="object"/> type is allowed and will be converted into <see cref="IReadOnlyDictionary{string, string}"/> (where both <c>TKey</c> and <c>TValue</c> are <see cref="string"/>).
+		/// The value is of type <c>IReadOnlyDictionary&lt;string, string&gt;</c>.<br/>
+		/// On input, <c>object</c> type is allowed and will be converted into <c>IReadOnlyDictionary&lt;string, string&gt;</c>.<br/>
+		/// <br/>
+		/// This attribute cannot be overriden.
 		/// </remarks>
 		Tags,
 
+		/// <summary>
+		/// The mail's title.<br/>
+		/// If a mail has a title, it will be visible in the collections menu and will not be removed from the save data after being read.
+		/// </summary>
+		/// <remarks>
+		/// The value is of type <c>string?</c>.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, string?, Action&lt;string?&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>string? title</c> - The mail's current title.<br/>
+		/// Parameter #4: <c>Action&lt;string?&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
+		/// </remarks>
+		Title,
+
 		/// <summary>Text of the given mail.</summary>
-		/// <remarks>The value is of type <see cref="string"/>.</remarks>
+		/// <remarks>
+		/// The value is of type <c>string</c>.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, string, Action&lt;string&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>string text</c> - The mail's current text.<br/>
+		/// Parameter #4: <c>Action&lt;string&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
+		/// </remarks>
 		Text,
 
 		/// <summary>The items attached to the mail.</summary>
 		/// <remarks>
-		/// The value is of type <see cref="IReadOnlyList{T}"/> (where <c>T</c> is <see cref="Item"/>).<br/>
-		/// On input, <see cref="IEnumerable{T}"/> type (where <c>T</c> is <see cref="Item"/>) is allowed and will be converted.<br/>
-		/// On input, <see cref="Item"/> type is allowed and will be wrapped.
+		/// The value is of type <c>IReadOnlyList&lt;Item&gt;</c>.<br/>
+		/// On input, <c>IEnumerable&lt;Item&gt;</c> type is allowed and will be converted.<br/>
+		/// On input, <c>Item</c> type is allowed and will be wrapped.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, IReadOnlyList&lt;Item&gt;, Action&lt;IEnumerable&lt;Item&gt;&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>IReadOnlyList&lt;Item&gt; items</c> - The mail's current attached items.<br/>
+		/// Parameter #4: <c>Action&lt;IEnumerable&lt;Item&gt;&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
 		/// </remarks>
 		Items,
 
 		/// <summary>A recipe name attached to the mail.</summary>
-		/// <remarks>The value is of type <see cref="string"/>.</remarks>
+		/// <remarks>
+		/// The value is of type <c>string</c>.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, string?, Action&lt;string?&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>string? recipe</c> - The mail's current attached recipe.<br/>
+		/// Parameter #4: <c>Action&lt;string?&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
+		/// </remarks>
 		Recipe,
 
 		/// <summary>The background ID to use for this mail.</summary>
 		/// <remarks>
 		/// The value is of type <see cref="int"/>.<br/>
-		/// On input, <see cref="MailBackground"/> type is allowed and will be casted.<br/>
-		/// See <see cref="MailBackground"/> for allowed values.
+		/// On input, <c>MailBackground</c> type is allowed and will be casted.<br/>
+		/// See <see cref="MailBackground"/> for allowed values.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, int, Action&lt;int&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>int backgroundID</c> - The mail's current background.<br/>
+		/// Parameter #4: <c>Action&lt;int&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
 		/// </remarks>
 		Background,
 
 		/// <summary>The text color ID to use for this mail.</summary>
 		/// <remarks>
 		/// The value is of type <see cref="int"/>.<br/>
-		/// On input, <see cref="MailTextColor"/> type is allowed and will be casted.<br/>
-		/// See <see cref="MailTextColor"/> for allowed values.
+		/// On input, <c>MailTextColor</c> type is allowed and will be casted.<br/>
+		/// See <see cref="MailTextColor"/> for allowed values.<br/>
+		/// <br/>
+		/// This attribute can be overriden with a <c>Action&lt;string, string, int?, Action&lt;int?&gt;&gt;</c> delegate.<br/>
+		/// Parameter #1: <c>string modUniqueID</c> - The mod's unique ID.<br/>
+		/// Parameter #2: <c>string mailID</c> - The mail's ID.<br/>
+		/// Parameter #3: <c>int? textColor</c> - The mail's current text color.<br/>
+		/// Parameter #4: <c>Action&lt;int?&gt; @override</c> - A delegate to call to override the value.<br/>
+		/// See <see cref="IMailPersistenceFrameworkApi.RegisterMailAttributeOverrides"/> for more details.
 		/// </remarks>
 		TextColor,
 	}
@@ -76,32 +133,10 @@ namespace Shockah.PleaseGiftMeInPerson
 		/// Registers mod overrides for mails.
 		/// </summary>
 		/// <param name="mod">The mod's manifest.</param>
-		/// <param name="text">
-		/// The text override.<br/>
-		/// Parameter #1 (<see cref="string"/>): <c>modUniqueID</c> - The mod's unique ID.<br/>
-		/// Parameter #2 (<see cref="string"/>): <c>mailID</c> - The mail's ID.<br/>
-		/// Parameter #3 (<see cref="string"/>): <c>text</c> - The mail's current text.<br/>
-		/// Parameter #4 (<see cref="Action{T}"/> (where <c>T</c> is <see cref="string"/>)): <c>@override</c> - A delegate to call to override the value.<br/>
-		/// </param>
-		/// <param name="items">
-		/// The attached items override.<br/>
-		/// Parameter #1 (<see cref="string"/>): <c>modUniqueID</c> - The mod's unique ID.<br/>
-		/// Parameter #2 (<see cref="string"/>): <c>mailID</c> - The mail's ID.<br/>
-		/// Parameter #3 (<see cref="IReadOnlyList{T}"/> (where <c>T</c> is <see cref="Item"/>)): <c>items</c> - The mail's current attached items.<br/>
-		/// Parameter #4 (<see cref="Action{T}"/> (where <c>T</c> is <see cref="IEnumerable{T}"/> (where <c>T</c> is <see cref="Item"/>))): <c>@override</c> - A delegate to call to override the value.<br/>
-		/// </param>
-		/// <param name="recipe">
-		/// The attached recipe name override.<br/>
-		/// Parameter #1 (<see cref="string"/>): <c>modUniqueID</c> - The mod's unique ID.<br/>
-		/// Parameter #2 (<see cref="string"/>): <c>mailID</c> - The mail's ID.<br/>
-		/// Parameter #3 (<see cref="string"/>): <c>recipe</c> - The mail's current attached recipe name.<br/>
-		/// Parameter #4 (<see cref="Action{T}"/> (where <c>T</c> is <see cref="string"/>?)): <c>@override</c> - A delegate to call to override the value.<br/>
-		/// </param>
-		void RegisterModOverrides(
+		/// <param name="overrides">Overrides to use for each attribute</param>
+		void RegisterMailAttributeOverrides(
 			IManifest mod,
-			Action<string, string, string, Action<string>>? text = null,
-			Action<string, string, IReadOnlyList<Item>, Action<IEnumerable<Item>>>? items = null,
-			Action<string, string, string?, Action<string?>>? recipe = null
+			IReadOnlyDictionary<int /* MailApiAttribute */, Delegate> overrides
 		);
 
 		/// <summary>

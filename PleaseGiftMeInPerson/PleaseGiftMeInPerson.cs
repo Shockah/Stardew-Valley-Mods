@@ -70,10 +70,11 @@ namespace Shockah.PleaseGiftMeInPerson
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			MailPersistenceFrameworkApi = Helper.ModRegistry.GetApi<IMailPersistenceFrameworkApi>("Shockah.MailPersistenceFramework");
-			MailPersistenceFrameworkApi?.RegisterModOverrides(
-				mod: ModManifest,
-				text: MailTextOverride
-			);
+			MailPersistenceFrameworkApi?.RegisterMailAttributeOverrides(ModManifest, new Dictionary<int, Delegate>
+			{
+				{ (int)MailApiAttribute.Title, new Action<string, string, string?, Action<string?>>(MailTitleOverride) },
+				{ (int)MailApiAttribute.Text, new Action<string, string, string, Action<string>>(MailTextOverride) }
+			});
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -215,7 +216,10 @@ namespace Shockah.PleaseGiftMeInPerson
 
 			SetupConfigEntryMenu(() => Config.Default);
 			if (MailPersistenceFrameworkApi is not null)
+			{
 				helper.AddEnumOption("config.returnUnlikedItems", () => Config.ReturnUnlikedItems);
+				helper.AddBoolOption("config.returnMailsInCollection", () => Config.ReturnMailsInCollection);
+			}
 
 			helper.AddMultiPageLinkOption(
 				keyPrefix: "config.npcOverrides",
@@ -352,10 +356,33 @@ namespace Shockah.PleaseGiftMeInPerson
 							NpcName = originalAddresseeNpcName
 						}
 					},
+					{ (int)MailApiAttribute.Title, Config.ReturnMailsInCollection ? "<placeholder>" : null },
 					{ (int)MailApiAttribute.Text, "text" },
 					{ (int)MailApiAttribute.Items, item.getOne() }
 				}
 			);
+		}
+
+		private void MailTitleOverride(string modUniqueID, string mailID, string? title, Action<string?> @override)
+		{
+			if (modUniqueID != ModManifest.UniqueID)
+				return;
+			var tags = MailPersistenceFrameworkApi!.GetMailTags(modUniqueID, mailID);
+			if (!tags.TryGetValue("MailType", out var mailType))
+			{
+				Monitor.Log($"Received a mail without a type.", LogLevel.Warn);
+				return;
+			}
+
+			if (mailType == ReturnedItemMailType)
+			{
+				if (title is not null)
+					@override(Helper.Translation.Get("returnMailTemplate.title"));
+			}
+			else
+			{
+				Monitor.Log($"Unknown mail type {mailType}.", LogLevel.Warn);
+			}
 		}
 
 		private void MailTextOverride(string modUniqueID, string mailID, string text, Action<string> @override)
@@ -372,9 +399,9 @@ namespace Shockah.PleaseGiftMeInPerson
 			if (mailType == ReturnedItemMailType)
 			{
 				if (tags.TryGetValue("NpcName", out var npcName))
-					@override(Helper.Translation.Get("returnMailTemplate.known", new { NpcName = npcName })); 
+					@override(Helper.Translation.Get("returnMailTemplate.text.known", new { NpcName = npcName })); 
 				else
-					@override(Helper.Translation.Get("returnMailTemplate.unknown"));
+					@override(Helper.Translation.Get("returnMailTemplate.text.unknown"));
 			}
 			else
 			{

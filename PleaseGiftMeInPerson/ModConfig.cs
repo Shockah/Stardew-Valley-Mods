@@ -88,6 +88,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
 
 		public ReturningBehavior ReturnUnlikedItems { get; set; } = ReturningBehavior.NormallyLiked;
+		public bool ReturnMailsInCollection { get; set; } = true;
 
 		public ModConfig()
 		{
