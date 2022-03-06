@@ -24,7 +24,6 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
-		private IMailPersistenceFrameworkApi? MailPersistenceFrameworkApi;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
 		private Farmer? CurrentPlayerGiftingViaMail;
@@ -69,13 +68,6 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			MailPersistenceFrameworkApi = Helper.ModRegistry.GetApi<IMailPersistenceFrameworkApi>("Shockah.MailPersistenceFramework");
-			MailPersistenceFrameworkApi?.RegisterMailAttributeOverrides(ModManifest, new Dictionary<int, Delegate>
-			{
-				{ (int)MailApiAttribute.Title, new Action<string, string, string?, Action<string?>>(MailTitleOverride) },
-				{ (int)MailApiAttribute.Text, new Action<string, string, string, Action<string>>(MailTextOverride) }
-			});
-
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "GiftToNpc"),
@@ -215,11 +207,6 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 
 			SetupConfigEntryMenu(() => Config.Default);
-			if (MailPersistenceFrameworkApi is not null)
-			{
-				helper.AddEnumOption("config.returnUnlikedItems", () => Config.ReturnUnlikedItems);
-				helper.AddBoolOption("config.returnMailsInCollection", () => Config.ReturnMailsInCollection);
-			}
 
 			helper.AddMultiPageLinkOption(
 				keyPrefix: "config.npcOverrides",
@@ -329,8 +316,6 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
 		{
-			if (MailPersistenceFrameworkApi is null)
-				return;
 			if ((int)Instance.ModifiedGiftTaste > (int)GiftTaste.Dislike)
 				return;
 
@@ -344,76 +329,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			if (!returnItem)
 				return;
 
-			MailPersistenceFrameworkApi.SendMailToLocalPlayer(
-				mod: ModManifest,
-				attributes: new Dictionary<int, object?>
-				{
-					{
-						(int)MailApiAttribute.Tags,
-						new
-						{
-							MailType = ReturnedItemMailType,
-							NpcName = originalAddresseeNpcName
-						}
-					},
-					{ (int)MailApiAttribute.Title, Config.ReturnMailsInCollection ? "<placeholder>" : null },
-					{ (int)MailApiAttribute.Text, "<placeholder>" },
-					{ (int)MailApiAttribute.Items, item.getOne() }
-				}
-			);
-		}
-
-		private void MailTitleOverride(string modUniqueID, string mailID, string? title, Action<string?> @override)
-		{
-			if (modUniqueID != ModManifest.UniqueID)
-				return;
-			var tags = MailPersistenceFrameworkApi!.GetMailTags(modUniqueID, mailID);
-			if (!tags.TryGetValue("MailType", out var mailType))
-			{
-				Monitor.Log($"Received a mail without a type.", LogLevel.Warn);
-				return;
-			}
-
-			if (mailType == ReturnedItemMailType)
-			{
-				if (title is not null)
-					@override(Helper.Translation.Get("returnMailTemplate.title"));
-			}
-			else
-			{
-				Monitor.Log($"Unknown mail type {mailType}.", LogLevel.Warn);
-			}
-		}
-
-		private void MailTextOverride(string modUniqueID, string mailID, string text, Action<string> @override)
-		{
-			if (modUniqueID != ModManifest.UniqueID)
-				return;
-			var tags = MailPersistenceFrameworkApi!.GetMailTags(modUniqueID, mailID);
-			if (!tags.TryGetValue("MailType", out var mailType))
-			{
-				Monitor.Log($"Received a mail without a type.", LogLevel.Warn);
-				return;
-			}
-
-			if (mailType == ReturnedItemMailType)
-			{
-				if (tags.TryGetValue("NpcName", out var npcName))
-				{
-					var character = Characters.Value.FirstOrNull(c => c.name == npcName);
-					if (character is not null)
-						npcName = character.Value.displayName;
-					@override(Helper.Translation.Get("returnMailTemplate.text.known", new { NpcName = npcName }));
-				}
-				else
-				{
-					@override(Helper.Translation.Get("returnMailTemplate.text.unknown"));
-				}
-			}
-			else
-			{
-				Monitor.Log($"Unknown mail type {mailType}.", LogLevel.Warn);
-			}
+			// TODO: actually send a mail
 		}
 
 		private static void GiftShipmentController_GiftToNpc_Prefix()

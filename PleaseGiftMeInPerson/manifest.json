@@ -11,10 +11,6 @@
 		{
 			"UniqueID": "Digus.MailServicesMod",
 			"IsRequired": true
-		},
-		{
-			"UniqueID": "Shockah.MailPersistenceFramework",
-			"IsRequired": false
 		}
 	]
 }

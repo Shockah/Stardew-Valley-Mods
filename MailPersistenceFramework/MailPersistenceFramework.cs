@@ -199,29 +199,19 @@ namespace Shockah.MailPersistenceFramework
 						v => mailTextColor = v.HasValue ? (MailTextColor)v : null
 					);
 
-				if (mail.Recipe is not null)
+				if (letter is null)
 				{
 					letter = new(
 						id: letterID,
 						text: mailText,
 						recipe: mailRecipe,
-						condition: l => !Game1.player.mailReceived.Contains(l.Id),
-						callback: l => { },
-						whichBG: (int)mailBackground
-					);
-				}
-				else
-				{
-					letter = new(
-						id: letterID,
-						text: mailText,
-						items: mailItems.ToList(),
-						condition: l => !Game1.player.mailReceived.Contains(l.Id),
+						condition: l => Game1.player.UniqueMultiplayerID == mail.AddresseeID && !Game1.player.mailReceived.Contains(l.Id),
 						callback: l => { },
 						whichBG: (int)mailBackground
 					);
 				}
 
+				letter.DynamicItems = l => new List<Item>(mail.Items);
 				if (mailTitle is not null)
 					letter.Title = mailTitle;
 				if (mailTextColor is not null)
