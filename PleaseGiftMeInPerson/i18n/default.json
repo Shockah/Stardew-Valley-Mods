@@ -1,4 +1,7 @@
 ﻿{
+	"config.section.npc.name": "NPC",
+	"config.section.appearance.name": "Appearance",
+
 	"config.giftsToRemember.name": "Gifts to remember",
 	"config.giftsToRemember.tooltip": "How many gifts should an NPC remember.",
 	"config.daysToRemember.name": "Days to remember",
@@ -12,6 +15,16 @@
 	"config.mailsUntilLove.name": "Mails until love",
 	"config.mailsUntilLove.tooltip": "How many mailed gifts does it take for an NPC to start loving gifts.\n-1: never\n0: right away",
 
+	"config.npcOverrides.name": "NPC-specific overrides",
+	"config.showCurrentMailModifier.name": "Show current mail modifier",
+	"config.showCurrentMailModifier.tooltip": "Whether to display additional if an NPC would like to receive a gift via mail or not.",
+
+	"mailGift.loveTier": "{{Name}} :D",
+	"mailGift.likeTier": "{{Name}} :)",
+	"mailGift.neutralTier": "{{Name}}",
+	"mailGift.dislikeTier": "{{Name}} :|",
+	"mailGift.hateTier": "{{Name}} :/",
+
 	"unused.config.returnUnlikedItems.name": "Return unliked items",
 	"unused.config.returnUnlikedItems.tooltip": "Specifies whether items unliked by NPCs should be returned via mail the next day.",
 	"unused.config.returnUnlikedItems.value.Never": "Never",
@@ -19,14 +32,6 @@
 	"unused.config.returnUnlikedItems.value.Always": "Always",
 	"unused.config.returnMailsInCollection.name": "Put return mails in collection",
 	"unused.config.returnMailsInCollection.tooltip": "Whether package return mails should be displayed in the collection menu.\nNote: This only affects new mails.",
-
-	"config.npcOverrides.name": "NPC-specific overrides",
-
-	"mailGift.loveTier": "{{Name}} :D",
-	"mailGift.likeTier": "{{Name}} :)",
-	"mailGift.neutralTier": "{{Name}}",
-	"mailGift.dislikeTier": "{{Name}} :|",
-	"mailGift.hateTier": "{{Name}} :/",
 
 	"unused.returnMailTemplate.title": "Package return",
 	"unused.returnMailTemplate.text.unknown": "Dear @,^^Your package could not be delivered, as they refused to receive its contents.^You can find the original package contents's in this package.^^Sincerely,^Pelican Town Postal Service",

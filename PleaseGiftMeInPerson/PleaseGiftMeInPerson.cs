@@ -22,13 +22,13 @@ namespace Shockah.PleaseGiftMeInPerson
 		private static readonly string MailServicesMod_GiftShipmentController_QualifiedName = "MailServicesMod.GiftShipmentController, MailServicesMod";
 		private static readonly string GiftEntriesSaveDataKey = "GiftEntries";
 		private static readonly string GiftEntriesMessageType = "GiftEntries";
-		private static readonly string ReturnedItemMailType = "ReturnedItem";
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
-		private Farmer? CurrentPlayerGiftingViaMail;
+		private Farmer? CurrentGiftingPlayer;
+		private GiftMethod? CurrentGiftMethod;
 		private GiftTaste OriginalGiftTaste;
 		private GiftTaste ModifiedGiftTaste;
 		private int TicksUntilConfigSetup = 5;
@@ -81,6 +81,12 @@ namespace Shockah.PleaseGiftMeInPerson
 				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "CreateResponsePage"),
 				Monitor,
 				transpiler: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Transpiler))
+			);
+			harmony.TryPatchVirtual(
+				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.tryToReceiveActiveObject)),
+				Monitor,
+				prefix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Prefix)),
+				postfix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Postfix))
 			);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.getGiftTasteForThisItem)),
@@ -203,8 +209,12 @@ namespace Shockah.PleaseGiftMeInPerson
 				}
 			);
 
+			helper.AddSectionTitle("config.section.appearance");
+			helper.AddBoolOption("config.showCurrentMailModifier", () => Config.ShowCurrentMailModifier);
+
 			void SetupConfigEntryMenu(Func<ModConfig.Entry> entry)
 			{
+				helper.AddSectionTitle("config.section.npc");
 				helper.AddNumberOption("config.giftsToRemember", () => entry().GiftsToRemember, v => entry().GiftsToRemember = v, min: 0);
 				helper.AddNumberOption("config.daysToRemember", () => entry().DaysToRemember, v => entry().DaysToRemember = v, min: 0);
 				helper.AddNumberOption("config.mailsUntilDislike", () => entry().MailsUntilDislike, v => entry().MailsUntilDislike = v, min: -1);
@@ -340,12 +350,14 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private static void GiftShipmentController_GiftToNpc_Prefix()
 		{
-			Instance.CurrentPlayerGiftingViaMail = Game1.player;
+			Instance.CurrentGiftingPlayer = Game1.player;
+			Instance.CurrentGiftMethod = GiftMethod.ByMail;
 		}
 
 		private static void GiftShipmentController_GiftToNpc_Postfix()
 		{
-			Instance.CurrentPlayerGiftingViaMail = null;
+			Instance.CurrentGiftingPlayer = null;
+			Instance.CurrentGiftMethod = null;
 		}
 
 		private static IEnumerable<CodeInstruction> GiftShipmentController_CreateResponsePage_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -384,6 +396,9 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		public static string GiftShipmentController_CreateResponsePage_Transpiler_ModifyDisplayName(string displayName, string npcName)
 		{
+			if (!Instance.Config.ShowCurrentMailModifier)
+				return displayName;
+			
 			var mailGiftTasteModifier = Instance.GetMailGiftTasteModifier(Game1.player, npcName);
 			var translationKey = mailGiftTasteModifier switch
 			{
@@ -397,30 +412,56 @@ namespace Shockah.PleaseGiftMeInPerson
 			return Instance.Helper.Translation.Get(translationKey, new { Name = displayName });
 		}
 
+		private static void NPC_tryToReceiveActiveObject_Prefix(NPC __instance, Farmer __0 /* who */)
+		{
+			Instance.CurrentGiftingPlayer = __0;
+			Instance.CurrentGiftMethod = GiftMethod.InPerson;
+		}
+
+		private static void NPC_tryToReceiveActiveObject_Postfix(NPC __instance)
+		{
+			Instance.CurrentGiftingPlayer = null;
+			Instance.CurrentGiftMethod = null;
+		}
+
 		private static void NPC_getGiftTasteForThisItem_Postfix(NPC __instance, ref int __result)
 		{
+			if (Instance.CurrentGiftingPlayer is null || Instance.CurrentGiftMethod is null)
+				return;
+			
 			Instance.OriginalGiftTaste = GiftTasteExt.From(__result);
-			var player = Instance.CurrentPlayerGiftingViaMail;
-			if (player is not null)
-				__result = Instance.OriginalGiftTaste
-					.GetModified((int)Instance.GetMailGiftTasteModifier(player, __instance.Name))
-					.GetStardewValue();
+			switch (Instance.CurrentGiftMethod.Value)
+			{
+				case GiftMethod.InPerson:
+					break;
+				case GiftMethod.ByMail:
+					__result = Instance.OriginalGiftTaste
+						.GetModified((int)Instance.GetMailGiftTasteModifier(Instance.CurrentGiftingPlayer, __instance.Name))
+						.GetStardewValue();
+					break;
+				default:
+					throw new InvalidOperationException($"{nameof(GiftMethod)} has an invalid value.");
+			}
+			
 			Instance.ModifiedGiftTaste = GiftTasteExt.From(__result);
 		}
 
 		private static void NPC_receiveGift_Postfix(NPC __instance, SObject o, Farmer giver)
 		{
+			if (Instance.CurrentGiftMethod is null)
+				return;
+			
 			Instance.RecordGiftEntryForNPC(
 				giver,
 				__instance.Name,
 				new(
 					new WorldDate(Game1.Date),
 					Instance.OriginalGiftTaste,
-					Instance.CurrentPlayerGiftingViaMail == giver ? GiftMethod.ByMail : GiftMethod.InPerson
+					Instance.CurrentGiftMethod.Value
 				)
 			);
 
-			if (Instance.CurrentPlayerGiftingViaMail == giver)
+			if (Instance.CurrentGiftingPlayer == giver)
 				Instance.ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
 		}
 	}

@@ -87,14 +87,18 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
 
+		public bool ShowCurrentMailModifier { get; set; } = true;
+
+		#region Unimplemented
 		public ReturningBehavior ReturnUnlikedItems { get; set; } = ReturningBehavior.NormallyLiked;
 		public bool ReturnMailsInCollection { get; set; } = true;
+		#endregion
 
 		public ModConfig()
 		{
 		}
 
-		public ModConfig(ModConfig other) : this()
+		public ModConfig(ModConfig other): this()
 		{
 			Default.CopyFrom(other.Default);
 			foreach (var (name, entry) in other.PerNPC)
