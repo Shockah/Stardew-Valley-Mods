@@ -140,7 +140,7 @@ namespace Shockah.MailPersistenceFramework
 				if (mail.AddresseeID != Game1.player.UniqueMultiplayerID)
 					continue;
 
-				string letterID = $"{nameof(MailPersistenceFramework)}_{mail.ID}";
+				string letterID = $"{nameof(MailPersistenceFramework)}_{mail.ModUniqueID}_{mail.ID}";
 				var letter = MailDao.FindLetter(letterID);
 				var isExistingLetter = letter is not null;
 				if (letter is not null && mail.Title is null)
