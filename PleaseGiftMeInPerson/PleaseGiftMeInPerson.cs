@@ -357,7 +357,7 @@ namespace Shockah.PleaseGiftMeInPerson
 						}
 					},
 					{ (int)MailApiAttribute.Title, Config.ReturnMailsInCollection ? "<placeholder>" : null },
-					{ (int)MailApiAttribute.Text, "text" },
+					{ (int)MailApiAttribute.Text, "<placeholder>" },
 					{ (int)MailApiAttribute.Items, item.getOne() }
 				}
 			);
@@ -399,9 +399,16 @@ namespace Shockah.PleaseGiftMeInPerson
 			if (mailType == ReturnedItemMailType)
 			{
 				if (tags.TryGetValue("NpcName", out var npcName))
-					@override(Helper.Translation.Get("returnMailTemplate.text.known", new { NpcName = npcName })); 
+				{
+					var character = Characters.Value.FirstOrNull(c => c.name == npcName);
+					if (character is not null)
+						npcName = character.Value.displayName;
+					@override(Helper.Translation.Get("returnMailTemplate.text.known", new { NpcName = npcName }));
+				}
 				else
+				{
 					@override(Helper.Translation.Get("returnMailTemplate.text.unknown"));
+				}
 			}
 			else
 			{
