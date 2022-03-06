@@ -19,6 +19,7 @@ namespace Shockah.MailPersistenceFramework
 		public int DayOfMonth { get; set; }
 		public long AddresseeID { get; set; }
 		public IReadOnlyDictionary<string, string> Tags { get; set; }
+		public string? Title { get; set; }
 		public string Text { get; set; }
 		public IReadOnlyList<ItemType> Items { get; set; }
 		public string? Recipe { get; set; }
@@ -39,6 +40,7 @@ namespace Shockah.MailPersistenceFramework
 			WorldDate date,
 			long addresseeID,
 			IReadOnlyDictionary<string, string> tags,
+			string? title,
 			string text,
 			IReadOnlyList<ItemType> items,
 			string? recipe,
@@ -47,7 +49,7 @@ namespace Shockah.MailPersistenceFramework
 		) : this(
 			modUniqueID, id,
 			date.Year, date.SeasonIndex, date.DayOfMonth,
-			addresseeID, tags, text,
+			addresseeID, tags, title, text,
 			items, recipe,
 			background, textColor
 		) { }
@@ -61,6 +63,7 @@ namespace Shockah.MailPersistenceFramework
 			int dayOfMonth,
 			long addresseeID,
 			IReadOnlyDictionary<string, string> tags,
+			string? title,
 			string text,
 			IReadOnlyList<ItemType> items,
 			string? recipe,
@@ -80,6 +83,7 @@ namespace Shockah.MailPersistenceFramework
 			this.DayOfMonth = dayOfMonth;
 			this.AddresseeID = addresseeID;
 			this.Tags = tags;
+			this.Title = title;
 			this.Text = text;
 			this.Items = items;
 			this.Recipe = recipe;
@@ -92,6 +96,7 @@ namespace Shockah.MailPersistenceFramework
 			return new Dictionary<int, object?>
 			{
 				{ (int)MailApiAttribute.Tags, Tags },
+				{ (int)MailApiAttribute.Title, Title },
 				{ (int)MailApiAttribute.Text, Text },
 				{
 					(int)MailApiAttribute.Items,
@@ -99,7 +104,9 @@ namespace Shockah.MailPersistenceFramework
 						? Items
 						: ((IReadOnlyList<string>)Items).Select(si => MailDataExt.DeserializeItem(si)!).ToList()
 				},
-				{ (int)MailApiAttribute.Recipe, Recipe }
+				{ (int)MailApiAttribute.Recipe, Recipe },
+				{ (int)MailApiAttribute.Background, (int)Background },
+				{ (int)MailApiAttribute.TextColor, TextColor is null ? null : (int)TextColor }
 			};
 		}
 	}
@@ -112,7 +119,7 @@ namespace Shockah.MailPersistenceFramework
 			=> new(
 				self.ModUniqueID, self.ID,
 				self.Year, self.SeasonIndex, self.DayOfMonth,
-				self.AddresseeID, self.Tags, self.Text,
+				self.AddresseeID, self.Tags, self.Title, self.Text,
 				self.Items.Select(i => SerializeItem(i)!).ToList(), self.Recipe,
 				self.Background, self.TextColor
 			);
@@ -121,7 +128,7 @@ namespace Shockah.MailPersistenceFramework
 			=> new(
 				self.ModUniqueID, self.ID,
 				self.Year, self.SeasonIndex, self.DayOfMonth,
-				self.AddresseeID, self.Tags, self.Text,
+				self.AddresseeID, self.Tags, self.Title, self.Text,
 				self.Items.Select(si => DeserializeItem(si)!).ToList(), self.Recipe,
 				self.Background, self.TextColor
 			);

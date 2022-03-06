@@ -106,7 +106,7 @@ namespace Shockah.MailPersistenceFramework
 			{
 				var (modUniqueID, mailID) = e.ReadAs<(string, string)>();
 				var mail = Mails.FirstOrDefault(m => m.ModUniqueID == modUniqueID && m.ID == mailID);
-				if (mail is not null)
+				if (mail is not null && mail.Title is null)
 				{
 					Mails.Remove(mail);
 
@@ -141,68 +141,117 @@ namespace Shockah.MailPersistenceFramework
 					continue;
 
 				string letterID = $"{nameof(MailPersistenceFramework)}_{mail.ID}";
-				var existingLetter = MailDao.FindLetter(letterID);
-				if (existingLetter is null)
+				var letter = MailDao.FindLetter(letterID);
+				var isExistingLetter = letter is not null;
+				if (letter is not null && mail.Title is null)
+					MailDao.RemoveLetter(letter);
+
+				string? mailTitle = mail.Title;
+				foreach (var @override in Overrides)
+					@override.Title?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						mailTitle,
+						v =>
+						{
+							if (mailTitle is null && v is not null)
+								throw new InvalidOperationException("Cannot add a title to a mail that didn't start with a title to begin with.");
+							mailTitle = v;
+						}
+					);
+
+				string mailText = mail.Text;
+				foreach (var @override in Overrides)
+					@override.Text?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						mailText,
+						v => mailText = v
+					);
+
+				IReadOnlyList<Item> mailItems = mail.Items;
+				foreach (var @override in Overrides)
+					@override.Items?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						mailItems,
+						v => mailItems = new List<Item>(v)
+					);
+
+				string? mailRecipe = mail.Recipe;
+				foreach (var @override in Overrides)
+					@override.Recipe?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						mailRecipe,
+						v => mailRecipe = v
+					);
+
+				MailBackground mailBackground = mail.Background;
+				foreach (var @override in Overrides)
+					@override.Background?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						(int)mailBackground,
+						v => mailBackground = (MailBackground)v
+					);
+
+				MailTextColor? mailTextColor = mail.TextColor;
+				foreach (var @override in Overrides)
+					@override.TextColor?.Invoke(
+						mail.ModUniqueID, mail.ID,
+						mailTextColor.HasValue ? (int)mailTextColor.Value : null,
+						v => mailTextColor = v.HasValue ? (MailTextColor)v : null
+					);
+
+				if (mail.Recipe is not null)
 				{
-					Letter newLetter;
-
-					string mailText = mail.Text;
-					foreach (var @override in Overrides)
-						@override.Text?.Invoke(mail.ModUniqueID, mail.ID, mailText, v => mailText = v);
-
-					IReadOnlyList<Item> mailItems = mail.Items;
-					foreach (var @override in Overrides)
-						@override.Items?.Invoke(mail.ModUniqueID, mail.ID, mailItems, v => mailItems = new List<Item>(v));
-
-					string? mailRecipe = mail.Recipe;
-					foreach (var @override in Overrides)
-						@override.Recipe?.Invoke(mail.ModUniqueID, mail.ID, mailRecipe, v => mailRecipe = v);
-
-					if (mail.Recipe is not null)
-					{
-						newLetter = new(
-							id: letterID,
-							text: mailText,
-							recipe: mailRecipe,
-							condition: l => !Game1.player.mailReceived.Contains(l.Id),
-							callback: l => { },
-							whichBG: (int)mail.Background
-						);
-					}
-					else
-					{
-						newLetter = new(
-							id: letterID,
-							text: mailText,
-							items: mailItems.ToList(),
-							condition: l => !Game1.player.mailReceived.Contains(l.Id),
-							callback: l => { },
-							whichBG: (int)mail.Background
-						);
-					}
-
-					if (mail.TextColor is not null)
-						newLetter.TextColor = (int)mail.TextColor;
-
-					newLetter.Callback = l =>
-					{
-						Mails.Remove(mail);
-						MailDao.RemoveLetter(newLetter);
-
-						Helper.Multiplayer.SendMessage(
-							(mail.ModUniqueID, mail.ID),
-							ReadMailMessage,
-							new[] { ModManifest.UniqueID },
-							(GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
-								? Game1.getOnlineFarmers()
-									.Select(p => p.UniqueMultiplayerID)
-									.Where(id => id != GameExt.GetHostPlayer().UniqueMultiplayerID)
-									.ToArray()
-								: new[] { GameExt.GetHostPlayer().UniqueMultiplayerID }
-						);
-					};
-					MailDao.SaveLetter(newLetter);
+					letter = new(
+						id: letterID,
+						text: mailText,
+						recipe: mailRecipe,
+						condition: l => !Game1.player.mailReceived.Contains(l.Id),
+						callback: l => { },
+						whichBG: (int)mailBackground
+					);
 				}
+				else
+				{
+					letter = new(
+						id: letterID,
+						text: mailText,
+						items: mailItems.ToList(),
+						condition: l => !Game1.player.mailReceived.Contains(l.Id),
+						callback: l => { },
+						whichBG: (int)mailBackground
+					);
+				}
+
+				if (mailTitle is not null)
+					letter.Title = mailTitle;
+				if (mailTextColor is not null)
+					letter.TextColor = (int)mailTextColor.Value;
+
+				letter.Callback = l =>
+				{
+					if (mailTitle is not null)
+					{
+						Game1.player.mailReceived.Add(l.Id);
+						return;
+					}
+
+					Mails.Remove(mail);
+					MailDao.RemoveLetter(letter);
+
+					Helper.Multiplayer.SendMessage(
+						(mail.ModUniqueID, mail.ID),
+						ReadMailMessage,
+						new[] { ModManifest.UniqueID },
+						(GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
+							? Game1.getOnlineFarmers()
+								.Select(p => p.UniqueMultiplayerID)
+								.Where(id => id != GameExt.GetHostPlayer().UniqueMultiplayerID)
+								.ToArray()
+							: new[] { GameExt.GetHostPlayer().UniqueMultiplayerID }
+					);
+				};
+				if (!isExistingLetter)
+					MailDao.SaveLetter(letter);
 			}
 		}
 
@@ -222,17 +271,12 @@ namespace Shockah.MailPersistenceFramework
 			);
 		}
 
-		public void RegisterModOverrides(
-			IManifest mod,
-			Action<string, string, string, Action<string>>? text = null,
-			Action<string, string, IReadOnlyList<Item>, Action<IEnumerable<Item>>>? items = null,
-			Action<string, string, string?, Action<string?>>? recipe = null
-		)
+		public void RegisterMailAttributeOverrides(IManifest mod, IReadOnlyDictionary<int /* MailApiAttribute */, Delegate> overrides)
 		{
 			var indexToRemove = Overrides.FirstIndex(o => o.Mod == mod);
 			if (indexToRemove is not null)
 				Overrides.RemoveAt(indexToRemove.Value);
-			Overrides.Add(new(mod, text, items, recipe));
+			Overrides.Add(ModOverrideEntry.FromDictionary(mod, overrides));
 		}
 
 		public string SendMail(IManifest mod, Farmer addressee, IReadOnlyDictionary<int /* MailApiAttribute */, object?> attributes)
@@ -242,6 +286,9 @@ namespace Shockah.MailPersistenceFramework
 			if (!attributes.TryGetValue((int)MailApiAttribute.Text, out var rawText) || rawText is null)
 				rawText = "";
 			string text = (string)rawText;
+
+			attributes.TryGetValue((int)MailApiAttribute.Title, out var rawTitle);
+			string? title = rawTitle as string;
 
 			if (!attributes.TryGetValue((int)MailApiAttribute.Items, out var rawItems) || rawItems is null)
 				rawItems = Enumerable.Empty<Item>();
@@ -272,7 +319,7 @@ namespace Shockah.MailPersistenceFramework
 				Game1.Date,
 				addressee.UniqueMultiplayerID,
 				(IReadOnlyDictionary<string, string>)(tags is null ? new Dictionary<string, string>() : ObjectTokens.Extract(tags)),
-				text,
+				title, text,
 				items, recipe,
 				background, textColor
 			);
