@@ -36,7 +36,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
 
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
-		private IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
+		private readonly IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -276,7 +276,7 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void RecordGiftEntryForNPC(Farmer player, string npcName, GiftEntry giftEntry)
 		{
-			Monitor.Log($"{GameExt.GetMultiplayerMode()} {player.Name} gifted {giftEntry.GiftTaste} {giftEntry.GiftMethod} to {npcName}", LogLevel.Debug);
+			Monitor.Log($"{GameExt.GetMultiplayerMode()} {player.Name} gifted {giftEntry.GiftTaste} {giftEntry.GiftMethod} to {npcName}", LogLevel.Trace);
 			if (!GiftEntries.TryGetValue(player.UniqueMultiplayerID, out var allGiftEntries))
 			{
 				allGiftEntries = new Dictionary<string, IList<GiftEntry>>();
@@ -344,7 +344,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			if (!returnItem)
 				return;
 
-			MailPersistenceFrameworkApi?.SendMailToLocalPlayer(
+			MailPersistenceFrameworkApi.SendMailToLocalPlayer(
 				mod: ModManifest,
 				attributes: new Dictionary<int, object?>
 				{
