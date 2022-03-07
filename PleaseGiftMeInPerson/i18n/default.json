@@ -3,6 +3,7 @@
 	"config.section.npc.name": "NPC",
 	"config.section.npcPreferences.name": "NPC preferences",
 	"config.section.npcPreferences.tooltip": "Controls how to modify the gift taste for the given gift methods.\n\"Hates\": -2 tiers\n\"Dislikes, hates frequent\": -1 tier, -2 tiers past the frequent %\n\"Hates frequent\": -1 tier past the infrequent %, -2 tiers past the frequent %\n\"Dislikes\": -1 tier\n\"Dislikes frequent\": no change, -1 tier past the frequent %\n\"Neutral\": no change\n\"Likes infrequent, dislikes frequent\": +1 tier, no change past the infrequent %, -1 tier past the frequent %\n\"Likes infrequent\": no change, +1 tier below the infrequent %\n\"Likes\": +1 tier\n\"Loves infrequent\": +2 tiers below the infrequent %, +1 tier below the frequent %\n\"Likes, loves infrequent\": +1 tier, +2 tiers below the infrequent %\n\"Loves\": +2 tiers",
+	"config.section.overrides.name": "Overrides",
 
 	"config.giftPreference.value.Hates": "Hates",
 	"config.giftPreference.value.DislikesAndHatesFrequent": "Dislikes, hates frequent",
@@ -37,6 +38,8 @@
 	"config.enableModOverrides.name": "Enable mod overrides",
 	"config.enableModOverrides.tooltip": "Whether mod overrides should be enabled.\nThis allows mods to specify whether NPCs (dis)like mailed/in-person gifts.\n\nIf disabled, the above settings will be used as default.\nIf enabled, a mod's override will be preferred over the defaults.\n  (but not over an NPC-specific config override).",
 	"config.npcOverrides.name": "NPC-specific overrides",
+
+	"config.spouse.name": "Spouse",
 
 	"mailGift.loveTier": "{{Name}} :D",
 	"mailGift.likeTier": "{{Name}} :)",

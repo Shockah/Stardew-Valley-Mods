@@ -94,6 +94,15 @@ namespace Shockah.PleaseGiftMeInPerson
 			frequentGiftPercent: 0.66f
 		);
 
+		public Entry Spouse { get; set; } = new(
+			giftsToRemember: 5,
+			daysToRemember: 14,
+			inPersonPreference: GiftPreference.Neutral,
+			byMailPreference: GiftPreference.HatesFrequent,
+			infrequentGiftPercent: 0.33f,
+			frequentGiftPercent: 0.66f
+		);
+
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
 
 		public bool EnableNPCOverrides { get; set; } = true;

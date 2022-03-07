@@ -249,6 +249,9 @@ namespace Shockah.PleaseGiftMeInPerson
 
 			SetupConfigEntryMenu(() => Config.Default);
 
+			helper.AddSectionTitle("config.section.overrides");
+			helper.AddPageLink("spouse", "config.spouse");
+
 			helper.AddMultiPageLinkOption(
 				keyPrefix: "config.npcOverrides",
 				columns: _ => 3,
@@ -256,6 +259,9 @@ namespace Shockah.PleaseGiftMeInPerson
 				pageName: character => character.displayName,
 				pageValues: Characters.Value.ToArray()
 			);
+
+			helper.AddPage("config.spouse", "spouse");
+			SetupConfigEntryMenu(() => Config.Spouse);
 
 			foreach (var (name, displayName) in Characters.Value)
 			{
@@ -344,8 +350,8 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
-			var configEntry = Config.GetForNPC(npcName);
-			if (configEntry.EnableModOverrides && configEntry.HasSameValues(LastDefaultConfigEntry))
+			var configEntry = player.spouse == npcName ? Config.Spouse : Config.GetForNPC(npcName);
+			if (player.spouse != npcName && configEntry.EnableModOverrides && configEntry.HasSameValues(LastDefaultConfigEntry))
 			{
 				var asset = Game1.content.Load<Dictionary<string, string>>(OverrideAssetPath);
 				if (asset.TryGetValue(npcName, out var line))
