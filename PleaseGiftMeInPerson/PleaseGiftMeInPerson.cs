@@ -34,6 +34,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		private GiftTaste OriginalGiftTaste;
 		private GiftTaste ModifiedGiftTaste;
 		private int TicksUntilConfigSetup = 5;
+		internal bool AcceptedInPersonGiftDialogue = false;
 
 		private readonly XmlSerializer itemSerializer = new(typeof(Item));
 		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
@@ -47,7 +48,6 @@ namespace Shockah.PleaseGiftMeInPerson
 			Config = helper.ReadConfig<ModConfig>();
 			LastDefaultConfigEntry = new(Config.Default);
 			Helper.Content.AssetLoaders.Add(new OverrideAssetLoader());
-			Helper.Content.AssetEditors.Add(new OverrideAssetEditor());
 
 			Characters = new(() =>
 			{
@@ -91,6 +91,11 @@ namespace Shockah.PleaseGiftMeInPerson
 				Monitor,
 				prefix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Prefix)),
 				postfix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Postfix))
+			);
+			harmony.TryPatch(
+				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.tryToReceiveActiveObject)),
+				Monitor,
+				transpiler: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Transpiler))
 			);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.getGiftTasteForThisItem)),
@@ -213,10 +218,9 @@ namespace Shockah.PleaseGiftMeInPerson
 				}
 			);
 
-			helper.AddSectionTitle("config.section.behavior");
-			helper.AddBoolOption("config.enableNpcOverrides", () => Config.Default.EnableModOverrides);
-
-			helper.AddSectionTitle("config.section.appearance");
+			helper.AddSectionTitle("config.section.general");
+			helper.AddBoolOption("config.enableNpcOverrides", () => Config.EnableNPCOverrides);
+			helper.AddBoolOption("config.confirmUnlikedInPersonGifts", () => Config.ConfirmUnlikedInPersonGifts);
 			helper.AddBoolOption("config.showCurrentMailModifier", () => Config.ShowCurrentMailModifier);
 
 			void SetupConfigEntryMenu(Func<ModConfig.Entry> entry)
@@ -433,15 +437,15 @@ namespace Shockah.PleaseGiftMeInPerson
 			if ((int)Instance.ModifiedGiftTaste > (int)GiftTaste.Dislike)
 				return;
 
-			var returnItem = Instance.Config.ReturnUnlikedItems switch
-			{
-				ModConfig.ReturningBehavior.Never => false,
-				ModConfig.ReturningBehavior.NormallyLiked => (int)originalGiftTaste >= (int)GiftTaste.Neutral,
-				ModConfig.ReturningBehavior.Always => true,
-				_ => throw new ArgumentException($"{nameof(ModConfig.ReturningBehavior)} has an invalid value."),
-			};
-			if (!returnItem)
-				return;
+			//var returnItem = Instance.Config.ReturnUnlikedItems switch
+			//{
+			//	ModConfig.ReturningBehavior.Never => false,
+			//	ModConfig.ReturningBehavior.NormallyLiked => (int)originalGiftTaste >= (int)GiftTaste.Neutral,
+			//	ModConfig.ReturningBehavior.Always => true,
+			//	_ => throw new ArgumentException($"{nameof(ModConfig.ReturningBehavior)} has an invalid value."),
+			//};
+			//if (!returnItem)
+			//	return;
 
 			// TODO: actually send a mail
 		}
@@ -520,6 +524,87 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			Instance.CurrentGiftingPlayer = null;
 			Instance.CurrentGiftMethod = null;
+		}
+
+		private static IEnumerable<CodeInstruction> NPC_tryToReceiveActiveObject_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions, ILGenerator il)
+		{
+			var instructions = enumerableInstructions.ToList();
+
+			// IL to find:
+			// IL_1984: ldarg.0
+			// IL_1985: ldloc.0
+			// IL_1986: ldfld class StardewValley.Farmer StardewValley.NPC/'<>c__DisplayClass231_0'::who
+			// IL_198b: callvirt instance class StardewValley.Object StardewValley.Farmer::get_ActiveObject()
+			// IL_1990: ldloc.0
+			// IL_1991: ldfld class StardewValley.Farmer StardewValley.NPC/'<>c__DisplayClass231_0'::who
+			// IL_1996: ldc.i4.1
+			// IL_1997: ldc.r4 1
+			// IL_199c: ldc.i4.1
+			// IL_199d: call instance void StardewValley.NPC::receiveGift(class StardewValley.Object, class StardewValley.Farmer, bool, float32, bool)
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdarg(0),
+				i => i.IsLdloc(),
+				i => i.opcode == OpCodes.Ldfld,
+				i => i.Calls(AccessTools.PropertyGetter(typeof(Farmer), nameof(Farmer.ActiveObject))),
+				i => i.IsLdloc(),
+				i => i.opcode == OpCodes.Ldfld,
+				i => i.IsLdcI4(),
+				i => i.opcode == OpCodes.Ldc_R4,
+				i => i.IsLdcI4(),
+				i => i.Calls(AccessTools.Method(typeof(NPC), nameof(NPC.receiveGift)))
+			});
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch methods - Please Gift Me In Person probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			var receiveGiftLabel = il.DefineLabel();
+			worker.Prefix(new[]
+			{
+				new CodeInstruction(OpCodes.Ldarg_0),
+				new CodeInstruction(OpCodes.Ldarg_1),
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PleaseGiftMeInPerson), nameof(NPC_tryToReceiveActiveObject_Transpiler_ConfirmationDialogueCheck))),
+				new CodeInstruction(OpCodes.Brfalse, receiveGiftLabel),
+				new CodeInstruction(OpCodes.Ret)
+			});
+			worker[5].labels.Add(receiveGiftLabel);
+
+			return instructions;
+		}
+
+		public static bool NPC_tryToReceiveActiveObject_Transpiler_ConfirmationDialogueCheck(NPC __instance, Farmer who)
+		{
+			if (!Instance.Config.ConfirmUnlikedInPersonGifts)
+				return false;
+			if (Instance.AcceptedInPersonGiftDialogue)
+			{
+				Instance.AcceptedInPersonGiftDialogue = false;
+				return false;
+			}
+			var giftTasteModifier = Instance.GetGiftTasteModifier(who, __instance.Name, GiftMethod.InPerson);
+			if ((int)giftTasteModifier >= 0)
+				return false;
+
+			var questionTranslationKey = giftTasteModifier switch
+			{
+				GiftTaste.Dislike => "inPersonGift.question.dislike",
+				GiftTaste.Hate => "inPersonGift.question.hate",
+				_ => throw new InvalidOperationException($"{nameof(GiftTaste)} has an invalid value."),
+			};
+			who.currentLocation.createQuestionDialogue(
+				Instance.Helper.Translation.Get(questionTranslationKey, new { Name = __instance.displayName }),
+				who.currentLocation.createYesNoResponses(), (who, answer) =>
+				{
+					if (answer == "Yes")
+					{
+						Instance.AcceptedInPersonGiftDialogue = true;
+						__instance.tryToReceiveActiveObject(who);
+					}
+				}
+			);
+			return true;
 		}
 
 		private static void NPC_getGiftTasteForThisItem_Postfix(NPC __instance, ref int __result)

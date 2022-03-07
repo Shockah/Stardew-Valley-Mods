@@ -6,8 +6,6 @@ namespace Shockah.PleaseGiftMeInPerson
 {
 	internal class ModConfig
 	{
-		public enum ReturningBehavior { Never, NormallyLiked, Always }
-
 		public class Entry: IEquatable<Entry>
 		{
 			public int GiftsToRemember { get; set; }
@@ -98,12 +96,9 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();
 
+		public bool EnableNPCOverrides { get; set; } = true;
+		public bool ConfirmUnlikedInPersonGifts { get; set; } = true;
 		public bool ShowCurrentMailModifier { get; set; } = true;
-
-		#region Unimplemented
-		public ReturningBehavior ReturnUnlikedItems { get; set; } = ReturningBehavior.NormallyLiked;
-		public bool ReturnMailsInCollection { get; set; } = true;
-		#endregion
 
 		public ModConfig()
 		{

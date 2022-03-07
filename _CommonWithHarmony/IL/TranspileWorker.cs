@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 
 namespace Shockah.CommonModCode.IL
 {
@@ -19,6 +20,9 @@ namespace Shockah.CommonModCode.IL
 			this.Index = index;
 			this.Length = length;
 		}
+
+		public static TranspileWorker? FindLabel(IList<CodeInstruction> instructions, Label label, int startIndex = 0, int? endIndex = null)
+			=> FindInstructions(instructions, new Func<CodeInstruction, bool>[] { i => i.labels.Contains(label) }, startIndex, endIndex);
 
 		public static TranspileWorker? FindInstructions(IList<CodeInstruction> instructions, IList<Func<CodeInstruction, bool>> instructionsToFind, int startIndex = 0, int? endIndex = null, int occurence = 1)
 		{
@@ -66,31 +70,25 @@ namespace Shockah.CommonModCode.IL
 			return this;
 		}
 
-		public TranspileWorker Insert(int relativeIndex, IEnumerable<CodeInstruction> newInstructions)
+		public TranspileWorker Insert(int relativeIndex, IEnumerable<CodeInstruction> newInstructions, bool moveFirstInstructionLabels = true)
 		{
+			var firstInstructionLabels = new List<Label>(this.Instructions[this.Index].labels);
+			if (moveFirstInstructionLabels && relativeIndex == 0)
+				this.Instructions[this.Index].labels.Clear();
 			int extraLength = 0;
 			foreach (var instruction in newInstructions)
 				this.Instructions.Insert(this.Index + relativeIndex + extraLength++, instruction);
 			this.Length += extraLength;
+			if (moveFirstInstructionLabels && relativeIndex == 0)
+				foreach (var label in firstInstructionLabels)
+					this.Instructions[this.Index + relativeIndex].labels.Add(label);
 			return this;
 		}
 
-		public TranspileWorker Prefix(IEnumerable<CodeInstruction> newInstructions)
-		{
-			int extraLength = 0;
-			foreach (var instruction in newInstructions)
-				this.Instructions.Insert(this.Index + extraLength++, instruction);
-			this.Length += extraLength;
-			return this;
-		}
+		public TranspileWorker Prefix(IEnumerable<CodeInstruction> newInstructions, bool moveFirstInstructionLabels = true)
+			=> this.Insert(0, newInstructions, moveFirstInstructionLabels);
 
 		public TranspileWorker Postfix(IEnumerable<CodeInstruction> newInstructions)
-		{
-			int extraLength = 0;
-			foreach (var instruction in newInstructions)
-				this.Instructions.Insert(this.Index + this.Length + extraLength++, instruction);
-			this.Length += extraLength;
-			return this;
-		}
+			=> this.Insert(this.Length, newInstructions, false);
 	}
 }
