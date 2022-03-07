@@ -5,6 +5,38 @@ namespace Shockah.CommonModCode.IL
 {
 	public static class TranspileHelper
 	{
+		public static CodeInstruction? ToLoadLocal(this CodeInstruction instruction)
+		{
+			if (instruction.opcode == OpCodes.Ldloc_0 || instruction.opcode == OpCodes.Stloc_0)
+				return new CodeInstruction(OpCodes.Ldloc_0);
+			else if (instruction.opcode == OpCodes.Ldloc_1 || instruction.opcode == OpCodes.Stloc_1)
+				return new CodeInstruction(OpCodes.Ldloc_1);
+			else if (instruction.opcode == OpCodes.Ldloc_2 || instruction.opcode == OpCodes.Stloc_2)
+				return new CodeInstruction(OpCodes.Ldloc_2);
+			else if (instruction.opcode == OpCodes.Ldloc_3 || instruction.opcode == OpCodes.Stloc_3)
+				return new CodeInstruction(OpCodes.Ldloc_3);
+			else if (instruction.opcode == OpCodes.Ldloc || instruction.opcode == OpCodes.Stloc)
+				return new CodeInstruction(OpCodes.Ldloc, instruction.operand);
+			else
+				return null;
+		}
+
+		public static CodeInstruction? ToStoreLocal(this CodeInstruction instruction)
+		{
+			if (instruction.opcode == OpCodes.Ldloc_0 || instruction.opcode == OpCodes.Stloc_0)
+				return new CodeInstruction(OpCodes.Stloc_0);
+			else if (instruction.opcode == OpCodes.Ldloc_1 || instruction.opcode == OpCodes.Stloc_1)
+				return new CodeInstruction(OpCodes.Stloc_1);
+			else if (instruction.opcode == OpCodes.Ldloc_2 || instruction.opcode == OpCodes.Stloc_2)
+				return new CodeInstruction(OpCodes.Stloc_2);
+			else if (instruction.opcode == OpCodes.Ldloc_3 || instruction.opcode == OpCodes.Stloc_3)
+				return new CodeInstruction(OpCodes.Stloc_3);
+			else if (instruction.opcode == OpCodes.Ldloc || instruction.opcode == OpCodes.Stloc)
+				return new CodeInstruction(OpCodes.Stloc, instruction.operand);
+			else
+				return null;
+		}
+
 		public static bool IsLdcI4(this CodeInstruction instruction)
 		{
 			return instruction.opcode == OpCodes.Ldc_I4 ||

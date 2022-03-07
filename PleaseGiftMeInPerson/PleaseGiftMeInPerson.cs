@@ -1,4 +1,6 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.GMCM.Helper;
@@ -8,11 +10,12 @@ using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.BellsAndWhistles;
+using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Xml.Serialization;
 using SObject = StardewValley.Object;
 
 namespace Shockah.PleaseGiftMeInPerson
@@ -25,6 +28,12 @@ namespace Shockah.PleaseGiftMeInPerson
 		private static readonly string GiftEntriesSaveDataKey = "GiftEntries";
 		private static readonly string GiftEntriesMessageType = "GiftEntries";
 
+		private static readonly Rectangle CursorsMailSourceRect = new(189, 423, 16, 13);
+		private static readonly Rectangle EmojisLoveSourceRect = new(9, 27, 9, 9);
+		private static readonly Rectangle EmojisLikeSourceRect = new(0, 0, 9, 9);
+		private static readonly Rectangle EmojisDislikeSourceRect = new(99, 0, 9, 9);
+		private static readonly Rectangle EmojisHateSourceRect = new(0, 9, 9, 9);
+
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
@@ -34,9 +43,9 @@ namespace Shockah.PleaseGiftMeInPerson
 		private GiftTaste OriginalGiftTaste;
 		private GiftTaste ModifiedGiftTaste;
 		private int TicksUntilConfigSetup = 5;
+		private Texture2D EmojisTexture = null!;
 		internal bool AcceptedInPersonGiftDialogue = false;
 
-		private readonly XmlSerializer itemSerializer = new(typeof(Item));
 		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
 
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
@@ -64,6 +73,8 @@ namespace Shockah.PleaseGiftMeInPerson
 				return characters;
 			});
 
+			UpdateEmojisTexture();
+
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -84,7 +95,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			harmony.TryPatch(
 				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "CreateResponsePage"),
 				Monitor,
-				transpiler: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Transpiler))
+				prefix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Prefix))
 			);
 			harmony.TryPatchVirtual(
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.tryToReceiveActiveObject)),
@@ -106,6 +117,11 @@ namespace Shockah.PleaseGiftMeInPerson
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.receiveGift)),
 				Monitor,
 				postfix: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(NPC_receiveGift_Postfix))
+			);
+			harmony.TryPatch(
+				original: () => AccessTools.Method(typeof(DialogueBox), nameof(DialogueBox.draw), new[] { typeof(SpriteBatch) }),
+				Monitor,
+				transpiler: new HarmonyMethod(typeof(PleaseGiftMeInPerson), nameof(DialogueBox_draw_Transpiler))
 			);
 		}
 
@@ -268,6 +284,11 @@ namespace Shockah.PleaseGiftMeInPerson
 				api.AddPage(ModManifest, $"character_{name}", () => displayName);
 				SetupConfigEntryMenu(() => Config.PerNPC[name]);
 			}
+		}
+
+		private void UpdateEmojisTexture()
+		{
+			EmojisTexture = Game1.content.Load<Texture2D>("LooseSprites\\emojis");
 		}
 
 		private void CleanUpGiftEntries()
@@ -468,56 +489,9 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance.CurrentGiftMethod = null;
 		}
 
-		private static IEnumerable<CodeInstruction> GiftShipmentController_CreateResponsePage_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		private static void GiftShipmentController_CreateResponsePage_Prefix()
 		{
-			var instructions = enumerableInstructions.ToList();
-
-			// IL to find:
-			// IL_0117: ldloc.0
-			// IL_0118: ldloc.3
-			// IL_0119: callvirt instance string['Stardew Valley'] StardewValley.Character::get_Name()
-			// IL_011e: ldloc.3
-			// IL_011f: callvirt instance string['Stardew Valley'] StardewValley.Character::get_displayName()
-			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
-			{
-				i => i.IsLdloc(),
-				i => i.IsLdloc(),
-				i => i.Calls(AccessTools.PropertyGetter(typeof(Character), nameof(Character.Name))),
-				i => i.IsLdloc(),
-				i => i.Calls(AccessTools.PropertyGetter(typeof(Character), nameof(Character.displayName)))
-			});
-			if (worker is null)
-			{
-				Instance.Monitor.Log($"Could not patch methods - Please Gift Me In Person probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
-				return instructions;
-			}
-
-			worker.Postfix(new[]
-			{
-				new CodeInstruction(worker[1]), // ldloc.3
-				new CodeInstruction(worker[2]), // callvirt instance string['Stardew Valley'] StardewValley.Character::get_Name()
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PleaseGiftMeInPerson), nameof(GiftShipmentController_CreateResponsePage_Transpiler_ModifyDisplayName)))
-			});
-
-			return instructions;
-		}
-
-		public static string GiftShipmentController_CreateResponsePage_Transpiler_ModifyDisplayName(string displayName, string npcName)
-		{
-			if (!Instance.Config.ShowCurrentMailModifier)
-				return displayName;
-			
-			var mailGiftTasteModifier = Instance.GetGiftTasteModifier(Game1.player, npcName, GiftMethod.ByMail);
-			var translationKey = mailGiftTasteModifier switch
-			{
-				GiftTaste.Hate => "mailGift.hateTier",
-				GiftTaste.Dislike => "mailGift.dislikeTier",
-				GiftTaste.Neutral => "mailGift.neutralTier",
-				GiftTaste.Like => "mailGift.likeTier",
-				GiftTaste.Love => "mailGift.loveTier",
-				_ => throw new ArgumentException($"Invalid mail gift taste modifier {mailGiftTasteModifier}."),
-			};
-			return Instance.Helper.Translation.Get(translationKey, new { Name = displayName });
+			Instance.UpdateEmojisTexture();
 		}
 
 		private static void NPC_tryToReceiveActiveObject_Prefix(NPC __instance, Farmer __0 /* who */)
@@ -642,6 +616,148 @@ namespace Shockah.PleaseGiftMeInPerson
 
 			if (Instance.CurrentGiftingPlayer == giver)
 				Instance.ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
+		}
+
+		private static IEnumerable<CodeInstruction> DialogueBox_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		{
+			var instructions = enumerableInstructions.ToList();
+
+			// IL to find:
+			// IL_013c: ldarg.0
+			// IL_013d: ldfld int32 StardewValley.Menus.DialogueBox::x
+			// IL_0142: ldc.i4.4
+			// IL_0143: add
+			// IL_0144: ldloc.0
+			// IL_0145: ldc.i4.8
+			// IL_0146: sub
+			// IL_0147: ldarg.0
+			// IL_0148: ldfld int32 StardewValley.Menus.IClickableMenu::width
+			// IL_014d: ldc.i4.8
+			// IL_014e: sub
+			// IL_014f: ldarg.0
+			// IL_0150: ldfld class [System.Collections] System.Collections.Generic.List`1<class StardewValley.Response> StardewValley.Menus.DialogueBox::responses
+			// IL_0155: ldloc.1
+			// IL_0156: callvirt instance !0 class [System.Collections] System.Collections.Generic.List`1<class StardewValley.Response>::get_Item(int32)
+			// IL_015b: ldfld string StardewValley.Response::responseText
+			// IL_0160: ldarg.0
+			// IL_0161: ldfld int32 StardewValley.Menus.IClickableMenu::width
+			// IL_0166: call int32 StardewValley.BellsAndWhistles.SpriteText::getHeightOfString(string, int32)
+			// IL_016b: ldc.i4.s 16
+			// IL_016d: add
+			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.IsLdarg(0),
+				i => i.LoadsField(AccessTools.Field(typeof(DialogueBox), nameof(DialogueBox.x))),
+				i => i.IsLdcI4(),
+				i => i.opcode == OpCodes.Add,
+				i => i.IsLdloc(),
+				i => i.IsLdcI4(),
+				i => i.opcode == OpCodes.Sub,
+				i => i.IsLdarg(0),
+				i => i.LoadsField(AccessTools.Field(typeof(IClickableMenu), nameof(IClickableMenu.width))),
+				i => i.IsLdcI4(),
+				i => i.opcode == OpCodes.Sub,
+				i => i.IsLdarg(0),
+				i => i.LoadsField(AccessTools.Field(typeof(DialogueBox), nameof(DialogueBox.responses))),
+				i => i.IsLdloc(),
+				i => i.opcode == OpCodes.Callvirt,
+				i => i.LoadsField(AccessTools.Field(typeof(Response), nameof(Response.responseText))),
+				i => i.IsLdarg(0),
+				i => i.LoadsField(AccessTools.Field(typeof(IClickableMenu), nameof(IClickableMenu.width))),
+				i => i.Calls(AccessTools.Method(typeof(SpriteText), nameof(SpriteText.getHeightOfString))),
+				i => i.IsLdcI4(),
+				i => i.opcode == OpCodes.Add,
+			});
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch methods - Please Gift Me In Person probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			var responseYLocalInstruction = worker[4];
+			var iLocalInstruction = worker[13];
+
+			// IL to find (after the previous IL):
+			// IL_01d1: call void StardewValley.BellsAndWhistles.SpriteText::drawString(class [MonoGame.Framework]Microsoft.Xna.Framework.Graphics.SpriteBatch, string, int32, int32, int32, int32, int32, float32, float32, bool, int32, string, int32, valuetype StardewValley.BellsAndWhistles.SpriteText/ScrollTextAlignment)
+			worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			{
+				i => i.Calls(AccessTools.Method(typeof(SpriteText), nameof(SpriteText.drawString)))
+			}, startIndex: worker.EndIndex);
+			if (worker is null)
+			{
+				Instance.Monitor.Log($"Could not patch methods - Please Gift Me In Person probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
+			}
+
+			worker.Postfix(new[]
+			{
+				new CodeInstruction(OpCodes.Ldarg_1),
+				new CodeInstruction(OpCodes.Ldarg_0),
+				new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(DialogueBox), nameof(DialogueBox.responses))),
+				iLocalInstruction.ToLoadLocal()!,
+				new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(IList<Response>), "get_Item")),
+				new CodeInstruction(OpCodes.Ldarg_0),
+				new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(DialogueBox), nameof(DialogueBox.x))),
+				responseYLocalInstruction.ToLoadLocal()!,
+				new CodeInstruction(OpCodes.Ldarg_0),
+				new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(IClickableMenu), nameof(IClickableMenu.width))),
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PleaseGiftMeInPerson), nameof(DialogueBox_draw_Transpiler_DrawAccessory)))
+			});
+
+			return instructions;
+		}
+
+		private static void DialogueBox_draw_Transpiler_DrawAccessory(SpriteBatch b, Response response, int x, int y, int width)
+		{
+			if (!Instance.Config.ShowCurrentMailModifier)
+				return;
+			if (Game1.currentLocation.lastQuestionKey != "MailServiceMod_GiftShipment")
+				return;
+			if (!Instance.Characters.Value.Any(c => c.name == response.responseKey))
+				return;
+
+			int height = SpriteText.getHeightOfString(response.responseText, width) + 16;
+			float scale = 4f;
+
+			b.Draw(
+				Game1.mouseCursors,
+				new Vector2(x + width - 8, y + height / 2f),
+				CursorsMailSourceRect, Color.White,
+				0f, new Vector2(CursorsMailSourceRect.Width, CursorsMailSourceRect.Height / 2f), scale,
+				SpriteEffects.None, 1f
+			);
+
+			Texture2D tasteTexture;
+			Rectangle tasteSourceRect;
+			switch (Instance.GetGiftTasteModifier(Game1.player, response.responseKey, GiftMethod.ByMail))
+			{
+				case GiftTaste.Love:
+					tasteTexture = Instance.EmojisTexture;
+					tasteSourceRect = EmojisLoveSourceRect;
+					break;
+				case GiftTaste.Like:
+					tasteTexture = Instance.EmojisTexture;
+					tasteSourceRect = EmojisLikeSourceRect;
+					break;
+				case GiftTaste.Dislike:
+					tasteTexture = Instance.EmojisTexture;
+					tasteSourceRect = EmojisDislikeSourceRect;
+					break;
+				case GiftTaste.Hate:
+					tasteTexture = Instance.EmojisTexture;
+					tasteSourceRect = EmojisHateSourceRect;
+					break;
+				default:
+					return;
+			}
+
+			b.Draw(
+				tasteTexture,
+				new Vector2(x + width - 8, y + height / 2f - (CursorsMailSourceRect.Height - 3) * scale),
+				tasteSourceRect, Color.White,
+				0f, new Vector2(tasteSourceRect.Width, 0f), scale,
+				SpriteEffects.None, 1f
+			);
 		}
 	}
 }

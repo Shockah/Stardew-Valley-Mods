@@ -41,12 +41,6 @@
 
 	"config.spouse.name": "Spouse",
 
-	"mailGift.loveTier": "{{Name}} :D",
-	"mailGift.likeTier": "{{Name}} :)",
-	"mailGift.neutralTier": "{{Name}}",
-	"mailGift.dislikeTier": "{{Name}} :|",
-	"mailGift.hateTier": "{{Name}} :/",
-
 	"inPersonGift.question.dislike": "{{Name}} will dislike receiving a gift in person. Gift anyway?",
 	"inPersonGift.question.hate": "{{Name}} will hate receiving a gift in person. Gift anyway?",
 
