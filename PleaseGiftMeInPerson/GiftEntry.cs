@@ -5,6 +5,22 @@ using System;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
+	public enum GiftPreference
+	{
+		Hates = -5,
+		DislikesAndHatesFrequent = -4,
+		HatesFrequent = -3,
+		Dislikes = -2,
+		DislikesFrequent = -1,
+		Neutral = 0,
+		LikesInfrequentButDislikesFrequent = 1,
+		LikesInfrequent = 2,
+		Likes = 3,
+		LovesInfrequent = 4,
+		LikesAndLovesInfrequent = 5,
+		Loves = 6
+	}
+
 	internal enum GiftMethod { InPerson, ByMail }
 	
 	internal struct GiftEntry: IEquatable<GiftEntry>

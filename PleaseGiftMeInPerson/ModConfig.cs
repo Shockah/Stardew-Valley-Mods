@@ -12,36 +12,40 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			public int GiftsToRemember { get; set; }
 			public int DaysToRemember { get; set; }
-			public int MailsUntilDislike { get; set; }
-			public int MailsUntilHate { get; set; }
-			public int MailsUntilLike { get; set; }
-			public int MailsUntilLove { get; set; }
+			public GiftPreference InPersonPreference { get; set; }
+			public GiftPreference ByMailPreference { get; set; }
+			public float InfrequentGiftPercent { get; set; }
+			public float FrequentGiftPercent { get; set; }
+			public bool EnableModOverrides { get; set; }
 
 			[JsonConstructor]
 			public Entry(
 				int giftsToRemember,
 				int daysToRemember,
-				int mailsUntilDislike,
-				int mailsUntilHate,
-				int mailsUntilLike = -1,
-				int mailsUntilLove = -1
+				GiftPreference inPersonPreference,
+				GiftPreference byMailPreference,
+				float infrequentGiftPercent,
+				float frequentGiftPercent,
+				bool enableModOverrides = true
 			)
 			{
 				this.GiftsToRemember = giftsToRemember;
 				this.DaysToRemember = daysToRemember;
-				this.MailsUntilDislike = mailsUntilDislike;
-				this.MailsUntilHate = mailsUntilHate;
-				this.MailsUntilLike = mailsUntilLike;
-				this.MailsUntilLove = mailsUntilLove;
+				this.InPersonPreference = inPersonPreference;
+				this.ByMailPreference = byMailPreference;
+				this.InfrequentGiftPercent = infrequentGiftPercent;
+				this.FrequentGiftPercent = frequentGiftPercent;
+				this.EnableModOverrides = enableModOverrides;
 			}
 
 			public Entry(Entry other): this(
 				giftsToRemember: other.GiftsToRemember,
 				daysToRemember: other.DaysToRemember,
-				mailsUntilDislike: other.MailsUntilDislike,
-				mailsUntilHate: other.MailsUntilHate,
-				mailsUntilLike: other.MailsUntilLike,
-				mailsUntilLove: other.MailsUntilLove
+				inPersonPreference: other.InPersonPreference,
+				byMailPreference: other.ByMailPreference,
+				infrequentGiftPercent: other.InfrequentGiftPercent,
+				frequentGiftPercent: other.FrequentGiftPercent,
+				enableModOverrides: other.EnableModOverrides
 			)
 			{
 			}
@@ -50,26 +54,31 @@ namespace Shockah.PleaseGiftMeInPerson
 			{
 				this.GiftsToRemember = other.GiftsToRemember;
 				this.DaysToRemember = other.DaysToRemember;
-				this.MailsUntilDislike = other.MailsUntilDislike;
-				this.MailsUntilHate = other.MailsUntilHate;
-				this.MailsUntilLike = other.MailsUntilLike;
-				this.MailsUntilLove = other.MailsUntilLove;
+				this.InPersonPreference = other.InPersonPreference;
+				this.ByMailPreference = other.ByMailPreference;
+				this.InfrequentGiftPercent = other.InfrequentGiftPercent;
+				this.FrequentGiftPercent = other.FrequentGiftPercent;
+				this.EnableModOverrides = other.EnableModOverrides;
 			}
+
+			public bool HasSameValues(Entry other)
+				=> GiftsToRemember == other.GiftsToRemember
+				&& DaysToRemember == other.DaysToRemember
+				&& InPersonPreference == other.InPersonPreference
+				&& ByMailPreference == other.ByMailPreference
+				&& InfrequentGiftPercent == other.InfrequentGiftPercent
+				&& FrequentGiftPercent == other.FrequentGiftPercent;
 
 			public bool Equals(Entry? other)
 				=> other is not null
-				&& GiftsToRemember == other.GiftsToRemember
-				&& DaysToRemember == other.DaysToRemember
-				&& MailsUntilDislike == other.MailsUntilDislike
-				&& MailsUntilHate == other.MailsUntilHate
-				&& MailsUntilLike == other.MailsUntilLike
-				&& MailsUntilLove == other.MailsUntilLove;
+				&& HasSameValues(other)
+				&& EnableModOverrides == other.EnableModOverrides;
 
 			public override bool Equals(object? obj)
 				=> obj is Entry entry && Equals(entry);
 
 			public override int GetHashCode()
-				=> (GiftsToRemember, DaysToRemember, MailsUntilDislike, MailsUntilHate, MailsUntilLike, MailsUntilLove).GetHashCode();
+				=> (GiftsToRemember, DaysToRemember, InPersonPreference, ByMailPreference, InfrequentGiftPercent, FrequentGiftPercent, EnableModOverrides).GetHashCode();
 
 			public static bool operator ==(Entry lhs, Entry rhs)
 				=> lhs.Equals(rhs);
@@ -81,8 +90,10 @@ namespace Shockah.PleaseGiftMeInPerson
 		public Entry Default { get; set; } = new(
 			giftsToRemember: 5,
 			daysToRemember: 14,
-			mailsUntilDislike: 2,
-			mailsUntilHate: 3
+			inPersonPreference: GiftPreference.Neutral,
+			byMailPreference: GiftPreference.HatesFrequent,
+			infrequentGiftPercent: 0.33f,
+			frequentGiftPercent: 0.66f
 		);
 
 		public IDictionary<string, Entry> PerNPC { get; set; } = new Dictionary<string, Entry>();

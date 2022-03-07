@@ -20,6 +20,8 @@ namespace Shockah.PleaseGiftMeInPerson
 	public class PleaseGiftMeInPerson: Mod
 	{
 		private static readonly string MailServicesMod_GiftShipmentController_QualifiedName = "MailServicesMod.GiftShipmentController, MailServicesMod";
+
+		internal static readonly string OverrideAssetPath = "Data/PleaseGiftMeInPerson";
 		private static readonly string GiftEntriesSaveDataKey = "GiftEntries";
 		private static readonly string GiftEntriesMessageType = "GiftEntries";
 
@@ -44,6 +46,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
 			LastDefaultConfigEntry = new(Config.Default);
+			Helper.Content.AssetLoaders.Add(new OverrideAssetLoader());
+			Helper.Content.AssetEditors.Add(new OverrideAssetEditor());
 
 			Characters = new(() =>
 			{
@@ -209,18 +213,34 @@ namespace Shockah.PleaseGiftMeInPerson
 				}
 			);
 
+			helper.AddSectionTitle("config.section.behavior");
+			helper.AddBoolOption("config.enableNpcOverrides", () => Config.Default.EnableModOverrides);
+
 			helper.AddSectionTitle("config.section.appearance");
 			helper.AddBoolOption("config.showCurrentMailModifier", () => Config.ShowCurrentMailModifier);
 
 			void SetupConfigEntryMenu(Func<ModConfig.Entry> entry)
 			{
+				helper.AddSectionTitle("config.section.npcPreferences");
+				helper.AddEnumOption(
+					keyPrefix: "config.inPersonPreference",
+					valuePrefix: "config.giftPreference",
+					getValue: () => entry().InPersonPreference,
+					setValue: v => entry().InPersonPreference = v
+				);
+				helper.AddEnumOption(
+					keyPrefix: "config.byMailPreference",
+					valuePrefix: "config.giftPreference",
+					getValue: () => entry().ByMailPreference,
+					setValue: v => entry().ByMailPreference = v
+				);
+				helper.AddNumberOption("config.infrequentGiftPercent", () => entry().InfrequentGiftPercent, v => entry().InfrequentGiftPercent = v, min: 0f, max: 1f, interval: 0.01f);
+				helper.AddNumberOption("config.frequentGiftPercent", () => entry().FrequentGiftPercent, v => entry().FrequentGiftPercent = v, min: 0f, max: 1f, interval: 0.01f);
+
 				helper.AddSectionTitle("config.section.npc");
+				helper.AddBoolOption("config.enableModOverrides", () => entry().EnableModOverrides, v => entry().EnableModOverrides = v);
 				helper.AddNumberOption("config.giftsToRemember", () => entry().GiftsToRemember, v => entry().GiftsToRemember = v, min: 0);
 				helper.AddNumberOption("config.daysToRemember", () => entry().DaysToRemember, v => entry().DaysToRemember = v, min: 0);
-				helper.AddNumberOption("config.mailsUntilDislike", () => entry().MailsUntilDislike, v => entry().MailsUntilDislike = v, min: -1);
-				helper.AddNumberOption("config.mailsUntilHate", () => entry().MailsUntilHate, v => entry().MailsUntilHate = v, min: -1);
-				helper.AddNumberOption("config.mailsUntilLike", () => entry().MailsUntilLike, v => entry().MailsUntilLike = v, min: -1);
-				helper.AddNumberOption("config.mailsUntilLove", () => entry().MailsUntilLove, v => entry().MailsUntilLove = v, min: -1);
 			}
 
 			SetupConfigEntryMenu(() => Config.Default);
@@ -315,19 +335,97 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
-		private GiftTaste GetMailGiftTasteModifier(Farmer player, string npcName)
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0018:Inline variable declaration", Justification = "Better semi-repeated code")]
+		private GiftTaste GetGiftTasteModifier(Farmer player, string npcName, GiftMethod method)
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
 			var configEntry = Config.GetForNPC(npcName);
-			(GiftTaste taste, int mails)[] sorted = new[]
+			if (configEntry.EnableModOverrides && configEntry.HasSameValues(LastDefaultConfigEntry))
 			{
-				(taste: GiftTaste.Hate, mails: configEntry.MailsUntilHate),
-				(taste: GiftTaste.Dislike, mails: configEntry.MailsUntilDislike),
-				(taste: GiftTaste.Like, mails: configEntry.MailsUntilLike),
-				(taste: GiftTaste.Love, mails: configEntry.MailsUntilLove)
-			}.Where(e => e.mails >= 0).OrderBy(e => e.mails).ToArray();
-			return sorted.LastOrNull(e => e.mails <= viaMail)?.taste ?? GiftTaste.Neutral;
+				var asset = Game1.content.Load<Dictionary<string, string>>(OverrideAssetPath);
+				if (asset.TryGetValue(npcName, out var line))
+				{
+					var split = line.Split('/');
+					configEntry = new(configEntry);
+					GiftPreference parsedGiftPreference;
+					float parsedFloat;
+
+					if (split.Length > 0 && Enum.TryParse(split[0].Trim(), true, out parsedGiftPreference))
+						configEntry.InPersonPreference = parsedGiftPreference;
+					if (split.Length > 1 && Enum.TryParse(split[1].Trim(), true, out parsedGiftPreference))
+						configEntry.ByMailPreference = parsedGiftPreference;
+					if (split.Length > 2 && float.TryParse(split[2].Trim(), out parsedFloat))
+						configEntry.InfrequentGiftPercent = parsedFloat;
+					if (split.Length > 3 && float.TryParse(split[3].Trim(), out parsedFloat))
+						configEntry.FrequentGiftPercent = parsedFloat;
+				}
+			}
+
+			float sameMethodPercent = 1f * giftEntries.Count(e => e.GiftMethod == method) / configEntry.GiftsToRemember;
+			var preference = method switch
+			{
+				GiftMethod.InPerson => configEntry.InPersonPreference,
+				GiftMethod.ByMail => configEntry.ByMailPreference,
+				_ => throw new ArgumentException($"{nameof(GiftMethod)} has an invalid value."),
+			};
+
+			switch (preference)
+			{
+				case GiftPreference.Hates:
+					return GiftTaste.Hate;
+				case GiftPreference.HatesFrequent:
+					if (sameMethodPercent >= configEntry.FrequentGiftPercent)
+						return GiftTaste.Hate;
+					else if (sameMethodPercent >= configEntry.InfrequentGiftPercent)
+						return GiftTaste.Dislike;
+					else
+						return GiftTaste.Neutral;
+				case GiftPreference.DislikesAndHatesFrequent:
+					if (sameMethodPercent >= configEntry.FrequentGiftPercent)
+						return GiftTaste.Hate;
+					else
+						return GiftTaste.Dislike;
+				case GiftPreference.Dislikes:
+					return GiftTaste.Dislike;
+				case GiftPreference.DislikesFrequent:
+					if (sameMethodPercent >= configEntry.FrequentGiftPercent)
+						return GiftTaste.Dislike;
+					else
+						return GiftTaste.Neutral;
+				case GiftPreference.Neutral:
+					return GiftTaste.Neutral;
+				case GiftPreference.LikesInfrequentButDislikesFrequent:
+					if (sameMethodPercent >= configEntry.FrequentGiftPercent)
+						return GiftTaste.Dislike;
+					else if (sameMethodPercent >= configEntry.InfrequentGiftPercent)
+						return GiftTaste.Neutral;
+					else
+						return GiftTaste.Like;
+				case GiftPreference.LikesInfrequent:
+					if (sameMethodPercent < configEntry.InfrequentGiftPercent)
+						return GiftTaste.Like;
+					else
+						return GiftTaste.Neutral;
+				case GiftPreference.Likes:
+					return GiftTaste.Like;
+				case GiftPreference.LovesInfrequent:
+					if (sameMethodPercent < configEntry.InfrequentGiftPercent)
+						return GiftTaste.Love;
+					else if (sameMethodPercent < configEntry.FrequentGiftPercent)
+						return GiftTaste.Like;
+					else
+						return GiftTaste.Neutral;
+				case GiftPreference.LikesAndLovesInfrequent:
+					if (sameMethodPercent < configEntry.InfrequentGiftPercent)
+						return GiftTaste.Love;
+					else
+						return GiftTaste.Like;
+				case GiftPreference.Loves:
+					return GiftTaste.Love;
+				default:
+					throw new ArgumentException($"{nameof(GiftPreference)} has an invalid value.");
+			}
 		}
 
 		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
@@ -399,7 +497,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			if (!Instance.Config.ShowCurrentMailModifier)
 				return displayName;
 			
-			var mailGiftTasteModifier = Instance.GetMailGiftTasteModifier(Game1.player, npcName);
+			var mailGiftTasteModifier = Instance.GetGiftTasteModifier(Game1.player, npcName, GiftMethod.ByMail);
 			var translationKey = mailGiftTasteModifier switch
 			{
 				GiftTaste.Hate => "mailGift.hateTier",
@@ -430,19 +528,9 @@ namespace Shockah.PleaseGiftMeInPerson
 				return;
 			
 			Instance.OriginalGiftTaste = GiftTasteExt.From(__result);
-			switch (Instance.CurrentGiftMethod.Value)
-			{
-				case GiftMethod.InPerson:
-					break;
-				case GiftMethod.ByMail:
-					__result = Instance.OriginalGiftTaste
-						.GetModified((int)Instance.GetMailGiftTasteModifier(Instance.CurrentGiftingPlayer, __instance.Name))
-						.GetStardewValue();
-					break;
-				default:
-					throw new InvalidOperationException($"{nameof(GiftMethod)} has an invalid value.");
-			}
-			
+			__result = Instance.OriginalGiftTaste
+				.GetModified((int)Instance.GetGiftTasteModifier(Instance.CurrentGiftingPlayer, __instance.Name, Instance.CurrentGiftMethod.Value))
+				.GetStardewValue();
 			Instance.ModifiedGiftTaste = GiftTasteExt.From(__result);
 		}
 
