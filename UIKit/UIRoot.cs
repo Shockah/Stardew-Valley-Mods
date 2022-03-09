@@ -49,6 +49,7 @@ namespace Shockah.UIKit
 				ConstraintSolver.TryAddConstraint(BottomConstraint);
 				LastY2 = Y2;
 			}
+
 			ConstraintSolver.Solve();
 
 			foreach (var subview in Subviews)

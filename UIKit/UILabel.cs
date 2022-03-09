@@ -1,10 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 
 namespace Shockah.UIKit
 {
-	public abstract class UILabel<FontType>: UIView where FontType: class, IUIFont
+	public abstract class UILabel<FontType>: UIView.Drawable where FontType: class, IUIFont
 	{
 		public string Text
 		{
@@ -64,7 +63,7 @@ namespace Shockah.UIKit
 			UpdateIntrinsicSize();
 		}
 
-		public sealed override void DrawSelf(SpriteBatch b)
+		public sealed override void DrawSelf(RenderContext context)
 		{
 			var viewWidth = Width;
 			var contentWidth = IntrinsicWidth!.Value;
@@ -76,10 +75,10 @@ namespace Shockah.UIKit
 				TextAlignment.Right => leftOverWidth,
 				_ => throw new InvalidOperationException($"{nameof(TextAlignment)} has an invalid value."),
 			};
-			DrawSelf(b, AbsoluteTopLeft + new Vector2(offset, 0f));
+			DrawSelf(context, offset);
 		}
 
-		protected abstract void DrawSelf(SpriteBatch b, Vector2 finalPosition);
+		protected abstract void DrawSelf(RenderContext context, float xOffset);
 
 		private void UpdateIntrinsicSize()
 		{
@@ -112,9 +111,9 @@ namespace Shockah.UIKit
 		{
 		}
 
-		protected override void DrawSelf(SpriteBatch b, Vector2 finalPosition)
+		protected override void DrawSelf(RenderContext context, float xOffset)
 		{
-			Font.Draw(b, finalPosition, Text, Color);
+			Font.Draw(context.SpriteBatch, new(context.X + xOffset, context.Y), Size, Text, Color);
 		}
 	}
 
@@ -124,9 +123,9 @@ namespace Shockah.UIKit
 		{
 		}
 
-		protected override void DrawSelf(SpriteBatch b, Vector2 finalPosition)
+		protected override void DrawSelf(RenderContext context, float xOffset)
 		{
-			Font.Draw(b, finalPosition, Text);
+			Font.Draw(context.SpriteBatch, new(context.X + xOffset, context.Y), Size, Text);
 		}
 	}
 }
