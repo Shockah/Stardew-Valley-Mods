@@ -36,10 +36,7 @@ namespace Shockah.UIKit
 				stackView.LeftAnchor.ConstraintTo(Root).Activate();
 				stackView.BottomAnchor.ConstraintTo(Root).Activate();
 
-				background.TopAnchor.ConstraintTo(stackView, 16).Activate();
-				background.BottomAnchor.ConstraintTo(stackView, -16).Activate();
-				background.LeftAnchor.ConstraintTo(stackView, 16).Activate();
-				background.RightAnchor.ConstraintTo(stackView, -16).Activate();
+				background.EdgeConstraintsTo(stackView, 16).Activate();
 
 				for (int i = 0; i < 3; i++)
 				{
