@@ -1,0 +1,10 @@
+﻿{
+    "Name": "UIKit",
+    "Author": "Shockah",
+    "Version": "0.0.1",
+    "Description": "A UI kit based on the Cassowary incremental constraint solver.",
+    "UniqueID": "Shockah.UIKit",
+    "EntryDll": "UIKit.dll",
+    "MinimumApiVersion": "3.0.0",
+    "UpdateKeys": [ "Nexus:0" ]
+}
