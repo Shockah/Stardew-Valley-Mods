@@ -7,18 +7,18 @@
 
 		public interface Horizontal: IConstrainable
 		{
-			public UITypedAnchorWithOpposite<Horizontal> LeftAnchor { get; }
-			public UITypedAnchorWithOpposite<Horizontal> RightAnchor { get; }
-			public UITypedAnchor<Horizontal> WidthAnchor { get; }
-			public UITypedAnchor<Horizontal> CenterXAnchor { get; }
+			public IUITypedAnchorWithOpposite<Horizontal> LeftAnchor { get; }
+			public IUITypedAnchorWithOpposite<Horizontal> RightAnchor { get; }
+			public IUITypedAnchor<Horizontal> WidthAnchor { get; }
+			public IUITypedAnchor<Horizontal> CenterXAnchor { get; }
 		}
 
 		public interface Vertical: IConstrainable
 		{
-			public UITypedAnchorWithOpposite<Vertical> TopAnchor { get; }
-			public UITypedAnchorWithOpposite<Vertical> BottomAnchor { get; }
-			public UITypedAnchor<Vertical> HeightAnchor { get; }
-			public UITypedAnchor<Vertical> CenterYAnchor { get; }
+			public IUITypedAnchorWithOpposite<Vertical> TopAnchor { get; }
+			public IUITypedAnchorWithOpposite<Vertical> BottomAnchor { get; }
+			public IUITypedAnchor<Vertical> HeightAnchor { get; }
+			public IUITypedAnchor<Vertical> CenterYAnchor { get; }
 		}
 	}
 }

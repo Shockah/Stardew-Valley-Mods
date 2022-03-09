@@ -1,14 +1,18 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.CommonModCode;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using System;
+using System.Linq;
 
 namespace Shockah.UIKit
 {
 	public class UIKit: Mod
 	{
 		private readonly UIRoot Root = new();
+		private UISurfaceView surfaceView = null!;
 
 		public override void Entry(IModHelper helper)
 		{
@@ -18,32 +22,55 @@ namespace Shockah.UIKit
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
 			{
-				var label = new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.");
-				Root.AddSubview(label);
-				label.LeftAnchor.ConstraintTo(Root).Activate();
-				label.TopAnchor.ConstraintTo(Root).Activate();
-			}
+				parent.AddSubview(self);
+				self.LeftAnchor.MakeConstraintTo(parent).Activate();
+				self.TopAnchor.MakeConstraintTo(parent).Activate();
+			});
 
+			surfaceView = new UISurfaceView().With(Root, (self, parent) =>
 			{
-				var background = new UIRectangle();
-				background.Color = Color.DarkSalmon * 0.5f;
-				Root.AddSubview(background);
-
-				var stackView = new UIStackView(Orientation.Vertical);
-				stackView.Spacing = 16;
-				Root.AddSubview(stackView);
-				stackView.LeftAnchor.ConstraintTo(Root).Activate();
-				stackView.BottomAnchor.ConstraintTo(Root).Activate();
-
-				background.EdgeConstraintsTo(stackView, 16).Activate();
-
-				for (int i = 0; i < 3; i++)
+				new UIQuad().With(self, (self, parent) =>
 				{
-					var label = new UIColorableLabel(new UIDialogueFont(2f), $"Label #{i + 1}");
-					stackView.AddArrangedSubview(label);
-				}
-			}
+					self.Color = Color.DarkSalmon * 0.5f;
+
+					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
+					{
+						self.ContentInsets = new(16);
+						self.Alignment = UIStackViewAlignment.Center;
+
+						for (int i = 0; i < 4; i++)
+						{
+							new UIColorableLabel(new UIDialogueFont()).With(self, (self, parent) =>
+							{
+								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";
+								//self.TextAlignment = TextAlignment.Center;
+
+								parent.AddArrangedSubview(self);
+							});
+
+							new UIUncolorableLabel(new UISpriteTextFont(color: UISpriteTextFontColor.White)).With(self, (self, parent) =>
+							{
+								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";
+								//self.TextAlignment = TextAlignment.Center;
+
+								parent.AddArrangedSubview(self);
+							});
+						}
+
+						parent.AddSubview(self);
+						self.MakeEdgeConstraintsToSuperview().Activate();
+					});
+
+					parent.AddSubview(self);
+					self.MakeEdgeConstraintsToSuperview().Activate();
+				});
+
+				parent.AddSubview(self);
+				self.LeftAnchor.MakeConstraintTo(parent, 16).Activate();
+				self.BottomAnchor.MakeConstraintTo(parent, -16).Activate();
+			});
 		}
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
@@ -53,9 +80,10 @@ namespace Shockah.UIKit
 			Root.Y1 = 0f;
 			Root.Width = viewportBounds.Size.X;
 			Root.Height = viewportBounds.Size.Y;
-
 			Root.LayoutIfNeeded();
-			Root.Draw(e.SpriteBatch);
+
+			surfaceView.Color = Color.White * (0.8f + 0.2f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
+			Root.DrawInParentContext(new(e.SpriteBatch));
 		}
 	}
 }

@@ -1,6 +1,5 @@
 ﻿using Cassowary;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using Shockah.UIKit.Geometry;
 using System;
 using System.Collections.Generic;
 
@@ -86,26 +85,26 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public Vector2 TopLeft => new(X1, Y1);
-		public Vector2 TopRight => new(X2, Y1);
-		public Vector2 BottomLeft => new(X1, Y2);
-		public Vector2 BottomRight => new(X2, Y2);
+		public UIVector2 TopLeft => new(X1, Y1);
+		public UIVector2 TopRight => new(X2, Y1);
+		public UIVector2 BottomLeft => new(X1, Y2);
+		public UIVector2 BottomRight => new(X2, Y2);
 
-		public Vector2 AbsoluteTopLeft => new(AbsoluteX1, AbsoluteY1);
-		public Vector2 AbsoluteTopRight => new(AbsoluteX2, AbsoluteY1);
-		public Vector2 AbsoluteBottomLeft => new(AbsoluteX1, AbsoluteY2);
-		public Vector2 AbsoluteBottomRight => new(AbsoluteX2, AbsoluteY2);
+		public UIVector2 AbsoluteTopLeft => new(AbsoluteX1, AbsoluteY1);
+		public UIVector2 AbsoluteTopRight => new(AbsoluteX2, AbsoluteY1);
+		public UIVector2 AbsoluteBottomLeft => new(AbsoluteX1, AbsoluteY2);
+		public UIVector2 AbsoluteBottomRight => new(AbsoluteX2, AbsoluteY2);
 
-		public Vector2 Size => new(Width, Height);
+		public UIVector2 Size => new(Width, Height);
 
-		public UITypedAnchorWithOpposite<IConstrainable.Horizontal> LeftAnchor => LazyLeft.Value;
-		public UITypedAnchorWithOpposite<IConstrainable.Horizontal> RightAnchor => LazyRight.Value;
-		public UITypedAnchorWithOpposite<IConstrainable.Vertical> TopAnchor => LazyTop.Value;
-		public UITypedAnchorWithOpposite<IConstrainable.Vertical> BottomAnchor => LazyBottom.Value;
-		public UITypedAnchor<IConstrainable.Horizontal> WidthAnchor => LazyWidth.Value;
-		public UITypedAnchor<IConstrainable.Vertical> HeightAnchor => LazyHeight.Value;
-		public UITypedAnchor<IConstrainable.Horizontal> CenterXAnchor => LazyCenterX.Value;
-		public UITypedAnchor<IConstrainable.Vertical> CenterYAnchor => LazyCenterY.Value;
+		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> LeftAnchor => LazyLeft.Value;
+		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> RightAnchor => LazyRight.Value;
+		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> TopAnchor => LazyTop.Value;
+		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> BottomAnchor => LazyBottom.Value;
+		public IUITypedAnchor<IConstrainable.Horizontal> WidthAnchor => LazyWidth.Value;
+		public IUITypedAnchor<IConstrainable.Vertical> HeightAnchor => LazyHeight.Value;
+		public IUITypedAnchor<IConstrainable.Horizontal> CenterXAnchor => LazyCenterX.Value;
+		public IUITypedAnchor<IConstrainable.Vertical> CenterYAnchor => LazyCenterY.Value;
 
 		public float? IntrinsicWidth
 		{
@@ -147,7 +146,7 @@ namespace Shockah.UIKit
 		public event ParentChildEvent<UIView, UIView>? AddedSubview;
 		public event ParentChildEvent<UIView, UIView>? RemovedSubview;
 		public event OwnerValueChangeEvent<UIView, (float? X, float? Y)>? IntrinsicSizeChanged;
-		public event OwnerValueChangeEvent<UIView, (float X, float Y)>? SizeChanged;
+		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintRemoved;
 
@@ -206,8 +205,8 @@ namespace Shockah.UIKit
 			LazyBottom = new(() => new(this, new(BottomVariable.Value), "Bottom", c => c.BottomAnchor, c => c.TopAnchor));
 			LazyWidth = new(() => new(this, new ClLinearExpression(RightVariable.Value).Minus(LeftVariable.Value), "Width", c => c.WidthAnchor));
 			LazyHeight = new(() => new(this, new ClLinearExpression(BottomVariable.Value).Minus(TopVariable.Value), "Height", c => c.HeightAnchor));
-			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(WidthAnchor.Expression.Times(0.5)), "CenterX", c => c.CenterXAnchor));
-			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(HeightAnchor.Expression.Times(0.5)), "CenterY", c => c.CenterYAnchor));
+			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(((IUIAnchor.Internal)WidthAnchor).Expression.Times(0.5)), "CenterX", c => c.CenterXAnchor));
+			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(((IUIAnchor.Internal)HeightAnchor).Expression.Times(0.5)), "CenterY", c => c.CenterYAnchor));
 
 			RightAfterLeftConstraint = new(() => new ClLinearInequality(RightVariable.Value, Cl.Operator.GreaterThanOrEqualTo, LeftVariable.Value));
 			BottomAfterTopConstraint = new(() => new ClLinearInequality(BottomVariable.Value, Cl.Operator.GreaterThanOrEqualTo, TopVariable.Value));
@@ -247,9 +246,6 @@ namespace Shockah.UIKit
 			if (Root is null)
 				return;
 
-			foreach (var subview in Subviews)
-				subview.LayoutIfNeeded();
-
 			var oldWidth = Width;
 			var oldHeight = Height;
 			Root.ConstraintSolver.Solve();
@@ -259,24 +255,33 @@ namespace Shockah.UIKit
 			AbsoluteY2 = (float)BottomVariable.Value.Value;
 			if (oldWidth != Width || oldHeight != Height)
 				SizeChanged?.Invoke(this, (oldWidth, oldHeight), (Width, Height));
+
+			foreach (var subview in Subviews)
+				subview.LayoutIfNeeded();
 		}
 
-		public void Draw(SpriteBatch b)
+		public void DrawInParentContext(RenderContext context)
 		{
 			if (!IsVisible)
 				return;
-			DrawSelf(b);
-			DrawChildren(b);
+
+			var newContext = context.GetTranslated(X1, Y1);
+			DrawInSelfContext(newContext);
 		}
 
-		public virtual void DrawSelf(SpriteBatch b)
+		public void DrawInSelfContext(RenderContext context)
 		{
+			if (!IsVisible)
+				return;
+
+			(this as Drawable)?.DrawSelf(context);
+			DrawChildren(context);
 		}
 
-		public virtual void DrawChildren(SpriteBatch b)
+		public virtual void DrawChildren(RenderContext context)
 		{
 			foreach (var subview in Subviews)
-				subview.Draw(b);
+				subview.DrawInParentContext(context);
 		}
 
 		internal void AddConstraint(UILayoutConstraint constraint)
@@ -331,13 +336,13 @@ namespace Shockah.UIKit
 			if (intrinsicSize.X is not null)
 			{
 				newConstraints.Add(new ClLinearInequality(
-					WidthAnchor.Expression,
+					((IUIAnchor.Internal)WidthAnchor).Expression,
 					Cl.Operator.LessThanOrEqualTo,
 					new ClLinearExpression(intrinsicSize.X.Value),
 					HorizontalContentHuggingStrength)
 				);
 				newConstraints.Add(new ClLinearInequality(
-					WidthAnchor.Expression,
+					((IUIAnchor.Internal)WidthAnchor).Expression,
 					Cl.Operator.GreaterThanOrEqualTo,
 					new ClLinearExpression(intrinsicSize.X.Value),
 					HorizontalCompressionResistanceStrength)
@@ -346,19 +351,24 @@ namespace Shockah.UIKit
 			if (intrinsicSize.Y is not null)
 			{
 				newConstraints.Add(new ClLinearInequality(
-					HeightAnchor.Expression,
+					((IUIAnchor.Internal)HeightAnchor).Expression,
 					Cl.Operator.LessThanOrEqualTo,
 					new ClLinearExpression(intrinsicSize.Y.Value),
 					VerticalContentHuggingStrength)
 				);
 				newConstraints.Add(new ClLinearInequality(
-					HeightAnchor.Expression,
+					((IUIAnchor.Internal)HeightAnchor).Expression,
 					Cl.Operator.GreaterThanOrEqualTo,
 					new ClLinearExpression(intrinsicSize.Y.Value),
 					VerticalCompressionResistanceStrength)
 				);
 			}
 			IntrinsicSizeConstraints = newConstraints;
+		}
+
+		public abstract class Drawable: UIView
+		{
+			public abstract void DrawSelf(RenderContext context);
 		}
 	}
 }

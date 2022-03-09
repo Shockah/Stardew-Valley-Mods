@@ -3,16 +3,29 @@ using System;
 
 namespace Shockah.UIKit
 {
-	public class UIAnchor
+	public interface IUIAnchor
+	{
+		IConstrainable Owner { get; }
+
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interface")]
+		internal interface Internal: IUIAnchor
+		{
+			ClLinearExpression Expression { get; }
+		}
+	}
+
+	public class UIAnchor: IUIAnchor.Internal
 	{
 		public IConstrainable Owner { get; private set; }
-		internal ClLinearExpression Expression { get; private set; }
+		ClLinearExpression IUIAnchor.Internal.Expression => _expression;
 		private readonly string AnchorName;
+
+		private readonly ClLinearExpression _expression;
 
 		public UIAnchor(IConstrainable owner, ClLinearExpression expression, string anchorName)
 		{
 			this.Owner = owner;
-			this.Expression = expression;
+			this._expression = expression;
 			this.AnchorName = anchorName;
 		}
 
@@ -20,37 +33,50 @@ namespace Shockah.UIKit
 			=> $"{Owner}.{AnchorName}";
 	}
 
-	public class UITypedAnchor<ConstrainableType>: UIAnchor where ConstrainableType : IConstrainable
+	public interface IUITypedAnchor<in ConstrainableType>: IUIAnchor where ConstrainableType : IConstrainable
 	{
-		internal Func<ConstrainableType, UITypedAnchor<ConstrainableType>> AnchorFunction { get; private set; }
+		IUITypedAnchor<ConstrainableType> GetSameAnchorInConstrainable(ConstrainableType constrainable);
+	}
+
+	public class UITypedAnchor<ConstrainableType>: UIAnchor, IUITypedAnchor<ConstrainableType> where ConstrainableType : IConstrainable
+	{
+		private Func<ConstrainableType, IUITypedAnchor<ConstrainableType>> AnchorFunction { get; }
 
 		public UITypedAnchor(
 			ConstrainableType owner,
 			ClLinearExpression expression,
 			string anchorName,
-			Func<ConstrainableType, UITypedAnchor<ConstrainableType>> anchorFunction
+			Func<ConstrainableType, IUITypedAnchor<ConstrainableType>> anchorFunction
 		) : base(owner, expression, anchorName)
 		{
 			this.AnchorFunction = anchorFunction;
 		}
+
+		public IUITypedAnchor<ConstrainableType> GetSameAnchorInConstrainable(ConstrainableType constrainable)
+			=> AnchorFunction(constrainable);
 	}
 
-	public class UITypedAnchorWithOpposite<ConstrainableType>: UITypedAnchor<ConstrainableType> where ConstrainableType : IConstrainable
+	public interface IUITypedAnchorWithOpposite<in ConstrainableType>: IUITypedAnchor<ConstrainableType> where ConstrainableType : IConstrainable
 	{
-		private Func<ConstrainableType, UITypedAnchorWithOpposite<ConstrainableType>> OppositeAnchorFunction { get; set; }
+		IUITypedAnchor<ConstrainableType> GetOppositeAnchorInConstrainable(ConstrainableType constrainable);
+	}
+
+	public class UITypedAnchorWithOpposite<ConstrainableType>: UITypedAnchor<ConstrainableType>, IUITypedAnchorWithOpposite<ConstrainableType> where ConstrainableType : IConstrainable
+	{
+		private Func<ConstrainableType, IUITypedAnchorWithOpposite<ConstrainableType>> OppositeAnchorFunction { get; }
 
 		public UITypedAnchorWithOpposite(
 			ConstrainableType owner,
 			ClLinearExpression expression,
 			string anchorName,
-			Func<ConstrainableType, UITypedAnchor<ConstrainableType>> anchorFunction,
-			Func<ConstrainableType, UITypedAnchorWithOpposite<ConstrainableType>> oppositeFunction
+			Func<ConstrainableType, IUITypedAnchor<ConstrainableType>> anchorFunction,
+			Func<ConstrainableType, IUITypedAnchorWithOpposite<ConstrainableType>> oppositeFunction
 		) : base(owner, expression, anchorName, anchorFunction)
 		{
 			this.OppositeAnchorFunction = oppositeFunction;
 		}
 
-		public UITypedAnchorWithOpposite<ConstrainableType> GetOpposite(ConstrainableType constrainable)
+		public IUITypedAnchor<ConstrainableType> GetOppositeAnchorInConstrainable(ConstrainableType constrainable)
 			=> OppositeAnchorFunction(constrainable);
 	}
 }

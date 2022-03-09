@@ -28,8 +28,8 @@ namespace Shockah.UIKit
 	
 	public class UILayoutConstraint: IEquatable<UILayoutConstraint>
 	{
-		public UIAnchor Anchor1 { get; }
-		public UIAnchor? Anchor2 { get; }
+		public IUIAnchor Anchor1 { get; }
+		public IUIAnchor? Anchor2 { get; }
 		public float Constant { get; }
 		public float Multiplier { get; }
 		public UILayoutConstraintRelation Relation { get; }
@@ -38,12 +38,12 @@ namespace Shockah.UIKit
 		public bool IsActive { get; private set; } = false;
 		internal readonly Lazy<ClConstraint> CassowaryConstraint;
 
-		public UILayoutConstraint(UIAnchor anchor1, float constant = 0f, float multiplier = 1f, UIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
+		public UILayoutConstraint(IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
 			: this(ClStrength.Required, anchor1, constant, multiplier, anchor2, relation)
 		{
 		}
 
-		public UILayoutConstraint(ClStrength strength, UIAnchor anchor1, float constant = 0f, float multiplier = 1f, UIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
+		public UILayoutConstraint(ClStrength strength, IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
 		{
 			this.Anchor1 = anchor1;
 			this.Constant = constant;
@@ -64,16 +64,26 @@ namespace Shockah.UIKit
 
 		private ClConstraint CreateCassowaryConstraint()
 		{
-			if (Anchor2 is null)
+			var anchor1 = Anchor1 as IUIAnchor.Internal ?? throw new InvalidOperationException();
+			IUIAnchor.Internal? anchor2 = null;
+			if (Anchor2 is not null)
+			{
+				if (Anchor2 is IUIAnchor.Internal @internal)
+					anchor2 = @internal;
+				else
+					throw new InvalidOperationException();
+			}
+
+			if (anchor2 is null)
 			{
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(Anchor1.Expression, new ClLinearExpression(Constant), Strength),
+						new ClLinearEquation(anchor1.Expression, new ClLinearExpression(Constant), Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(Anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(Anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}
@@ -82,11 +92,11 @@ namespace Shockah.UIKit
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(Anchor1.Expression, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearEquation(anchor1.Expression, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(Anchor1.Expression, Cl.Operator.LessThanOrEqualTo, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(Anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}

@@ -5,7 +5,7 @@ using System;
 
 namespace Shockah.UIKit
 {
-	public class UIRectangle: UIView
+	public class UIQuad: UIView.Drawable
 	{
 		private static readonly Lazy<Texture2D> Pixel = new(() =>
 		{
@@ -53,17 +53,27 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public event OwnerValueChangeEvent<UIRectangle, Texture2D?>? TextureChanged;
-		public event OwnerValueChangeEvent<UIRectangle, Rectangle?>? TextureSourceRectChanged;
-		public event OwnerValueChangeEvent<UIRectangle, Color>? ColorChanged;
+		public event OwnerValueChangeEvent<UIQuad, Texture2D?>? TextureChanged;
+		public event OwnerValueChangeEvent<UIQuad, Rectangle?>? TextureSourceRectChanged;
+		public event OwnerValueChangeEvent<UIQuad, Color>? ColorChanged;
 
 		private Texture2D? _texture = null;
 		private Rectangle? _textureSourceRect = null;
 		private Color _color = Color.White;
 
-		public override void DrawSelf(SpriteBatch b)
+		public override void DrawSelf(RenderContext context)
 		{
-			b.Draw(Texture ?? Pixel.Value, AbsoluteTopLeft, TextureSourceRect ?? null, Color, 0f, Vector2.Zero, new Vector2(Width, Height), SpriteEffects.None, 1f);
+			context.SpriteBatch.Draw(
+				texture: Texture ?? Pixel.Value,
+				position: new(context.X, context.Y),
+				sourceRectangle: TextureSourceRect ?? null,
+				color: Color,
+				rotation: 0f,
+				origin: Vector2.Zero,
+				scale: new Vector2(Width, Height),
+				effects: SpriteEffects.None,
+				layerDepth: 0f
+			);
 		}
 	}
 }
