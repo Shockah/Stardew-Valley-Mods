@@ -15,6 +15,15 @@ namespace Shockah.UIKit
 				UILayoutConstraintRelation.LessThanOrEqual => "<=",
 				_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 			};
+
+		public static UILayoutConstraintRelation GetReverse(this UILayoutConstraintRelation self)
+			=> self switch
+			{
+				UILayoutConstraintRelation.Equal => UILayoutConstraintRelation.Equal,
+				UILayoutConstraintRelation.GreaterThanOrEqual => UILayoutConstraintRelation.LessThanOrEqual,
+				UILayoutConstraintRelation.LessThanOrEqual => UILayoutConstraintRelation.GreaterThanOrEqual,
+				_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
+			};
 	}
 	
 	public class UILayoutConstraint: IEquatable<UILayoutConstraint>
