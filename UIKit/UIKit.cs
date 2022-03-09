@@ -1,4 +1,5 @@
-﻿using Shockah.CommonModCode.UI;
+﻿using Microsoft.Xna.Framework;
+using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -25,11 +26,20 @@ namespace Shockah.UIKit
 			}
 
 			{
+				var background = new UIRectangle();
+				background.Color = Color.DarkSalmon * 0.5f;
+				Root.AddSubview(background);
+
 				var stackView = new UIStackView(Orientation.Vertical);
 				stackView.Spacing = 16;
 				Root.AddSubview(stackView);
 				stackView.LeftAnchor.ConstraintTo(Root).Activate();
 				stackView.BottomAnchor.ConstraintTo(Root).Activate();
+
+				background.TopAnchor.ConstraintTo(stackView, 16).Activate();
+				background.BottomAnchor.ConstraintTo(stackView, -16).Activate();
+				background.LeftAnchor.ConstraintTo(stackView, 16).Activate();
+				background.RightAnchor.ConstraintTo(stackView, -16).Activate();
 
 				for (int i = 0; i < 3; i++)
 				{
