@@ -63,7 +63,7 @@ namespace Shockah.UIKit
 
 		public override void DrawSelf(SpriteBatch b)
 		{
-			b.Draw(Texture ?? Pixel.Value, AbsoluteTopLeft, TextureSourceRect ?? null, Color);
+			b.Draw(Texture ?? Pixel.Value, AbsoluteTopLeft, TextureSourceRect ?? null, Color, 0f, Vector2.Zero, new Vector2(Width, Height), SpriteEffects.None, 1f);
 		}
 	}
 }
