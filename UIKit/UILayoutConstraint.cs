@@ -189,7 +189,7 @@ namespace Shockah.UIKit
 			}
 			else
 			{
-				var commonView = UIViewExt.GetCommonSuperview(owner1, owner2);
+				var commonView = UIViews.GetCommonSuperview(owner1, owner2);
 				if (commonView is null)
 					throw new InvalidOperationException($"Cannot add a constraint between unrelated views {owner1} and {owner2}.");
 				return commonView;

@@ -5,7 +5,7 @@ namespace Shockah.UIKit
 {
 	public enum UILayoutConstraintMultipleEdgeRelation { Equal, Inside, Outside }
 
-	public static class IConstrainableExt
+	public static class IConstrainables
 	{
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsTo(
 			this IConstrainable.Horizontal self,

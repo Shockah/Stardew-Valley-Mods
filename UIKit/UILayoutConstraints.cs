@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Shockah.UIKit
 {
-	public static class UILayoutConstraintExt
+	public static class UILayoutConstraints
 	{
 		public static UIView? GetStoringView(this UILayoutConstraint self)
 		{
