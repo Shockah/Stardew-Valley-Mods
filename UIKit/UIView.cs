@@ -1,5 +1,6 @@
 ﻿using Cassowary;
 using Shockah.UIKit.Geometry;
+using Shockah.UIKit.Gesture;
 using System;
 using System.Collections.Generic;
 
@@ -9,7 +10,7 @@ namespace Shockah.UIKit
 	{
 		public UIView ConstrainableOwnerView => this;
 
-		public UIRoot? Root
+		public UIRootView? Root
 		{
 			get => _root;
 			set
@@ -29,6 +30,7 @@ namespace Shockah.UIKit
 		public UIView? Superview { get; private set; }
 		public IReadOnlyList<UIView> Subviews => (IReadOnlyList<UIView>)_subviews;
 		public IReadOnlySet<UILayoutConstraint> Constraints => (IReadOnlySet<UILayoutConstraint>)_constraints;
+		public IReadOnlyList<UIGestureRecognizer> GestureRecognizers => (IReadOnlyList<UIGestureRecognizer>)_gestureRecognizers;
 
 		public float X1 { get; set; } = 0f;
 		public float Y1 { get; set; } = 0f;
@@ -109,9 +111,12 @@ namespace Shockah.UIKit
 		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
 
 		public bool IsVisible { get; set; } = true;
+		public bool ClipsTouchesToBounds { get; set; } = false;
+		public bool IsSelfTouchInteractionEnabled { get; set; } = false;
+		public bool IsSubviewTouchInteractionEnabled { get; set; } = true;
 
-		public event ParentChildEvent<UIRoot, UIView>? AddedToRoot;
-		public event ParentChildEvent<UIRoot, UIView>? RemovedFromRoot;
+		public event ParentChildEvent<UIRootView, UIView>? AddedToRoot;
+		public event ParentChildEvent<UIRootView, UIView>? RemovedFromRoot;
 		public event ParentChildEvent<UIView, UIView>? AddedToSuperview;
 		public event ParentChildEvent<UIView, UIView>? RemovedFromSuperview;
 		public event ParentChildEvent<UIView, UIView>? AddedSubview;
@@ -123,11 +128,12 @@ namespace Shockah.UIKit
 
 		internal readonly ISet<UILayoutConstraint> _heldConstraints = new HashSet<UILayoutConstraint>();
 
-		private UIRoot? _root;
+		private UIRootView? _root;
 		private readonly IList<UIView> _subviews = new List<UIView>();
+		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
+		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private float? _intrinsicWidth;
 		private float? _intrinsicHeight;
-		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
 
 		internal readonly Lazy<ClVariable> LeftVariable;
 		internal readonly Lazy<ClVariable> RightVariable;
@@ -195,7 +201,7 @@ namespace Shockah.UIKit
 			subview.Superview = this;
 			subview.AddedToSuperview?.Invoke(this, subview);
 			AddedSubview?.Invoke(this, subview);
-			subview.Root = Root ?? this as UIRoot;
+			subview.Root = Root ?? this as UIRootView;
 		}
 
 		public void RemoveFromSuperview()
@@ -276,6 +282,83 @@ namespace Shockah.UIKit
 				subview.DrawInParentContext(context);
 		}
 
+		public void AddGestureRecognizer(UIGestureRecognizer recognizer)
+		{
+			if (_gestureRecognizers.Contains(recognizer))
+				return;
+			_gestureRecognizers.Add(recognizer);
+			Root?.GestureRecognizerManager?.AddGestureRecognizer(recognizer);
+		}
+
+		public void RemoveGestureRecognizer(UIGestureRecognizer recognizer)
+		{
+			_gestureRecognizers.Remove(recognizer);
+			Root?.GestureRecognizerManager?.RemoveGestureRecognizer(recognizer);
+		}
+
+		public virtual bool IsTouchInBounds(UITouch touch)
+		{
+			return touch.LastPoint.X < X1 || touch.LastPoint.Y < Y1 || touch.LastPoint.X >= X2 || touch.LastPoint.Y >= Y2;
+		}
+
+		public virtual bool OnTouchDown(UITouch touch, bool isHandled = false)
+		{
+			if (!IsVisible)
+				return isHandled;
+			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
+				return isHandled;
+
+			if (IsSubviewTouchInteractionEnabled)
+			{
+				foreach (var subview in Subviews)
+					isHandled |= subview.OnTouchDown(touch.GetTranslated(X1, Y1));
+			}
+			if (IsSelfTouchInteractionEnabled)
+			{
+				foreach (var recognizer in GestureRecognizers)
+					recognizer.OnTouchDown(touch);
+			}
+			return isHandled;
+		}
+
+		public virtual void OnTouchChanged(UITouch touch)
+		{
+			if (!IsVisible)
+				return;
+			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
+				return;
+
+			if (IsSubviewTouchInteractionEnabled)
+			{
+				foreach (var subview in Subviews)
+					subview.OnTouchChanged(touch.GetTranslated(X1, Y1));
+			}
+			if (IsSelfTouchInteractionEnabled)
+			{
+				foreach (var recognizer in GestureRecognizers)
+					recognizer.OnTouchChanged(touch);
+			}
+		}
+
+		public virtual void OnTouchUp(UITouch touch)
+		{
+			if (!IsVisible)
+				return;
+			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
+				return;
+
+			if (IsSubviewTouchInteractionEnabled)
+			{
+				foreach (var subview in Subviews)
+					subview.OnTouchUp(touch.GetTranslated(X1, Y1));
+			}
+			if (IsSelfTouchInteractionEnabled)
+			{
+				foreach (var recognizer in GestureRecognizers)
+					recognizer.OnTouchUp(touch);
+			}
+		}
+
 		internal void AddConstraint(UILayoutConstraint constraint)
 		{
 			if (_constraints.Add(constraint))
@@ -288,7 +371,7 @@ namespace Shockah.UIKit
 				ConstraintRemoved?.Invoke(this, constraint);
 		}
 
-		private void OnAddedToRoot(UIRoot root)
+		private void OnAddedToRoot(UIRootView root)
 		{
 			root.AddViewVariables(this);
 
@@ -303,7 +386,7 @@ namespace Shockah.UIKit
 				subview.Root = root;
 		}
 
-		private void OnRemovedFromRoot(UIRoot root)
+		private void OnRemovedFromRoot(UIRootView root)
 		{
 			foreach (var constraint in _heldConstraints)
 				root.QueueRemoveConstraint(constraint);

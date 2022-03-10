@@ -1,11 +1,14 @@
 ﻿using Cassowary;
+using Shockah.UIKit.Gesture;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.UIKit
 {
-	public class UIRoot: UIView
+	public class UIRootView: UIView
 	{
+		public IGestureRecognizerManager GestureRecognizerManager { get; private set; }
+
 		public event UnsatisfiableConstraintEvent? UnsatifiableConstraintEvent;
 
 		private ClSimplexSolver ConstraintSolver { get; set; } = new() { AutoSolve = false };
@@ -21,6 +24,11 @@ namespace Shockah.UIKit
 
 		private readonly ISet<UILayoutConstraint> QueuedConstraintsToAdd = new HashSet<UILayoutConstraint>();
 		private readonly ISet<UILayoutConstraint> QueuedConstraintsToRemove = new HashSet<UILayoutConstraint>();
+
+		public UIRootView(IGestureRecognizerManager gestureRecognizerManager)
+		{
+			this.GestureRecognizerManager = gestureRecognizerManager;
+		}
 
 		public void SolveLayout()
 		{
