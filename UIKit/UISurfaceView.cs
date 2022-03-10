@@ -52,15 +52,7 @@ namespace Shockah.UIKit
 			if (RenderTarget is null)
 				UpdateRenderTarget();
 
-			bool wasInProgress = true;
-			try
-			{
-				context.SpriteBatch.End();
-			}
-			catch
-			{
-				wasInProgress = false;
-			}
+			bool wasInProgress = context.SpriteBatch.TryEnd();
 
 			var oldRenderTarget = context.SpriteBatch.GraphicsDevice.GetRenderTargets().FirstOrNull()?.RenderTarget as RenderTarget2D;
 			context.SpriteBatch.GraphicsDevice.SetRenderTarget(RenderTarget);
