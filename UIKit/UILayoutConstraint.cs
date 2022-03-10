@@ -159,7 +159,7 @@ namespace Shockah.UIKit
 				return;
 			IsUnsatisfied = false;
 			var constraintOwningView = GetViewToPutConstraintOn();
-			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.QueueAddConstraint(this);
+			(constraintOwningView.Root ?? constraintOwningView as UIRootView)?.QueueAddConstraint(this);
 			constraintOwningView._heldConstraints.Add(this);
 			Anchor1.Owner.ConstrainableOwnerView.AddConstraint(this);
 			Anchor2?.Owner.ConstrainableOwnerView.AddConstraint(this);
@@ -173,7 +173,7 @@ namespace Shockah.UIKit
 			IsUnsatisfied = false;
 			var constraintOwningView = GetViewToPutConstraintOn();
 			constraintOwningView._heldConstraints.Remove(this);
-			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.QueueRemoveConstraint(this);
+			(constraintOwningView.Root ?? constraintOwningView as UIRootView)?.QueueRemoveConstraint(this);
 			Anchor1.Owner.ConstrainableOwnerView.RemoveConstraint(this);
 			Anchor2?.Owner.ConstrainableOwnerView.RemoveConstraint(this);
 			IsActive = false;
