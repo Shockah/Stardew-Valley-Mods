@@ -23,6 +23,8 @@ namespace Shockah.UIKit
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
+
 			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
 			{
 				parent.AddSubview(self);
@@ -84,6 +86,7 @@ namespace Shockah.UIKit
 			Root.Y1 = 0f;
 			Root.Width = viewportBounds.Size.X;
 			Root.Height = viewportBounds.Size.Y;
+			Root.UpdateConstraints();
 			Root.LayoutIfNeeded();
 
 			surfaceView.Color = Color.White * (0.8f + 0.2f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));

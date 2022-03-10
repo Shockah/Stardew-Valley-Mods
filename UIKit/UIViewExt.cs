@@ -39,10 +39,11 @@ namespace Shockah.UIKit
 			int minCount = Math.Min(aSuperviews.Count, bSuperviews.Count);
 			for (int i = 1; i < minCount; i++)
 			{
-				if (aSuperviews[i] != bSuperviews[i])
-					return aSuperviews[i - 1];
+				if (aSuperviews[i] == bSuperviews[i])
+					continue;
+				return aSuperviews[i - 1];
 			}
-			return aSuperviews[0];
+			return aSuperviews[minCount - 1];
 		}
 	}
 }

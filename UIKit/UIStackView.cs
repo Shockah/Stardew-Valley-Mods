@@ -121,13 +121,6 @@ namespace Shockah.UIKit
 			IsDirty = true;
 		}
 
-		public override void LayoutIfNeeded()
-		{
-			if (IsDirty)
-				UpdateConstraints();
-			base.LayoutIfNeeded();
-		}
-
 		private void OnRemovedSubview(UIView subview)
 		{
 			if (_arrangedSubviews.Contains(subview))
@@ -141,8 +134,11 @@ namespace Shockah.UIKit
 			}
 		}
 
-		private void UpdateConstraints()
+		public override void OnUpdateConstraints()
 		{
+			if (!IsDirty)
+				return;
+
 			foreach (var layoutHelperView in LayoutHelperViews)
 				layoutHelperView.RemoveFromSuperview();
 			LayoutHelperViews.Clear();
