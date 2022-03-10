@@ -2,7 +2,7 @@
 
 namespace Shockah.UIKit
 {
-	public static class SpriteBatchExt
+	public static class SpriteBatches
 	{
 		public static bool TryEnd(this SpriteBatch self)
 		{
