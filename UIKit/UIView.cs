@@ -35,30 +35,6 @@ namespace Shockah.UIKit
 		public float X2 { get; private set; } = 0f;
 		public float Y2 { get; private set; } = 0f;
 
-		public float AbsoluteX1
-		{
-			get => X1 + (Superview?.AbsoluteX1 ?? 0f);
-			set => X1 = value - (Superview?.AbsoluteX1 ?? 0f);
-		}
-
-		public float AbsoluteY1
-		{
-			get => Y1 + (Superview?.AbsoluteY1 ?? 0f);
-			set => Y1 = value - (Superview?.AbsoluteY1 ?? 0f);
-		}
-
-		public float AbsoluteX2
-		{
-			get => X2 + (Superview?.AbsoluteX1 ?? 0f);
-			set => X2 = value - (Superview?.AbsoluteX1 ?? 0f);
-		}
-
-		public float AbsoluteY2
-		{
-			get => Y2 + (Superview?.AbsoluteY1 ?? 0f);
-			set => Y2 = value - (Superview?.AbsoluteY1 ?? 0f);
-		}
-
 		public float Width
 		{
 			get => X2 - X1;
@@ -89,11 +65,6 @@ namespace Shockah.UIKit
 		public UIVector2 TopRight => new(X2, Y1);
 		public UIVector2 BottomLeft => new(X1, Y2);
 		public UIVector2 BottomRight => new(X2, Y2);
-
-		public UIVector2 AbsoluteTopLeft => new(AbsoluteX1, AbsoluteY1);
-		public UIVector2 AbsoluteTopRight => new(AbsoluteX2, AbsoluteY1);
-		public UIVector2 AbsoluteBottomLeft => new(AbsoluteX1, AbsoluteY2);
-		public UIVector2 AbsoluteBottomRight => new(AbsoluteX2, AbsoluteY2);
 
 		public UIVector2 Size => new(Width, Height);
 
@@ -254,10 +225,10 @@ namespace Shockah.UIKit
 			var oldWidth = Width;
 			var oldHeight = Height;
 			Root.SolveLayout();
-			AbsoluteX1 = (float)LeftVariable.Value.Value;
-			AbsoluteY1 = (float)TopVariable.Value.Value;
-			AbsoluteX2 = (float)RightVariable.Value.Value;
-			AbsoluteY2 = (float)BottomVariable.Value.Value;
+			X1 = (float)(LeftVariable.Value.Value - (Superview?.LeftVariable?.Value?.Value ?? 0));
+			Y1 = (float)(TopVariable.Value.Value - (Superview?.TopVariable?.Value?.Value ?? 0));
+			X2 = (float)(RightVariable.Value.Value - (Superview?.LeftVariable?.Value?.Value ?? 0));
+			Y2 = (float)(BottomVariable.Value.Value - (Superview?.TopVariable?.Value?.Value ?? 0));
 			if (oldWidth != Width || oldHeight != Height)
 				SizeChanged?.Invoke(this, (oldWidth, oldHeight), (Width, Height));
 
