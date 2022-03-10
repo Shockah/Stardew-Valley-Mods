@@ -3,6 +3,61 @@ using System;
 
 namespace Shockah.UIKit
 {
+	public readonly struct UILayoutConstraintPriority: IEquatable<UILayoutConstraintPriority>, IComparable<UILayoutConstraintPriority>
+	{
+		public static UILayoutConstraintPriority Required => _required;
+		public static UILayoutConstraintPriority Strong => _strong;
+		public static UILayoutConstraintPriority Medium => _medium;
+		public static UILayoutConstraintPriority Weak => _weak;
+
+		private static readonly UILayoutConstraintPriority _required = new(1000f);
+		private static readonly UILayoutConstraintPriority _strong = new(750f);
+		private static readonly UILayoutConstraintPriority _medium = new(500f);
+		private static readonly UILayoutConstraintPriority _weak = new(250f);
+
+		public readonly float Value { get; }
+		internal readonly ClStrength Strength { get; }
+
+		public UILayoutConstraintPriority(float value = 1000f)
+		{
+			Value = Math.Clamp(value, 0f, 1000f);
+			Strength = Value >= 1000f ? ClStrength.Required : new($"{Value}", new(Value, Value, Value));
+		}
+
+		public override string ToString()
+			=> Value >= Required.Value ? "Required" : $"{Value}";
+
+		public bool Equals(UILayoutConstraintPriority other)
+			=> Strength.SymbolicWeight.Equal(other.Strength.SymbolicWeight);
+
+		public override bool Equals(object? obj)
+			=> obj is UILayoutConstraintPriority other && Equals(other);
+
+		public override int GetHashCode()
+			=> Strength.SymbolicWeight.AsDouble().GetHashCode();
+
+		public int CompareTo(UILayoutConstraintPriority other)
+			=> Strength.SymbolicWeight.AsDouble().CompareTo(other.Strength.SymbolicWeight.AsDouble());
+
+		public static bool operator ==(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> left.Equals(right);
+
+		public static bool operator !=(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> !(left == right);
+
+		public static bool operator <(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> left.Strength.SymbolicWeight.LessThan(right.Strength.SymbolicWeight);
+
+		public static bool operator <=(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> left.Strength.SymbolicWeight.LessThanOrEqual(right.Strength.SymbolicWeight);
+
+		public static bool operator >(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> left.Strength.SymbolicWeight.GreaterThan(right.Strength.SymbolicWeight);
+
+		public static bool operator >=(UILayoutConstraintPriority left, UILayoutConstraintPriority right)
+			=> !left.Strength.SymbolicWeight.LessThan(right.Strength.SymbolicWeight);
+	}
+
 	public enum UILayoutConstraintRelation { LessThanOrEqual, Equal, GreaterThanOrEqual }
 
 	public static class UILayoutConstraintRelationExt
@@ -33,33 +88,29 @@ namespace Shockah.UIKit
 		public float Constant { get; }
 		public float Multiplier { get; }
 		public UILayoutConstraintRelation Relation { get; }
-		public ClStrength Strength { get; }
+		public UILayoutConstraintPriority Priority { get; }
 
 		public bool IsActive { get; private set; } = false;
+		public bool IsUnsatisfied { get; internal set; } = false;
 		internal readonly Lazy<ClConstraint> CassowaryConstraint;
 
-		public UILayoutConstraint(IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
-			: this(ClStrength.Required, anchor1, constant, multiplier, anchor2, relation)
-		{
-		}
-
-		public UILayoutConstraint(ClStrength strength, IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal)
+		public UILayoutConstraint(IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal, UILayoutConstraintPriority? priority = null)
 		{
 			this.Anchor1 = anchor1;
 			this.Constant = constant;
 			this.Multiplier = multiplier;
 			this.Anchor2 = anchor2;
 			this.Relation = relation;
-			this.Strength = strength;
+			this.Priority = priority ?? UILayoutConstraintPriority.Required;
 			CassowaryConstraint = new(() => CreateCassowaryConstraint());
 		}
 
 		public override string ToString()
 		{
 			if (Anchor2 is null)
-				return $"{Anchor1} {Relation.GetSymbol()} {Constant} @{Strength}";
+				return $"{Anchor1} {Relation.GetSymbol()} {Constant} @{Priority}";
 			else
-				return $"{Anchor1} {Relation.GetSymbol()} {Anchor2} * {Multiplier} + {Constant} @{Strength}";
+				return $"{Anchor1} {Relation.GetSymbol()} {Anchor2} * {Multiplier} + {Constant} @{Priority}";
 		}
 
 		private ClConstraint CreateCassowaryConstraint()
@@ -79,11 +130,11 @@ namespace Shockah.UIKit
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(anchor1.Expression, new ClLinearExpression(Constant), Strength),
+						new ClLinearEquation(anchor1.Expression, new ClLinearExpression(Constant), Priority.Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}
@@ -92,11 +143,11 @@ namespace Shockah.UIKit
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(anchor1.Expression, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearEquation(anchor1.Expression, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Strength),
+						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}
@@ -106,9 +157,10 @@ namespace Shockah.UIKit
 		{
 			if (IsActive)
 				return;
+			IsUnsatisfied = false;
 			var constraintOwningView = GetViewToPutConstraintOn();
+			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.QueueAddConstraint(this);
 			constraintOwningView._heldConstraints.Add(this);
-			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.ConstraintSolver.TryAddConstraint(CassowaryConstraint.Value);
 			Anchor1.Owner.ConstrainableOwnerView.AddConstraint(this);
 			Anchor2?.Owner.ConstrainableOwnerView.AddConstraint(this);
 			IsActive = true;
@@ -118,9 +170,10 @@ namespace Shockah.UIKit
 		{
 			if (!IsActive)
 				return;
+			IsUnsatisfied = false;
 			var constraintOwningView = GetViewToPutConstraintOn();
 			constraintOwningView._heldConstraints.Remove(this);
-			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.ConstraintSolver.RemoveConstraint(CassowaryConstraint.Value);
+			(constraintOwningView.Root ?? constraintOwningView as UIRoot)?.QueueRemoveConstraint(this);
 			Anchor1.Owner.ConstrainableOwnerView.RemoveConstraint(this);
 			Anchor2?.Owner.ConstrainableOwnerView.RemoveConstraint(this);
 			IsActive = false;
@@ -148,13 +201,15 @@ namespace Shockah.UIKit
 			&& other.Anchor1 == Anchor1
 			&& other.Anchor2 == Anchor2
 			&& other.Constant == Constant
-			&& other.Multiplier == Multiplier;
+			&& other.Multiplier == Multiplier
+			&& other.Relation == Relation
+			&& other.Priority == Priority;
 
 		public override bool Equals(object? obj)
 			=> obj is UILayoutConstraint other && Equals(other);
 
 		public override int GetHashCode()
-			=> (Anchor1, Anchor2, Constant, Multiplier).GetHashCode();
+			=> (Anchor1, Anchor2, Constant, Multiplier, Relation, Priority).GetHashCode();
 
 		public static bool operator ==(UILayoutConstraint lhs, UILayoutConstraint rhs)
 			=> lhs.Equals(rhs);

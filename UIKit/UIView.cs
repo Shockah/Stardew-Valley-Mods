@@ -132,10 +132,10 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public ClStrength HorizontalContentHuggingStrength { get; set; } = ClStrength.Medium;
-		public ClStrength HorizontalCompressionResistanceStrength { get; set; } = ClStrength.Strong;
-		public ClStrength VerticalContentHuggingStrength { get; set; } = ClStrength.Medium;
-		public ClStrength VerticalCompressionResistanceStrength { get; set; } = ClStrength.Strong;
+		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Weak;
+		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
+		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Weak;
+		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
 
 		public bool IsVisible { get; set; } = true;
 
@@ -172,11 +172,11 @@ namespace Shockah.UIKit
 		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyCenterX;
 		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyCenterY;
 
-		private readonly Lazy<ClConstraint> RightAfterLeftConstraint;
-		private readonly Lazy<ClConstraint> BottomAfterTopConstraint;
+		private readonly Lazy<UILayoutConstraint> RightAfterLeftConstraint;
+		private readonly Lazy<UILayoutConstraint> BottomAfterTopConstraint;
 
-		private IReadOnlyList<ClConstraint> _intrinsicSizeConstraints = Array.Empty<ClConstraint>();
-		private IReadOnlyList<ClConstraint> IntrinsicSizeConstraints
+		private IReadOnlyList<UILayoutConstraint> _intrinsicSizeConstraints = Array.Empty<UILayoutConstraint>();
+		private IReadOnlyList<UILayoutConstraint> IntrinsicSizeConstraints
 		{
 			get => _intrinsicSizeConstraints;
 			set
@@ -184,9 +184,9 @@ namespace Shockah.UIKit
 				if (Root is not null)
 				{
 					foreach (var constraint in _intrinsicSizeConstraints)
-						Root.ConstraintSolver.RemoveConstraint(constraint);
+						Root.QueueRemoveConstraint(constraint);
 					foreach (var constraint in value)
-						Root.ConstraintSolver.TryAddConstraint(constraint);
+						Root.QueueAddConstraint(constraint);
 				}
 				_intrinsicSizeConstraints = value;
 			}
@@ -208,8 +208,8 @@ namespace Shockah.UIKit
 			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(((IUIAnchor.Internal)WidthAnchor).Expression.Times(0.5)), "CenterX", c => c.CenterXAnchor));
 			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(((IUIAnchor.Internal)HeightAnchor).Expression.Times(0.5)), "CenterY", c => c.CenterYAnchor));
 
-			RightAfterLeftConstraint = new(() => new ClLinearInequality(RightVariable.Value, Cl.Operator.GreaterThanOrEqualTo, LeftVariable.Value));
-			BottomAfterTopConstraint = new(() => new ClLinearInequality(BottomVariable.Value, Cl.Operator.GreaterThanOrEqualTo, TopVariable.Value));
+			RightAfterLeftConstraint = new(() => RightAnchor.MakeConstraintTo(LeftAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));
+			BottomAfterTopConstraint = new(() => BottomAnchor.MakeConstraintTo(TopAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));
 
 			AddedToRoot += (root, _) => OnAddedToRoot(root);
 			RemovedFromRoot += (root, _) => OnRemovedFromRoot(root);
@@ -241,14 +241,19 @@ namespace Shockah.UIKit
 			Root = null;
 		}
 
-		public virtual void LayoutIfNeeded()
+		public void LayoutIfNeeded()
+		{
+			OnInternalLayoutIfNeeded();
+		}
+
+		internal virtual void OnInternalLayoutIfNeeded()
 		{
 			if (Root is null)
 				return;
 
 			var oldWidth = Width;
 			var oldHeight = Height;
-			Root.ConstraintSolver.Solve();
+			Root.SolveLayout();
 			AbsoluteX1 = (float)LeftVariable.Value.Value;
 			AbsoluteY1 = (float)TopVariable.Value.Value;
 			AbsoluteX2 = (float)RightVariable.Value.Value;
@@ -256,8 +261,24 @@ namespace Shockah.UIKit
 			if (oldWidth != Width || oldHeight != Height)
 				SizeChanged?.Invoke(this, (oldWidth, oldHeight), (Width, Height));
 
+			OnLayoutIfNeeded();
 			foreach (var subview in Subviews)
 				subview.LayoutIfNeeded();
+		}
+
+		public virtual void OnLayoutIfNeeded()
+		{
+		}
+
+		public void UpdateConstraints()
+		{
+			foreach (var subview in Subviews)
+				subview.UpdateConstraints();
+			OnUpdateConstraints();
+		}
+
+		public virtual void OnUpdateConstraints()
+		{
 		}
 
 		public void DrawInParentContext(RenderContext context)
@@ -298,70 +319,62 @@ namespace Shockah.UIKit
 
 		private void OnAddedToRoot(UIRoot root)
 		{
-			root.ConstraintSolver.TryAddConstraint(RightAfterLeftConstraint.Value);
-			root.ConstraintSolver.TryAddConstraint(BottomAfterTopConstraint.Value);
+			root.AddViewVariables(this);
+
+			root.QueueAddConstraint(RightAfterLeftConstraint.Value);
+			root.QueueAddConstraint(BottomAfterTopConstraint.Value);
 			foreach (var constraint in IntrinsicSizeConstraints)
-				root.ConstraintSolver.TryAddConstraint(constraint);
+				root.QueueAddConstraint(constraint);
 
 			foreach (var constraint in _heldConstraints)
-				root.ConstraintSolver.TryAddConstraint(constraint.CassowaryConstraint.Value);
+				root.QueueAddConstraint(constraint);
 			foreach (var subview in _subviews)
 				subview.Root = root;
-
-			var variables = new[] { LeftVariable, RightVariable, TopVariable, BottomVariable };
-			foreach (var variable in variables)
-				root.ConstraintSolver.AddVar(variable.Value);
 		}
 
 		private void OnRemovedFromRoot(UIRoot root)
 		{
 			foreach (var constraint in _heldConstraints)
-				root.ConstraintSolver.RemoveConstraint(constraint.CassowaryConstraint.Value);
+				root.QueueRemoveConstraint(constraint);
 			foreach (var subview in _subviews)
 				subview.Root = root;
 
-			root.ConstraintSolver.RemoveConstraint(RightAfterLeftConstraint.Value);
-			root.ConstraintSolver.RemoveConstraint(BottomAfterTopConstraint.Value);
+			root.QueueRemoveConstraint(RightAfterLeftConstraint.Value);
+			root.QueueRemoveConstraint(BottomAfterTopConstraint.Value);
 			foreach (var constraint in IntrinsicSizeConstraints)
-				root.ConstraintSolver.RemoveConstraint(constraint);
+				root.QueueRemoveConstraint(constraint);
 
-			var variables = new[] { LeftVariable, RightVariable, TopVariable, BottomVariable };
-			foreach (var variable in variables)
-				root.ConstraintSolver.NoteRemovedVariable(variable.Value, variable.Value);
+			root.RemoveViewVariables(this);
 		}
 
 		private void OnIntrinsicSizeChanged((float? X, float? Y) intrinsicSize)
 		{
-			var newConstraints = new List<ClConstraint>();
+			var newConstraints = new List<UILayoutConstraint>();
 			if (intrinsicSize.X is not null)
 			{
-				newConstraints.Add(new ClLinearInequality(
-					((IUIAnchor.Internal)WidthAnchor).Expression,
-					Cl.Operator.LessThanOrEqualTo,
-					new ClLinearExpression(intrinsicSize.X.Value),
-					HorizontalContentHuggingStrength)
-				);
-				newConstraints.Add(new ClLinearInequality(
-					((IUIAnchor.Internal)WidthAnchor).Expression,
-					Cl.Operator.GreaterThanOrEqualTo,
-					new ClLinearExpression(intrinsicSize.X.Value),
-					HorizontalCompressionResistanceStrength)
-				);
+				newConstraints.Add(((IUIAnchor.Internal)WidthAnchor).MakeConstraint(
+					intrinsicSize.X.Value,
+					UILayoutConstraintRelation.LessThanOrEqual,
+					HorizontalContentHuggingPriority
+				));
+				newConstraints.Add(((IUIAnchor.Internal)WidthAnchor).MakeConstraint(
+					intrinsicSize.X.Value,
+					UILayoutConstraintRelation.GreaterThanOrEqual,
+					HorizontalCompressionResistancePriority
+				));
 			}
 			if (intrinsicSize.Y is not null)
 			{
-				newConstraints.Add(new ClLinearInequality(
-					((IUIAnchor.Internal)HeightAnchor).Expression,
-					Cl.Operator.LessThanOrEqualTo,
-					new ClLinearExpression(intrinsicSize.Y.Value),
-					VerticalContentHuggingStrength)
-				);
-				newConstraints.Add(new ClLinearInequality(
-					((IUIAnchor.Internal)HeightAnchor).Expression,
-					Cl.Operator.GreaterThanOrEqualTo,
-					new ClLinearExpression(intrinsicSize.Y.Value),
-					VerticalCompressionResistanceStrength)
-				);
+				newConstraints.Add(((IUIAnchor.Internal)HeightAnchor).MakeConstraint(
+					intrinsicSize.Y.Value,
+					UILayoutConstraintRelation.LessThanOrEqual,
+					VerticalContentHuggingPriority
+				));
+				newConstraints.Add(((IUIAnchor.Internal)HeightAnchor).MakeConstraint(
+					intrinsicSize.Y.Value,
+					UILayoutConstraintRelation.GreaterThanOrEqual,
+					VerticalCompressionResistancePriority
+				));
 			}
 			IntrinsicSizeConstraints = newConstraints;
 		}

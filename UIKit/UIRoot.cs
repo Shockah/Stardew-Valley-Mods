@@ -1,10 +1,14 @@
 ﻿using Cassowary;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.UIKit
 {
 	public class UIRoot: UIView
 	{
-		internal ClSimplexSolver ConstraintSolver { get; private set; } = new() { AutoSolve = false };
+		public event UnsatisfiableConstraintEvent? UnsatifiableConstraintEvent;
+
+		private ClSimplexSolver ConstraintSolver { get; set; } = new() { AutoSolve = false };
 
 		private float LastX1 { get; set; } = 0f;
 		private float LastY1 { get; set; } = 0f;
@@ -15,8 +19,15 @@ namespace Shockah.UIKit
 		private ClConstraint? TopConstraint;
 		private ClConstraint? BottomConstraint;
 
-		public override void LayoutIfNeeded()
+		private readonly ISet<UILayoutConstraint> QueuedConstraintsToAdd = new HashSet<UILayoutConstraint>();
+		private readonly ISet<UILayoutConstraint> QueuedConstraintsToRemove = new HashSet<UILayoutConstraint>();
+
+		public void SolveLayout()
 		{
+			foreach (var constraint in QueuedConstraintsToRemove)
+				ConstraintSolver.RemoveConstraint(constraint.CassowaryConstraint.Value);
+			QueuedConstraintsToRemove.Clear();
+
 			if (X1 != LastX1 || LeftConstraint is null)
 			{
 				if (LeftConstraint is not null)
@@ -50,10 +61,56 @@ namespace Shockah.UIKit
 				LastY2 = Y2;
 			}
 
-			ConstraintSolver.Solve();
+			foreach (var constraint in QueuedConstraintsToAdd.OrderByDescending(c => c.Priority))
+			{
+				try
+				{
+					ConstraintSolver.AddConstraint(constraint.CassowaryConstraint.Value);
+				}
+				catch
+				{
+					constraint.IsUnsatisfied = true;
+					UnsatifiableConstraintEvent?.Invoke(this, constraint);
+				}
+			}
+			QueuedConstraintsToAdd.Clear();
 
+			ConstraintSolver.Solve();
+		}
+
+		internal void AddViewVariables(UIView view)
+		{
+			ConstraintSolver.AddVar(view.LeftVariable.Value);
+			ConstraintSolver.AddVar(view.RightVariable.Value);
+			ConstraintSolver.AddVar(view.TopVariable.Value);
+			ConstraintSolver.AddVar(view.BottomVariable.Value);
+		}
+
+		internal void RemoveViewVariables(UIView view)
+		{
+			ConstraintSolver.NoteRemovedVariable(view.LeftVariable.Value, view.LeftVariable.Value);
+			ConstraintSolver.NoteRemovedVariable(view.RightVariable.Value, view.RightVariable.Value);
+			ConstraintSolver.NoteRemovedVariable(view.TopVariable.Value, view.TopVariable.Value);
+			ConstraintSolver.NoteRemovedVariable(view.BottomVariable.Value, view.BottomVariable.Value);
+		}
+
+		internal override void OnInternalLayoutIfNeeded()
+		{
+			SolveLayout();
+
+			OnLayoutIfNeeded();
 			foreach (var subview in Subviews)
 				subview.LayoutIfNeeded();
+		}
+
+		internal void QueueAddConstraint(UILayoutConstraint constraint)
+		{
+			QueuedConstraintsToAdd.Add(constraint);
+		}
+
+		internal void QueueRemoveConstraint(UILayoutConstraint constraint)
+		{
+			QueuedConstraintsToRemove.Add(constraint);
 		}
 	}
 }
