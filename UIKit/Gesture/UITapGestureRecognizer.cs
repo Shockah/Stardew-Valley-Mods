@@ -6,6 +6,7 @@ namespace Shockah.UIKit.Gesture
 	{
 		public int TapsRequired { get; private set; }
 		public float Delay { get; private set; }
+		public Func<UITouch, bool>? TouchPredicate { get; private set; }
 
 		public event Action<UITapGestureRecognizer, UITouch>? TapEvent;
 
@@ -14,10 +15,11 @@ namespace Shockah.UIKit.Gesture
 		private double CurrentTime;
 		private double? TapTime = null;
 
-		public UITapGestureRecognizer(int tapsRequired = 1, float delay = 0f)
+		public UITapGestureRecognizer(int tapsRequired = 1, float delay = 0f, Func<UITouch, bool>? touchPredicate = null)
 		{
 			this.TapsRequired = tapsRequired;
 			this.Delay = delay;
+			this.TouchPredicate = touchPredicate;
 
 			StateChanged += (_, _, _) => OnStateChanged();
 		}
@@ -60,6 +62,9 @@ namespace Shockah.UIKit.Gesture
 
 			if (State == UIGestureRecognizerState.Possible || InProgress)
 			{
+				if (TouchPredicate?.Invoke(touch) == false)
+					return;
+
 				if (InProgress)
 				{
 					State = UIGestureRecognizerState.Changed;
@@ -75,22 +80,37 @@ namespace Shockah.UIKit.Gesture
 			}
 		}
 
+		public override void OnTouchChanged(UITouch touch)
+		{
+			base.OnTouchChanged(touch);
+			if (this.Touch == touch && TouchPredicate?.Invoke(touch) == false)
+				TryFinish();
+		}
+
 		public override void OnTouchUp(UITouch touch)
 		{
 			base.OnTouchUp(touch);
+			if (this.Touch == touch)
+				TryFinish();
+		}
 
-			if (InProgress && this.Touch == touch && Taps >= TapsRequired)
+		private void TryFinish()
+		{
+			if (Touch is null)
+				return;
+
+			if (InProgress && Taps >= TapsRequired)
 			{
 				if (!FailRequirementsSatisfied)
 					return;
-				if (touch.ActiveRecognizer is not null)
+				if (Touch.ActiveRecognizer is not null)
 				{
 					State = UIGestureRecognizerState.Failed;
 					return;
 				}
-				touch.ActiveRecognizer = this;
+				Touch.ActiveRecognizer = this;
 				State = UIGestureRecognizerState.Ended;
-				TapEvent?.Invoke(this, touch);
+				TapEvent?.Invoke(this, Touch);
 			}
 		}
 
