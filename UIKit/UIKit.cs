@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
@@ -31,9 +32,12 @@ namespace Shockah.UIKit
 
 			surfaceView = new UISurfaceView().With(Root, (self, parent) =>
 			{
-				new UIQuad().With(self, (self, parent) =>
+				new UINinePatch().With(self, (self, parent) =>
 				{
-					self.Color = Color.DarkSalmon * 0.5f;
+					self.Texture = Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen");
+					self.TextureSourceRect = new(16, 16, 160, 160);
+					self.NinePatchInsets = new(44);
+					self.Color = Color.White * 0.75f;
 
 					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
 					{

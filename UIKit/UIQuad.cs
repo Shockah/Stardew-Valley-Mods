@@ -7,7 +7,7 @@ namespace Shockah.UIKit
 {
 	public class UIQuad: UIView.Drawable
 	{
-		private static readonly Lazy<Texture2D> Pixel = new(() =>
+		protected static readonly Lazy<Texture2D> Pixel = new(() =>
 		{
 			var pixel = new Texture2D(Game1.graphics.GraphicsDevice, 1, 1);
 			pixel.SetData(new[] { Color.White });
