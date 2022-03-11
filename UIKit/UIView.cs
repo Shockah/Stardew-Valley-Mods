@@ -3,6 +3,7 @@ using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.UIKit
 {
@@ -111,7 +112,8 @@ namespace Shockah.UIKit
 		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
 
 		public bool IsVisible { get; set; } = true;
-		public bool ClipsTouchesToBounds { get; set; } = false;
+		public bool ClipsSelfTouchesToBounds { get; set; } = true;
+		public bool ClipsSubviewTouchesToBounds { get; set; } = false;
 		public bool IsSelfTouchInteractionEnabled { get; set; } = false;
 		public bool IsSubviewTouchInteractionEnabled { get; set; } = true;
 
@@ -284,39 +286,51 @@ namespace Shockah.UIKit
 
 		public void AddGestureRecognizer(UIGestureRecognizer recognizer)
 		{
+			if (recognizer.Owner is not null)
+				throw new ArgumentException($"Gesture recognizer {recognizer} already has an owner.");
 			if (_gestureRecognizers.Contains(recognizer))
 				return;
 			_gestureRecognizers.Add(recognizer);
+			recognizer.Owner = this;
 			Root?.GestureRecognizerManager?.AddGestureRecognizer(recognizer);
 		}
 
 		public void RemoveGestureRecognizer(UIGestureRecognizer recognizer)
 		{
+			if (recognizer.Owner != this)
+				return;
+			recognizer.Owner = null;
 			_gestureRecognizers.Remove(recognizer);
 			Root?.GestureRecognizerManager?.RemoveGestureRecognizer(recognizer);
 		}
 
 		public virtual bool IsTouchInBounds(UITouch touch)
 		{
-			return touch.LastPoint.X < X1 || touch.LastPoint.Y < Y1 || touch.LastPoint.X >= X2 || touch.LastPoint.Y >= Y2;
+			return touch.LastPoint.X >= X1 || touch.LastPoint.Y >= Y1 || touch.LastPoint.X < X2 || touch.LastPoint.Y < Y2;
 		}
 
 		public virtual bool OnTouchDown(UITouch touch, bool isHandled = false)
 		{
 			if (!IsVisible)
 				return isHandled;
-			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
-				return isHandled;
 
-			if (IsSubviewTouchInteractionEnabled)
+			var isTouchInBounds = (ClipsSelfTouchesToBounds || ClipsSubviewTouchesToBounds) ? this.IsTouchInBounds(touch) : true;
+			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
-				foreach (var subview in Subviews)
-					isHandled |= subview.OnTouchDown(touch.GetTranslated(X1, Y1));
+				foreach (var subview in Subviews.Reverse())
+					isHandled |= subview.OnTouchDown(touch.GetTranslated(subview.X1, subview.Y1), isHandled);
 			}
-			if (IsSelfTouchInteractionEnabled)
+			if (IsSelfTouchInteractionEnabled && !isHandled && (!ClipsSelfTouchesToBounds || isTouchInBounds))
 			{
 				foreach (var recognizer in GestureRecognizers)
+				{
 					recognizer.OnTouchDown(touch);
+					if (touch.ActiveRecognizer == recognizer)
+					{
+						isHandled = true;
+						break;
+					}
+				}
 			}
 			return isHandled;
 		}
@@ -325,13 +339,11 @@ namespace Shockah.UIKit
 		{
 			if (!IsVisible)
 				return;
-			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
-				return;
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				foreach (var subview in Subviews)
-					subview.OnTouchChanged(touch.GetTranslated(X1, Y1));
+					subview.OnTouchChanged(touch.GetTranslated(subview.X1, subview.Y1));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -344,13 +356,11 @@ namespace Shockah.UIKit
 		{
 			if (!IsVisible)
 				return;
-			if (ClipsTouchesToBounds && IsTouchInBounds(touch))
-				return;
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				foreach (var subview in Subviews)
-					subview.OnTouchUp(touch.GetTranslated(X1, Y1));
+					subview.OnTouchUp(touch.GetTranslated(subview.X1, subview.Y1));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -379,15 +389,21 @@ namespace Shockah.UIKit
 			root.QueueAddConstraint(BottomAfterTopConstraint.Value);
 			foreach (var constraint in IntrinsicSizeConstraints)
 				root.QueueAddConstraint(constraint);
-
 			foreach (var constraint in _heldConstraints)
 				root.QueueAddConstraint(constraint);
+
+			foreach (var recognizer in GestureRecognizers)
+				root.GestureRecognizerManager.AddGestureRecognizer(recognizer);
+
 			foreach (var subview in _subviews)
 				subview.Root = root;
 		}
 
 		private void OnRemovedFromRoot(UIRootView root)
 		{
+			foreach (var recognizer in GestureRecognizers)
+				root.GestureRecognizerManager.RemoveGestureRecognizer(recognizer);
+
 			foreach (var constraint in _heldConstraints)
 				root.QueueRemoveConstraint(constraint);
 			foreach (var subview in _subviews)

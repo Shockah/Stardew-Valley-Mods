@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Shockah.CommonModCode;
+using System;
 using System.Collections.Generic;
 
 namespace Shockah.UIKit.Gesture
@@ -7,6 +8,12 @@ namespace Shockah.UIKit.Gesture
 
 	public abstract class UIGestureRecognizer
 	{
+		public UIView? Owner
+		{
+			get => OwnerReference?.GetTargetOrNull();
+			internal set => OwnerReference = value is null ? null : new(value);
+		}
+
 		public UIGestureRecognizerState State
 		{
 			get => _state;
@@ -25,7 +32,7 @@ namespace Shockah.UIKit.Gesture
 			get
 			{
 				foreach (var failRequirement in FailRequirements)
-					if (failRequirement.State != UIGestureRecognizerState.Failed)
+					if (failRequirement.Owner is not null && failRequirement.State != UIGestureRecognizerState.Failed)
 						return false;
 				return true;
 			}
@@ -44,6 +51,8 @@ namespace Shockah.UIKit.Gesture
 
 		protected IReadOnlySet<UIGestureRecognizer> FailRequirees
 			=> (IReadOnlySet<UIGestureRecognizer>)_failRequirees;
+
+		private WeakReference<UIView>? OwnerReference { get; set; }
 
 		private UIGestureRecognizerState _state = UIGestureRecognizerState.Possible;
 		private readonly ISet<UIGestureRecognizer> _failRequirements = new HashSet<UIGestureRecognizer>();

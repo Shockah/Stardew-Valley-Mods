@@ -46,13 +46,13 @@ namespace Shockah.UIKit
 				return;
 			}
 
-			var wholeSourceRect = TextureSourceRect ?? new(0, 0, Texture.Width, Texture.Height);
+			var wholeSourceRect = Texture.Value.SourceRect;
 
 			// top-left
 			if (NinePatchInsets.Left > 0 && NinePatchInsets.Top > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X,
 						context.Y
@@ -76,7 +76,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Right > 0 && NinePatchInsets.Top > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X + Width - NinePatchInsets.Right * Scale.X,
 						context.Y
@@ -100,7 +100,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Left > 0 && NinePatchInsets.Bottom > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X,
 						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
@@ -124,7 +124,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Right > 0 && NinePatchInsets.Bottom > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X + Width - NinePatchInsets.Right * Scale.X,
 						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
@@ -148,7 +148,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Top > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X + NinePatchInsets.Left * Scale.X,
 						context.Y
@@ -175,7 +175,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Bottom > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X + NinePatchInsets.Left * Scale.X,
 						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
@@ -202,7 +202,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Left > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X,
 						context.Y + NinePatchInsets.Top * Scale.Y
@@ -229,7 +229,7 @@ namespace Shockah.UIKit
 			if (NinePatchInsets.Right > 0)
 			{
 				context.SpriteBatch.Draw(
-					texture: Texture,
+					texture: Texture.Value.Texture,
 					position: new(
 						context.X + Width - NinePatchInsets.Right * Scale.X,
 						context.Y + NinePatchInsets.Top * Scale.Y
@@ -254,7 +254,7 @@ namespace Shockah.UIKit
 
 			// center
 			context.SpriteBatch.Draw(
-				texture: Texture,
+				texture: Texture.Value.Texture,
 				position: new(
 					context.X + NinePatchInsets.Left * Scale.X,
 					context.Y + NinePatchInsets.Top * Scale.Y

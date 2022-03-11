@@ -28,7 +28,7 @@ namespace Shockah.UIKit
 
 		public UISurfaceView()
 		{
-			ClipsTouchesToBounds = true;
+			ClipsSubviewTouchesToBounds = true;
 			SizeChanged += (_, _, _) => UpdateRenderTarget();
 		}
 

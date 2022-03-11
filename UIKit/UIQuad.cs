@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Shockah.UIKit.Geometry;
 using StardewValley;
 using System;
 
@@ -7,14 +8,14 @@ namespace Shockah.UIKit
 {
 	public class UIQuad: UIView.Drawable
 	{
-		protected static readonly Lazy<Texture2D> Pixel = new(() =>
+		protected static readonly Lazy<UITextureRect> Pixel = new(() =>
 		{
 			var pixel = new Texture2D(Game1.graphics.GraphicsDevice, 1, 1);
 			pixel.SetData(new[] { Color.White });
-			return pixel;
+			return new(pixel);
 		});
 		
-		public Texture2D? Texture
+		public UITextureRect? Texture
 		{
 			get => _texture;
 			set
@@ -24,19 +25,6 @@ namespace Shockah.UIKit
 				var oldValue = _texture;
 				_texture = value;
 				TextureChanged?.Invoke(this, oldValue, value);
-			}
-		}
-
-		public Rectangle? TextureSourceRect
-		{
-			get => _textureSourceRect;
-			set
-			{
-				if (_textureSourceRect == value)
-					return;
-				var oldValue = _textureSourceRect;
-				_textureSourceRect = value;
-				TextureSourceRectChanged?.Invoke(this, oldValue, value);
 			}
 		}
 
@@ -53,20 +41,18 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public event OwnerValueChangeEvent<UIQuad, Texture2D?>? TextureChanged;
-		public event OwnerValueChangeEvent<UIQuad, Rectangle?>? TextureSourceRectChanged;
+		public event OwnerValueChangeEvent<UIQuad, UITextureRect?>? TextureChanged;
 		public event OwnerValueChangeEvent<UIQuad, Color>? ColorChanged;
 
-		private Texture2D? _texture = null;
-		private Rectangle? _textureSourceRect = null;
+		private UITextureRect? _texture = null;
 		private Color _color = Color.White;
 
 		public override void DrawSelf(RenderContext context)
 		{
 			context.SpriteBatch.Draw(
-				texture: Texture ?? Pixel.Value,
+				texture: (Texture ?? Pixel.Value).Texture,
 				position: new(context.X, context.Y),
-				sourceRectangle: TextureSourceRect ?? null,
+				sourceRectangle: (Texture ?? Pixel.Value).SourceRect,
 				color: Color,
 				rotation: 0f,
 				origin: Vector2.Zero,

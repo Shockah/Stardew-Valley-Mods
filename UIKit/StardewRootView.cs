@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using Shockah.CommonModCode.SMAPI;
 using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
@@ -16,7 +15,7 @@ namespace Shockah.UIKit
 		{
 			internal StardewRootView Owner = null!;
 
-			public IEnumerable<UIGestureRecognizer> GestureRecognizers => Owner.GestureRecognizers;
+			public IEnumerable<UIGestureRecognizer> GestureRecognizers => ((IGestureRecognizerManager)Owner).GestureRecognizers;
 			public IEnumerable<UIContinuousGestureRecognizer> ContinuousGestureRecognizers => ((IGestureRecognizerManager)Owner).ContinuousGestureRecognizers;
 
 			public void AddGestureRecognizer(UIGestureRecognizer recognizer)
@@ -35,13 +34,11 @@ namespace Shockah.UIKit
 		IEnumerable<UIContinuousGestureRecognizer> IGestureRecognizerManager.ContinuousGestureRecognizers
 			=> _gestureRecognizers.OfType<UIContinuousGestureRecognizer>();
 
-		private readonly IMonitor Monitor;
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private UITouch<int, ISet<SButton>>? CurrentTouch;
 
-		public StardewRootView(IMonitor monitor) : base(new PrivateGestureRecognizerManager())
+		public StardewRootView() : base(new PrivateGestureRecognizerManager())
 		{
-			this.Monitor = monitor;
 			((PrivateGestureRecognizerManager)this.GestureRecognizerManager).Owner = this;
 		}
 
@@ -58,7 +55,7 @@ namespace Shockah.UIKit
 
 		void IGestureRecognizerManager.Update()
 		{
-			foreach (var recognizer in GestureRecognizers)
+			foreach (var recognizer in ((IGestureRecognizerManager)this).GestureRecognizers)
 			{
 				if (recognizer.State == UIGestureRecognizerState.Ended)
 					recognizer.State = UIGestureRecognizerState.Possible;
@@ -66,7 +63,7 @@ namespace Shockah.UIKit
 
 			if (CurrentTouch is null && ((IGestureRecognizerManager)this).ContinuousGestureRecognizers.Any(r => r.InProgress || r.State == UIGestureRecognizerState.Detecting))
 			{
-				foreach (var recognizer in GestureRecognizers)
+				foreach (var recognizer in ((IGestureRecognizerManager)this).GestureRecognizers)
 				{
 					if (recognizer.State == UIGestureRecognizerState.Detecting)
 						recognizer.State = UIGestureRecognizerState.Failed;
@@ -78,6 +75,9 @@ namespace Shockah.UIKit
 				}
 			}
 
+			foreach (var recognizer in GestureRecognizers)
+				recognizer.Update(Game1.currentGameTime.TotalGameTime.TotalSeconds);
+
 			var currentMouseState = Game1.input.GetMouseState();
 			var mouseButtons = new[] { SButton.MouseLeft, SButton.MouseRight, SButton.MouseMiddle, SButton.MouseX1, SButton.MouseX2 };
 			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && InputHelper.IsPressed(b, mouseState: Game1.oldMouseState)).ToHashSet();
@@ -87,7 +87,7 @@ namespace Shockah.UIKit
 			{
 				if (newDown.Count != 0)
 				{
-					UIVector2 point = new(currentMouseState.X, currentMouseState.Y);
+					UIVector2 point = new(Game1.getMouseX(true), Game1.getMouseY(true));
 					UITouch<int, ISet<SButton>> touch = new(this, 0, point, newDown);
 					CurrentTouch = touch;
 					OnTouchDown(touch);
