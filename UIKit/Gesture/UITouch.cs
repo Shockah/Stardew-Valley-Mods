@@ -40,6 +40,8 @@ namespace Shockah.UIKit.Gesture
 			IsFinished = true;
 		}
 
+		public abstract bool IsSame(UITouch? touch);
+
 		public abstract UITouch GetTranslated(float x, float y);
 	}
 	
@@ -83,11 +85,14 @@ namespace Shockah.UIKit.Gesture
 			_snapshots.Add(new(point, state));
 		}
 
+		public override bool IsSame(UITouch? touch)
+			=> touch is UITouch<TPointerID, TPointerState> other && PointerID.Equals(other.PointerID);
+
 		public override UITouch GetTranslated(float x, float y)
 		{
-			var touch = new UITouch<TPointerID, TPointerState>(GestureRecognizerManager, PointerID, FirstPoint, First.State);
+			var touch = new UITouch<TPointerID, TPointerState>(GestureRecognizerManager, PointerID, FirstPoint - (x, y), First.State);
 			for (int i = 1; i < Snapshots.Count; i++)
-				touch.AddSnapshot(Snapshots[i].Point, Snapshots[i].State);
+				touch.AddSnapshot(Snapshots[i].Point - (x, y), Snapshots[i].State);
 			return touch;
 		}
 	}

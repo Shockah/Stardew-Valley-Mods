@@ -23,7 +23,7 @@ namespace Shockah.UIKit
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			Root = new(Monitor);
+			Root = new();
 			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
 
 			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
@@ -37,8 +37,7 @@ namespace Shockah.UIKit
 			{
 				new UINinePatch().With(self, (self, parent) =>
 				{
-					self.Texture = Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen");
-					self.TextureSourceRect = new(16, 16, 160, 160);
+					self.Texture = new(Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen"), new(16, 16, 160, 160));
 					self.NinePatchInsets = new(44);
 					self.Color = Color.White * 0.75f;
 
@@ -46,6 +45,25 @@ namespace Shockah.UIKit
 					{
 						self.ContentInsets = new(16);
 						self.Alignment = UIStackViewAlignment.Center;
+
+						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
+						{
+							//self.Alignment = UIStackViewAlignment.Center;
+							self.Spacing = 24f;
+
+							new UICheckbox().With(self, (self, parent) =>
+							{
+								parent.AddArrangedSubview(self);
+							});
+
+							new UIColorableLabel(new UIDialogueFont()).With(self, (self, parent) =>
+							{
+								self.Text = "Check me out";
+								parent.AddArrangedSubview(self);
+							});
+
+							parent.AddArrangedSubview(self);
+						});
 
 						for (int i = 0; i < 4; i++)
 						{

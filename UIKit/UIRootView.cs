@@ -33,13 +33,13 @@ namespace Shockah.UIKit
 		public void SolveLayout()
 		{
 			foreach (var constraint in QueuedConstraintsToRemove)
-				ConstraintSolver.RemoveConstraint(constraint.CassowaryConstraint.Value);
+				ConstraintSolver.RemoveConstraintIfExists(constraint.CassowaryConstraint.Value);
 			QueuedConstraintsToRemove.Clear();
 
 			if (X1 != LastX1 || LeftConstraint is null)
 			{
 				if (LeftConstraint is not null)
-					ConstraintSolver.RemoveConstraint(LeftConstraint);
+					ConstraintSolver.RemoveConstraintIfExists(LeftConstraint);
 				LeftConstraint = new ClLinearEquation(new ClLinearExpression(LeftVariable.Value), new ClLinearExpression(X1));
 				ConstraintSolver.TryAddConstraint(LeftConstraint);
 				LastX1 = X1;
@@ -47,7 +47,7 @@ namespace Shockah.UIKit
 			if (Y1 != LastY1 || TopConstraint is null)
 			{
 				if (TopConstraint is not null)
-					ConstraintSolver.RemoveConstraint(TopConstraint);
+					ConstraintSolver.RemoveConstraintIfExists(TopConstraint);
 				TopConstraint = new ClLinearEquation(new ClLinearExpression(TopVariable.Value), new ClLinearExpression(Y1));
 				ConstraintSolver.TryAddConstraint(TopConstraint);
 				LastY1 = Y1;
@@ -55,7 +55,7 @@ namespace Shockah.UIKit
 			if (X2 != LastX2 || RightConstraint is null)
 			{
 				if (RightConstraint is not null)
-					ConstraintSolver.RemoveConstraint(RightConstraint);
+					ConstraintSolver.RemoveConstraintIfExists(RightConstraint);
 				RightConstraint = new ClLinearEquation(new ClLinearExpression(RightVariable.Value), new ClLinearExpression(X2));
 				ConstraintSolver.TryAddConstraint(RightConstraint);
 				LastX2 = X2;
@@ -63,7 +63,7 @@ namespace Shockah.UIKit
 			if (Y2 != LastY2 || BottomConstraint is null)
 			{
 				if (BottomConstraint is not null)
-					ConstraintSolver.RemoveConstraint(BottomConstraint);
+					ConstraintSolver.RemoveConstraintIfExists(BottomConstraint);
 				BottomConstraint = new ClLinearEquation(new ClLinearExpression(BottomVariable.Value), new ClLinearExpression(Y2));
 				ConstraintSolver.TryAddConstraint(BottomConstraint);
 				LastY2 = Y2;

@@ -15,11 +15,19 @@ namespace Shockah.UIKit.Gesture
 		private double CurrentTime;
 		private double? TapTime = null;
 
-		public UITapGestureRecognizer(int tapsRequired = 1, float delay = 0f, Func<UITouch, bool>? touchPredicate = null)
+		public UITapGestureRecognizer(
+			int tapsRequired = 1,
+			float delay = 0f,
+			Func<UITouch, bool>? touchPredicate = null,
+			Action<UITapGestureRecognizer, UITouch>? onTap = null
+		)
 		{
 			this.TapsRequired = tapsRequired;
 			this.Delay = delay;
 			this.TouchPredicate = touchPredicate;
+
+			if (onTap is not null)
+				TapEvent += onTap;
 
 			StateChanged += (_, _, _) => OnStateChanged();
 		}
@@ -76,6 +84,7 @@ namespace Shockah.UIKit.Gesture
 					Taps++;
 				}
 				this.Touch = touch;
+				touch.ActiveRecognizer = this;
 				TapTime = Delay > 0f ? CurrentTime : null;
 			}
 		}
@@ -83,14 +92,14 @@ namespace Shockah.UIKit.Gesture
 		public override void OnTouchChanged(UITouch touch)
 		{
 			base.OnTouchChanged(touch);
-			if (this.Touch == touch && TouchPredicate?.Invoke(touch) == false)
+			if (touch.IsSame(this.Touch) && TouchPredicate?.Invoke(touch) == false)
 				TryFinish();
 		}
 
 		public override void OnTouchUp(UITouch touch)
 		{
 			base.OnTouchUp(touch);
-			if (this.Touch == touch)
+			if (touch.IsSame(this.Touch))
 				TryFinish();
 		}
 
@@ -103,7 +112,7 @@ namespace Shockah.UIKit.Gesture
 			{
 				if (!FailRequirementsSatisfied)
 					return;
-				if (Touch.ActiveRecognizer is not null)
+				if (Touch.ActiveRecognizer is not null && Touch.ActiveRecognizer != this)
 				{
 					State = UIGestureRecognizerState.Failed;
 					return;
