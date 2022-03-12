@@ -7,9 +7,13 @@ namespace Shockah.UIKit.Geometry
 	{
 		public static UIVector2 Zero => _zero;
 		public static UIVector2 One => _one;
+		public static UIVector2 UnitX => _unitX;
+		public static UIVector2 UnitY => _unitY;
 
 		private static readonly UIVector2 _zero = new(0);
 		private static readonly UIVector2 _one = new(1);
+		private static readonly UIVector2 _unitX = new(1, 0);
+		private static readonly UIVector2 _unitY = new(0, 1);
 
 		public float X { get; }
 		public float Y { get; }
