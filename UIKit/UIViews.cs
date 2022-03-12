@@ -1,12 +1,14 @@
 ﻿using Shockah.UIKit.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace Shockah.UIKit
 {
 	public static class UIViews
 	{
+		[Pure]
 		public static UIVector2 ConvertPointBetweenViews(UIVector2 point, UIView from, UIView to)
 		{
 			if (from == to)
@@ -47,6 +49,7 @@ namespace Shockah.UIKit
 			subview.RemoveFromSuperview();
 		}
 
+		[Pure]
 		public static IEnumerable<UIView> GetViewHierarchy(this UIView self, bool includeSelf)
 		{
 			if (includeSelf)
@@ -59,6 +62,7 @@ namespace Shockah.UIKit
 			}
 		}
 
+		[Pure]
 		public static UIView? GetCommonSuperview(UIView a, UIView b)
 		{
 			if (a == b)

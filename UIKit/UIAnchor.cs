@@ -1,5 +1,6 @@
 ﻿using Cassowary;
 using System;
+using System.Diagnostics.Contracts;
 
 namespace Shockah.UIKit
 {
@@ -34,6 +35,7 @@ namespace Shockah.UIKit
 
 	public interface IUITypedAnchor<in ConstrainableType>: IUIAnchor where ConstrainableType : IConstrainable
 	{
+		[Pure]
 		IUITypedAnchor<ConstrainableType> GetSameAnchorInConstrainable(ConstrainableType constrainable);
 	}
 
@@ -51,12 +53,14 @@ namespace Shockah.UIKit
 			this.AnchorFunction = anchorFunction;
 		}
 
+		[Pure]
 		public IUITypedAnchor<ConstrainableType> GetSameAnchorInConstrainable(ConstrainableType constrainable)
 			=> AnchorFunction(constrainable);
 	}
 
 	public interface IUITypedAnchorWithOpposite<in ConstrainableType>: IUITypedAnchor<ConstrainableType> where ConstrainableType : IConstrainable
 	{
+		[Pure]
 		IUITypedAnchor<ConstrainableType> GetOppositeAnchorInConstrainable(ConstrainableType constrainable);
 	}
 
@@ -75,6 +79,7 @@ namespace Shockah.UIKit
 			this.OppositeAnchorFunction = oppositeFunction;
 		}
 
+		[Pure]
 		public IUITypedAnchor<ConstrainableType> GetOppositeAnchorInConstrainable(ConstrainableType constrainable)
 			=> OppositeAnchorFunction(constrainable);
 	}

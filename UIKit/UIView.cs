@@ -4,6 +4,7 @@ using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace Shockah.UIKit
@@ -371,6 +372,7 @@ namespace Shockah.UIKit
 			Root?.GestureRecognizerManager?.RemoveGestureRecognizer(recognizer);
 		}
 
+		[Pure]
 		public virtual bool IsTouchInBounds(UITouch touch)
 		{
 			return touch.LastPoint.X >= 0f && touch.LastPoint.Y >= 0f && touch.LastPoint.X < Width && touch.LastPoint.Y < Height;
