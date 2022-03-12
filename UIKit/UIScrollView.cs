@@ -25,14 +25,14 @@ namespace Shockah.UIKit
 		internal readonly Lazy<ClVariable> TopVariable;
 		internal readonly Lazy<ClVariable> BottomVariable;
 
-		internal readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyLeft;
-		internal readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyRight;
-		internal readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyTop;
-		internal readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyBottom;
-		internal readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyWidth;
-		internal readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyHeight;
-		internal readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyCenterX;
-		internal readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyCenterY;
+		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyLeft;
+		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyRight;
+		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyTop;
+		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyBottom;
+		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyWidth;
+		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyHeight;
+		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyCenterX;
+		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyCenterY;
 
 		internal readonly Lazy<UILayoutConstraint> RightAfterLeftConstraint;
 		internal readonly Lazy<UILayoutConstraint> BottomAfterTopConstraint;
