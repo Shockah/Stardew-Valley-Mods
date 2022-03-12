@@ -56,7 +56,7 @@ namespace Shockah.UIKit
 				color: Color,
 				rotation: 0f,
 				origin: Vector2.Zero,
-				scale: new Vector2(Width, Height),
+				scale: ((UIVector2)(Texture ?? Pixel.Value).SourceRect.Size) / (Width, Height),
 				effects: SpriteEffects.None,
 				layerDepth: 0f
 			);

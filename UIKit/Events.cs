@@ -4,6 +4,9 @@ namespace Shockah.UIKit
 {
 	public delegate void ParentChildEvent<Parent, Child>(Parent parent, Child child);
 
+	public delegate void NoValueEvent();
+	public delegate void OwnerNoValueEvent<Owner>(Owner owner);
+
 	public delegate void ValueChangeEvent<T>(T oldValue, T newValue);
 	public delegate void OwnerValueChangeEvent<Owner, T>(Owner owner, T oldValue, T newValue);
 	public delegate void ContextValueChangeEvent<Context, T>(Context context, T oldValue, T newValue);

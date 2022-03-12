@@ -232,13 +232,60 @@ namespace Shockah.UIKit
 
 		public void AddSubview(UIView subview)
 		{
+			InsertSubview(Subviews.Count, subview);
+		}
+
+		public void InsertSubview(int index, UIView subview)
+		{
 			if (subview.Superview is not null)
 				throw new InvalidOperationException($"Cannot add subview {subview}, as it's already added to {subview.Superview}.");
-			_subviews.Add(subview);
+			_subviews.Insert(index, subview);
 			subview.Superview = this;
 			subview.AddedToSuperview?.Invoke(this, subview);
 			AddedSubview?.Invoke(this, subview);
 			subview.Root = Root ?? this as UIRootView;
+		}
+
+		public void BringSubviewToFront(UIView subview)
+		{
+			if (subview.Superview != this)
+				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
+			_subviews.Remove(subview);
+			_subviews.Add(subview);
+		}
+
+		public void SendSubviewToBack(UIView subview)
+		{
+			if (subview.Superview != this)
+				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
+			_subviews.Remove(subview);
+			_subviews.Insert(0, subview);
+		}
+
+		public void PutSubviewAbove(UIView subview, UIView anotherSubview)
+		{
+			if (subview.Superview != this)
+				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
+			if (anotherSubview.Superview != this)
+				throw new InvalidOperationException($"View {anotherSubview} is not a subview of {this}.");
+			_subviews.Remove(subview);
+			var index = _subviews.IndexOf(anotherSubview);
+			if (index == -1)
+				throw new InvalidOperationException($"View {anotherSubview} is not a subview of {this}.");
+			_subviews.Insert(index + 1, subview);
+		}
+
+		public void PutSubviewBelow(UIView subview, UIView anotherSubview)
+		{
+			if (subview.Superview != this)
+				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
+			if (anotherSubview.Superview != this)
+				throw new InvalidOperationException($"View {anotherSubview} is not a subview of {this}.");
+			_subviews.Remove(subview);
+			var index = _subviews.IndexOf(anotherSubview);
+			if (index == -1)
+				throw new InvalidOperationException($"View {anotherSubview} is not a subview of {this}.");
+			_subviews.Insert(index, subview);
 		}
 
 		public void RemoveFromSuperview()
@@ -356,7 +403,7 @@ namespace Shockah.UIKit
 			if (!IsVisible)
 				yield break;
 
-			var isTouchInBounds = !ClipsSubviewTouchesToBounds || this.IsTouchInBounds(touch);
+			var isTouchInBounds = this.IsTouchInBounds(touch);
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
 				var translatedTouch = touch.GetTranslated(X1, Y1);
@@ -364,7 +411,7 @@ namespace Shockah.UIKit
 					foreach (var hoveredView in subview.GetHoveredViewsAndUpdateHover(translatedTouch))
 						yield return hoveredView;
 			}
-			if (IsSelfTouchInteractionEnabled && isTouchInBounds)
+			if (isTouchInBounds)
 			{
 				var indexToUpdate = _hoverPointers.FirstIndex(t => t.IsSame(touch));
 				if (indexToUpdate is null)
@@ -377,7 +424,19 @@ namespace Shockah.UIKit
 				{
 					_hoverPointers[indexToUpdate.Value] = touch;
 				}
-				yield return this;
+
+				if (IsSelfTouchInteractionEnabled)
+					yield return this;
+			}
+			else
+			{
+				var indexToRemove = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+				if (indexToRemove is not null)
+				{
+					var oldValue = _hoverPointers.ToList();
+					_hoverPointers.RemoveAt(indexToRemove.Value);
+					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<UITouch>)_hoverPointers);
+				}
 			}
 		}
 
@@ -390,7 +449,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
 				var translatedTouch = touch.GetTranslated(X1, Y1);
-				foreach (var subview in Subviews.Reverse())
+				foreach (var subview in Subviews.Reverse().ToList())
 					isHandled |= subview.OnTouchDown(translatedTouch, isHandled);
 			}
 			if (IsSelfTouchInteractionEnabled && !isHandled && (!ClipsSelfTouchesToBounds || isTouchInBounds))
@@ -418,7 +477,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				var translatedTouch = touch.GetTranslated(X1, Y1);
-				foreach (var subview in Subviews)
+				foreach (var subview in Subviews.Reverse().ToList())
 					subview.OnTouchChanged(translatedTouch);
 			}
 			if (IsSelfTouchInteractionEnabled)
@@ -436,7 +495,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				var translatedTouch = touch.GetTranslated(X1, Y1);
-				foreach (var subview in Subviews)
+				foreach (var subview in Subviews.Reverse().ToList())
 					subview.OnTouchUp(translatedTouch);
 			}
 			if (IsSelfTouchInteractionEnabled)
