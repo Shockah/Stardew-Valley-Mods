@@ -228,6 +228,21 @@ namespace Shockah.UIKit
 
 			quad.Texture = texture;
 			quad.Color = color;
+
+			UIVector2 maxSize = NormalTexture.SourceRect.Size;
+			if (HoverTexture is not null)
+			{
+				var size = HoverTexture.Value.SourceRect.Size;
+				maxSize = new(Math.Max(maxSize.X, size.X), Math.Max(maxSize.Y, size.Y));
+			}
+			if (PressedTexture is not null)
+			{
+				var size = PressedTexture.Value.SourceRect.Size;
+				maxSize = new(Math.Max(maxSize.X, size.X), Math.Max(maxSize.Y, size.Y));
+			}
+
+			IntrinsicWidth = maxSize.X;
+			IntrinsicHeight = maxSize.Y;
 		}
 
 		private void OnGestureRecognizerStateChanged(UIGestureRecognizer recognizer)

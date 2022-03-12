@@ -21,6 +21,8 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public bool UsesSurface { get; set; } = true;
+
 		public event OwnerValueChangeEvent<UISurfaceView, Color>? ColorChanged;
 
 		private RenderTarget2D? RenderTarget;
@@ -48,6 +50,12 @@ namespace Shockah.UIKit
 
 		public override void DrawChildren(RenderContext context)
 		{
+			if (!UsesSurface)
+			{
+				base.DrawChildren(context);
+				return;
+			}
+
 			if (Width <= 0 || Height <= 0)
 				return;
 			if (RenderTarget is null)
