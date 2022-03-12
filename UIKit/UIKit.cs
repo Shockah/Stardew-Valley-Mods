@@ -18,12 +18,13 @@ namespace Shockah.UIKit
 		public override void Entry(IModHelper helper)
 		{
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
 			helper.Events.Display.RenderedHud += OnRenderedHud;
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			Root = new();
+			Root = new(Helper.Input);
 			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
 
 			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
@@ -40,6 +41,7 @@ namespace Shockah.UIKit
 					self.Texture = new(Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen"), new(16, 16, 160, 160));
 					self.NinePatchInsets = new(44);
 					self.Color = Color.White * 0.75f;
+					self.IsTouchThrough = false;
 
 					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
 					{
@@ -98,10 +100,16 @@ namespace Shockah.UIKit
 			});
 		}
 
+		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+		{
+			Root.Update();
+		}
+
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
 			surfaceView.Color = Color.White * (0.8f + 0.2f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
-			Root.UpdateAndDraw(e.SpriteBatch);
+			Root.Update();
+			Root.Draw(e.SpriteBatch);
 		}
 	}
 }

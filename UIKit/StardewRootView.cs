@@ -34,11 +34,14 @@ namespace Shockah.UIKit
 		IEnumerable<UIContinuousGestureRecognizer> IGestureRecognizerManager.ContinuousGestureRecognizers
 			=> _gestureRecognizers.OfType<UIContinuousGestureRecognizer>();
 
+		private readonly IInputHelper InputHelper;
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private UITouch<int, ISet<SButton>>? CurrentTouch;
+		private bool SuppressTouch = false;
 
-		public StardewRootView() : base(new PrivateGestureRecognizerManager())
+		public StardewRootView(IInputHelper inputHelper) : base(new PrivateGestureRecognizerManager())
 		{
+			this.InputHelper = inputHelper;
 			((PrivateGestureRecognizerManager)this.GestureRecognizerManager).Owner = this;
 		}
 
@@ -80,17 +83,20 @@ namespace Shockah.UIKit
 
 			var currentMouseState = Game1.input.GetMouseState();
 			var mouseButtons = new[] { SButton.MouseLeft, SButton.MouseRight, SButton.MouseMiddle, SButton.MouseX1, SButton.MouseX2 };
-			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && InputHelper.IsPressed(b, mouseState: Game1.oldMouseState)).ToHashSet();
-			var newDown = mouseButtons.Where(b => Game1.game1.IsActive && InputHelper.IsPressed(b, mouseState: currentMouseState)).ToHashSet();
+			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: Game1.oldMouseState)).ToHashSet();
+			var newDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: currentMouseState)).ToHashSet();
+
+			UIVector2 newTouchPoint = new(Game1.getMouseX(true), Game1.getMouseY(true));
+			UITouch<int, ISet<SButton>> newTouch = new(this, 0, newTouchPoint, newDown);
+			var hoveredViews = GetHoveredViewsAndUpdateHover(newTouch);
 
 			if (CurrentTouch is null)
 			{
 				if (newDown.Count != 0)
 				{
-					UIVector2 point = new(Game1.getMouseX(true), Game1.getMouseY(true));
-					UITouch<int, ISet<SButton>> touch = new(this, 0, point, newDown);
-					CurrentTouch = touch;
-					OnTouchDown(touch);
+					CurrentTouch = newTouch;
+					var handled = OnTouchDown(newTouch);
+					SuppressTouch = handled;
 				}
 			}
 			else
@@ -100,6 +106,7 @@ namespace Shockah.UIKit
 					CurrentTouch.Finish();
 					OnTouchUp(CurrentTouch);
 					CurrentTouch = null;
+					SuppressTouch = false;
 				}
 				else
 				{
@@ -111,24 +118,30 @@ namespace Shockah.UIKit
 					}
 				}
 			}
+
+			if (SuppressTouch && CurrentTouch is not null)
+				foreach (var button in CurrentTouch.Last.State)
+					InputHelper.Suppress(button);
 		}
 
-		public void UpdateAndDraw(SpriteBatch b)
+		public void Update()
 		{
 			if (ScreenEdgeInsets is not null)
 			{
-				var viewportBounds = Game1.graphics.GraphicsDevice.Viewport.Bounds;
 				X1 = ScreenEdgeInsets.Value.Left;
 				Y1 = ScreenEdgeInsets.Value.Top;
-				Width = viewportBounds.Size.X - ScreenEdgeInsets.Value.Horizontal;
-				Height = viewportBounds.Size.Y - ScreenEdgeInsets.Value.Vertical;
+				Width = Game1.viewport.Width * Game1.options.zoomLevel / Game1.options.uiScale - ScreenEdgeInsets.Value.Horizontal;
+				Height = Game1.viewport.Height * Game1.options.zoomLevel / Game1.options.uiScale - ScreenEdgeInsets.Value.Vertical;
 			}
 
 			UpdateConstraints();
 			LayoutIfNeeded();
 
 			((IGestureRecognizerManager)this).Update();
+		}
 
+		public void Draw(SpriteBatch b)
+		{
 			DrawInParentContext(new(b));
 		}
 	}
