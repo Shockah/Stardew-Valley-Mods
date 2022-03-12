@@ -118,12 +118,24 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public bool IsVisible
+		{
+			get => _isVisible;
+			set
+			{
+				if (_isVisible == value)
+					return;
+				var oldValue = _isVisible;
+				_isVisible = value;
+				IsVisibleChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
 		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
 		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
 		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
 		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
 
-		public bool IsVisible { get; set; } = true;
 		public bool ClipsSelfTouchesToBounds { get; set; } = true;
 		public bool ClipsSubviewTouchesToBounds { get; set; } = false;
 		public bool IsSelfTouchInteractionEnabled { get; set; } = false;
@@ -136,6 +148,7 @@ namespace Shockah.UIKit
 		public event ParentChildEvent<UIView, UIView>? AddedSubview;
 		public event ParentChildEvent<UIView, UIView>? RemovedSubview;
 		public event OwnerValueChangeEvent<UIView, (float? X, float? Y)>? IntrinsicSizeChanged;
+		public event OwnerValueChangeEvent<UIView, bool>? IsVisibleChanged;
 		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintRemoved;
@@ -146,6 +159,7 @@ namespace Shockah.UIKit
 		private readonly IList<UIView> _subviews = new List<UIView>();
 		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
+		private bool _isVisible = true;
 		private float? _intrinsicWidth;
 		private float? _intrinsicHeight;
 
