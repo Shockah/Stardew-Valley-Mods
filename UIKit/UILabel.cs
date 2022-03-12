@@ -57,6 +57,9 @@ namespace Shockah.UIKit
 			this._text = text;
 			this._font = font;
 
+			HorizontalContentHuggingPriority = new(UILayoutConstraintPriority.Low.Value + 1f);
+			VerticalContentHuggingPriority = new(UILayoutConstraintPriority.Low.Value + 1f);
+
 			TextChanged += (_, _, _) => UpdateIntrinsicSize();
 			FontChanged += (_, _, _) => UpdateIntrinsicSize();
 

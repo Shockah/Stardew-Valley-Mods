@@ -33,6 +33,18 @@ namespace Shockah.UIKit
 		public IReadOnlySet<UILayoutConstraint> Constraints => (IReadOnlySet<UILayoutConstraint>)_constraints;
 		public IReadOnlyList<UIGestureRecognizer> GestureRecognizers => (IReadOnlyList<UIGestureRecognizer>)_gestureRecognizers;
 
+		public IEnumerable<UILayoutConstraint> AllConstraints
+		{
+			get
+			{
+				foreach (var constraint in _heldConstraints)
+					yield return constraint;
+				foreach (var subview in Subviews)
+					foreach (var constraint in subview.AllConstraints)
+						yield return constraint;
+			}
+		}
+
 		public float X1 { get; set; } = 0f;
 		public float Y1 { get; set; } = 0f;
 		public float X2 { get; private set; } = 0f;
@@ -106,10 +118,10 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Weak;
-		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
-		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Weak;
-		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.Strong;
+		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
+		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
+		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
+		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
 
 		public bool IsVisible { get; set; } = true;
 		public bool ClipsSelfTouchesToBounds { get; set; } = true;
@@ -306,7 +318,7 @@ namespace Shockah.UIKit
 
 		public virtual bool IsTouchInBounds(UITouch touch)
 		{
-			return touch.LastPoint.X >= X1 || touch.LastPoint.Y >= Y1 || touch.LastPoint.X < X2 || touch.LastPoint.Y < Y2;
+			return touch.LastPoint.X >= X1 && touch.LastPoint.Y >= Y1 && touch.LastPoint.X < X2 && touch.LastPoint.Y < Y2;
 		}
 
 		public virtual bool OnTouchDown(UITouch touch, bool isHandled = false)
@@ -318,7 +330,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
 				foreach (var subview in Subviews.Reverse())
-					isHandled |= subview.OnTouchDown(touch.GetTranslated(subview.X1, subview.Y1), isHandled);
+					isHandled |= subview.OnTouchDown(touch.GetTranslated(X1, Y1), isHandled);
 			}
 			if (IsSelfTouchInteractionEnabled && !isHandled && (!ClipsSelfTouchesToBounds || isTouchInBounds))
 			{
@@ -343,7 +355,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				foreach (var subview in Subviews)
-					subview.OnTouchChanged(touch.GetTranslated(subview.X1, subview.Y1));
+					subview.OnTouchChanged(touch.GetTranslated(X1, Y1));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -360,7 +372,7 @@ namespace Shockah.UIKit
 			if (IsSubviewTouchInteractionEnabled)
 			{
 				foreach (var subview in Subviews)
-					subview.OnTouchUp(touch.GetTranslated(subview.X1, subview.Y1));
+					subview.OnTouchUp(touch.GetTranslated(X1, Y1));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
