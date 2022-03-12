@@ -133,6 +133,7 @@ namespace Shockah.UIKit
 				new UIScrollView().With(self, (self, parent) =>
 				{
 					self.ScrollFactor *= 0.5f;
+					self.ReverseVerticalDirection = true;
 
 					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
 					{
@@ -167,6 +168,8 @@ namespace Shockah.UIKit
 
 		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
 		{
+			if (!Context.IsWorldReady)
+				return;
 			Root.Update();
 		}
 

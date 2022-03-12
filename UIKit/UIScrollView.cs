@@ -98,6 +98,8 @@ namespace Shockah.UIKit
 		public bool ClampsHorizontalContentOffset { get; set; } = true;
 		public bool AllowsVerticalScrolling { get; set; } = true;
 		public bool AllowsHorizontalScrolling { get; set; } = true;
+		public bool ReverseVerticalDirection { get; set; } = false;
+		public bool ReverseHorizontalDirection { get; set; } = false;
 
 		private UIVector2 _contentOffset = UIVector2.Zero;
 
@@ -134,9 +136,13 @@ namespace Shockah.UIKit
 			if (touch is UITouch<int, ISet<SButton>> typedTouch)
 			{
 				var toScroll = typedTouch.Last.Scroll * ScrollFactor;
-				if (!AllowsVerticalScrolling)
+				if (ReverseVerticalDirection)
+					toScroll *= new UIVector2(1, -1);
+				else if (!AllowsVerticalScrolling)
 					toScroll *= UIVector2.UnitX;
-				if (!AllowsHorizontalScrolling)
+				if (ReverseHorizontalDirection)
+					toScroll *= new UIVector2(-1, 1);
+				else if (!AllowsHorizontalScrolling)
 					toScroll *= UIVector2.UnitY;
 
 				var oldContentOffset = ContentOffset;
@@ -171,13 +177,19 @@ namespace Shockah.UIKit
 		{
 			ContentFrameConstraints = new[]
 			{
-				ContentFrame.LeftAnchor.MakeConstraintTo(LeftAnchor, -ContentOffset.X),
-				ContentFrame.TopAnchor.MakeConstraintTo(TopAnchor, -ContentOffset.Y)
+				ReverseVerticalDirection
+					? ContentFrame.BottomAnchor.MakeConstraintTo(BottomAnchor, ContentOffset.Y)
+					: ContentFrame.TopAnchor.MakeConstraintTo(TopAnchor, -ContentOffset.Y),
+				ReverseHorizontalDirection
+					? ContentFrame.RightAnchor.MakeConstraintTo(RightAnchor, ContentOffset.X)
+					: ContentFrame.LeftAnchor.MakeConstraintTo(LeftAnchor, -ContentOffset.X)
 			};
 		}
 
 		private void OnAddedToRoot(UIRootView root)
 		{
+			UpdateContentFrameConstraints();
+
 			root.AddVariables(ContentFrame.LeftVariable.Value, ContentFrame.RightVariable.Value, ContentFrame.TopVariable.Value, ContentFrame.BottomVariable.Value);
 			root.QueueAddConstraint(ContentFrame.RightAfterLeftConstraint.Value);
 			root.QueueAddConstraint(ContentFrame.BottomAfterTopConstraint.Value);
