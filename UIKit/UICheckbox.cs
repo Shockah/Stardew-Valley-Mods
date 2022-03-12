@@ -110,13 +110,13 @@ namespace Shockah.UIKit
 		private Color _color = Color.White;
 		private string? _clickSoundName = "drumkit6";
 
-		public UICheckbox()
+		public UICheckbox(Func<UITouch, bool>? touchPredicate = null)
 		{
 			IsSelfTouchInteractionEnabled = true;
 			HorizontalContentHuggingPriority = UILayoutConstraintPriority.High;
 			VerticalContentHuggingPriority = UILayoutConstraintPriority.High;
 
-			AddGestureRecognizer(new UITapGestureRecognizer(onTap: (_, _) =>
+			AddGestureRecognizer(new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
 			{
 				Game1.playSound(ClickSoundName);
 				IsChecked = !IsChecked;
