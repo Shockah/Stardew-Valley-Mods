@@ -53,10 +53,7 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X,
-						context.Y
-					),
+					position: context.Offset,
 					sourceRectangle: new(
 						wholeSourceRect.Left,
 						wholeSourceRect.Top,
@@ -77,9 +74,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X + Width - NinePatchInsets.Right * Scale.X,
-						context.Y
+					position: context.Offset + (
+						Width - NinePatchInsets.Right * Scale.X,
+						0f
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Right - (int)NinePatchInsets.Right,
@@ -101,9 +98,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X,
-						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
+					position: context.Offset + (
+						0f,
+						Height - NinePatchInsets.Bottom * Scale.Y
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Left,
@@ -125,9 +122,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X + Width - NinePatchInsets.Right * Scale.X,
-						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
+					position: context.Offset + (
+						Width - NinePatchInsets.Right * Scale.X,
+						Height - NinePatchInsets.Bottom * Scale.Y
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Right - (int)NinePatchInsets.Right,
@@ -149,9 +146,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X + NinePatchInsets.Left * Scale.X,
-						context.Y
+					position: context.Offset + (
+						NinePatchInsets.Left * Scale.X,
+						0f
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Left + (int)NinePatchInsets.Left,
@@ -176,9 +173,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X + NinePatchInsets.Left * Scale.X,
-						context.Y + Height - NinePatchInsets.Bottom * Scale.Y
+					position: context.Offset + (
+						NinePatchInsets.Left * Scale.X,
+						Height - NinePatchInsets.Bottom * Scale.Y
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Left + (int)NinePatchInsets.Left,
@@ -203,9 +200,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X,
-						context.Y + NinePatchInsets.Top * Scale.Y
+					position: context.Offset + (
+						0f,
+						NinePatchInsets.Top * Scale.Y
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Left,
@@ -230,9 +227,9 @@ namespace Shockah.UIKit
 			{
 				context.SpriteBatch.Draw(
 					texture: Texture.Value.Texture,
-					position: new(
-						context.X + Width - NinePatchInsets.Right * Scale.X,
-						context.Y + NinePatchInsets.Top * Scale.Y
+					position: context.Offset + (
+						Width - NinePatchInsets.Right * Scale.X,
+						NinePatchInsets.Top * Scale.Y
 					),
 					sourceRectangle: new(
 						wholeSourceRect.Right - (int)NinePatchInsets.Right,
@@ -255,9 +252,9 @@ namespace Shockah.UIKit
 			// center
 			context.SpriteBatch.Draw(
 				texture: Texture.Value.Texture,
-				position: new(
-					context.X + NinePatchInsets.Left * Scale.X,
-					context.Y + NinePatchInsets.Top * Scale.Y
+				position: context.Offset + (
+					NinePatchInsets.Left * Scale.X,
+					NinePatchInsets.Top * Scale.Y
 				),
 				sourceRectangle: new(
 					wholeSourceRect.Left + (int)NinePatchInsets.Left,

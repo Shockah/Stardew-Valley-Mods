@@ -122,6 +122,48 @@ namespace Shockah.UIKit
 				self.LeftAnchor.MakeConstraintTo(parent, 16).Activate();
 				self.BottomAnchor.MakeConstraintTo(parent, -16).Activate();
 			});
+
+			new UINinePatch().With(Root, (self, parent) =>
+			{
+				self.Texture = new(Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen"), new(16, 16, 160, 160));
+				self.NinePatchInsets = new(44);
+				self.Color = Color.White * 0.75f;
+				self.IsTouchThrough = false;
+
+				new UIScrollView().With(self, (self, parent) =>
+				{
+					self.ScrollFactor *= 0.5f;
+
+					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
+					{
+						var colors = new[] { Color.Red, Color.Orange, Color.Yellow, Color.Lime, Color.Cyan, Color.Blue, Color.Magenta };
+						foreach (var color in colors)
+						{
+							new UIQuad().With(self, (self, parent) =>
+							{
+								self.Color = color;
+
+								parent.AddArrangedSubview(self);
+								self.HeightAnchor.MakeConstraint(80).Activate();
+							});
+						}
+
+						parent.AddSubview(self);
+						self.LeftAnchor.MakeConstraintToSuperview().Activate();
+						self.RightAnchor.MakeConstraintToSuperview().Activate();
+						self.MakeEdgeConstraintsTo(parent.ContentFrame).Activate();
+					});
+
+					parent.AddSubview(self);
+					self.MakeEdgeConstraintsToSuperview(20f).Activate();
+				});
+
+				parent.AddSubview(self);
+				self.CenterYAnchor.MakeConstraintTo(parent).Activate();
+				self.RightAnchor.MakeConstraintTo(parent, -160).Activate();
+				self.WidthAnchor.MakeConstraint(200).Activate();
+				self.HeightAnchor.MakeConstraint(200).Activate();
+			});
 		}
 
 		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)

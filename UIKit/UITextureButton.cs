@@ -206,7 +206,7 @@ namespace Shockah.UIKit
 		private static OwnerNoValueEvent<UITextureButton> ConvertHandler(OwnerNoValueEvent<IUIButtonBehavior> handler)
 			=> owner => handler(owner);
 
-		public override void OnUpdateConstraints()
+		protected override void OnUpdateConstraints()
 		{
 			base.OnUpdateConstraints();
 

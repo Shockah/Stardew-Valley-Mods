@@ -1,21 +1,20 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Shockah.UIKit.Geometry;
 
 namespace Shockah.UIKit
 {
 	public struct RenderContext
 	{
 		public readonly SpriteBatch SpriteBatch { get; }
-		public readonly float X { get; }
-		public readonly float Y { get; }
+		public readonly UIVector2 Offset { get; }
 
-		public RenderContext(SpriteBatch spriteBatch, float x = 0f, float y = 0f)
+		public RenderContext(SpriteBatch spriteBatch, UIVector2? offset = null)
 		{
 			this.SpriteBatch = spriteBatch;
-			this.X = x;
-			this.Y = y;
+			this.Offset = offset ?? UIVector2.Zero;
 		}
 
-		public RenderContext GetTranslated(float x, float y)
-			=> new(SpriteBatch, this.X + x, this.Y + y);
+		public RenderContext GetTranslated(UIVector2 translation)
+			=> new(SpriteBatch, Offset + translation);
 	}
 }

@@ -178,7 +178,7 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public override void OnUpdateConstraints()
+		protected override void OnUpdateConstraints()
 		{
 			if (!IsDirty)
 				return;
