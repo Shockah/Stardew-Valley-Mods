@@ -9,7 +9,7 @@ namespace Shockah.UIKit.Geometry
 		public readonly Texture2D Texture { get; }
 		public Rectangle SourceRect => _sourceRect ?? new(0, 0, Texture.Width, Texture.Height);
 
-		public readonly Rectangle? _sourceRect { get; }
+		private readonly Rectangle? _sourceRect { get; }
 
 		public UITextureRect(Texture2D texture, Rectangle? sourceRect = null)
 		{

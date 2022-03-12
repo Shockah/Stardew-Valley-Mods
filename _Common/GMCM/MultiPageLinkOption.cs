@@ -73,10 +73,10 @@ namespace Shockah.CommonModCode.GMCM
 			);
 		}
 
-		private Vector2 GetGMCMSize()
+		private static Vector2 GetGMCMSize()
 			=> new(Math.Min(1200, Game1.uiViewport.Width - 200), Game1.uiViewport.Height - 128 - 116);
 
-		private Vector2 GetGMCMPosition(Vector2? size = null)
+		private static Vector2 GetGMCMPosition(Vector2? size = null)
 		{
 			Vector2 gmcmSize = size ?? GetGMCMSize();
 			return new((Game1.uiViewport.Width - gmcmSize.X) / 2, (Game1.uiViewport.Height - gmcmSize.Y) / 2);
@@ -156,7 +156,7 @@ namespace Shockah.CommonModCode.GMCM
 			IsReflectionSetup = true;
 		}
 
-		private void OpenPage(string pageID)
+		private static void OpenPage(string pageID)
 		{
 			SetupReflectionIfNeeded();
 

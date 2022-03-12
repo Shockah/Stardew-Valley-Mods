@@ -37,7 +37,7 @@ namespace Shockah.CommonModCode
 		public class Impl: IWildcardPattern
 		{
 			public string Pattern { get; private set; }
-			private Lazy<SRegex> Regex;
+			private readonly Lazy<SRegex> Regex;
 
 			public Impl(string pattern)
 			{

@@ -104,7 +104,7 @@ namespace Shockah.FlexibleSprinklers
 	internal class KnownSizeCachingMap: IMap.WithKnownSize
 	{
 		private readonly IMap Wrapped;
-		private SoilType?[,] Cache;
+		private readonly SoilType?[,] Cache;
 		public int Width { get; }
 		public int Height { get; }
 

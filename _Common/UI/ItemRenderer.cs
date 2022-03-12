@@ -9,7 +9,7 @@ namespace Shockah.CommonModCode.UI
 {
 	public class ItemRenderer
 	{
-		private Texture2D GetItemTexture(SObject @object)
+		private static Texture2D GetItemTexture(SObject @object)
 		{
 			if (@object.ParentSheetIndex < 0)
 				return Game1.mouseCursors;
@@ -20,7 +20,7 @@ namespace Shockah.CommonModCode.UI
 				return Game1.objectSpriteSheet;
 		}
 
-		private Rectangle GetItemSourceRectangle(SObject @object)
+		private static Rectangle GetItemSourceRectangle(SObject @object)
 		{
 			var index = @object.ParentSheetIndex;
 			if (index < 0)
@@ -34,7 +34,7 @@ namespace Shockah.CommonModCode.UI
 				return Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, index, 16, 16);
 		}
 
-		private Rectangle GetColoredItemSourceRectangle(ColoredObject @object)
+		private static Rectangle GetColoredItemSourceRectangle(ColoredObject @object)
 		{
 			var index = @object.ParentSheetIndex;
 			if (index < 0)

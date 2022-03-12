@@ -19,7 +19,6 @@ namespace Shockah.FlexibleSprinklers
 		ISet<IntPoint> GetSprinklerTiles(IMap map)
 			=> GetSprinklerTilesWithSteps(map).SelectMany(step => step.Item1).ToHashSet();
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface Independent: ISprinklerBehavior
 		{
 			IList<(ISet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap map, IntPoint sprinklerPosition, SprinklerInfo info);

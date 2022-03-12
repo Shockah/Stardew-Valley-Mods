@@ -787,11 +787,11 @@ namespace Shockah.MachineStatus
 			AreVisibleMachinesDirty = false;
 		}
 
-		private bool MachineMatches(SObject machine, IEnumerable<IWildcardPattern> patterns)
+		private static bool MachineMatches(SObject machine, IEnumerable<IWildcardPattern> patterns)
 			=> patterns.Any(p => p.Matches(machine.Name) || p.Matches(machine.DisplayName));
 
 		[return: NotNullIfNotNull("object")]
-		private SObject? GetOne(SObject? @object)
+		private static SObject? GetOne(SObject? @object)
 		{
 			if (@object is CrabPot crabPot)
 				return new CrabPot(crabPot.TileLocation);
@@ -799,7 +799,7 @@ namespace Shockah.MachineStatus
 				return @object?.getOne() as SObject;
 		}
 
-		private SObject CopyMachine(SObject machine)
+		private static SObject CopyMachine(SObject machine)
 		{
 			var newMachine = GetOne(machine);
 			newMachine.TileLocation = machine.TileLocation;
@@ -812,7 +812,7 @@ namespace Shockah.MachineStatus
 			return newMachine;
 		}
 
-		private bool IsLocationAccessible(GameLocation location)
+		private static bool IsLocationAccessible(GameLocation location)
 		{
 			if (location is Cellar cellar)
 			{
@@ -828,7 +828,7 @@ namespace Shockah.MachineStatus
 			return true;
 		}
 
-		private MachineState GetMachineState(SObject machine)
+		private static MachineState GetMachineState(SObject machine)
 		{
 			if (machine is CrabPot crabPot)
 				if (crabPot.bait.Value is not null && crabPot.heldObject.Value is null)
@@ -845,7 +845,7 @@ namespace Shockah.MachineStatus
 				_ => throw new InvalidOperationException(),
 			};
 
-		private MachineState GetMachineState(bool readyForHarvest, int minutesUntilReady, SObject? heldObject)
+		private static MachineState GetMachineState(bool readyForHarvest, int minutesUntilReady, SObject? heldObject)
 		{
 			if (readyForHarvest || (heldObject is not null && minutesUntilReady <= 0))
 				return MachineState.Ready;
@@ -855,7 +855,7 @@ namespace Shockah.MachineStatus
 				return MachineState.Waiting;
 		}
 
-		private bool IsMachine(GameLocation location, SObject @object)
+		private static bool IsMachine(SObject @object)
 		{
 			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory && @object is not CrabPot)
 				return false;
@@ -902,7 +902,7 @@ namespace Shockah.MachineStatus
 
 		internal bool UpdateMachine(GameLocation location, SObject machine)
 		{
-			if (!IsMachine(location, machine))
+			if (!IsMachine(machine))
 				return false;
 			if (!IsLocationAccessible(location))
 				return RemoveMachine(location, machine);
@@ -914,7 +914,7 @@ namespace Shockah.MachineStatus
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 				return;
-			if (!IsMachine(location, machine))
+			if (!IsMachine(machine))
 				return;
 
 			UpdateMachine(location, machine);

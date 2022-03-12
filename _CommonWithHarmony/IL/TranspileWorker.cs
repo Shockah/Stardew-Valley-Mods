@@ -8,7 +8,7 @@ namespace Shockah.CommonModCode.IL
 	public sealed class TranspileWorker
 	{
 		private readonly IList<CodeInstruction> Instructions;
-		private int Index;
+		private readonly int Index;
 		public int Length { get; private set; }
 
 		public int StartIndex => Index;

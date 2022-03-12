@@ -1,6 +1,5 @@
 ﻿namespace Shockah.UIKit
 {
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interfaces")]
 	public interface IConstrainable
 	{
 		public UIView ConstrainableOwnerView { get; }
