@@ -44,7 +44,7 @@ namespace Shockah.UIKit.Gesture
 		public bool Finished
 			=> State is UIGestureRecognizerState.Ended or UIGestureRecognizerState.Failed or UIGestureRecognizerState.Cancelled;
 
-		public event OwnerValueChangeEvent<UIGestureRecognizer, UIGestureRecognizerState?>? StateChanged;
+		public event OwnerValueChangeEvent<UIGestureRecognizer, UIGestureRecognizerState>? StateChanged;
 
 		protected IReadOnlySet<UIGestureRecognizer> FailRequirements
 			=> (IReadOnlySet<UIGestureRecognizer>)_failRequirements;

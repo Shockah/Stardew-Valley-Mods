@@ -55,6 +55,7 @@ namespace Shockah.UIKit
 
 							new UICheckbox().With(self, (self, parent) =>
 							{
+								self.IsCheckedChanged += (_, _, newValue) => Monitor.Log($"Changed checkbox state: {newValue}", LogLevel.Info);
 								parent.AddArrangedSubview(self);
 							});
 
@@ -85,6 +86,30 @@ namespace Shockah.UIKit
 								parent.AddArrangedSubview(self);
 							});
 						}
+
+						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
+						{
+							self.Alignment = UIStackViewAlignment.Center;
+							self.Spacing = 24f;
+
+							new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
+							{
+								self.TapEvent += _ => Monitor.Log("Pressed OK button", LogLevel.Info);
+								parent.AddArrangedSubview(self);
+								self.WidthAnchor.MakeConstraint(64).Activate();
+								self.HeightAnchor.MakeConstraint(64).Activate();
+							});
+
+							new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
+							{
+								self.TapEvent += _ => Monitor.Log("Pressed Cancel button", LogLevel.Info);
+								parent.AddArrangedSubview(self);
+								self.WidthAnchor.MakeConstraint(64).Activate();
+								self.HeightAnchor.MakeConstraint(64).Activate();
+							});
+
+							parent.AddArrangedSubview(self);
+						});
 
 						parent.AddSubview(self);
 						self.MakeEdgeConstraintsToSuperview().Activate();

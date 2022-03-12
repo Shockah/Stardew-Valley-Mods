@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Shockah.CommonModCode.SMAPI;
 using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
@@ -78,17 +79,20 @@ namespace Shockah.UIKit
 				}
 			}
 
-			foreach (var recognizer in GestureRecognizers)
-				recognizer.Update(Game1.currentGameTime.TotalGameTime.TotalSeconds);
+			var totalSeconds = Game1.currentGameTime?.TotalGameTime.TotalSeconds;
+			if (totalSeconds is not null)
+				foreach (var recognizer in ((IGestureRecognizerManager)this).GestureRecognizers)
+					recognizer.Update(totalSeconds.Value);
 
-			var currentMouseState = Game1.input.GetMouseState();
+			var currentMouseState = Mouse.GetState();
 			var mouseButtons = new[] { SButton.MouseLeft, SButton.MouseRight, SButton.MouseMiddle, SButton.MouseX1, SButton.MouseX2 };
 			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: Game1.oldMouseState)).ToHashSet();
 			var newDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: currentMouseState)).ToHashSet();
 
 			UIVector2 newTouchPoint = new(Game1.getMouseX(true), Game1.getMouseY(true));
 			UITouch<int, ISet<SButton>> newTouch = new(this, 0, newTouchPoint, newDown);
-			var hoveredViews = GetHoveredViewsAndUpdateHover(newTouch);
+
+			GetHoveredViewsAndUpdateHover(newTouch).ToList();
 
 			if (CurrentTouch is null)
 			{

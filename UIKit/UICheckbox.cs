@@ -11,6 +11,8 @@ namespace Shockah.UIKit
 	public interface IUICheckboxBehavior
 	{
 		public bool IsChecked { get; set; }
+
+		public event OwnerValueChangeEvent<UICheckbox, bool>? IsCheckedChanged;
 	}
 
 	public class UICheckbox: UIView.Drawable, IUICheckboxBehavior
@@ -80,16 +82,16 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public string? ClickSoundName
+		public string? TapSoundName
 		{
-			get => _clickSoundName;
+			get => _tapSoundName;
 			set
 			{
-				if (_clickSoundName == value)
+				if (_tapSoundName == value)
 					return;
-				var oldValue = _clickSoundName;
-				_clickSoundName = value;
-				ClickSoundNameChanged?.Invoke(this, oldValue, value);
+				var oldValue = _tapSoundName;
+				_tapSoundName = value;
+				TapSoundNameChanged?.Invoke(this, oldValue, value);
 			}
 		}
 
@@ -101,14 +103,14 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UICheckbox, UITextureRect>? UncheckedTextureChanged;
 		public event OwnerValueChangeEvent<UICheckbox, UIVector2>? ScaleChanged;
 		public event OwnerValueChangeEvent<UICheckbox, Color>? ColorChanged;
-		public event OwnerValueChangeEvent<UICheckbox, string?>? ClickSoundNameChanged;
+		public event OwnerValueChangeEvent<UICheckbox, string?>? TapSoundNameChanged;
 
 		private bool _isChecked = false;
 		private Lazy<UITextureRect> LazyCheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectChecked));
 		private Lazy<UITextureRect> LazyUncheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectUnchecked));
 		private UIVector2 _scale = new(4);
 		private Color _color = Color.White;
-		private string? _clickSoundName = "drumkit6";
+		private string? _tapSoundName = "drumkit6";
 
 		public UICheckbox(Func<UITouch, bool>? touchPredicate = null)
 		{
@@ -118,7 +120,8 @@ namespace Shockah.UIKit
 
 			AddGestureRecognizer(new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
 			{
-				Game1.playSound(ClickSoundName);
+				if (TapSoundName is not null)
+					Game1.playSound(TapSoundName);
 				IsChecked = !IsChecked;
 			}));
 		}
