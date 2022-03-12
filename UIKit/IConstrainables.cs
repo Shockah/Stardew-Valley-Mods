@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 
 namespace Shockah.UIKit
 {
@@ -7,6 +8,7 @@ namespace Shockah.UIKit
 
 	public static class IConstrainables
 	{
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsTo(
 			this IConstrainable.Horizontal self,
 			IConstrainable.Horizontal other,
@@ -27,6 +29,7 @@ namespace Shockah.UIKit
 			yield return self.RightAnchor.MakeConstraintTo(other, -insets, relation: singleEdgeRightRelation, priority: priority);
 		}
 
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeVerticalEdgeConstraintsTo(
 			this IConstrainable.Vertical self,
 			IConstrainable.Vertical other,
@@ -47,6 +50,7 @@ namespace Shockah.UIKit
 			yield return self.BottomAnchor.MakeConstraintTo(other, -insets, relation: singleEdgeBottomRelation, priority: priority);
 		}
 
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeEdgeConstraintsTo<ConstrainableTypeA, ConstrainableTypeB>(
 			this ConstrainableTypeA self,
 			ConstrainableTypeB other,
@@ -63,7 +67,8 @@ namespace Shockah.UIKit
 				yield return constraint;
 		}
 
-		public static IEnumerable<UILayoutConstraint> HorizontalEdgeConstraintsToSuperview(
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsToSuperview(
 			this IConstrainable.Horizontal self,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
@@ -75,6 +80,7 @@ namespace Shockah.UIKit
 			return self.MakeHorizontalEdgeConstraintsTo(superview, insets, relation, priority);
 		}
 
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeVerticalEdgeConstraintsToSuperview(
 			this IConstrainable.Vertical self,
 			float insets = 0f,
@@ -87,6 +93,7 @@ namespace Shockah.UIKit
 			return self.MakeVerticalEdgeConstraintsTo(superview, insets, relation, priority);
 		}
 
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeEdgeConstraintsToSuperview<ConstrainableType>(
 			this ConstrainableType self,
 			float insets = 0f,

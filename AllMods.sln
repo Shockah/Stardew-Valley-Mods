@@ -23,7 +23,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailPersistenceFramework", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hibernation", "Hibernation\Hibernation.csproj", "{7ED542FC-8015-4D98-A5EC-EFA429D34A3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIKit", "UIKit\UIKit.csproj", "{8868A527-91B3-401F-993F-4E0DD58F2104}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UIKit", "UIKit\UIKit.csproj", "{8868A527-91B3-401F-993F-4E0DD58F2104}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7F7A093D-6988-443F-B76B-F8AF33826F37}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

@@ -459,7 +459,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
-		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "TODO in the future")]
+		private static void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
 		{
 			if ((int)Instance.ModifiedGiftTaste > (int)GiftTaste.Dislike)
 				return;
@@ -494,13 +495,13 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance.UpdateEmojisTexture();
 		}
 
-		private static void NPC_tryToReceiveActiveObject_Prefix(NPC __instance, Farmer __0 /* who */)
+		private static void NPC_tryToReceiveActiveObject_Prefix(Farmer __0 /* who */)
 		{
 			Instance.CurrentGiftingPlayer = __0;
 			Instance.CurrentGiftMethod = GiftMethod.InPerson;
 		}
 
-		private static void NPC_tryToReceiveActiveObject_Postfix(NPC __instance)
+		private static void NPC_tryToReceiveActiveObject_Postfix()
 		{
 			Instance.CurrentGiftingPlayer = null;
 			Instance.CurrentGiftMethod = null;
@@ -615,7 +616,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			);
 
 			if (Instance.CurrentGiftingPlayer == giver)
-				Instance.ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
+				ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
 		}
 
 		private static IEnumerable<CodeInstruction> DialogueBox_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)

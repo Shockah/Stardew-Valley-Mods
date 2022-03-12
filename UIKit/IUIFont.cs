@@ -7,7 +7,6 @@ using System;
 
 namespace Shockah.UIKit
 {
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interfaces")]
 	public interface IUIFont
 	{
 		UIVector2 Measure(string text, float maxWidth = float.PositiveInfinity);

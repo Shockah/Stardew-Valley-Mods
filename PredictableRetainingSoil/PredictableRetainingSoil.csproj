@@ -7,6 +7,12 @@
 		<EnableModZip Condition="$(Configuration) != 'Release'">False</EnableModZip>
 	</PropertyGroup>
 	<ItemGroup>
+		<None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
+		<PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0">
+			<Private>True</Private>
+		</PackageReference>
 	</ItemGroup>
 </Project>

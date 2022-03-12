@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 
 namespace Shockah.UIKit
 {
 	public static class UIAnchorExt
 	{
+		[Pure]
 		public static UILayoutConstraint MakeConstraint(
 			this IUIAnchor self,
 			float constant,
@@ -12,6 +14,7 @@ namespace Shockah.UIKit
 		)
 			=> new(self, constant, relation: relation, priority: priority);
 
+		[Pure]
 		public static UILayoutConstraint MakeConstraintTo(
 			this IUIAnchor self,
 			IUIAnchor other,
@@ -22,6 +25,7 @@ namespace Shockah.UIKit
 		)
 			=> new(self, constant, multiplier, other, relation, priority);
 
+		[Pure]
 		public static UILayoutConstraint MakeConstraintTo<ConstrainableType>(
 			this IUITypedAnchor<ConstrainableType> self,
 			ConstrainableType other,
@@ -32,6 +36,7 @@ namespace Shockah.UIKit
 		) where ConstrainableType : IConstrainable
 			=> new(self, constant, multiplier, self.GetSameAnchorInConstrainable(other), relation, priority);
 
+		[Pure]
 		public static UILayoutConstraint MakeConstraintToOpposite<ConstrainableType>(
 			this IUITypedAnchorWithOpposite<ConstrainableType> self,
 			ConstrainableType other,
@@ -42,6 +47,7 @@ namespace Shockah.UIKit
 		) where ConstrainableType : IConstrainable
 			=> new(self, constant, multiplier, self.GetOppositeAnchorInConstrainable(other), relation, priority);
 
+		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperview(
 			this IUITypedAnchor<UIView> self,
 			float constant = 0f,
@@ -55,6 +61,7 @@ namespace Shockah.UIKit
 			return self.MakeConstraintTo(self.GetSameAnchorInConstrainable(superview), constant, multiplier, relation, priority);
 		}
 
+		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperviewOpposite(
 			this IUITypedAnchorWithOpposite<UIView> self,
 			float constant = 0f,

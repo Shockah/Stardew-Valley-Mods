@@ -7,7 +7,6 @@ namespace Shockah.UIKit
 	{
 		IConstrainable Owner { get; }
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interface")]
 		internal interface Internal: IUIAnchor
 		{
 			ClLinearExpression Expression { get; }

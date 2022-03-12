@@ -18,7 +18,7 @@ namespace Shockah.CommonModCode.Stardew
 
 		public static IEnumerable<GameLocation> GetAllLocations()
 		{
-			IEnumerable<GameLocation> GetLocationAndSublocations(GameLocation location)
+			static IEnumerable<GameLocation> GetLocationAndSublocations(GameLocation location)
 			{
 				yield return location;
 				if (location is BuildableGameLocation buildable)

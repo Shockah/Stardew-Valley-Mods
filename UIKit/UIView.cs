@@ -38,7 +38,7 @@ namespace Shockah.UIKit
 		{
 			get
 			{
-				foreach (var constraint in _heldConstraints)
+				foreach (var constraint in HeldConstraints)
 					yield return constraint;
 				foreach (var subview in Subviews)
 					foreach (var constraint in subview.AllConstraints)
@@ -160,7 +160,7 @@ namespace Shockah.UIKit
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintRemoved;
 
-		internal readonly ISet<UILayoutConstraint> _heldConstraints = new HashSet<UILayoutConstraint>();
+		internal readonly ISet<UILayoutConstraint> HeldConstraints = new HashSet<UILayoutConstraint>();
 
 		private UIRootView? _root;
 		private readonly IList<UIView> _subviews = new List<UIView>();
@@ -434,7 +434,9 @@ namespace Shockah.UIKit
 			if (!IsVisible)
 				return isHandled;
 
+#pragma warning disable IDE0075 // Simplify conditional expression
 			var isTouchInBounds = (ClipsSelfTouchesToBounds || ClipsSubviewTouchesToBounds) ? this.IsTouchInBounds(touch) : true;
+#pragma warning restore IDE0075 // Simplify conditional expression
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
 				foreach (var subview in Subviews.Reverse().ToList())
@@ -511,7 +513,7 @@ namespace Shockah.UIKit
 			root.QueueAddConstraint(BottomAfterTopConstraint.Value);
 			foreach (var constraint in IntrinsicSizeConstraints)
 				root.QueueAddConstraint(constraint);
-			foreach (var constraint in _heldConstraints)
+			foreach (var constraint in HeldConstraints)
 				root.QueueAddConstraint(constraint);
 
 			foreach (var recognizer in GestureRecognizers)
@@ -526,7 +528,7 @@ namespace Shockah.UIKit
 			foreach (var recognizer in GestureRecognizers)
 				root.GestureRecognizerManager.RemoveGestureRecognizer(recognizer);
 
-			foreach (var constraint in _heldConstraints)
+			foreach (var constraint in HeldConstraints)
 				root.QueueRemoveConstraint(constraint);
 			foreach (var subview in _subviews)
 				subview.Root = root;

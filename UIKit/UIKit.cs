@@ -149,8 +149,7 @@ namespace Shockah.UIKit
 						}
 
 						parent.AddSubview(self);
-						self.LeftAnchor.MakeConstraintToSuperview().Activate();
-						self.RightAnchor.MakeConstraintToSuperview().Activate();
+						self.MakeHorizontalEdgeConstraintsToSuperview().Activate();
 						self.MakeEdgeConstraintsTo(parent.ContentFrame).Activate();
 					});
 
