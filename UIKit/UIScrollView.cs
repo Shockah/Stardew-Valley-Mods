@@ -96,6 +96,8 @@ namespace Shockah.UIKit
 
 		public bool ClampsVerticalContentOffset { get; set; } = true;
 		public bool ClampsHorizontalContentOffset { get; set; } = true;
+		public bool AllowsVerticalScrolling { get; set; } = true;
+		public bool AllowsHorizontalScrolling { get; set; } = true;
 
 		private UIVector2 _contentOffset = UIVector2.Zero;
 
@@ -132,6 +134,11 @@ namespace Shockah.UIKit
 			if (touch is UITouch<int, ISet<SButton>> typedTouch)
 			{
 				var toScroll = typedTouch.Last.Scroll * ScrollFactor;
+				if (!AllowsVerticalScrolling)
+					toScroll *= UIVector2.UnitX;
+				if (!AllowsHorizontalScrolling)
+					toScroll *= UIVector2.UnitY;
+
 				var oldContentOffset = ContentOffset;
 				ContentOffset += toScroll;
 				if (oldContentOffset != ContentOffset)
