@@ -123,10 +123,8 @@ namespace Shockah.UIKit
 
 			AddedToRoot += (root, _) => OnAddedToRoot(root);
 			RemovedFromRoot += (root, _) => OnRemovedFromRoot(root);
+			ContentOffsetChanged += (_, _, _) => UpdateContentFrameConstraints();
 		}
-
-		public override UIVector2 GetSubviewTranslation(UIView subview)
-			=> base.GetSubviewTranslation(subview) - ContentOffset;
 
 		public override bool OnSelfHover(UITouch touch)
 		{
@@ -166,8 +164,8 @@ namespace Shockah.UIKit
 		{
 			ContentFrameConstraints = new[]
 			{
-				ContentFrame.LeftAnchor.MakeConstraintTo(LeftAnchor, ContentOffset.X),
-				ContentFrame.TopAnchor.MakeConstraintTo(TopAnchor, ContentOffset.Y)
+				ContentFrame.LeftAnchor.MakeConstraintTo(LeftAnchor, -ContentOffset.X),
+				ContentFrame.TopAnchor.MakeConstraintTo(TopAnchor, -ContentOffset.Y)
 			};
 		}
 
