@@ -98,6 +98,9 @@ namespace Shockah.UIKit
 		public UICheckbox()
 		{
 			IsSelfTouchInteractionEnabled = true;
+			HorizontalContentHuggingPriority = UILayoutConstraintPriority.High;
+			VerticalContentHuggingPriority = UILayoutConstraintPriority.High;
+
 			AddGestureRecognizer(new UITapGestureRecognizer(onTap: (_, _) =>
 			{
 				IsChecked = !IsChecked;

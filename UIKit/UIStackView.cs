@@ -196,27 +196,42 @@ namespace Shockah.UIKit
 				float trailingInset
 			) where ConstrainableType : IConstrainable
 			{
-				foreach (var arrangedSubview in ArrangedSubviews)
+				switch (Alignment)
 				{
-					switch (Alignment)
-					{
-						case UIStackViewAlignment.Fill:
+					case UIStackViewAlignment.Fill:
+						foreach (var arrangedSubview in ArrangedSubviews)
+						{
 							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
 							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
-							break;
-						case UIStackViewAlignment.Center:
-							StackViewConstraints.Add(centerAnchor(arrangedSubview).MakeConstraintTo(centerAnchor(this), leadingInset / 2 - trailingInset / 2));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual));
-							break;
-						case UIStackViewAlignment.Leading:
+						}
+						break;
+					case UIStackViewAlignment.Center:
+						foreach (var arrangedSubview in ArrangedSubviews)
+						{
+							StackViewConstraints.Add(centerAnchor(arrangedSubview).MakeConstraintTo(centerAnchor(this), (leadingInset - trailingInset) / 2));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+						}
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						break;
+					case UIStackViewAlignment.Leading:
+						foreach (var arrangedSubview in ArrangedSubviews)
+						{
 							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual));
-							break;
-						case UIStackViewAlignment.Trailing:
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+						}
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						break;
+					case UIStackViewAlignment.Trailing:
+						foreach (var arrangedSubview in ArrangedSubviews)
+						{
 							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual));
-							break;
-					}
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+						}
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						break;
 				}
 			}
 

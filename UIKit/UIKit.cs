@@ -43,12 +43,12 @@ namespace Shockah.UIKit
 
 					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
 					{
-						self.ContentInsets = new(16);
+						self.ContentInsets = new(26);
 						self.Alignment = UIStackViewAlignment.Center;
 
 						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
 						{
-							//self.Alignment = UIStackViewAlignment.Center;
+							self.Alignment = UIStackViewAlignment.Center;
 							self.Spacing = 24f;
 
 							new UICheckbox().With(self, (self, parent) =>

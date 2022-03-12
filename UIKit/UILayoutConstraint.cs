@@ -1,19 +1,20 @@
 ﻿using Cassowary;
 using System;
+using System.Text;
 
 namespace Shockah.UIKit
 {
 	public readonly struct UILayoutConstraintPriority: IEquatable<UILayoutConstraintPriority>, IComparable<UILayoutConstraintPriority>
 	{
 		public static UILayoutConstraintPriority Required => _required;
-		public static UILayoutConstraintPriority Strong => _strong;
+		public static UILayoutConstraintPriority High => _high;
 		public static UILayoutConstraintPriority Medium => _medium;
-		public static UILayoutConstraintPriority Weak => _weak;
+		public static UILayoutConstraintPriority Low => _low;
 
 		private static readonly UILayoutConstraintPriority _required = new(1000f);
-		private static readonly UILayoutConstraintPriority _strong = new(750f);
+		private static readonly UILayoutConstraintPriority _high = new(750f);
 		private static readonly UILayoutConstraintPriority _medium = new(500f);
-		private static readonly UILayoutConstraintPriority _weak = new(250f);
+		private static readonly UILayoutConstraintPriority _low = new(250f);
 
 		public readonly float Value { get; }
 		internal readonly ClStrength Strength { get; }
@@ -21,11 +22,11 @@ namespace Shockah.UIKit
 		public UILayoutConstraintPriority(float value = 1000f)
 		{
 			Value = Math.Clamp(value, 0f, 1000f);
-			Strength = Value >= 1000f ? ClStrength.Required : new($"{Value}", new(Value, Value, Value));
+			Strength = Value >= 1000f ? ClStrength.Required : new($"{Value}", new(Value, 0f, 0f));
 		}
 
 		public override string ToString()
-			=> Value >= Required.Value ? "Required" : $"{Value}";
+			=> $"{Value}";
 
 		public bool Equals(UILayoutConstraintPriority other)
 			=> Strength.SymbolicWeight.Equal(other.Strength.SymbolicWeight);
@@ -107,10 +108,24 @@ namespace Shockah.UIKit
 
 		public override string ToString()
 		{
+			StringBuilder sb = new($"{Anchor1} {Relation.GetSymbol()}");
 			if (Anchor2 is null)
-				return $"{Anchor1} {Relation.GetSymbol()} {Constant} @{Priority}";
+			{
+				sb.Append($" {Constant}");
+			}
 			else
-				return $"{Anchor1} {Relation.GetSymbol()} {Anchor2} * {Multiplier} + {Constant} @{Priority}";
+			{
+				sb.Append($" {Anchor2}");
+				if (Multiplier != 1f)
+					sb.Append($" * {Multiplier}");
+
+				if (Constant > 0f)
+					sb.Append($" + {Constant}");
+				else if (Constant < 0f)
+					sb.Append($" - {-Constant}");
+			}
+			sb.Append($" @{Priority}");
+			return sb.ToString();
 		}
 
 		private ClConstraint CreateCassowaryConstraint()

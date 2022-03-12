@@ -6,7 +6,7 @@ namespace Shockah.UIKit
 	{
 		public static UILayoutConstraint MakeConstraint(
 			this IUIAnchor self,
-			float constant = 0f,
+			float constant,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
 			UILayoutConstraintPriority? priority = null
 		)
