@@ -89,26 +89,25 @@ namespace Shockah.UIKit
 
 						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
 						{
-							self.Alignment = UIStackViewAlignment.Center;
 							self.Spacing = 24f;
 
-							new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
+							var button1 = new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed OK button", LogLevel.Info);
 								parent.AddArrangedSubview(self);
-								self.WidthAnchor.MakeConstraint(64).Activate();
 								self.HeightAnchor.MakeConstraint(64).Activate();
 							});
 
-							new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
+							var button2 = new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed Cancel button", LogLevel.Info);
 								parent.AddArrangedSubview(self);
-								self.WidthAnchor.MakeConstraint(64).Activate();
 								self.HeightAnchor.MakeConstraint(64).Activate();
 							});
 
 							parent.AddArrangedSubview(self);
+							button1.WidthAnchor.MakeConstraintTo(button2).Activate();
+							self.WidthAnchor.MakeConstraintToSuperview().Activate();
 						});
 
 						parent.AddSubview(self);
@@ -133,7 +132,6 @@ namespace Shockah.UIKit
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
 			surfaceView.Color = Color.White * (0.8f + 0.2f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
-			Root.Update();
 			Root.Draw(e.SpriteBatch);
 		}
 	}
