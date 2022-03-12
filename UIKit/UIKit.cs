@@ -95,14 +95,14 @@ namespace Shockah.UIKit
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed OK button", LogLevel.Info);
 								parent.AddArrangedSubview(self);
-								self.HeightAnchor.MakeConstraint(64).Activate();
+								self.MakeAspectRatioConstraint().Activate();
 							});
 
 							var button2 = new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed Cancel button", LogLevel.Info);
 								parent.AddArrangedSubview(self);
-								self.HeightAnchor.MakeConstraint(64).Activate();
+								self.MakeAspectRatioConstraint().Activate();
 							});
 
 							parent.AddArrangedSubview(self);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Shockah.UIKit.Geometry;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 
@@ -8,6 +9,32 @@ namespace Shockah.UIKit
 
 	public static class IConstrainables
 	{
+		#region Self
+
+		[Pure]
+		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
+			this ConstrainableType self,
+			UIVector2 ratio,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> MakeAspectRatioConstraint(self, ratio.X / ratio.Y, relation, priority);
+
+		[Pure]
+		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
+			this ConstrainableType self,
+			float ratio = 1f,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> new(self.WidthAnchor, 0f, ratio, self.HeightAnchor, relation, priority);
+
+		#endregion
+
+		#region Any other constrainable
+
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsTo(
 			this IConstrainable.Horizontal self,
@@ -68,6 +95,25 @@ namespace Shockah.UIKit
 		}
 
 		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsTo<ConstrainableTypeA, ConstrainableTypeB>(
+			this ConstrainableTypeA self,
+			ConstrainableTypeB other,
+			UIVector2? offset = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableTypeA : IConstrainable.Horizontal, IConstrainable.Vertical
+			where ConstrainableTypeB : IConstrainable.Horizontal, IConstrainable.Vertical
+		{
+			yield return self.CenterXAnchor.MakeConstraintTo(other, offset?.X ?? 0f, relation: relation, priority: priority);
+			yield return self.CenterYAnchor.MakeConstraintTo(other, offset?.Y ?? 0f, relation: relation, priority: priority);
+		}
+
+		#endregion
+
+		#region Superview
+
+		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsToSuperview(
 			this IConstrainable.Horizontal self,
 			float insets = 0f,
@@ -105,5 +151,21 @@ namespace Shockah.UIKit
 				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
 			return self.MakeEdgeConstraintsTo(superview, insets, relation, priority);
 		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsToSuperview<ConstrainableType>(
+			this ConstrainableType self,
+			UIVector2? offset = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+		{
+			var superview = self.ConstrainableOwnerView.Superview
+				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
+			return self.MakeCenterConstraintsTo(superview, offset, relation, priority);
+		}
+
+		#endregion
 	}
 }
