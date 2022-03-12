@@ -2,6 +2,7 @@
 using Shockah.UIKit.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.UIKit
 {
@@ -62,6 +63,19 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public bool IgnoreInvisibleViews
+		{
+			get => _ignoreInvisibleViews;
+			set
+			{
+				if (_ignoreInvisibleViews == value)
+					return;
+				var oldValue = _ignoreInvisibleViews;
+				_ignoreInvisibleViews = value;
+				IgnoreInvisibleViewsChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
 		public UIEdgeInsets ContentInsets
 		{
 			get => _contentInsets;
@@ -81,12 +95,14 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UIStackView, UIStackViewDistribution>? DistributionChanged;
 		public event OwnerValueChangeEvent<UIStackView, UIStackViewAlignment>? AlignmentChanged;
 		public event OwnerValueChangeEvent<UIStackView, float>? SpacingChanged;
+		public event OwnerValueChangeEvent<UIStackView, bool>? IgnoreInvisibleViewsChanged;
 		public event OwnerValueChangeEvent<UIStackView, UIEdgeInsets>? ContentInsetsChanged;
 
 		private Orientation _orientation;
 		private UIStackViewDistribution _distribution = UIStackViewDistribution.Fill;
 		private UIStackViewAlignment _alignment = UIStackViewAlignment.Fill;
 		private float _spacing = 0f;
+		private bool _ignoreInvisibleViews = true;
 		private UIEdgeInsets _contentInsets = new();
 
 		private readonly IList<UIView> _arrangedSubviews = new List<UIView>();
@@ -104,12 +120,36 @@ namespace Shockah.UIKit
 			AlignmentChanged += (_, _, _) => IsDirty = true;
 			SpacingChanged += (_, _, _) => IsDirty = true;
 			ContentInsetsChanged += (_, _, _) => IsDirty = true;
+
+			IgnoreInvisibleViewsChanged += (_, _, newValue) =>
+			{
+				if (newValue)
+				{
+					foreach (var subview in ArrangedSubviews)
+						subview.IsVisibleChanged += OnArrangedSubviewIsVisibleChanged;
+				}
+				else
+				{
+					foreach (var subview in ArrangedSubviews)
+						subview.IsVisibleChanged -= OnArrangedSubviewIsVisibleChanged;
+				}
+				IsDirty = true;
+			};
 		}
 
 		public void AddArrangedSubview(UIView subview)
 		{
-			_arrangedSubviews.Add(subview);
 			AddSubview(subview);
+			StartArrangingSubview(subview);
+		}
+
+		public void StartArrangingSubview(UIView subview)
+		{
+			if (subview.Superview != this)
+				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
+			_arrangedSubviews.Add(subview);
+			if (IgnoreInvisibleViews)
+				subview.IsVisibleChanged += OnArrangedSubviewIsVisibleChanged;
 			IsDirty = true;
 		}
 
@@ -118,6 +158,8 @@ namespace Shockah.UIKit
 			if (subview.Superview != this)
 				throw new InvalidOperationException($"View {subview} is not a subview of {this}.");
 			_arrangedSubviews.Remove(subview);
+			if (IgnoreInvisibleViews)
+				subview.IsVisibleChanged -= OnArrangedSubviewIsVisibleChanged;
 			IsDirty = true;
 		}
 
@@ -126,6 +168,8 @@ namespace Shockah.UIKit
 			if (_arrangedSubviews.Contains(subview))
 			{
 				_arrangedSubviews.Remove(subview);
+				if (IgnoreInvisibleViews)
+					subview.IsVisibleChanged -= OnArrangedSubviewIsVisibleChanged;
 				IsDirty = true;
 			}
 			else if (LayoutHelperViews.Contains(subview))
@@ -146,7 +190,8 @@ namespace Shockah.UIKit
 			StackViewConstraints.Deactivate();
 			StackViewConstraints.Clear();
 
-			if (ArrangedSubviews.Count == 0)
+			var consideredSubviews = IgnoreInvisibleViews ? ArrangedSubviews.Where(v => v.IsVisible).ToList() : ArrangedSubviews;
+			if (consideredSubviews.Count == 0)
 				return;
 
 			void UpdateOrientationalDistributionConstraints<ConstrainableType>(
@@ -157,17 +202,17 @@ namespace Shockah.UIKit
 				float trailingInset
 			) where ConstrainableType : IConstrainable
 			{
-				StackViewConstraints.Add(leadingAnchor(ArrangedSubviews[0]).MakeConstraintTo(leadingAnchor(this), leadingInset));
-				StackViewConstraints.Add(trailingAnchor(ArrangedSubviews[^1]).MakeConstraintTo(trailingAnchor(this), -trailingInset));
+				StackViewConstraints.Add(leadingAnchor(consideredSubviews[0]).MakeConstraintTo(leadingAnchor(this), leadingInset));
+				StackViewConstraints.Add(trailingAnchor(consideredSubviews[^1]).MakeConstraintTo(trailingAnchor(this), -trailingInset));
 				switch (Distribution)
 				{
 					case UIStackViewDistribution.Fill:
 					case UIStackViewDistribution.FillEqually:
-						for (int i = 1; i < ArrangedSubviews.Count; i++)
+						for (int i = 1; i < consideredSubviews.Count; i++)
 						{
-							StackViewConstraints.Add(leadingAnchor(ArrangedSubviews[i]).MakeConstraintTo(trailingAnchor(ArrangedSubviews[i - 1]), Spacing));
+							StackViewConstraints.Add(leadingAnchor(consideredSubviews[i]).MakeConstraintTo(trailingAnchor(consideredSubviews[i - 1]), Spacing));
 							if (Distribution == UIStackViewDistribution.FillEqually)
-								StackViewConstraints.Add(lengthAnchor(ArrangedSubviews[i]).MakeConstraintTo(lengthAnchor(ArrangedSubviews[0])));
+								StackViewConstraints.Add(lengthAnchor(consideredSubviews[i]).MakeConstraintTo(lengthAnchor(consideredSubviews[0])));
 						}
 						break;
 					case UIStackViewDistribution.EqualSpacing:
@@ -176,10 +221,10 @@ namespace Shockah.UIKit
 						AddSubview(layoutHelperView);
 						LayoutHelperViews.Add(layoutHelperView);
 
-						for (int i = 1; i < ArrangedSubviews.Count; i++)
+						for (int i = 1; i < consideredSubviews.Count; i++)
 						{
-							StackViewConstraints.Add(leadingAnchor(layoutHelperView).MakeConstraintTo(trailingAnchor(ArrangedSubviews[i - 1]), Spacing));
-							StackViewConstraints.Add(trailingAnchor(layoutHelperView).MakeConstraintTo(leadingAnchor(ArrangedSubviews[i]), Spacing));
+							StackViewConstraints.Add(leadingAnchor(layoutHelperView).MakeConstraintTo(trailingAnchor(consideredSubviews[i - 1]), Spacing));
+							StackViewConstraints.Add(trailingAnchor(layoutHelperView).MakeConstraintTo(leadingAnchor(consideredSubviews[i]), Spacing));
 						}
 						for (int i = 1; i < LayoutHelperViews.Count; i++)
 							StackViewConstraints.Add(lengthAnchor(LayoutHelperViews[i]).MakeConstraintTo(lengthAnchor(LayoutHelperViews[0])));
@@ -199,14 +244,14 @@ namespace Shockah.UIKit
 				switch (Alignment)
 				{
 					case UIStackViewAlignment.Fill:
-						foreach (var arrangedSubview in ArrangedSubviews)
+						foreach (var arrangedSubview in consideredSubviews)
 						{
 							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
 							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
 						}
 						break;
 					case UIStackViewAlignment.Center:
-						foreach (var arrangedSubview in ArrangedSubviews)
+						foreach (var arrangedSubview in consideredSubviews)
 						{
 							StackViewConstraints.Add(centerAnchor(arrangedSubview).MakeConstraintTo(centerAnchor(this), (leadingInset - trailingInset) / 2));
 							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
@@ -215,7 +260,7 @@ namespace Shockah.UIKit
 						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
 						break;
 					case UIStackViewAlignment.Leading:
-						foreach (var arrangedSubview in ArrangedSubviews)
+						foreach (var arrangedSubview in consideredSubviews)
 						{
 							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
 							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
@@ -224,7 +269,7 @@ namespace Shockah.UIKit
 						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
 						break;
 					case UIStackViewAlignment.Trailing:
-						foreach (var arrangedSubview in ArrangedSubviews)
+						foreach (var arrangedSubview in consideredSubviews)
 						{
 							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
 							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
@@ -275,6 +320,11 @@ namespace Shockah.UIKit
 
 			StackViewConstraints.Activate();
 			IsDirty = false;
+		}
+
+		private void OnArrangedSubviewIsVisibleChanged(UIView subview, bool oldValue, bool newValue)
+		{
+			IsDirty = true;
 		}
 	}
 }
