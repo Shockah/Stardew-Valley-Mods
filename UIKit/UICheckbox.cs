@@ -126,7 +126,7 @@ namespace Shockah.UIKit
 			}));
 		}
 
-		public override void OnUpdateConstraints()
+		protected override void OnUpdateConstraints()
 		{
 			base.OnUpdateConstraints();
 			IntrinsicWidth = CurrentTexture.SourceRect.Width * Scale.X;
@@ -136,7 +136,7 @@ namespace Shockah.UIKit
 		public override void DrawSelf(RenderContext context)
 		{
 			var actualScale = Size / CurrentTexture.SourceRect.Size;
-			context.SpriteBatch.Draw(CurrentTexture.Texture, new(context.X, context.Y), CurrentTexture.SourceRect, Color, 0f, Vector2.Zero, actualScale, SpriteEffects.None, 0f);
+			context.SpriteBatch.Draw(CurrentTexture.Texture, context.Offset, CurrentTexture.SourceRect, Color, 0f, Vector2.Zero, actualScale, SpriteEffects.None, 0f);
 		}
 	}
 }

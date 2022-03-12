@@ -86,29 +86,23 @@ namespace Shockah.UIKit
 			ConstraintSolver.Solve();
 		}
 
-		internal void AddViewVariables(UIView view)
+		public void AddVariables(params ClVariable[] variables)
 		{
-			ConstraintSolver.AddVar(view.LeftVariable.Value);
-			ConstraintSolver.AddVar(view.RightVariable.Value);
-			ConstraintSolver.AddVar(view.TopVariable.Value);
-			ConstraintSolver.AddVar(view.BottomVariable.Value);
+			foreach (var variable in variables)
+				ConstraintSolver.AddVar(variable);
 		}
 
-		internal void RemoveViewVariables(UIView view)
+		public void RemoveVariables(params ClVariable[] variables)
 		{
-			ConstraintSolver.NoteRemovedVariable(view.LeftVariable.Value, view.LeftVariable.Value);
-			ConstraintSolver.NoteRemovedVariable(view.RightVariable.Value, view.RightVariable.Value);
-			ConstraintSolver.NoteRemovedVariable(view.TopVariable.Value, view.TopVariable.Value);
-			ConstraintSolver.NoteRemovedVariable(view.BottomVariable.Value, view.BottomVariable.Value);
+			foreach (var variable in variables)
+				ConstraintSolver.NoteRemovedVariable(variable, variable);
 		}
 
-		internal override void OnInternalLayoutIfNeeded()
+		protected override void OnLayoutIfNeeded()
 		{
-			SolveLayout();
-
-			OnLayoutIfNeeded();
-			foreach (var subview in Subviews)
-				subview.LayoutIfNeeded();
+			if (Root is null)
+				SolveLayout();
+			base.OnLayoutIfNeeded();
 		}
 
 		internal void QueueAddConstraint(UILayoutConstraint constraint)

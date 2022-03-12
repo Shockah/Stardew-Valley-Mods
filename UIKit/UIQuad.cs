@@ -51,7 +51,7 @@ namespace Shockah.UIKit
 		{
 			context.SpriteBatch.Draw(
 				texture: (Texture ?? Pixel.Value).Texture,
-				position: new(context.X, context.Y),
+				position: context.Offset,
 				sourceRectangle: (Texture ?? Pixel.Value).SourceRect,
 				color: Color,
 				rotation: 0f,

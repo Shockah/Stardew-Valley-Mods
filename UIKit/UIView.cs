@@ -304,10 +304,12 @@ namespace Shockah.UIKit
 
 		public void LayoutIfNeeded()
 		{
-			OnInternalLayoutIfNeeded();
+			OnLayoutIfNeeded();
+			foreach (var subview in Subviews)
+				subview.LayoutIfNeeded();
 		}
 
-		internal virtual void OnInternalLayoutIfNeeded()
+		protected virtual void OnLayoutIfNeeded()
 		{
 			if (Root is null)
 				return;
@@ -321,14 +323,6 @@ namespace Shockah.UIKit
 			Y2 = (float)(BottomVariable.Value.Value - (Superview?.TopVariable?.Value?.Value ?? 0));
 			if (oldWidth != Width || oldHeight != Height)
 				SizeChanged?.Invoke(this, (oldWidth, oldHeight), (Width, Height));
-
-			OnLayoutIfNeeded();
-			foreach (var subview in Subviews)
-				subview.LayoutIfNeeded();
-		}
-
-		public virtual void OnLayoutIfNeeded()
-		{
 		}
 
 		public void UpdateConstraints()
@@ -338,20 +332,11 @@ namespace Shockah.UIKit
 			OnUpdateConstraints();
 		}
 
-		public virtual void OnUpdateConstraints()
+		protected virtual void OnUpdateConstraints()
 		{
 		}
 
-		public void DrawInParentContext(RenderContext context)
-		{
-			if (!IsVisible)
-				return;
-
-			var newContext = context.GetTranslated(X1, Y1);
-			DrawInSelfContext(newContext);
-		}
-
-		public void DrawInSelfContext(RenderContext context)
+		public void Draw(RenderContext context)
 		{
 			if (!IsVisible)
 				return;
@@ -363,7 +348,7 @@ namespace Shockah.UIKit
 		public virtual void DrawChildren(RenderContext context)
 		{
 			foreach (var subview in Subviews)
-				subview.DrawInParentContext(context);
+				subview.Draw(context.GetTranslated(GetSubviewTranslation(subview)));
 		}
 
 		public void AddGestureRecognizer(UIGestureRecognizer recognizer)
@@ -388,7 +373,7 @@ namespace Shockah.UIKit
 
 		public virtual bool IsTouchInBounds(UITouch touch)
 		{
-			return touch.LastPoint.X >= X1 && touch.LastPoint.Y >= Y1 && touch.LastPoint.X < X2 && touch.LastPoint.Y < Y2;
+			return touch.LastPoint.X >= 0f && touch.LastPoint.Y >= 0f && touch.LastPoint.X < Width && touch.LastPoint.Y < Height;
 		}
 
 		public void RemoveHover(UITouch touch)
@@ -398,17 +383,18 @@ namespace Shockah.UIKit
 				_hoverPointers.RemoveAt(indexToRemove.Value);
 		}
 
-		public IEnumerable<UIView> GetHoveredViewsAndUpdateHover(UITouch touch)
+		public virtual UIVector2 GetSubviewTranslation(UIView subview)
+			=> subview.TopLeft;
+
+		public virtual bool OnUpdateHover(UITouch touch, bool isHandled = false)
 		{
 			if (!IsVisible)
-				yield break;
+				return isHandled;
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
-				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse().ToList())
-					foreach (var hoveredView in subview.GetHoveredViewsAndUpdateHover(translatedTouch))
-						yield return hoveredView;
+					isHandled |= subview.OnUpdateHover(touch.GetTranslated(GetSubviewTranslation(subview)));
 			}
 			if (IsTouchInBounds(touch))
 			{
@@ -423,9 +409,7 @@ namespace Shockah.UIKit
 				{
 					_hoverPointers[indexToUpdate.Value] = touch;
 				}
-
-				if (IsSelfTouchInteractionEnabled)
-					yield return this;
+				isHandled = OnSelfHover(touch);
 			}
 			else
 			{
@@ -437,6 +421,12 @@ namespace Shockah.UIKit
 					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<UITouch>)_hoverPointers);
 				}
 			}
+			return isHandled;
+		}
+
+		public virtual bool OnSelfHover(UITouch touch)
+		{
+			return false;
 		}
 
 		public virtual bool OnTouchDown(UITouch touch, bool isHandled = false)
@@ -447,9 +437,8 @@ namespace Shockah.UIKit
 			var isTouchInBounds = (ClipsSelfTouchesToBounds || ClipsSubviewTouchesToBounds) ? this.IsTouchInBounds(touch) : true;
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
-				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse().ToList())
-					isHandled |= subview.OnTouchDown(translatedTouch, isHandled);
+					isHandled |= subview.OnTouchDown(touch.GetTranslated(GetSubviewTranslation(subview)), isHandled);
 			}
 			if (IsSelfTouchInteractionEnabled && !isHandled && (!ClipsSelfTouchesToBounds || isTouchInBounds))
 			{
@@ -475,9 +464,8 @@ namespace Shockah.UIKit
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
-				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse().ToList())
-					subview.OnTouchChanged(translatedTouch);
+					subview.OnTouchChanged(touch.GetTranslated(GetSubviewTranslation(subview)));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -493,9 +481,8 @@ namespace Shockah.UIKit
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
-				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse().ToList())
-					subview.OnTouchUp(translatedTouch);
+					subview.OnTouchUp(touch.GetTranslated(GetSubviewTranslation(subview)));
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -518,7 +505,7 @@ namespace Shockah.UIKit
 
 		private void OnAddedToRoot(UIRootView root)
 		{
-			root.AddViewVariables(this);
+			root.AddVariables(LeftVariable.Value, RightVariable.Value, TopVariable.Value, BottomVariable.Value);
 
 			root.QueueAddConstraint(RightAfterLeftConstraint.Value);
 			root.QueueAddConstraint(BottomAfterTopConstraint.Value);
@@ -549,7 +536,7 @@ namespace Shockah.UIKit
 			foreach (var constraint in IntrinsicSizeConstraints)
 				root.QueueRemoveConstraint(constraint);
 
-			root.RemoveViewVariables(this);
+			root.RemoveVariables(LeftVariable.Value, RightVariable.Value, TopVariable.Value, BottomVariable.Value);
 		}
 
 		private void OnIntrinsicSizeChanged((float? X, float? Y) intrinsicSize)

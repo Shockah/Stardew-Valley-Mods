@@ -116,7 +116,7 @@ namespace Shockah.UIKit
 
 		protected override void DrawSelf(RenderContext context, float xOffset)
 		{
-			Font.Draw(context.SpriteBatch, new(context.X + xOffset, context.Y), Size, Text, Color);
+			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, Text, Color);
 		}
 	}
 
@@ -128,7 +128,7 @@ namespace Shockah.UIKit
 
 		protected override void DrawSelf(RenderContext context, float xOffset)
 		{
-			Font.Draw(context.SpriteBatch, new(context.X + xOffset, context.Y), Size, Text);
+			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, Text);
 		}
 	}
 }

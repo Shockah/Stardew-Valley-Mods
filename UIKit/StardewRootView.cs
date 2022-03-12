@@ -39,6 +39,7 @@ namespace Shockah.UIKit
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private UITouch<int, ISet<SButton>>? CurrentTouch;
 		private bool SuppressTouch = false;
+		private UIVector2? LastMouseScroll = null;
 
 		public StardewRootView(IInputHelper inputHelper) : base(new PrivateGestureRecognizerManager())
 		{
@@ -89,10 +90,23 @@ namespace Shockah.UIKit
 			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: Game1.oldMouseState)).ToHashSet();
 			var newDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: currentMouseState)).ToHashSet();
 
-			UIVector2 newTouchPoint = new(Game1.getMouseX(true), Game1.getMouseY(true));
-			UITouch<int, ISet<SButton>> newTouch = new(this, 0, newTouchPoint, newDown);
+			UIVector2 currentMouseScroll = new(
+				-currentMouseState.HorizontalScrollWheelValue,
+				-currentMouseState.ScrollWheelValue
+			);
+			if (LastMouseScroll is null)
+				LastMouseScroll = currentMouseScroll;
 
-			GetHoveredViewsAndUpdateHover(newTouch).ToList();
+			UIVector2 newTouchPoint = new(Game1.getMouseX(true), Game1.getMouseY(true));
+			UITouch<int, ISet<SButton>> newTouch = new(
+				this,
+				0,
+				newTouchPoint,
+				newDown,
+				currentMouseScroll - LastMouseScroll.Value
+			);
+
+			OnUpdateHover(newTouch);
 
 			if (CurrentTouch is null)
 			{
@@ -123,6 +137,8 @@ namespace Shockah.UIKit
 				}
 			}
 
+			LastMouseScroll = currentMouseScroll;
+
 			if (SuppressTouch && CurrentTouch is not null)
 				foreach (var button in CurrentTouch.Last.State)
 					InputHelper.Suppress(button);
@@ -146,7 +162,7 @@ namespace Shockah.UIKit
 
 		public void Draw(SpriteBatch b)
 		{
-			DrawInParentContext(new(b));
+			Draw(new RenderContext(b, TopLeft));
 		}
 	}
 }

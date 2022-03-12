@@ -66,7 +66,7 @@ namespace Shockah.UIKit
 			if (wasInProgress)
 				context.SpriteBatch.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
 
-			context.SpriteBatch.Draw(RenderTarget!, new Vector2(context.X, context.Y), Color);
+			context.SpriteBatch.Draw(RenderTarget!, context.Offset, Color);
 		}
 	}
 }

@@ -42,7 +42,7 @@ namespace Shockah.UIKit.Gesture
 
 		public abstract bool IsSame(UITouch? touch);
 
-		public abstract UITouch GetTranslated(float x, float y);
+		public abstract UITouch GetTranslated(UIVector2 translation);
 	}
 	
 	public class UITouch<TPointerID, TPointerState>: UITouch
@@ -52,11 +52,13 @@ namespace Shockah.UIKit.Gesture
 		{
 			public readonly UIVector2 Point { get; }
 			public readonly TPointerState State { get; }
+			public readonly UIVector2 Scroll { get; }
 
-			public Snapshot(UIVector2 point, TPointerState state)
+			public Snapshot(UIVector2 point, TPointerState state, UIVector2 scroll)
 			{
 				this.Point = point;
 				this.State = state;
+				this.Scroll = scroll;
 			}
 		}
 
@@ -71,28 +73,34 @@ namespace Shockah.UIKit.Gesture
 
 		private readonly IList<Snapshot> _snapshots = new List<Snapshot>();
 
-		public UITouch(IGestureRecognizerManager gestureRecognizerManager, TPointerID pointerID, UIVector2 initialPoint, TPointerState initialState) : base(gestureRecognizerManager)
+		public UITouch(
+			IGestureRecognizerManager gestureRecognizerManager,
+			TPointerID pointerID,
+			UIVector2 initialPoint,
+			TPointerState initialState,
+			UIVector2? initialScroll = null
+		) : base(gestureRecognizerManager)
 		{
 			this.PointerID = pointerID;
-			_snapshots.Add(new(initialPoint, initialState));
+			_snapshots.Add(new(initialPoint, initialState, initialScroll ?? UIVector2.Zero));
 		}
 
 		public override string ToString()
-			=> $"UITouch{{ID = {PointerID}, IsFinished = {IsFinished}, Snapshots = {Snapshots.Count}, Point = {LastPoint}, State = {Last.State}, ActiveRecognizer = {ActiveRecognizer}}}";
+			=> $"UITouch{{ID = {PointerID}, IsFinished = {IsFinished}, Snapshots = {Snapshots.Count}, Point = {LastPoint}, State = {Last.State}, Scroll = {Last.Scroll}, ActiveRecognizer = {ActiveRecognizer}}}";
 
-		public void AddSnapshot(UIVector2 point, TPointerState state)
+		public void AddSnapshot(UIVector2 point, TPointerState state, UIVector2? scroll = null)
 		{
-			_snapshots.Add(new(point, state));
+			_snapshots.Add(new(point, state, scroll ?? UIVector2.Zero));
 		}
 
 		public override bool IsSame(UITouch? touch)
 			=> touch is UITouch<TPointerID, TPointerState> other && PointerID.Equals(other.PointerID);
 
-		public override UITouch GetTranslated(float x, float y)
+		public override UITouch GetTranslated(UIVector2 translation)
 		{
-			var touch = new UITouch<TPointerID, TPointerState>(GestureRecognizerManager, PointerID, FirstPoint - (x, y), First.State);
+			var touch = new UITouch<TPointerID, TPointerState>(GestureRecognizerManager, PointerID, FirstPoint - translation, First.State, First.Scroll);
 			for (int i = 1; i < Snapshots.Count; i++)
-				touch.AddSnapshot(Snapshots[i].Point - (x, y), Snapshots[i].State);
+				touch.AddSnapshot(Snapshots[i].Point - translation, Snapshots[i].State, Snapshots[i].Scroll);
 			return touch;
 		}
 	}
