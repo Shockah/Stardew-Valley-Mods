@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.IL;
+using Shockah.CommonModCode.SMAPI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -204,19 +205,19 @@ namespace Shockah.DontStopMeNow
 				return;
 			switch (LastToolButton.Value.Value.GetButtonType())
 			{
-				case InputHelper.ButtonType.Gamepad:
+				case InputExt.ButtonType.Gamepad:
 					if (!Config.FixFacingOnController)
 						return;
 					FixControllerFacingDirection();
 					break;
-				case InputHelper.ButtonType.Keyboard:
-				case InputHelper.ButtonType.Mouse:
+				case InputExt.ButtonType.Keyboard:
+				case InputExt.ButtonType.Mouse:
 					if (!Config.FixFacingOnMouse)
 						return;
 					FixMouseFacingDirection();
 					break;
 				default:
-					throw new ArgumentException($"{nameof(InputHelper.ButtonType)} has an invalid value.");
+					throw new ArgumentException($"{nameof(InputExt.ButtonType)} has an invalid value.");
 			}
 		}
 

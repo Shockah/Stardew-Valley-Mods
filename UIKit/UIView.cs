@@ -1,4 +1,5 @@
 ﻿using Cassowary;
+using Shockah.CommonModCode;
 using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
 using System;
@@ -131,6 +132,9 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public IReadOnlyList<UITouch> HoverPointers => (IReadOnlyList<UITouch>)_hoverPointers;
+		public bool Hover => _hoverPointers.Count != 0;
+
 		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
 		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
 		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
@@ -140,6 +144,7 @@ namespace Shockah.UIKit
 		public bool ClipsSubviewTouchesToBounds { get; set; } = false;
 		public bool IsSelfTouchInteractionEnabled { get; set; } = false;
 		public bool IsSubviewTouchInteractionEnabled { get; set; } = true;
+		public bool IsTouchThrough { get; set; } = true;
 
 		public event ParentChildEvent<UIRootView, UIView>? AddedToRoot;
 		public event ParentChildEvent<UIRootView, UIView>? RemovedFromRoot;
@@ -149,6 +154,8 @@ namespace Shockah.UIKit
 		public event ParentChildEvent<UIView, UIView>? RemovedSubview;
 		public event OwnerValueChangeEvent<UIView, (float? X, float? Y)>? IntrinsicSizeChanged;
 		public event OwnerValueChangeEvent<UIView, bool>? IsVisibleChanged;
+		public event OwnerValueChangeEvent<UIView, IReadOnlyList<UITouch>>? HoverPointersChanged;
+		public event OwnerValueChangeEvent<UIView, bool>? HoverChanged;
 		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintRemoved;
@@ -160,6 +167,7 @@ namespace Shockah.UIKit
 		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private bool _isVisible = true;
+		private readonly IList<UITouch> _hoverPointers = new List<UITouch>();
 		private float? _intrinsicWidth;
 		private float? _intrinsicHeight;
 
@@ -219,6 +227,7 @@ namespace Shockah.UIKit
 			AddedToRoot += (root, _) => OnAddedToRoot(root);
 			RemovedFromRoot += (root, _) => OnRemovedFromRoot(root);
 			IntrinsicSizeChanged += (_, _, newValue) => OnIntrinsicSizeChanged(newValue);
+			HoverPointersChanged += (_, oldValue, newValue) => OnHoverPointersChanged(oldValue, newValue);
 		}
 
 		public void AddSubview(UIView subview)
@@ -335,6 +344,43 @@ namespace Shockah.UIKit
 			return touch.LastPoint.X >= X1 && touch.LastPoint.Y >= Y1 && touch.LastPoint.X < X2 && touch.LastPoint.Y < Y2;
 		}
 
+		public void RemoveHover(UITouch touch)
+		{
+			var indexToRemove = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+			if (indexToRemove is not null)
+				_hoverPointers.RemoveAt(indexToRemove.Value);
+		}
+
+		public IEnumerable<UIView> GetHoveredViewsAndUpdateHover(UITouch touch)
+		{
+			if (!IsVisible)
+				yield break;
+
+			var isTouchInBounds = !ClipsSubviewTouchesToBounds || this.IsTouchInBounds(touch);
+			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
+			{
+				var translatedTouch = touch.GetTranslated(X1, Y1);
+				foreach (var subview in Subviews.Reverse().ToList())
+					foreach (var hoveredView in subview.GetHoveredViewsAndUpdateHover(translatedTouch))
+						yield return hoveredView;
+			}
+			if (IsSelfTouchInteractionEnabled && isTouchInBounds)
+			{
+				var indexToUpdate = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+				if (indexToUpdate is null)
+				{
+					var oldValue = _hoverPointers.ToList();
+					_hoverPointers.Add(touch);
+					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<UITouch>)_hoverPointers);
+				}
+				else
+				{
+					_hoverPointers[indexToUpdate.Value] = touch;
+				}
+				yield return this;
+			}
+		}
+
 		public virtual bool OnTouchDown(UITouch touch, bool isHandled = false)
 		{
 			if (!IsVisible)
@@ -343,8 +389,9 @@ namespace Shockah.UIKit
 			var isTouchInBounds = (ClipsSelfTouchesToBounds || ClipsSubviewTouchesToBounds) ? this.IsTouchInBounds(touch) : true;
 			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
 			{
+				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse())
-					isHandled |= subview.OnTouchDown(touch.GetTranslated(X1, Y1), isHandled);
+					isHandled |= subview.OnTouchDown(translatedTouch, isHandled);
 			}
 			if (IsSelfTouchInteractionEnabled && !isHandled && (!ClipsSelfTouchesToBounds || isTouchInBounds))
 			{
@@ -358,6 +405,8 @@ namespace Shockah.UIKit
 					}
 				}
 			}
+			if (!IsTouchThrough && isTouchInBounds)
+				isHandled = true;
 			return isHandled;
 		}
 
@@ -368,8 +417,9 @@ namespace Shockah.UIKit
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
+				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews)
-					subview.OnTouchChanged(touch.GetTranslated(X1, Y1));
+					subview.OnTouchChanged(translatedTouch);
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -385,8 +435,9 @@ namespace Shockah.UIKit
 
 			if (IsSubviewTouchInteractionEnabled)
 			{
+				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews)
-					subview.OnTouchUp(touch.GetTranslated(X1, Y1));
+					subview.OnTouchUp(translatedTouch);
 			}
 			if (IsSelfTouchInteractionEnabled)
 			{
@@ -473,6 +524,14 @@ namespace Shockah.UIKit
 				));
 			}
 			IntrinsicSizeConstraints = newConstraints;
+		}
+
+		private void OnHoverPointersChanged(IReadOnlyList<UITouch> oldValue, IReadOnlyList<UITouch> newValue)
+		{
+			var oldEmpty = oldValue.Count == 0;
+			var newEmpty = newValue.Count == 0;
+			if (oldEmpty != newEmpty)
+				HoverChanged?.Invoke(this, !oldEmpty, !newEmpty);
 		}
 
 		public abstract class Drawable: UIView

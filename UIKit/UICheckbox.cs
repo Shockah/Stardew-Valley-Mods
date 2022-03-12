@@ -80,6 +80,19 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public string? ClickSoundName
+		{
+			get => _clickSoundName;
+			set
+			{
+				if (_clickSoundName == value)
+					return;
+				var oldValue = _clickSoundName;
+				_clickSoundName = value;
+				ClickSoundNameChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
 		public UITextureRect CurrentTexture
 			=> IsChecked ? CheckedTexture : UncheckedTexture;
 
@@ -88,12 +101,14 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UICheckbox, UITextureRect>? UncheckedTextureChanged;
 		public event OwnerValueChangeEvent<UICheckbox, UIVector2>? ScaleChanged;
 		public event OwnerValueChangeEvent<UICheckbox, Color>? ColorChanged;
+		public event OwnerValueChangeEvent<UICheckbox, string?>? ClickSoundNameChanged;
 
 		private bool _isChecked = false;
 		private Lazy<UITextureRect> LazyCheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectChecked));
 		private Lazy<UITextureRect> LazyUncheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectUnchecked));
 		private UIVector2 _scale = new(4);
 		private Color _color = Color.White;
+		private string? _clickSoundName = "drumkit6";
 
 		public UICheckbox()
 		{
@@ -103,6 +118,7 @@ namespace Shockah.UIKit
 
 			AddGestureRecognizer(new UITapGestureRecognizer(onTap: (_, _) =>
 			{
+				Game1.playSound(ClickSoundName);
 				IsChecked = !IsChecked;
 			}));
 		}

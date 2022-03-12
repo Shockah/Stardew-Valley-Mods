@@ -4,7 +4,7 @@ using StardewValley;
 
 namespace Shockah.CommonModCode.SMAPI
 {
-	public static class InputHelper
+	public static class InputExt
 	{
 		public enum ButtonType { Mouse, Keyboard, Gamepad }
 
