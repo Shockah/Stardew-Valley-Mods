@@ -403,15 +403,14 @@ namespace Shockah.UIKit
 			if (!IsVisible)
 				yield break;
 
-			var isTouchInBounds = this.IsTouchInBounds(touch);
-			if (IsSubviewTouchInteractionEnabled && (!ClipsSubviewTouchesToBounds || isTouchInBounds))
+			if (IsSubviewTouchInteractionEnabled)
 			{
 				var translatedTouch = touch.GetTranslated(X1, Y1);
 				foreach (var subview in Subviews.Reverse().ToList())
 					foreach (var hoveredView in subview.GetHoveredViewsAndUpdateHover(translatedTouch))
 						yield return hoveredView;
 			}
-			if (isTouchInBounds)
+			if (IsTouchInBounds(touch))
 			{
 				var indexToUpdate = _hoverPointers.FirstIndex(t => t.IsSame(touch));
 				if (indexToUpdate is null)
