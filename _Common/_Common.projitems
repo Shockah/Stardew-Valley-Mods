@@ -12,6 +12,7 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CallerIdentifiers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\GMCMI18nHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiPageLinkOptionForHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GMCM\Helper\MultiSelectTextOptionForHelper.cs" />

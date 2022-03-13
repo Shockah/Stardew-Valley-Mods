@@ -35,14 +35,26 @@ namespace Shockah.UIKit
 		public IReadOnlySet<UILayoutConstraint> Constraints => (IReadOnlySet<UILayoutConstraint>)_constraints;
 		public IReadOnlyList<UIGestureRecognizer> GestureRecognizers => (IReadOnlyList<UIGestureRecognizer>)_gestureRecognizers;
 
-		public IEnumerable<UILayoutConstraint> AllConstraints
+		public IEnumerable<UILayoutConstraint> AllDownstreamConstraints
 		{
 			get
 			{
 				foreach (var constraint in HeldConstraints)
 					yield return constraint;
 				foreach (var subview in Subviews)
-					foreach (var constraint in subview.AllConstraints)
+					foreach (var constraint in subview.AllDownstreamConstraints)
+						yield return constraint;
+			}
+		}
+
+		public IEnumerable<UILayoutConstraint> AllUpstreamConstraints
+		{
+			get
+			{
+				foreach (var constraint in HeldConstraints)
+					yield return constraint;
+				if (Superview is not null)
+					foreach (var constraint in Superview.AllUpstreamConstraints)
 						yield return constraint;
 			}
 		}
@@ -109,7 +121,7 @@ namespace Shockah.UIKit
 
 		public float? IntrinsicHeight
 		{
-			get => _intrinsicWidth;
+			get => _intrinsicHeight;
 			set
 			{
 				if (_intrinsicHeight == value)
@@ -136,10 +148,53 @@ namespace Shockah.UIKit
 		public IReadOnlyList<UITouch> HoverPointers => (IReadOnlyList<UITouch>)_hoverPointers;
 		public bool Hover => _hoverPointers.Count != 0;
 
-		public UILayoutConstraintPriority HorizontalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
-		public UILayoutConstraintPriority HorizontalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
-		public UILayoutConstraintPriority VerticalContentHuggingPriority { get; set; } = UILayoutConstraintPriority.Low;
-		public UILayoutConstraintPriority VerticalCompressionResistancePriority { get; set; } = UILayoutConstraintPriority.High;
+		public UILayoutConstraintPriority HorizontalContentHuggingPriority
+		{
+			get => _horizontalContentHuggingPriority;
+			set
+			{
+				if (_horizontalContentHuggingPriority == value)
+					return;
+				_horizontalContentHuggingPriority = value;
+				UpdateIntrinsicSizeConstraints();
+			}
+		}
+
+		public UILayoutConstraintPriority HorizontalCompressionResistancePriority
+		{
+			get => _horizontalCompressionResistancePriority;
+			set
+			{
+				if (_horizontalCompressionResistancePriority == value)
+					return;
+				_horizontalCompressionResistancePriority = value;
+				UpdateIntrinsicSizeConstraints();
+			}
+		}
+
+		public UILayoutConstraintPriority VerticalContentHuggingPriority
+		{
+			get => _verticalContentHuggingPriority;
+			set
+			{
+				if (_verticalContentHuggingPriority == value)
+					return;
+				_verticalContentHuggingPriority = value;
+				UpdateIntrinsicSizeConstraints();
+			}
+		}
+
+		public UILayoutConstraintPriority VerticalCompressionResistancePriority
+		{
+			get => _verticalCompressionResistancePriority;
+			set
+			{
+				if (_verticalCompressionResistancePriority == value)
+					return;
+				_verticalCompressionResistancePriority = value;
+				UpdateIntrinsicSizeConstraints();
+			}
+		}
 
 		public bool ClipsSelfTouchesToBounds { get; set; } = true;
 		public bool ClipsSubviewTouchesToBounds { get; set; } = false;
@@ -189,19 +244,19 @@ namespace Shockah.UIKit
 		private readonly Lazy<UILayoutConstraint> RightAfterLeftConstraint;
 		private readonly Lazy<UILayoutConstraint> BottomAfterTopConstraint;
 
+		private UILayoutConstraintPriority _horizontalContentHuggingPriority = UILayoutConstraintPriority.Low;
+		private UILayoutConstraintPriority _horizontalCompressionResistancePriority = UILayoutConstraintPriority.High;
+		private UILayoutConstraintPriority _verticalContentHuggingPriority = UILayoutConstraintPriority.Low;
+		private UILayoutConstraintPriority _verticalCompressionResistancePriority = UILayoutConstraintPriority.High;
+
 		private IReadOnlyList<UILayoutConstraint> _intrinsicSizeConstraints = Array.Empty<UILayoutConstraint>();
 		private IReadOnlyList<UILayoutConstraint> IntrinsicSizeConstraints
 		{
 			get => _intrinsicSizeConstraints;
 			set
 			{
-				if (Root is not null)
-				{
-					foreach (var constraint in _intrinsicSizeConstraints)
-						Root.QueueRemoveConstraint(constraint);
-					foreach (var constraint in value)
-						Root.QueueAddConstraint(constraint);
-				}
+				_intrinsicSizeConstraints.Deactivate();
+				value.Activate();
 				_intrinsicSizeConstraints = value;
 			}
 		}
@@ -227,7 +282,7 @@ namespace Shockah.UIKit
 
 			AddedToRoot += (root, _) => OnAddedToRoot(root);
 			RemovedFromRoot += (root, _) => OnRemovedFromRoot(root);
-			IntrinsicSizeChanged += (_, _, newValue) => OnIntrinsicSizeChanged(newValue);
+			IntrinsicSizeChanged += (_, _, newValue) => UpdateIntrinsicSizeConstraints();
 			HoverPointersChanged += (_, oldValue, newValue) => OnHoverPointersChanged(oldValue, newValue);
 		}
 
@@ -388,17 +443,19 @@ namespace Shockah.UIKit
 		public virtual UIVector2 GetSubviewTranslation(UIView subview)
 			=> subview.TopLeft;
 
-		public virtual bool OnUpdateHover(UITouch touch, bool isHandled = false)
+		public virtual bool OnUpdateHover(UITouch touch, bool isHandled = false, bool isTouchInParentBounds = true)
 		{
 			if (!IsVisible)
 				return isHandled;
 
+			var isTouchInBounds = this.IsTouchInBounds(touch);
 			if (IsSubviewTouchInteractionEnabled)
 			{
+				var newIsTouchInParentBounds = ClipsSubviewTouchesToBounds ? isTouchInParentBounds && isTouchInBounds : isTouchInParentBounds;
 				foreach (var subview in Subviews.Reverse().ToList())
-					isHandled |= subview.OnUpdateHover(touch.GetTranslated(GetSubviewTranslation(subview)));
+					isHandled |= subview.OnUpdateHover(touch.GetTranslated(GetSubviewTranslation(subview)), isHandled, newIsTouchInParentBounds);
 			}
-			if (IsTouchInBounds(touch))
+			if (isTouchInBounds && isTouchInParentBounds)
 			{
 				var indexToUpdate = _hoverPointers.FirstIndex(t => t.IsSame(touch));
 				if (indexToUpdate is null)
@@ -513,8 +570,6 @@ namespace Shockah.UIKit
 
 			root.QueueAddConstraint(RightAfterLeftConstraint.Value);
 			root.QueueAddConstraint(BottomAfterTopConstraint.Value);
-			foreach (var constraint in IntrinsicSizeConstraints)
-				root.QueueAddConstraint(constraint);
 			foreach (var constraint in HeldConstraints)
 				root.QueueAddConstraint(constraint);
 
@@ -537,37 +592,39 @@ namespace Shockah.UIKit
 
 			root.QueueRemoveConstraint(RightAfterLeftConstraint.Value);
 			root.QueueRemoveConstraint(BottomAfterTopConstraint.Value);
-			foreach (var constraint in IntrinsicSizeConstraints)
-				root.QueueRemoveConstraint(constraint);
 
 			root.RemoveVariables(LeftVariable.Value, RightVariable.Value, TopVariable.Value, BottomVariable.Value);
 		}
 
-		private void OnIntrinsicSizeChanged((float? X, float? Y) intrinsicSize)
+		private void UpdateIntrinsicSizeConstraints()
 		{
 			var newConstraints = new List<UILayoutConstraint>();
-			if (intrinsicSize.X is not null)
+			if (IntrinsicWidth is not null)
 			{
-				newConstraints.Add(((IUIAnchor.Internal)WidthAnchor).MakeConstraint(
-					intrinsicSize.X.Value,
+				newConstraints.Add(WidthAnchor.MakeConstraint(
+					"intrinsicWidth-contentHugging",
+					IntrinsicWidth.Value,
 					UILayoutConstraintRelation.LessThanOrEqual,
 					HorizontalContentHuggingPriority
 				));
-				newConstraints.Add(((IUIAnchor.Internal)WidthAnchor).MakeConstraint(
-					intrinsicSize.X.Value,
+				newConstraints.Add(WidthAnchor.MakeConstraint(
+					"intrinsicWidth-compressionResistance",
+					IntrinsicWidth.Value,
 					UILayoutConstraintRelation.GreaterThanOrEqual,
 					HorizontalCompressionResistancePriority
 				));
 			}
-			if (intrinsicSize.Y is not null)
+			if (IntrinsicHeight is not null)
 			{
-				newConstraints.Add(((IUIAnchor.Internal)HeightAnchor).MakeConstraint(
-					intrinsicSize.Y.Value,
+				newConstraints.Add(HeightAnchor.MakeConstraint(
+					"intrinsicHeight-contentHugging",
+					IntrinsicHeight.Value,
 					UILayoutConstraintRelation.LessThanOrEqual,
 					VerticalContentHuggingPriority
 				));
-				newConstraints.Add(((IUIAnchor.Internal)HeightAnchor).MakeConstraint(
-					intrinsicSize.Y.Value,
+				newConstraints.Add(HeightAnchor.MakeConstraint(
+					"intrinsicHeight-compressionResistance",
+					IntrinsicHeight.Value,
 					UILayoutConstraintRelation.GreaterThanOrEqual,
 					VerticalCompressionResistancePriority
 				));

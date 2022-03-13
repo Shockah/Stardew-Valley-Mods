@@ -31,11 +31,10 @@ namespace Shockah.UIKit
 			}
 
 			var commonIndex = GetCommonViewIndex();
-			var index = aSuperviews.Count - 1;
-			while (index-- > commonIndex)
-				point += aSuperviews[index].TopLeft;
-			while (index++ < bSuperviews.Count)
-				point -= bSuperviews[index].TopLeft;
+			for (int i = aSuperviews.Count - 1; i > commonIndex; i--)
+				point += aSuperviews[i].TopLeft;
+			for (int i = commonIndex + 1; i < bSuperviews.Count; i++)
+				point -= bSuperviews[i].TopLeft;
 			return point;
 		}
 

@@ -199,7 +199,7 @@ namespace Shockah.UIKit
 			quad = new UIQuad().With(this, (self, parent) =>
 			{
 				parent.AddSubview(self);
-				self.MakeEdgeConstraintsToSuperview().Activate();
+				self.MakeEdgeConstraintsToSuperview("UITextureButton-impl").Activate();
 			});
 		}
 

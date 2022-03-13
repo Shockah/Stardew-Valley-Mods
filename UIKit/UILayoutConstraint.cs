@@ -1,5 +1,7 @@
 ﻿using Cassowary;
+using Shockah.CommonModCode;
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Shockah.UIKit
@@ -10,11 +12,13 @@ namespace Shockah.UIKit
 		public static UILayoutConstraintPriority High => _high;
 		public static UILayoutConstraintPriority Medium => _medium;
 		public static UILayoutConstraintPriority Low => _low;
+		public static UILayoutConstraintPriority OptimalCalculations => _optimalCalculations;
 
 		private static readonly UILayoutConstraintPriority _required = new(1000f);
 		private static readonly UILayoutConstraintPriority _high = new(750f);
 		private static readonly UILayoutConstraintPriority _medium = new(500f);
 		private static readonly UILayoutConstraintPriority _low = new(250f);
+		private static readonly UILayoutConstraintPriority _optimalCalculations = new(50f);
 
 		public readonly float Value { get; }
 		internal readonly ClStrength Strength { get; }
@@ -22,7 +26,7 @@ namespace Shockah.UIKit
 		public UILayoutConstraintPriority(float value = 1000f)
 		{
 			Value = Math.Clamp(value, 0f, 1000f);
-			Strength = Value >= 1000f ? ClStrength.Required : new($"{Value}", new(Value, 0f, 0f));
+			Strength = Value >= 1000f ? ClStrength.Required : new($"{Value}", new(0f, Value, 0f));
 		}
 
 		public override string ToString()
@@ -90,13 +94,40 @@ namespace Shockah.UIKit
 		public float Multiplier { get; }
 		public UILayoutConstraintRelation Relation { get; }
 		public UILayoutConstraintPriority Priority { get; }
+		public string? Identifier { get; }
 
 		public bool IsActive { get; private set; } = false;
 		public bool IsUnsatisfied { get; internal set; } = false;
 		internal readonly Lazy<ClConstraint> CassowaryConstraint;
 
-		public UILayoutConstraint(IUIAnchor anchor1, float constant = 0f, float multiplier = 1f, IUIAnchor? anchor2 = null, UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal, UILayoutConstraintPriority? priority = null)
+		public UILayoutConstraint(
+			IUIAnchor anchor1,
+			float constant = 0f,
+			float multiplier = 1f,
+			IUIAnchor? anchor2 = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		) : this(
+			CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber),
+			anchor1, constant, multiplier, anchor2, relation, priority
+		)
 		{
+		}
+
+		public UILayoutConstraint(
+			string? identifier,
+			IUIAnchor anchor1,
+			float constant = 0f,
+			float multiplier = 1f,
+			IUIAnchor? anchor2 = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+		{
+			this.Identifier = identifier;
 			this.Anchor1 = anchor1;
 			this.Constant = constant;
 			this.Multiplier = multiplier;
@@ -108,7 +139,10 @@ namespace Shockah.UIKit
 
 		public override string ToString()
 		{
-			StringBuilder sb = new($"{Anchor1} {Relation.GetSymbol()}");
+			StringBuilder sb = new();
+			if (Identifier is not null)
+				sb.Append($"'{Identifier}' ");
+			sb.Append($"{Anchor1} {Relation.GetSymbol()}");
 			if (Anchor2 is null)
 			{
 				sb.Append($" {Constant}");
