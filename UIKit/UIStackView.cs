@@ -202,32 +202,32 @@ namespace Shockah.UIKit
 				float trailingInset
 			) where ConstrainableType : IConstrainable
 			{
-				StackViewConstraints.Add(leadingAnchor(consideredSubviews[0]).MakeConstraintTo(leadingAnchor(this), leadingInset));
-				StackViewConstraints.Add(trailingAnchor(consideredSubviews[^1]).MakeConstraintTo(trailingAnchor(this), -trailingInset));
+				StackViewConstraints.Add(leadingAnchor(consideredSubviews[0]).MakeConstraintTo("UISV-canvasConnection", leadingAnchor(this), leadingInset));
+				StackViewConstraints.Add(trailingAnchor(consideredSubviews[^1]).MakeConstraintTo("UISV-canvasConnection", trailingAnchor(this), -trailingInset));
 				switch (Distribution)
 				{
 					case UIStackViewDistribution.Fill:
 					case UIStackViewDistribution.FillEqually:
 						for (int i = 1; i < consideredSubviews.Count; i++)
 						{
-							StackViewConstraints.Add(leadingAnchor(consideredSubviews[i]).MakeConstraintTo(trailingAnchor(consideredSubviews[i - 1]), Spacing));
+							StackViewConstraints.Add(leadingAnchor(consideredSubviews[i]).MakeConstraintTo("UISV-distribution-fill", trailingAnchor(consideredSubviews[i - 1]), Spacing));
 							if (Distribution == UIStackViewDistribution.FillEqually)
-								StackViewConstraints.Add(lengthAnchor(consideredSubviews[i]).MakeConstraintTo(lengthAnchor(consideredSubviews[0])));
+								StackViewConstraints.Add(lengthAnchor(consideredSubviews[i]).MakeConstraintTo("UISV-distribution-fill-equally", lengthAnchor(consideredSubviews[0])));
 						}
 						break;
 					case UIStackViewDistribution.EqualSpacing:
 						var layoutHelperView = new UIView();
-						StackViewConstraints.Add(lengthAnchor(layoutHelperView).MakeConstraint(Spacing, UILayoutConstraintRelation.GreaterThanOrEqual));
 						AddSubview(layoutHelperView);
+						StackViewConstraints.Add(lengthAnchor(layoutHelperView).MakeConstraint("UISV-distribution-equalSpacing", Spacing, UILayoutConstraintRelation.GreaterThanOrEqual));
 						LayoutHelperViews.Add(layoutHelperView);
 
 						for (int i = 1; i < consideredSubviews.Count; i++)
 						{
-							StackViewConstraints.Add(leadingAnchor(layoutHelperView).MakeConstraintTo(trailingAnchor(consideredSubviews[i - 1]), Spacing));
-							StackViewConstraints.Add(trailingAnchor(layoutHelperView).MakeConstraintTo(leadingAnchor(consideredSubviews[i]), Spacing));
+							StackViewConstraints.Add(leadingAnchor(layoutHelperView).MakeConstraintTo("UISV-distribution-equalSpacing", trailingAnchor(consideredSubviews[i - 1]), Spacing));
+							StackViewConstraints.Add(trailingAnchor(layoutHelperView).MakeConstraintTo("UISV-distribution-equalSpacing", leadingAnchor(consideredSubviews[i]), Spacing));
 						}
 						for (int i = 1; i < LayoutHelperViews.Count; i++)
-							StackViewConstraints.Add(lengthAnchor(LayoutHelperViews[i]).MakeConstraintTo(lengthAnchor(LayoutHelperViews[0])));
+							StackViewConstraints.Add(lengthAnchor(LayoutHelperViews[i]).MakeConstraintTo("UISV-distribution-equalSpacing", lengthAnchor(LayoutHelperViews[0])));
 						break;
 				}
 			}
@@ -246,36 +246,36 @@ namespace Shockah.UIKit
 					case UIStackViewAlignment.Fill:
 						foreach (var arrangedSubview in consideredSubviews)
 						{
-							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
-							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
+							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-fill", leadingAnchor(this), leadingInset));
+							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-fill", trailingAnchor(this), -trailingInset));
 						}
 						break;
 					case UIStackViewAlignment.Center:
 						foreach (var arrangedSubview in consideredSubviews)
 						{
-							StackViewConstraints.Add(centerAnchor(arrangedSubview).MakeConstraintTo(centerAnchor(this), (leadingInset - trailingInset) / 2));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+							StackViewConstraints.Add(centerAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-center", centerAnchor(this), (leadingInset - trailingInset) / 2));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint("UISV-alignment-center", 0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-center", lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
 						}
-						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint("UISV-alignment-center", 0f, priority: new(24f)));
 						break;
 					case UIStackViewAlignment.Leading:
 						foreach (var arrangedSubview in consideredSubviews)
 						{
-							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo(leadingAnchor(this), leadingInset));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+							StackViewConstraints.Add(leadingAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-leading", leadingAnchor(this), leadingInset));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint("UISV-alignment-leading", 0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-leading", lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
 						}
-						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint("UISV-alignment-leading", 0f, priority: new(24f)));
 						break;
 					case UIStackViewAlignment.Trailing:
 						foreach (var arrangedSubview in consideredSubviews)
 						{
-							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo(trailingAnchor(this), -trailingInset));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint(0f, priority: new(25f)));
-							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo(lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
+							StackViewConstraints.Add(trailingAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-trailing", trailingAnchor(this), -trailingInset));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraint("UISV-alignment-trailing", 0f, priority: new(25f)));
+							StackViewConstraints.Add(lengthAnchor(arrangedSubview).MakeConstraintTo("UISV-alignment-trailing", lengthAnchor(this), -(leadingInset + trailingInset), relation: UILayoutConstraintRelation.LessThanOrEqual, priority: UILayoutConstraintPriority.High));
 						}
-						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint(0f, priority: new(24f)));
+						StackViewConstraints.Add(lengthAnchor(this).MakeConstraint("UISV-alignment-trailing", 0f, priority: new(24f)));
 						break;
 				}
 			}

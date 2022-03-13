@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Shockah.CommonModCode;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Shockah.UIKit
 {
@@ -30,6 +32,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeEqualConstraints<ConstrainableType>(
+			string? identifier,
 			Func<ConstrainableType, UIAnchor> anchor,
 			IEnumerable<ConstrainableType> constrainables,
 			UILayoutConstraintPriority? priority = null
@@ -46,7 +49,7 @@ namespace Shockah.UIKit
 				}
 				else
 				{
-					yield return new UILayoutConstraint(anchor(enumerator.Current), anchor2: anchor(first), priority: priority);
+					yield return new UILayoutConstraint(identifier, anchor(enumerator.Current), anchor2: anchor(first), priority: priority);
 				}
 			}
 		}
@@ -54,16 +57,16 @@ namespace Shockah.UIKit
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeEqualConstraints<ConstrainableType>(
 			Func<ConstrainableType, UIAnchor> anchor,
-			UILayoutConstraintPriority priority,
-			params ConstrainableType[] constrainables
-		) where ConstrainableType : IConstrainable
-			=> MakeEqualConstraints(anchor, constrainables, priority);
-
-		[Pure]
-		public static IEnumerable<UILayoutConstraint> MakeEqualConstraints<ConstrainableType>(
-			Func<ConstrainableType, UIAnchor> anchor,
-			params ConstrainableType[] constrainables
-		) where ConstrainableType : IConstrainable
-			=> MakeEqualConstraints(anchor, constrainables, null);
+			IEnumerable<ConstrainableType> constrainables,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			where ConstrainableType : IConstrainable
+			=> MakeEqualConstraints(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "equalConstraints"),
+				anchor, constrainables, priority
+			);
 	}
 }

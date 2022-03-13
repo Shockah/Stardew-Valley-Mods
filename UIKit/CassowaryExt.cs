@@ -1,4 +1,5 @@
 ﻿using Cassowary;
+using System.Collections.Generic;
 
 namespace Shockah.UIKit
 {
@@ -12,6 +13,10 @@ namespace Shockah.UIKit
 				return true;
 			}
 			catch (CassowaryConstraintNotFoundException)
+			{
+				return false;
+			}
+			catch (KeyNotFoundException)
 			{
 				return false;
 			}

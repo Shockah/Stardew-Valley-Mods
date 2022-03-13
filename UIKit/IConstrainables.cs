@@ -1,7 +1,9 @@
-﻿using Shockah.UIKit.Geometry;
+﻿using Shockah.CommonModCode;
+using Shockah.UIKit.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 
 namespace Shockah.UIKit
 {
@@ -14,22 +16,56 @@ namespace Shockah.UIKit
 		[Pure]
 		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
 			this ConstrainableType self,
+			string? identifier,
 			UIVector2 ratio,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
 			UILayoutConstraintPriority? priority = null
 		)
 			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
-			=> MakeAspectRatioConstraint(self, ratio.X / ratio.Y, relation, priority);
+			=> self.MakeAspectRatioConstraint(identifier, ratio.X / ratio.Y, relation, priority);
+
+		[Pure]
+		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
+			this ConstrainableType self,
+			UIVector2 ratio,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> self.MakeAspectRatioConstraint(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "aspectRatio"),
+				ratio, relation, priority
+			);
+
+		[Pure]
+		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
+			this ConstrainableType self,
+			string? identifier,
+			float ratio = 1f,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> new(identifier, self.WidthAnchor, 0f, ratio, self.HeightAnchor, relation, priority);
 
 		[Pure]
 		public static UILayoutConstraint MakeAspectRatioConstraint<ConstrainableType>(
 			this ConstrainableType self,
 			float ratio = 1f,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
-			UILayoutConstraintPriority? priority = null
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
 		)
 			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
-			=> new(self.WidthAnchor, 0f, ratio, self.HeightAnchor, relation, priority);
+			=> self.MakeAspectRatioConstraint(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "aspectRatio"),
+				ratio, relation, priority
+			);
 
 		#endregion
 
@@ -38,6 +74,7 @@ namespace Shockah.UIKit
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsTo(
 			this IConstrainable.Horizontal self,
+			string? identifier,
 			IConstrainable.Horizontal other,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
@@ -52,13 +89,30 @@ namespace Shockah.UIKit
 				_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 			};
 			var singleEdgeRightRelation = singleEdgeLeftRelation.GetReverse();
-			yield return self.LeftAnchor.MakeConstraintTo(other, insets, relation: singleEdgeLeftRelation, priority: priority);
-			yield return self.RightAnchor.MakeConstraintTo(other, -insets, relation: singleEdgeRightRelation, priority: priority);
+			yield return self.LeftAnchor.MakeConstraintTo(identifier, other, insets, relation: singleEdgeLeftRelation, priority: priority);
+			yield return self.RightAnchor.MakeConstraintTo(identifier, other, -insets, relation: singleEdgeRightRelation, priority: priority);
 		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsTo(
+			this IConstrainable.Horizontal self,
+			IConstrainable.Horizontal other,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			=> self.MakeHorizontalEdgeConstraintsTo(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "horizontalEdges"),
+				other, insets, relation, priority
+			);
 
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeVerticalEdgeConstraintsTo(
 			this IConstrainable.Vertical self,
+			string? identifier,
 			IConstrainable.Vertical other,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
@@ -73,8 +127,42 @@ namespace Shockah.UIKit
 				_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 			};
 			var singleEdgeBottomRelation = singleEdgeTopRelation.GetReverse();
-			yield return self.TopAnchor.MakeConstraintTo(other, insets, relation: singleEdgeTopRelation, priority: priority);
-			yield return self.BottomAnchor.MakeConstraintTo(other, -insets, relation: singleEdgeBottomRelation, priority: priority);
+			yield return self.TopAnchor.MakeConstraintTo(identifier, other, insets, relation: singleEdgeTopRelation, priority: priority);
+			yield return self.BottomAnchor.MakeConstraintTo(identifier, other, -insets, relation: singleEdgeBottomRelation, priority: priority);
+		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeVerticalEdgeConstraintsTo(
+			this IConstrainable.Vertical self,
+			IConstrainable.Vertical other,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			=> self.MakeVerticalEdgeConstraintsTo(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "verticalEdges"),
+				other, insets, relation, priority
+			);
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeEdgeConstraintsTo<ConstrainableTypeA, ConstrainableTypeB>(
+			this ConstrainableTypeA self,
+			string? identifier,
+			ConstrainableTypeB other,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+			where ConstrainableTypeA : IConstrainable.Horizontal, IConstrainable.Vertical
+			where ConstrainableTypeB : IConstrainable.Horizontal, IConstrainable.Vertical
+		{
+			foreach (var constraint in self.MakeHorizontalEdgeConstraintsTo(identifier, other, insets, relation, priority))
+				yield return constraint;
+			foreach (var constraint in self.MakeVerticalEdgeConstraintsTo(identifier, other, insets, relation, priority))
+				yield return constraint;
 		}
 
 		[Pure]
@@ -83,20 +171,22 @@ namespace Shockah.UIKit
 			ConstrainableTypeB other,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
-			UILayoutConstraintPriority? priority = null
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
 		)
 			where ConstrainableTypeA : IConstrainable.Horizontal, IConstrainable.Vertical
 			where ConstrainableTypeB : IConstrainable.Horizontal, IConstrainable.Vertical
-		{
-			foreach (var constraint in self.MakeHorizontalEdgeConstraintsTo(other, insets, relation, priority))
-				yield return constraint;
-			foreach (var constraint in self.MakeVerticalEdgeConstraintsTo(other, insets, relation, priority))
-				yield return constraint;
-		}
+			=> self.MakeEdgeConstraintsTo(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "edges"),
+				other, insets, relation, priority
+			);
 
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsTo<ConstrainableTypeA, ConstrainableTypeB>(
 			this ConstrainableTypeA self,
+			string? identifier,
 			ConstrainableTypeB other,
 			UIVector2? offset = null,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
@@ -105,9 +195,27 @@ namespace Shockah.UIKit
 			where ConstrainableTypeA : IConstrainable.Horizontal, IConstrainable.Vertical
 			where ConstrainableTypeB : IConstrainable.Horizontal, IConstrainable.Vertical
 		{
-			yield return self.CenterXAnchor.MakeConstraintTo(other, offset?.X ?? 0f, relation: relation, priority: priority);
-			yield return self.CenterYAnchor.MakeConstraintTo(other, offset?.Y ?? 0f, relation: relation, priority: priority);
+			yield return self.CenterXAnchor.MakeConstraintTo(identifier, other, offset?.X ?? 0f, relation: relation, priority: priority);
+			yield return self.CenterYAnchor.MakeConstraintTo(identifier, other, offset?.Y ?? 0f, relation: relation, priority: priority);
 		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsTo<ConstrainableTypeA, ConstrainableTypeB>(
+			this ConstrainableTypeA self,
+			ConstrainableTypeB other,
+			UIVector2? offset = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			where ConstrainableTypeA : IConstrainable.Horizontal, IConstrainable.Vertical
+			where ConstrainableTypeB : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> self.MakeCenterConstraintsTo(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "center"),
+				other, offset, relation, priority
+			);
 
 		#endregion
 
@@ -116,6 +224,7 @@ namespace Shockah.UIKit
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsToSuperview(
 			this IConstrainable.Horizontal self,
+			string? identifier,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
 			UILayoutConstraintPriority? priority = null
@@ -123,7 +232,36 @@ namespace Shockah.UIKit
 		{
 			var superview = self.ConstrainableOwnerView.Superview
 				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
-			return self.MakeHorizontalEdgeConstraintsTo(superview, insets, relation, priority);
+			return self.MakeHorizontalEdgeConstraintsTo(identifier, superview, insets, relation, priority);
+		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeHorizontalEdgeConstraintsToSuperview(
+			this IConstrainable.Horizontal self,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			=> self.MakeHorizontalEdgeConstraintsToSuperview(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "horizontalEdges-toSuperview"),
+				insets, relation, priority
+			);
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeVerticalEdgeConstraintsToSuperview(
+			this IConstrainable.Vertical self,
+			string? identifier,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null
+		)
+		{
+			var superview = self.ConstrainableOwnerView.Superview
+				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
+			return self.MakeVerticalEdgeConstraintsTo(identifier, superview, insets, relation, priority);
 		}
 
 		[Pure]
@@ -131,12 +269,29 @@ namespace Shockah.UIKit
 			this IConstrainable.Vertical self,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			=> self.MakeVerticalEdgeConstraintsToSuperview(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "verticalEdges-toSuperview"),
+				insets, relation, priority
+			);
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeEdgeConstraintsToSuperview<ConstrainableType>(
+			this ConstrainableType self,
+			string? identifier,
+			float insets = 0f,
+			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
 			UILayoutConstraintPriority? priority = null
 		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
 		{
 			var superview = self.ConstrainableOwnerView.Superview
 				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
-			return self.MakeVerticalEdgeConstraintsTo(superview, insets, relation, priority);
+			return self.MakeEdgeConstraintsTo(identifier, superview, insets, relation, priority);
 		}
 
 		[Pure]
@@ -144,17 +299,21 @@ namespace Shockah.UIKit
 			this ConstrainableType self,
 			float insets = 0f,
 			UILayoutConstraintMultipleEdgeRelation relation = UILayoutConstraintMultipleEdgeRelation.Equal,
-			UILayoutConstraintPriority? priority = null
-		) where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
-		{
-			var superview = self.ConstrainableOwnerView.Superview
-				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
-			return self.MakeEdgeConstraintsTo(superview, insets, relation, priority);
-		}
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> self.MakeEdgeConstraintsToSuperview(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "edges-toSuperview"),
+				insets, relation, priority
+			);
 
 		[Pure]
 		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsToSuperview<ConstrainableType>(
 			this ConstrainableType self,
+			string? identifier,
 			UIVector2? offset = null,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
 			UILayoutConstraintPriority? priority = null
@@ -163,8 +322,24 @@ namespace Shockah.UIKit
 		{
 			var superview = self.ConstrainableOwnerView.Superview
 				?? throw new InvalidOperationException($"View {self.ConstrainableOwnerView} does not have a superview.");
-			return self.MakeCenterConstraintsTo(superview, offset, relation, priority);
+			return self.MakeCenterConstraintsTo(identifier, superview, offset, relation, priority);
 		}
+
+		[Pure]
+		public static IEnumerable<UILayoutConstraint> MakeCenterConstraintsToSuperview<ConstrainableType>(
+			this ConstrainableType self,
+			UIVector2? offset = null,
+			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
+			UILayoutConstraintPriority? priority = null,
+			[CallerFilePath] string? callerFilePath = null,
+			[CallerMemberName] string? callerMemberName = null,
+			[CallerLineNumber] int? callerLineNumber = null
+		)
+			where ConstrainableType : IConstrainable.Horizontal, IConstrainable.Vertical
+			=> self.MakeCenterConstraintsToSuperview(
+				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber, "center-toSuperview"),
+				offset, relation, priority
+			);
 
 		#endregion
 	}
