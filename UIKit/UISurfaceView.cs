@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
+using Shockah.UIKit.Geometry;
 using StardewValley;
 using System;
 
@@ -21,12 +22,57 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public UIVector2 Origin
+		{
+			get => _origin;
+			set
+			{
+				if (_origin == value)
+					return;
+				var oldValue = _origin;
+				_origin = value;
+				OriginChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public UIVector2 RenderScale
+		{
+			get => _renderScale;
+			set
+			{
+				if (_renderScale == value)
+					return;
+				var oldValue = _renderScale;
+				_renderScale = value;
+				RenderScaleChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public float RenderRotation
+		{
+			get => _renderRotation;
+			set
+			{
+				if (_renderRotation == value)
+					return;
+				var oldValue = _renderRotation;
+				_renderRotation = value;
+				RotationChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
 		public bool UsesSurface { get; set; } = true;
 
 		public event OwnerValueChangeEvent<UISurfaceView, Color>? ColorChanged;
+		public event OwnerValueChangeEvent<UISurfaceView, UIVector2>? OriginChanged;
+		public event OwnerValueChangeEvent<UISurfaceView, UIVector2>? RenderScaleChanged;
+		public event OwnerValueChangeEvent<UISurfaceView, float>? RotationChanged;
 
 		private RenderTarget2D? RenderTarget;
 		private Color _color = Color.White;
+		private UIVector2 _origin = new(0.5f);
+		private UIVector2 _renderScale = UIVector2.One;
+		private float _renderRotation = 0f;
 
 		public UISurfaceView()
 		{
@@ -74,7 +120,7 @@ namespace Shockah.UIKit
 			if (wasInProgress)
 				context.SpriteBatch.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
 
-			context.SpriteBatch.Draw(RenderTarget!, context.Offset, Color);
+			context.SpriteBatch.Draw(RenderTarget, context.Offset + Size * Origin, null, Color, RenderRotation, Size * Origin, RenderScale, SpriteEffects.None, 0f);
 		}
 	}
 }
