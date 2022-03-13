@@ -10,7 +10,7 @@ namespace Shockah.UIKit
 	public enum UILabelLineBreakMode { ByWrapping, ByTruncatingTail, ByTruncatingHead }
 	public enum UILabelLineBreakSplitMode { ByWord, ByChar }
 
-	public abstract class UILabel<FontType>: UIView.Drawable where FontType: class, IUIFont
+	public class UILabel<FontType>: UIView.Drawable where FontType: class, IUIFont
 	{
 		public string Text
 		{
@@ -107,7 +107,7 @@ namespace Shockah.UIKit
 
 		internal string CachedText;
 		internal UIVector2 CachedTextSize = UIVector2.Zero;
-		private bool IsDirty = true;
+		protected bool IsDirty { get; set; } = true;
 
 		public UILabel(FontType font, string text = "")
 		{
@@ -151,7 +151,15 @@ namespace Shockah.UIKit
 			DrawSelf(context, offset);
 		}
 
-		protected abstract void DrawSelf(RenderContext context, float xOffset);
+		protected virtual UIVector2 Measure(string text)
+		{
+			return Font.Measure(text);
+		}
+
+		protected virtual void DrawSelf(RenderContext context, float xOffset)
+		{
+			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, CachedText);
+		}
 
 		private void UpdateCachedText()
 		{
@@ -160,7 +168,7 @@ namespace Shockah.UIKit
 				var lines = GetSplitLinesFitting();
 				CachedText = string.Join("\n", lines.Select(l => l.text));
 			}
-			CachedTextSize = Font.Measure(CachedText);
+			CachedTextSize = Measure(CachedText);
 			IsDirty = false;
 		}
 
@@ -175,13 +183,13 @@ namespace Shockah.UIKit
 			{
 				if (!sizeCache.TryGetValue(text, out var size))
 				{
-					size = Font.Measure(text);
+					size = Measure(text);
 					sizeCache[text] = size;
 				}
 				return size;
 			}
 
-			var measuredSize = Font.Measure(string.Join("\n", existingLines));
+			var measuredSize = GetMeasure(string.Join("\n", existingLines));
 			var optimalSize = GetOptimalSize(
 				horizontalLength: UIOptimalSideLength.Expanded,
 				verticalLength: UIOptimalSideLength.OfLength(measuredSize.Y)
@@ -310,6 +318,41 @@ namespace Shockah.UIKit
 		}
 	}
 
+	public class UIScalableLabel: UILabel<IUIFont.Scalable>
+	{
+		public UIVector2 Scale
+		{
+			get => _scale;
+			set
+			{
+				if (_scale == value)
+					return;
+				var oldValue = _scale;
+				_scale = value;
+				ScaleChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public event OwnerValueChangeEvent<UIScalableLabel, UIVector2>? ScaleChanged;
+
+		private UIVector2 _scale = UIVector2.One;
+		private Color _color = Color.White;
+
+		public UIScalableLabel(IUIFont.Scalable font, string text = "") : base(font, text)
+		{
+		}
+
+		protected override UIVector2 Measure(string text)
+		{
+			return base.Measure(text) * Scale;
+		}
+
+		protected override void DrawSelf(RenderContext context, float xOffset)
+		{
+			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, CachedText, Scale);
+		}
+	}
+
 	public class UIColorableLabel: UILabel<IUIFont.Colorable>
 	{
 		public Color Color
@@ -339,15 +382,53 @@ namespace Shockah.UIKit
 		}
 	}
 
-	public class UIUncolorableLabel: UILabel<IUIFont.Uncolorable>
+	public class UIScalableColorableLabel: UILabel<IUIFont.ScalableColorable>
 	{
-		public UIUncolorableLabel(IUIFont.Uncolorable font, string text = "") : base(font, text)
+		public UIVector2 Scale
 		{
+			get => _scale;
+			set
+			{
+				if (_scale == value)
+					return;
+				var oldValue = _scale;
+				_scale = value;
+				ScaleChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public Color Color
+		{
+			get => _color;
+			set
+			{
+				if (_color == value)
+					return;
+				var oldValue = _color;
+				_color = value;
+				ColorChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public event OwnerValueChangeEvent<UIScalableColorableLabel, UIVector2>? ScaleChanged;
+		public event OwnerValueChangeEvent<UIScalableColorableLabel, Color>? ColorChanged;
+
+		private UIVector2 _scale = UIVector2.One;
+		private Color _color = Color.White;
+
+		public UIScalableColorableLabel(IUIFont.ScalableColorable font, string text = "") : base(font, text)
+		{
+			ScaleChanged += (_, _, _) => IsDirty = true;
+		}
+
+		protected override UIVector2 Measure(string text)
+		{
+			return base.Measure(text) * Scale;
 		}
 
 		protected override void DrawSelf(RenderContext context, float xOffset)
 		{
-			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, CachedText);
+			Font.Draw(context.SpriteBatch, context.Offset + (xOffset, 0f), Size, CachedText, Color, Scale);
 		}
 	}
 }

@@ -27,8 +27,9 @@ namespace Shockah.UIKit
 			Root = new(Helper.Input);
 			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
 
-			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
+			new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont), "Top-left label.").With(Root, (self, parent) =>
 			{
+				self.Scale = 2f;
 				self.LineBreakMode = UILabelLineBreakMode.ByWrapping;
 				self.NumberOfLines = 0;
 
@@ -62,7 +63,7 @@ namespace Shockah.UIKit
 								parent.AddArrangedSubview(self);
 							});
 
-							new UIColorableLabel(new UIDialogueFont()).With(self, (self, parent) =>
+							new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont)).With(self, (self, parent) =>
 							{
 								self.Text = "Check me out";
 								self.NumberOfLines = 0;
@@ -74,7 +75,7 @@ namespace Shockah.UIKit
 
 						for (int i = 0; i < 4; i++)
 						{
-							new UIUncolorableLabel(new UISpriteTextFont(color: UISpriteTextFontColor.White)).With(self, (self, parent) =>
+							new UILabel<UISpriteTextFont>(new UISpriteTextFont(color: UISpriteTextFontColor.White)).With(self, (self, parent) =>
 							{
 								self.TextAlignment = TextAlignment.Center;
 								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";

@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.UIKit.Geometry;
-using StardewValley;
 using StardewValley.BellsAndWhistles;
 using System;
 
@@ -11,34 +10,59 @@ namespace Shockah.UIKit
 	{
 		UIVector2 Measure(string text, float maxWidth = float.PositiveInfinity);
 
-		public interface Uncolorable: IUIFont
+		void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text);
+
+		public interface Scalable: IUIFont
 		{
-			void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text);
+			UIVector2 IUIFont.Measure(string text, float maxWidth)
+				=> Measure(text, null, maxWidth);
+
+			UIVector2 Measure(string text, UIVector2? fontScale = null, float maxWidth = float.PositiveInfinity);
+
+			void IUIFont.Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text)
+				=> Draw(b, position, size, text, null);
+
+			void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, UIVector2? fontScale = null);
 		}
 
 		public interface Colorable: IUIFont
 		{
-			void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color color);
+			void IUIFont.Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text)
+				=> Draw(b, position, size, text, null);
+
+			void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color? color = null);
+		}
+
+		public interface ScalableColorable: Scalable, Colorable
+		{
+			void IUIFont.Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text)
+				=> Draw(b, position, size, text, null, null);
+
+			void Scalable.Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, UIVector2? fontScale)
+				=> Draw(b, position, size, text, null, fontScale);
+
+			void Colorable.Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color? color)
+				=> Draw(b, position, size, text, color, null);
+
+			void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color? color = null, UIVector2? fontScale = null);
 		}
 	}
 
-	public class UIDialogueFont: IUIFont.Colorable
+	public class UISpriteFont: IUIFont.ScalableColorable
 	{
-		public UIVector2 Scale { get; private set; }
+		public SpriteFont Font { get; private set; }
 
-		public UIDialogueFont(UIVector2? scale = null)
+		public UISpriteFont(SpriteFont font)
 		{
-			this.Scale = scale ?? UIVector2.One;
+			this.Font = font;
 		}
 
-		public UIVector2 Measure(string text, float maxWidth = float.PositiveInfinity)
-		{
-			return (UIVector2)Game1.dialogueFont.MeasureString(text) * Scale;
-		}
+		public UIVector2 Measure(string text, UIVector2? fontScale = null, float maxWidth = float.PositiveInfinity)
+			=> (UIVector2)Font.MeasureString(text) * (fontScale ?? UIVector2.One);
 
-		public void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color color)
+		public void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text, Color? color = null, UIVector2? fontScale = null)
 		{
-			b.DrawString(Game1.dialogueFont, text, position, color, 0f, Vector2.Zero, Scale, SpriteEffects.None, 1);
+			b.DrawString(Font, text, position, color ?? Color.White, 0f, Vector2.Zero, fontScale ?? UIVector2.One, SpriteEffects.None, 1);
 		}
 	}
 
@@ -56,21 +80,19 @@ namespace Shockah.UIKit
 		Gray = SpriteText.color_Gray
 	}
 
-	public class UISpriteTextFont: IUIFont.Uncolorable
+	public class UISpriteTextFont: IUIFont
 	{
-		public float Scale { get; private set; }
 		public UISpriteTextFontColor Color { get; private set; }
 
-		public UISpriteTextFont(float scale = 1f, UISpriteTextFontColor color = UISpriteTextFontColor.Default)
+		public UISpriteTextFont(UISpriteTextFontColor color = UISpriteTextFontColor.Default)
 		{
-			this.Scale = scale;
 			this.Color = color;
 		}
 
 		public UIVector2 Measure(string text, float maxWidth = float.PositiveInfinity)
 		{
 			var intMaxWidth = (int)Math.Ceiling(Math.Min(maxWidth, 999999));
-			return new Vector2(SpriteText.getWidthOfString(text, intMaxWidth) * Scale, SpriteText.getHeightOfString(text, intMaxWidth) * Scale);
+			return new Vector2(SpriteText.getWidthOfString(text, intMaxWidth), SpriteText.getHeightOfString(text, intMaxWidth));
 		}
 
 		public void Draw(SpriteBatch b, UIVector2 position, UIVector2 size, string text)
