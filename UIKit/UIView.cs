@@ -358,6 +358,69 @@ namespace Shockah.UIKit
 			Root = null;
 		}
 
+		public UIVector2 GetOptimalSize(
+			UIOptimalSideLength horizontalLength,
+			UIOptimalSideLength verticalLength,
+			UILayoutConstraintPriority? horizontalPriority = null,
+			UILayoutConstraintPriority? verticalPriority = null,
+			bool ignoringIntrinsicWidth = true,
+			bool ignoringIntrinsicHeight = true
+		)
+		{
+			if (Root is null)
+				throw new NotImplementedException($"{nameof(GetOptimalSize)} is not currently supported without a root view.");
+			horizontalPriority ??= UILayoutConstraintPriority.OptimalCalculations;
+			verticalPriority ??= UILayoutConstraintPriority.OptimalCalculations;
+
+			UILayoutConstraint horizontalConstraint;
+			{
+				if (horizontalLength is UIOptimalSideLength.LengthType typed)
+					horizontalConstraint = WidthAnchor.MakeConstraint("optimalCalculations-width-const", typed.Value, priority: horizontalPriority);
+				else if (horizontalLength is UIOptimalSideLength.CompressedType)
+					horizontalConstraint = WidthAnchor.MakeConstraint("optimalCalculations-width-compressed", 0f, priority: horizontalPriority);
+				else if (horizontalLength is UIOptimalSideLength.ExpandedType)
+					horizontalConstraint = WidthAnchor.MakeConstraint("optimalCalculations-width-expanded", 1_000_000_000f, priority: horizontalPriority);
+				else
+					throw new ArgumentException($"{nameof(UIOptimalSideLength)} has an invalid value.");
+			}
+
+			UILayoutConstraint verticalConstraint;
+			{
+				if (verticalLength is UIOptimalSideLength.LengthType typed)
+					verticalConstraint = HeightAnchor.MakeConstraint("optimalCalculations-height-const", typed.Value, priority: horizontalPriority);
+				else if (verticalLength is UIOptimalSideLength.CompressedType)
+					verticalConstraint = HeightAnchor.MakeConstraint("optimalCalculations-height-compressed", 0f, priority: verticalPriority);
+				else if (verticalLength is UIOptimalSideLength.ExpandedType)
+					verticalConstraint = HeightAnchor.MakeConstraint("optimalCalculations-height-expanded", 1_000_000_000f, priority: verticalPriority);
+				else
+					throw new ArgumentException($"{nameof(UIOptimalSideLength)} has an invalid value.");
+			}
+
+			if (ignoringIntrinsicWidth)
+				IntrinsicSizeConstraints.Where(c => c.Anchor1 == WidthAnchor).Deactivate();
+			if (ignoringIntrinsicHeight)
+				IntrinsicSizeConstraints.Where(c => c.Anchor1 == HeightAnchor).Deactivate();
+
+			horizontalConstraint.Activate();
+			verticalConstraint.Activate();
+			Root.SolveLayout();
+			UIVector2 result = new(
+				(float)(RightVariable.Value.Value - LeftVariable.Value.Value),
+				(float)(BottomVariable.Value.Value - TopVariable.Value.Value)
+			);
+
+			horizontalConstraint.Deactivate();
+			verticalConstraint.Deactivate();
+
+			if (ignoringIntrinsicWidth)
+				IntrinsicSizeConstraints.Where(c => c.Anchor1 == WidthAnchor).Activate();
+			if (ignoringIntrinsicHeight)
+				IntrinsicSizeConstraints.Where(c => c.Anchor1 == HeightAnchor).Activate();
+
+			Root.SolveLayout();
+			return result;
+		}
+
 		public void LayoutIfNeeded()
 		{
 			OnLayoutIfNeeded();

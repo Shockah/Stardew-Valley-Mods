@@ -29,9 +29,13 @@ namespace Shockah.UIKit
 
 			new UIColorableLabel(new UIDialogueFont(2f), "Top-left label.").With(Root, (self, parent) =>
 			{
+				self.LineBreakMode = UILabelLineBreakMode.ByWrapping;
+				self.NumberOfLines = 0;
+
 				parent.AddSubview(self);
-				self.LeftAnchor.MakeConstraintTo(parent).Activate();
-				self.TopAnchor.MakeConstraintTo(parent).Activate();
+				self.LeftAnchor.MakeConstraintToSuperview().Activate();
+				self.TopAnchor.MakeConstraintToSuperview().Activate();
+				self.WidthAnchor.MakeConstraint(400).Activate();
 			});
 
 			surfaceView = new UISurfaceView().With(Root, (self, parent) =>
@@ -46,7 +50,6 @@ namespace Shockah.UIKit
 					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
 					{
 						self.ContentInsets = new(26);
-						self.Alignment = UIStackViewAlignment.Center;
 
 						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
 						{
@@ -62,6 +65,7 @@ namespace Shockah.UIKit
 							new UIColorableLabel(new UIDialogueFont()).With(self, (self, parent) =>
 							{
 								self.Text = "Check me out";
+								self.NumberOfLines = 0;
 								parent.AddArrangedSubview(self);
 							});
 
@@ -70,25 +74,17 @@ namespace Shockah.UIKit
 
 						for (int i = 0; i < 4; i++)
 						{
-							new UIColorableLabel(new UIDialogueFont()).With(self, (self, parent) =>
-							{
-								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";
-								//self.TextAlignment = TextAlignment.Center;
-
-								parent.AddArrangedSubview(self);
-							});
-
 							new UIUncolorableLabel(new UISpriteTextFont(color: UISpriteTextFontColor.White)).With(self, (self, parent) =>
 							{
+								self.TextAlignment = TextAlignment.Center;
 								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";
-								//self.TextAlignment = TextAlignment.Center;
-
 								parent.AddArrangedSubview(self);
 							});
 						}
 
 						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
 						{
+							self.Distribution = UIStackViewDistribution.EqualSpacing;
 							self.Spacing = 24f;
 
 							var button1 = new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
@@ -107,7 +103,6 @@ namespace Shockah.UIKit
 
 							parent.AddArrangedSubview(self);
 							button1.WidthAnchor.MakeConstraintTo(button2).Activate();
-							self.WidthAnchor.MakeConstraintToSuperview().Activate();
 						});
 
 						parent.AddSubview(self);
@@ -119,8 +114,9 @@ namespace Shockah.UIKit
 				});
 
 				parent.AddSubview(self);
-				self.LeftAnchor.MakeConstraintTo(parent, 16).Activate();
-				self.BottomAnchor.MakeConstraintTo(parent, -16).Activate();
+				self.LeftAnchor.MakeConstraintToSuperview(16).Activate();
+				self.BottomAnchor.MakeConstraintToSuperview(-16).Activate();
+				self.WidthAnchor.MakeConstraint(300).Activate();
 			});
 
 			new UINinePatch().With(Root, (self, parent) =>
