@@ -105,6 +105,8 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UICheckbox, Color>? ColorChanged;
 		public event OwnerValueChangeEvent<UICheckbox, string?>? TapSoundNameChanged;
 
+		public UITapGestureRecognizer TapGestureRecognizer { get; private set; }
+
 		private bool _isChecked = false;
 		private Lazy<UITextureRect> LazyCheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectChecked));
 		private Lazy<UITextureRect> LazyUncheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectUnchecked));
@@ -118,7 +120,7 @@ namespace Shockah.UIKit
 			HorizontalContentHuggingPriority = UILayoutConstraintPriority.High;
 			VerticalContentHuggingPriority = UILayoutConstraintPriority.High;
 
-			AddGestureRecognizer(new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
+			AddGestureRecognizer(TapGestureRecognizer = new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
 			{
 				if (TapSoundName is not null)
 					Game1.playSound(TapSoundName);

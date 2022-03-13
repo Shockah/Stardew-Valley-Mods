@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
 using Shockah.UIKit.Geometry;
 using Shockah.UIKit.Gesture;
@@ -159,6 +158,8 @@ namespace Shockah.UIKit
 			}
 		}
 
+		public UITapGestureRecognizer TapGestureRecognizer { get; private set; }
+
 		private UITextureRect _normalTexture;
 		private UITextureRect? _hoverTexture = null;
 		private UITextureRect? _pressedTexture = null;
@@ -171,7 +172,7 @@ namespace Shockah.UIKit
 
 		private bool IsPressed = false;
 
-		private readonly UIQuad quad;
+		private readonly UIQuad Quad;
 
 		public UITextureButton(UITextureRect normalTexture, UITextureRect? hoverTexture = null, UITextureRect? pressedTexture = null, Func<UITouch, bool>? touchPredicate = null)
 		{
@@ -189,14 +190,14 @@ namespace Shockah.UIKit
 					Game1.playSound(soundName);
 			};
 
-			AddGestureRecognizer(new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
+			AddGestureRecognizer(TapGestureRecognizer = new UITapGestureRecognizer(touchPredicate: touchPredicate ?? TouchPredicates.LeftOrNonMouseButton, onTap: (_, _) =>
 			{
 				if (TapSoundName is not null)
 					Game1.playSound(TapSoundName);
 				TapEvent?.Invoke(this);
 			}).With(r => r.StateChanged += (recognizer, _, _) => OnGestureRecognizerStateChanged(recognizer)));
 
-			quad = new UIQuad().With(this, (self, parent) =>
+			Quad = new UIQuad().With(this, (self, parent) =>
 			{
 				parent.AddSubview(self);
 				self.MakeEdgeConstraintsToSuperview("UITextureButton-impl").Activate();
@@ -226,8 +227,8 @@ namespace Shockah.UIKit
 				color = PressedColor;
 			}
 
-			quad.Texture = texture;
-			quad.Color = color;
+			Quad.Texture = texture;
+			Quad.Color = color;
 
 			UIVector2 maxSize = NormalTexture.SourceRect.Size;
 			if (HoverTexture is not null)
