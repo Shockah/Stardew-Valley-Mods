@@ -286,6 +286,8 @@ namespace Shockah.UIKit
 								lengthAnchor(LayoutHelperViews[0])
 							));
 						break;
+					default:
+						throw new InvalidOperationException($"{nameof(UIStackViewDistribution)} has an invalid value.");
 				}
 			}
 
@@ -396,6 +398,8 @@ namespace Shockah.UIKit
 							priority: new(24f)
 						));
 						break;
+					default:
+						throw new InvalidOperationException($"{nameof(UIStackViewAlignment)} has an invalid value.");
 				}
 			}
 

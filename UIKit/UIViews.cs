@@ -6,6 +6,8 @@ using System.Linq;
 
 namespace Shockah.UIKit
 {
+	public enum UIViewVisitingOrder { SuperviewFirstSubviewOrder, SuperviewLastSubviewOrder, VisibleOrder, HoverOrder }
+
 	public static class UIViews
 	{
 		[Pure]
@@ -78,6 +80,48 @@ namespace Shockah.UIKit
 				return aSuperviews[i - 1];
 			}
 			return aSuperviews[minCount - 1];
+		}
+
+		[Pure]
+		public static IEnumerable<UIView> VisitAllViews(this UIView self, UIViewVisitingOrder order, bool includeSelf = true)
+		{
+			return order switch
+			{
+				UIViewVisitingOrder.SuperviewFirstSubviewOrder => self.VisitAllViewsInSuperviewFirstSubviewOrder(true),
+				UIViewVisitingOrder.SuperviewLastSubviewOrder => self.VisitAllViewsInSuperviewLastSubviewOrder(true),
+				UIViewVisitingOrder.VisibleOrder => self.VisitAllViewsInVisibleOrder(true),
+				_ => throw new InvalidOperationException($"{nameof(UIViewVisitingOrder)} has an invalid value.")
+			};
+		}
+
+		[Pure]
+		private static IEnumerable<UIView> VisitAllViewsInSuperviewFirstSubviewOrder(this UIView self, bool includeSelf)
+		{
+			if (includeSelf)
+				yield return self;
+			foreach (var subview in self.Subviews)
+				foreach (var toReturn in subview.VisitAllViewsInSuperviewFirstSubviewOrder(true))
+					yield return toReturn;
+		}
+
+		[Pure]
+		private static IEnumerable<UIView> VisitAllViewsInSuperviewLastSubviewOrder(this UIView self, bool includeSelf)
+		{
+			foreach (var subview in self.Subviews)
+				foreach (var toReturn in subview.VisitAllViewsInSuperviewLastSubviewOrder(true))
+					yield return toReturn;
+			if (includeSelf)
+				yield return self;
+		}
+
+		[Pure]
+		private static IEnumerable<UIView> VisitAllViewsInVisibleOrder(this UIView self, bool includeSelf)
+		{
+			foreach (var subview in self.Subviews.Reverse())
+				foreach (var toReturn in subview.VisitAllViewsInVisibleOrder(true))
+					yield return toReturn;
+			if (includeSelf)
+				yield return self;
 		}
 	}
 }

@@ -15,5 +15,10 @@ namespace Shockah.CommonModCode
 			closure(self, capture);
 			return self;
 		}
+
+		public static R Let<T, R>(this T self, Func<T, R> closure)
+		{
+			return closure(self);
+		}
 	}
 }
