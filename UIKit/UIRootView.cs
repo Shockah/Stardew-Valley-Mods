@@ -1,5 +1,6 @@
 ﻿using Cassowary;
 using Shockah.UIKit.Gesture;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +11,7 @@ namespace Shockah.UIKit
 		public IGestureRecognizerManager GestureRecognizerManager { get; private set; }
 
 		public event UnsatisfiableConstraintEvent? UnsatifiableConstraintEvent;
+		public event RenderedView? RenderedViewEvent;
 
 		private ClSimplexSolver ConstraintSolver { get; set; } = new() { AutoSolve = false };
 
@@ -96,6 +98,13 @@ namespace Shockah.UIKit
 		{
 			foreach (var variable in variables)
 				ConstraintSolver.NoteRemovedVariable(variable, variable);
+		}
+
+		internal void FireRenderedViewEvent(UIView view, RenderContext context)
+		{
+			if (view.Root != this)
+				throw new ArgumentException($"View {view} is not in the hierarchy of root view {this}.");
+			RenderedViewEvent?.Invoke(this, view, context);
 		}
 
 		protected override void OnLayoutIfNeeded()

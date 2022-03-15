@@ -8,13 +8,6 @@ namespace Shockah.UIKit
 {
 	public class UIQuad: UIView.Drawable
 	{
-		protected static readonly Lazy<UITextureRect> Pixel = new(() =>
-		{
-			var pixel = new Texture2D(Game1.graphics.GraphicsDevice, 1, 1);
-			pixel.SetData(new[] { Color.White });
-			return new(pixel);
-		});
-		
 		public UITextureRect? Texture
 		{
 			get => _texture;
@@ -50,20 +43,20 @@ namespace Shockah.UIKit
 		protected override void OnUpdateConstraints()
 		{
 			base.OnUpdateConstraints();
-			IntrinsicWidth = (Texture ?? Pixel.Value).SourceRect.Width;
-			IntrinsicHeight = (Texture ?? Pixel.Value).SourceRect.Height;
+			IntrinsicWidth = (Texture ?? UITextureRect.Pixel).SourceRect.Width;
+			IntrinsicHeight = (Texture ?? UITextureRect.Pixel).SourceRect.Height;
 		}
 
 		public override void DrawSelf(RenderContext context)
 		{
 			context.SpriteBatch.Draw(
-				texture: (Texture ?? Pixel.Value).Texture,
+				texture: (Texture ?? UITextureRect.Pixel).Texture,
 				position: context.Offset,
-				sourceRectangle: (Texture ?? Pixel.Value).SourceRect,
+				sourceRectangle: (Texture ?? UITextureRect.Pixel).SourceRect,
 				color: Color,
 				rotation: 0f,
 				origin: Vector2.Zero,
-				scale: Size / ((Texture ?? Pixel.Value).SourceRect.Size),
+				scale: Size / ((Texture ?? UITextureRect.Pixel).SourceRect.Size),
 				effects: SpriteEffects.None,
 				layerDepth: 0f
 			);

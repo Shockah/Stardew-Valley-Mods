@@ -463,6 +463,7 @@ namespace Shockah.UIKit
 				return;
 
 			(this as Drawable)?.DrawSelf(context);
+			Root?.FireRenderedViewEvent(this, context);
 			DrawChildren(context);
 		}
 

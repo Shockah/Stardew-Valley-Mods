@@ -1,11 +1,21 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using StardewValley;
 using System;
 
 namespace Shockah.UIKit.Geometry
 {
 	public readonly struct UITextureRect: IEquatable<UITextureRect>
 	{
+		public static UITextureRect Pixel => LazyPixel.Value;
+		
+		private static readonly Lazy<UITextureRect> LazyPixel = new(() =>
+		{
+			var pixel = new Texture2D(Game1.graphics.GraphicsDevice, 1, 1);
+			pixel.SetData(new[] { Color.White });
+			return new(pixel);
+		});
+
 		public readonly Texture2D Texture { get; }
 		public Rectangle SourceRect => _sourceRect ?? new(0, 0, Texture.Width, Texture.Height);
 
