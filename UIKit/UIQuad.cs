@@ -47,6 +47,13 @@ namespace Shockah.UIKit
 		private UITextureRect? _texture = null;
 		private Color _color = Color.White;
 
+		protected override void OnUpdateConstraints()
+		{
+			base.OnUpdateConstraints();
+			IntrinsicWidth = (Texture ?? Pixel.Value).SourceRect.Width;
+			IntrinsicHeight = (Texture ?? Pixel.Value).SourceRect.Height;
+		}
+
 		public override void DrawSelf(RenderContext context)
 		{
 			context.SpriteBatch.Draw(
