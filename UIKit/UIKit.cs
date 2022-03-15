@@ -33,7 +33,6 @@ namespace Shockah.UIKit
 			new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont), "Top-left label.").With(Root, (self, parent) =>
 			{
 				self.Scale = 2f;
-				self.LineBreakMode = UILabelLineBreakMode.ByWrapping;
 				self.NumberOfLines = 0;
 
 				parent.AddSubview(self);
