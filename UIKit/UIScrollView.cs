@@ -128,6 +128,10 @@ namespace Shockah.UIKit
 			AddedToRoot += (root, _) => OnAddedToRoot(root);
 			RemovedFromRoot += (root, _) => OnRemovedFromRoot(root);
 			ContentOffsetChanged += (_, _, _) => UpdateContentFrameConstraints();
+
+#pragma warning disable CA2245 // Do not assign a property to itself
+			ContentSizeChanged += (_, _, _) => ContentOffset = ContentOffset;
+#pragma warning restore CA2245 // Do not assign a property to itself
 		}
 
 		public override bool OnSelfHover(UITouch touch)
