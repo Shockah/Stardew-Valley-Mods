@@ -1,190 +1,195 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Shockah.CommonModCode;
-using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
-using StardewModdingAPI.Events;
-using StardewValley;
-using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Shockah.UIKit.Tools
 {
-	public class UIKit: Mod
+	public class UIKit: Mod, IUIKitToolsApi
 	{
-		private StardewRootView Root = null!;
-		private UISurfaceView SurfaceView = null!;
-		private readonly IDictionary<UIView, (string? title, string text)> Tooltips = new Dictionary<UIView, (string? title, string text)>();
+		internal static UIKit Instance = null!;
+
+		private DebugFrames DebugFrames = null!;
+		private ExampleUI ExampleUI = null!;
+
+		private readonly IDictionary<UIView, string> ViewIdentifiers = new Dictionary<UIView, string>();
 
 		public override void Entry(IModHelper helper)
 		{
-			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-			helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
-			helper.Events.Display.RenderedHud += OnRenderedHud;
+			Instance = this;
+			DebugFrames = new();
+
+			SetupCommands();
+
+			ExampleUI = new(helper, Monitor);
+			helper.Events.GameLoop.GameLaunched += ExampleUI.OnGameLaunched;
+			helper.Events.GameLoop.UpdateTicking += ExampleUI.OnUpdateTicking;
+			helper.Events.Display.RenderedHud += ExampleUI.OnRenderedHud;
+			ExampleUI.Root.SetIdentifier($"{ModManifest.UniqueID}.example");
 		}
 
-		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		private void SetupCommands()
 		{
-			Root = new(Helper.Input);
-			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
+			var prefix = "uikit_";
 
-			new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont), "Top-left label.").With(Root, (self, parent) =>
+			Helper.ConsoleCommands.Add($"{prefix}list_views", "TODO", ListViewsCommand);
+
+			foreach (var alias in new[] { "show_debug_frames", "sdf" })
+				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", ShowDebugFramesCommand);
+			foreach (var alias in new[] { "hide_debug_frames", "hdf" })
+				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", HideDebugFramesCommand);
+			foreach (var alias in new[] { "show_hierarchy_debug_frames", "shdf" })
+				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", ShowHierarchyDebugFramesCommand);
+			foreach (var alias in new[] { "hide_hierarchy_debug_frames", "hhdf" })
+				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", HideHierarchyDebugFramesCommand);
+		}
+
+		public override object GetApi()
+			=> this;
+
+		#region Commands
+
+		private IEnumerable<KeyValuePair<UIView, string>> ParseViewsArgument(string? arg)
+		{
+			IEnumerable<KeyValuePair<UIView, string>> matchingViews = ViewIdentifiers;
+			if (arg is not null)
 			{
-				self.Scale = 2f;
-				self.NumberOfLines = 0;
-
-				parent.AddSubview(self);
-				self.LeftAnchor.MakeConstraintToSuperview().Activate();
-				self.TopAnchor.MakeConstraintToSuperview().Activate();
-				self.WidthAnchor.MakeConstraint(400).Activate();
-			});
-
-			SurfaceView = new UISurfaceView().With(Root, (self, parent) =>
-			{
-				new UINinePatch().With(self, (self, parent) =>
+				try
 				{
-					self.Texture = new(Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen"), new(16, 16, 160, 160));
-					self.NinePatchInsets = new(44);
-					self.Color = Color.White * 0.75f;
-					self.IsTouchThrough = false;
-
-					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
-					{
-						self.ContentInsets = new(26);
-
-						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
-						{
-							self.Alignment = UIStackViewAlignment.Center;
-							self.Spacing = 24f;
-							Tooltips[self] = (title: null, text: "Checkbox stack view");
-
-							new UICheckbox().With(self, (self, parent) =>
-							{
-								self.IsCheckedChanged += (_, _, newValue) => Monitor.Log($"Changed checkbox state: {newValue}", LogLevel.Info);
-								parent.AddArrangedSubview(self);
-							});
-
-							new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont)).With(self, (self, parent) =>
-							{
-								self.Text = "Check me out";
-								self.NumberOfLines = 0;
-								parent.AddArrangedSubview(self);
-							});
-
-							parent.AddArrangedSubview(self);
-						});
-
-						for (int i = 0; i < 4; i++)
-						{
-							new UILabel<UISpriteTextFont>(new UISpriteTextFont(color: UISpriteTextFontColor.White)).With(self, (self, parent) =>
-							{
-								self.TextAlignment = TextAlignment.Center;
-								self.Text = $"Label no. {string.Concat(Enumerable.Repeat($"{i + 1}", i + 1))}";
-								parent.AddArrangedSubview(self);
-							});
-						}
-
-						new UIStackView(Orientation.Horizontal).With(self, (self, parent) =>
-						{
-							self.Distribution = UIStackViewDistribution.EqualSpacing;
-							self.Spacing = 24f;
-
-							var button1 = new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
-							{
-								self.TapEvent += _ => Monitor.Log("Pressed OK button", LogLevel.Info);
-								Tooltips[self] = (title: null, text: "Yay");
-								parent.AddArrangedSubview(self);
-								self.MakeAspectRatioConstraint().Activate();
-							});
-
-							var button2 = new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
-							{
-								self.TapEvent += _ => Monitor.Log("Pressed Cancel button", LogLevel.Info);
-								Tooltips[self] = (title: null, text: "Nay");
-								parent.AddArrangedSubview(self);
-								self.MakeAspectRatioConstraint().Activate();
-							});
-
-							parent.AddArrangedSubview(self);
-							button1.WidthAnchor.MakeConstraintTo(button2).Activate();
-						});
-
-						parent.AddSubview(self);
-						self.MakeEdgeConstraintsToSuperview().Activate();
-					});
-
-					parent.AddSubview(self);
-					self.MakeEdgeConstraintsToSuperview().Activate();
-				});
-
-				parent.AddSubview(self);
-				self.LeftAnchor.MakeConstraintToSuperview(16).Activate();
-				self.BottomAnchor.MakeConstraintToSuperview(-16).Activate();
-				self.WidthAnchor.MakeConstraint(300).Activate();
-			});
-
-			new UINinePatch().With(Root, (self, parent) =>
-			{
-				self.Texture = new(Game1.content.Load<Texture2D>("LooseSprites/DialogBoxGreen"), new(16, 16, 160, 160));
-				self.NinePatchInsets = new(44);
-				self.Color = Color.White * 0.75f;
-				self.IsTouchThrough = false;
-
-				new UIScrollView().With(self, (self, parent) =>
+					var regex = new Regex(arg);
+					matchingViews = matchingViews
+						.Where(kv => regex.IsMatch(kv.Value));
+				}
+				catch (Exception)
 				{
-					self.ScrollFactor *= 0.5f;
-					self.ReverseVerticalDirection = true;
-
-					new UIStackView(Orientation.Vertical).With(self, (self, parent) =>
-					{
-						var colors = new[] { Color.Red, Color.Orange, Color.Yellow, Color.Lime, Color.Cyan, Color.Blue, Color.Magenta };
-						foreach (var color in colors)
-						{
-							new UIQuad().With(self, (self, parent) =>
-							{
-								self.Color = color;
-
-								parent.AddArrangedSubview(self);
-								self.HeightAnchor.MakeConstraint(80).Activate();
-							});
-						}
-
-						parent.AddSubview(self);
-						self.MakeHorizontalEdgeConstraintsToSuperview().Activate();
-						self.MakeEdgeConstraintsTo(parent.ContentFrame).Activate();
-					});
-
-					parent.AddSubview(self);
-					self.MakeEdgeConstraintsToSuperview(20f).Activate();
-				});
-
-				parent.AddSubview(self);
-				self.CenterYAnchor.MakeConstraintTo(parent).Activate();
-				self.RightAnchor.MakeConstraintTo(parent, -160).Activate();
-				self.WidthAnchor.MakeConstraint(200).Activate();
-				self.HeightAnchor.MakeConstraint(200).Activate();
-			});
+					Monitor.Log("Provided regex is invalid.", LogLevel.Error);
+					return matchingViews;
+				}
+			}
+			return matchingViews;
 		}
 
-		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+		private void ListViewsCommand(string command, string[] args)
 		{
-			if (!Context.IsWorldReady)
-				return;
-			Root.Update();
+			var viewEntries = ParseViewsArgument(args.Length == 0 ? null : args[0])
+				.Select(kv => $"ID: {kv.Value} | Type: {kv.Key.GetType().Name} | Depth: {kv.Key.GetViewHierarchy(false).Count()}");
+			Monitor.Log($"Matching view(s):\n{string.Join('\n', viewEntries)}", LogLevel.Info);
 		}
 
-		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
+		private void ShowDebugFramesCommand(string command, string[] args)
 		{
-			SurfaceView.Color = Color.White * (0.9f + 0.1f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
-			Root.Draw(e.SpriteBatch);
-
-			var tooltip = Root.VisitAllViews(UIViewVisitingOrder.VisibleOrder)
-				.FirstOrDefault(v => v.Hover == HoverState.Direct && Tooltips.ContainsKey(v))
-				?.Let(v => Tooltips[v]);
-			if (tooltip is not null)
-				IClickableMenu.drawToolTip(e.SpriteBatch, tooltip.Value.text, tooltip.Value.title, null);
+			var views = ParseViewsArgument(args.Length == 0 ? null : args[0]).ToList();
+			Monitor.Log($"Showing debug frames for {views.Count} matching view(s).", LogLevel.Info);
+			foreach (var (view, _) in views)
+				DebugFrames.ObserveView(view);
 		}
+
+		private void HideDebugFramesCommand(string command, string[] args)
+		{
+			var views = ParseViewsArgument(args.Length == 0 ? null : args[0]).ToList();
+			Monitor.Log($"Hiding debug frames for {views.Count} matching view(s).", LogLevel.Info);
+			foreach (var (view, _) in views)
+				DebugFrames.StopObservingView(view);
+		}
+
+		private void ShowHierarchyDebugFramesCommand(string command, string[] args)
+		{
+			var views = ParseViewsArgument(args.Length == 0 ? null : args[0]).ToList();
+			Monitor.Log($"Showing hierarchy debug frames for {views.Count} matching view(s).", LogLevel.Info);
+			foreach (var (view, _) in views)
+				DebugFrames.ObserveViewHierarchy(view);
+		}
+
+		private void HideHierarchyDebugFramesCommand(string command, string[] args)
+		{
+			var views = ParseViewsArgument(args.Length == 0 ? null : args[0]).ToList();
+			Monitor.Log($"Hiding hierarchy debug frames for {views.Count} matching view(s).", LogLevel.Info);
+			foreach (var (view, _) in views)
+				DebugFrames.StopObservingViewHierarchy(view);
+		}
+
+		#endregion
+
+		#region API
+
+		#region Identifiers
+
+		public string? GetViewIdentifier(UIView view)
+			=> ViewIdentifiers.TryGetValue(view, out var identifier) ? identifier : null;
+
+		public void SetViewIdentifier(UIView view, string? identifier)
+		{
+			if (identifier is null)
+				ViewIdentifiers.Remove(view);
+			else
+				ViewIdentifiers[view] = identifier;
+		}
+
+		#endregion
+
+		#region Debug Frames
+
+		public IReadOnlyList<Color> GetDebugFrameColors()
+			=> DebugFrames.Colors;
+
+		public void SetDebugFrameColors(IReadOnlyList<Color> colors)
+			=> DebugFrames.Colors = colors;
+
+		public Color? GetDebugFrameColorOverride(UIView view)
+			=> DebugFrames.ColorOverrides.TryGetValue(view, out var value) ? value : null;
+
+		public void SetDebugFrameColorOverride(Color? color, UIView view)
+		{
+			if (color is null)
+				DebugFrames.ColorOverrides.Remove(view);
+			else
+				DebugFrames.ColorOverrides[view] = color.Value;
+		}
+
+		public bool IsDebugFrameVisible(UIView view)
+			=> DebugFrames.IsObservingView(view);
+
+		public void SetDebugFrameVisible(bool visible, UIView view)
+		{
+			if (visible)
+				DebugFrames.ObserveView(view);
+			else
+				DebugFrames.StopObservingView(view);
+		}
+
+		public void ToggleDebugFrameVisibility(UIView view)
+			=> SetDebugFrameVisible(!IsDebugFrameVisible(view), view);
+
+		public void ShowDebugFrame(UIView view)
+			=> DebugFrames.ObserveView(view);
+
+		public void HideDebugFrame(UIView view)
+			=> DebugFrames.StopObservingView(view);
+
+		public bool AreHierarchyDebugFramesVisible(UIView hierarchy)
+			=> DebugFrames.IsObservingViewHierarchy(hierarchy);
+
+		public void SetHierarchyDebugFramesVisible(bool visible, UIView hierarchy)
+		{
+			if (visible)
+				DebugFrames.ObserveViewHierarchy(hierarchy);
+			else
+				DebugFrames.StopObservingViewHierarchy(hierarchy);
+		}
+
+		public void ToggleHierarchyDebugFramesVisibility(UIView hierarchy)
+			=> SetHierarchyDebugFramesVisible(!AreHierarchyDebugFramesVisible(hierarchy), hierarchy);
+
+		public void ShowHierarchyDebugFrames(UIView hierarchy)
+			=> DebugFrames.ObserveViewHierarchy(hierarchy);
+
+		public void HideHierarchyDebugFrames(UIView hierarchy)
+			=> DebugFrames.StopObservingViewHierarchy(hierarchy);
+
+		#endregion
+
+		#endregion API
 	}
 }
