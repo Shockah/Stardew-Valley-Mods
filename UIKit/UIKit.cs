@@ -5,7 +5,9 @@ using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Menus;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.UIKit
@@ -13,7 +15,8 @@ namespace Shockah.UIKit
 	public class UIKit: Mod
 	{
 		private StardewRootView Root = null!;
-		private UISurfaceView surfaceView = null!;
+		private UISurfaceView SurfaceView = null!;
+		private readonly IDictionary<UIView, (string? title, string text)> Tooltips = new Dictionary<UIView, (string? title, string text)>();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -39,7 +42,7 @@ namespace Shockah.UIKit
 				self.WidthAnchor.MakeConstraint(400).Activate();
 			});
 
-			surfaceView = new UISurfaceView().With(Root, (self, parent) =>
+			SurfaceView = new UISurfaceView().With(Root, (self, parent) =>
 			{
 				new UINinePatch().With(self, (self, parent) =>
 				{
@@ -56,6 +59,7 @@ namespace Shockah.UIKit
 						{
 							self.Alignment = UIStackViewAlignment.Center;
 							self.Spacing = 24f;
+							Tooltips[self] = (title: null, text: "Checkbox stack view");
 
 							new UICheckbox().With(self, (self, parent) =>
 							{
@@ -91,6 +95,7 @@ namespace Shockah.UIKit
 							var button1 = new UITextureButton(new(Game1.mouseCursors, new(128, 256, 64, 64))).With(self, (self, parent) =>
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed OK button", LogLevel.Info);
+								Tooltips[self] = (title: null, text: "Yay");
 								parent.AddArrangedSubview(self);
 								self.MakeAspectRatioConstraint().Activate();
 							});
@@ -98,6 +103,7 @@ namespace Shockah.UIKit
 							var button2 = new UITextureButton(new(Game1.mouseCursors, new(192, 256, 64, 64))).With(self, (self, parent) =>
 							{
 								self.TapEvent += _ => Monitor.Log("Pressed Cancel button", LogLevel.Info);
+								Tooltips[self] = (title: null, text: "Nay");
 								parent.AddArrangedSubview(self);
 								self.MakeAspectRatioConstraint().Activate();
 							});
@@ -172,8 +178,14 @@ namespace Shockah.UIKit
 
 		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
 		{
-			surfaceView.Color = Color.White * (0.8f + 0.2f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
+			SurfaceView.Color = Color.White * (0.9f + 0.1f * (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250));
 			Root.Draw(e.SpriteBatch);
+
+			var tooltip = Root.VisitAllViews(UIViewVisitingOrder.VisibleOrder)
+				.FirstOrDefault(v => v.Hover == HoverState.Direct && Tooltips.ContainsKey(v))
+				?.Let(v => Tooltips[v]);
+			if (tooltip is not null)
+				IClickableMenu.drawToolTip(e.SpriteBatch, tooltip.Value.text, tooltip.Value.title, null);
 		}
 	}
 }

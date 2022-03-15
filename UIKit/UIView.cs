@@ -9,6 +9,8 @@ using System.Linq;
 
 namespace Shockah.UIKit
 {
+	public enum HoverState { None, Obscured, Direct }
+
 	public class UIView: IConstrainable.Horizontal, IConstrainable.Vertical
 	{
 		public UIView ConstrainableOwnerView => this;
@@ -145,8 +147,8 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public IReadOnlyList<UITouch> HoverPointers => (IReadOnlyList<UITouch>)_hoverPointers;
-		public bool Hover => _hoverPointers.Count != 0;
+		public IReadOnlyList<(UITouch touch, HoverState hover)> HoverPointers => (IReadOnlyList<(UITouch touch, HoverState hover)>)_hoverPointers;
+		public HoverState Hover => _hoverPointers.Count == 0 ? HoverState.None : (HoverState)_hoverPointers.Max(p => (int)p.hover);
 
 		public UILayoutConstraintPriority HorizontalContentHuggingPriority
 		{
@@ -210,7 +212,7 @@ namespace Shockah.UIKit
 		public event ParentChildEvent<UIView, UIView>? RemovedSubview;
 		public event OwnerValueChangeEvent<UIView, (float? X, float? Y)>? IntrinsicSizeChanged;
 		public event OwnerValueChangeEvent<UIView, bool>? IsVisibleChanged;
-		public event OwnerValueChangeEvent<UIView, IReadOnlyList<UITouch>>? HoverPointersChanged;
+		public event OwnerValueChangeEvent<UIView, IReadOnlyList<(UITouch touch, HoverState hover)>>? HoverPointersChanged;
 		public event OwnerValueChangeEvent<UIView, bool>? HoverChanged;
 		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
 		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
@@ -223,7 +225,7 @@ namespace Shockah.UIKit
 		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private bool _isVisible = true;
-		private readonly IList<UITouch> _hoverPointers = new List<UITouch>();
+		private readonly IList<(UITouch touch, HoverState hover)> _hoverPointers = new List<(UITouch touch, HoverState hover)>();
 		private float? _intrinsicWidth;
 		private float? _intrinsicHeight;
 
@@ -498,7 +500,7 @@ namespace Shockah.UIKit
 
 		public void RemoveHover(UITouch touch)
 		{
-			var indexToRemove = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+			var indexToRemove = _hoverPointers.FirstIndex(t => t.touch.IsSame(touch));
 			if (indexToRemove is not null)
 				_hoverPointers.RemoveAt(indexToRemove.Value);
 		}
@@ -520,27 +522,27 @@ namespace Shockah.UIKit
 			}
 			if (isTouchInBounds && isTouchInParentBounds)
 			{
-				var indexToUpdate = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+				var indexToUpdate = _hoverPointers.FirstIndex(t => t.touch.IsSame(touch));
 				if (indexToUpdate is null)
 				{
 					var oldValue = _hoverPointers.ToList();
-					_hoverPointers.Add(touch);
-					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<UITouch>)_hoverPointers);
+					_hoverPointers.Add((touch: touch, hover: isHandled ? HoverState.Obscured : HoverState.Direct));
+					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<(UITouch touch, HoverState hover)>)_hoverPointers);
 				}
 				else
 				{
-					_hoverPointers[indexToUpdate.Value] = touch;
+					_hoverPointers[indexToUpdate.Value] = (touch: touch, hover: isHandled ? HoverState.Obscured : HoverState.Direct);
 				}
 				isHandled = OnSelfHover(touch);
 			}
 			else
 			{
-				var indexToRemove = _hoverPointers.FirstIndex(t => t.IsSame(touch));
+				var indexToRemove = _hoverPointers.FirstIndex(t => t.touch.IsSame(touch));
 				if (indexToRemove is not null)
 				{
 					var oldValue = _hoverPointers.ToList();
 					_hoverPointers.RemoveAt(indexToRemove.Value);
-					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<UITouch>)_hoverPointers);
+					HoverPointersChanged?.Invoke(this, oldValue, (IReadOnlyList<(UITouch touch, HoverState hover)>)_hoverPointers);
 				}
 			}
 			return isHandled;
@@ -695,7 +697,7 @@ namespace Shockah.UIKit
 			IntrinsicSizeConstraints = newConstraints;
 		}
 
-		private void OnHoverPointersChanged(IReadOnlyList<UITouch> oldValue, IReadOnlyList<UITouch> newValue)
+		private void OnHoverPointersChanged(IReadOnlyList<(UITouch touch, HoverState hover)> oldValue, IReadOnlyList<(UITouch touch, HoverState hover)> newValue)
 		{
 			var oldEmpty = oldValue.Count == 0;
 			var newEmpty = newValue.Count == 0;

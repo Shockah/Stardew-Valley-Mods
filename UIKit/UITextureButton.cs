@@ -214,7 +214,7 @@ namespace Shockah.UIKit
 			var texture = NormalTexture;
 			var color = NormalColor;
 
-			if (Hover)
+			if (Hover == HoverState.Direct)
 			{
 				if (HoverTexture is not null)
 					texture = HoverTexture.Value;
