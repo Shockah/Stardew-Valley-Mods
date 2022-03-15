@@ -7,8 +7,8 @@ using System.Text.RegularExpressions;
 
 namespace Shockah.UIKit
 {
-	public enum UILabelLineBreakMode { ByWrapping, ByTruncatingTail, ByTruncatingHead }
-	public enum UILabelLineBreakSplitMode { ByWord, ByChar }
+	public enum UILabelLineSegmenting { ByWordBoundary, ByAlphanumericWord, ByChar }
+	public enum UILabelLineTruncating { None, Tail, Head }
 
 	public class UILabel<FontType>: UIView.Drawable where FontType: class, IUIFont
 	{
@@ -65,7 +65,33 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public UILabelLineBreakMode LineBreakMode
+		public UILabelLineTruncating LineTruncating
+		{
+			get => _lineTruncating;
+			set
+			{
+				if (_lineTruncating == value)
+					return;
+				var oldValue = _lineTruncating;
+				_lineTruncating = value;
+				LineTruncatingChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public UILabelLineSegmenting LineTruncatingSegmenting
+		{
+			get => _lineTruncatingSegmenting;
+			set
+			{
+				if (_lineTruncatingSegmenting == value)
+					return;
+				var oldValue = _lineTruncatingSegmenting;
+				_lineTruncatingSegmenting = value;
+				LineTruncatingSegmentingChanged?.Invoke(this, oldValue, value);
+			}
+		}
+
+		public UILabelLineSegmenting? LineBreakMode
 		{
 			get => _lineBreakMode;
 			set
@@ -78,32 +104,24 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public UILabelLineBreakSplitMode LineBreakSplitMode
-		{
-			get => _lineBreakSplitMode;
-			set
-			{
-				if (_lineBreakSplitMode == value)
-					return;
-				var oldValue = _lineBreakSplitMode;
-				_lineBreakSplitMode = value;
-				LineBreakSplitModeChanged?.Invoke(this, oldValue, value);
-			}
-		}
+		public bool IsDisplayingTruncatedText { get; private set; } = false;
 
 		public event OwnerValueChangeEvent<UILabel<FontType>, string>? TextChanged;
 		public event OwnerValueChangeEvent<UILabel<FontType>, FontType>? FontChanged;
 		public event OwnerValueChangeEvent<UILabel<FontType>, TextAlignment>? TextAlignmentChanged;
 		public event OwnerValueChangeEvent<UILabel<FontType>, int>? NumberOfLinesChanged;
-		public event OwnerValueChangeEvent<UILabel<FontType>, UILabelLineBreakMode>? LineBreakModeChanged;
-		public event OwnerValueChangeEvent<UILabel<FontType>, UILabelLineBreakSplitMode>? LineBreakSplitModeChanged;
+		public event OwnerValueChangeEvent<UILabel<FontType>, UILabelLineTruncating>? LineTruncatingChanged;
+		public event OwnerValueChangeEvent<UILabel<FontType>, UILabelLineSegmenting>? LineTruncatingSegmentingChanged;
+		public event OwnerValueChangeEvent<UILabel<FontType>, UILabelLineSegmenting?>? LineBreakModeChanged;
+		public event OwnerValueChangeEvent<UILabel<FontType>, bool>? IsDisplayingTruncatedTextChanged;
 
 		private string _text;
 		private FontType _font;
 		private TextAlignment _textAlignment = TextAlignment.Left;
 		private int _numberOfLines = 1;
-		private UILabelLineBreakMode _lineBreakMode = UILabelLineBreakMode.ByTruncatingTail;
-		private UILabelLineBreakSplitMode _lineBreakSplitMode = UILabelLineBreakSplitMode.ByWord;
+		private UILabelLineTruncating _lineTruncating = UILabelLineTruncating.Tail;
+		private UILabelLineSegmenting _lineTruncatingSegmenting = UILabelLineSegmenting.ByAlphanumericWord;
+		private UILabelLineSegmenting? _lineBreakMode = UILabelLineSegmenting.ByAlphanumericWord;
 
 		internal string CachedText;
 		internal UIVector2 CachedTextSize = UIVector2.Zero;
@@ -122,8 +140,9 @@ namespace Shockah.UIKit
 			TextChanged += (_, _, _) => IsDirty = true;
 			FontChanged += (_, _, _) => IsDirty = true;
 			NumberOfLinesChanged += (_, _, _) => IsDirty = true;
+			LineTruncatingChanged += (_, _, _) => IsDirty = true;
+			LineTruncatingSegmentingChanged += (_, _, _) => IsDirty = true;
 			LineBreakModeChanged += (_, _, _) => IsDirty = true;
-			LineBreakSplitModeChanged += (_, _, _) => IsDirty = true;
 			SizeChanged += (_, _, _) => IsDirty = true;
 		}
 
@@ -163,18 +182,36 @@ namespace Shockah.UIKit
 
 		private void UpdateCachedText()
 		{
+			bool wasDisplayingTruncatedText = IsDisplayingTruncatedText;
 			if (Root is not null)
 			{
-				var lines = GetSplitLinesFitting();
+				var (lines, isTruncated) = GetSplitLinesFitting();
 				CachedText = string.Join("\n", lines.Select(l => l.text));
+				IsDisplayingTruncatedText = isTruncated;
 			}
 			CachedTextSize = Measure(CachedText);
 			IsDirty = false;
+			if (wasDisplayingTruncatedText != IsDisplayingTruncatedText)
+				IsDisplayingTruncatedTextChanged?.Invoke(this, wasDisplayingTruncatedText, IsDisplayingTruncatedText);
 		}
 
-		private IReadOnlyList<(string text, UIVector2 size)> GetSplitLinesFitting()
+		private (IReadOnlyList<(string text, UIVector2 size)> lines, bool isTruncated) GetSplitLinesFitting()
 		{
-			string ellipsis = "...";
+			static IEnumerable<string> GetSegments(string text, UILabelLineSegmenting? segmenting)
+			{
+				return segmenting switch
+				{
+					UILabelLineSegmenting.ByWordBoundary => Regex.Split(text, "(\\s+)"),
+					UILabelLineSegmenting.ByAlphanumericWord =>
+						Regex.Split(text, "(\\s+)")
+							.SelectMany(split => Regex.Split(split, "([^a-z\\d])", RegexOptions.IgnoreCase))
+							.ToList(),
+					UILabelLineSegmenting.ByChar => text.Select(c => $"{c}").ToList(),
+					null => new[] { text },
+					_ => throw new InvalidOperationException($"{nameof(UILabelLineSegmenting)} has an invalid value."),
+				};
+			}
+
 			IDictionary<string, UIVector2> sizeCache = new Dictionary<string, UIVector2>();
 			var existingLines = Text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 			var results = new List<(string text, UIVector2 size)>();
@@ -195,6 +232,8 @@ namespace Shockah.UIKit
 				verticalLength: UIOptimalSideLength.OfLength(measuredSize.Y)
 			);
 
+			// line breaking
+
 			foreach (var existingLine in existingLines)
 			{
 				if (GetMeasure(existingLine).X <= optimalSize.X)
@@ -203,118 +242,78 @@ namespace Shockah.UIKit
 					continue;
 				}
 
-				IList<string> segments = LineBreakSplitMode switch
-				{
-					UILabelLineBreakSplitMode.ByWord => Regex.Split(existingLine, "(\\s+)"),
-					UILabelLineBreakSplitMode.ByChar => existingLine.Select(c => $"{c}").ToList(),
-					_ => throw new InvalidOperationException($"{nameof(UILabelLineBreakSplitMode)} has an invalid value."),
-				};
-
-				if (segments.Count == 0)
+				IReadOnlyList<string> lineSegments = GetSegments(existingLine, LineBreakMode).ToList();
+				if (lineSegments.Count == 0)
 				{
 					results.Add(("", GetMeasure(" ")));
-					continue;
 				}
-
-				switch (LineBreakMode)
+				else
 				{
-					case UILabelLineBreakMode.ByWrapping:
+					var currentLine = "";
+					var currentLength = 0f;
+					var ignoreWhitespace = false;
+
+					foreach (var segment in lineSegments)
+					{
+						var newLength = currentLength + GetMeasure(segment).X;
+						if (newLength > optimalSize.X && currentLine != "")
 						{
-							var currentLine = "";
-							var currentLength = 0f;
-							var ignoreWhitespace = false;
-
-							foreach (var segment in segments)
-							{
-								var newLength = currentLength + GetMeasure(segment).X;
-								if (newLength > optimalSize.X && currentLine != "")
-								{
-									results.Add((currentLine, GetMeasure(currentLine)));
-									currentLine = "";
-									currentLength = 0f;
-									ignoreWhitespace = true;
-								}
-
-								if (ignoreWhitespace && string.IsNullOrWhiteSpace(segment))
-									continue;
-								ignoreWhitespace = false;
-
-								currentLine += segment;
-								currentLength += GetMeasure(segment).X;
-							}
-
-							if (currentLine != "")
-								results.Add((currentLine, GetMeasure(currentLine)));
+							results.Add((currentLine, GetMeasure(currentLine)));
+							currentLine = "";
+							currentLength = 0f;
+							ignoreWhitespace = true;
 						}
-						break;
-					case UILabelLineBreakMode.ByTruncatingTail:
-						{
-							var currentLine = "";
-							var ellipsisLength = GetMeasure(ellipsis).X;
-							var currentLength = ellipsisLength;
 
-							foreach (var segment in segments)
-							{
-								var segmentLength = GetMeasure(segment).X;
-								if (currentLength + segmentLength <= optimalSize.X)
-								{
-									currentLine += segment;
-									currentLength += segmentLength;
-								}
-								else
-								{
-									currentLine = currentLine.TrimEnd() + ellipsis;
-									results.Add((currentLine, GetMeasure(currentLine)));
-									currentLine = "";
-									break;
-								}
-							}
+						if (ignoreWhitespace && string.IsNullOrWhiteSpace(segment))
+							continue;
+						ignoreWhitespace = false;
 
-							if (currentLine != "")
-							{
-								currentLine = currentLine.TrimEnd() + ellipsis;
-								results.Add((currentLine, GetMeasure(currentLine)));
-							}
-						}
-						break;
-					case UILabelLineBreakMode.ByTruncatingHead:
-						{
-							var currentLine = "";
-							var ellipsisLength = GetMeasure(ellipsis).X;
-							var currentLength = ellipsisLength;
+						currentLine += segment;
+						currentLength += GetMeasure(segment).X;
+					}
 
-							foreach (var segment in segments.Reverse())
-							{
-								var segmentLength = GetMeasure(segment).X;
-								if (currentLength + segmentLength <= optimalSize.X)
-								{
-									currentLine = segment + currentLine;
-									currentLength += segmentLength;
-								}
-								else
-								{
-									currentLine = ellipsis + currentLine.TrimStart();
-									results.Add((currentLine, GetMeasure(currentLine)));
-									currentLine = "";
-									break;
-								}
-							}
-
-							if (currentLine != "")
-							{
-								currentLine = ellipsis + currentLine.TrimStart();
-								results.Add((currentLine, GetMeasure(currentLine)));
-							}
-						}
-						break;
-					default:
-						throw new InvalidOperationException($"{nameof(UILabelLineBreakMode)} has an invalid value.");
+					if (currentLine != "")
+						results.Add((currentLine, GetMeasure(currentLine)));
 				}
 			}
 
+			// line limit
+
+			var removeFromStart = LineTruncating == UILabelLineTruncating.Head;
+			var removedAnyLines = false;
 			while (NumberOfLines != 0 && results.Count > NumberOfLines)
-				results.RemoveAt(NumberOfLines);
-			return results;
+			{
+				results.RemoveAt(removeFromStart ? 0 : results.Count - 1);
+				removedAnyLines = true;
+			}
+
+			// line truncating
+
+			if (removedAnyLines && LineTruncating != UILabelLineTruncating.None)
+			{
+				string ellipsis = "...";
+				var lineToTruncate = results[LineTruncating == UILabelLineTruncating.Head ? 0 : ^1].text;
+				lineToTruncate = LineTruncating == UILabelLineTruncating.Head ? ellipsis + lineToTruncate : lineToTruncate + ellipsis;
+				IEnumerable<string> lineSegments = GetSegments(lineToTruncate, LineTruncatingSegmenting);
+				
+				var currentLine = "";
+				var ellipsisLength = GetMeasure(ellipsis).X;
+				var currentLength = ellipsisLength;
+
+				foreach (var segment in LineTruncating == UILabelLineTruncating.Head ? lineSegments.Reverse() : lineSegments)
+				{
+					var segmentLength = GetMeasure(segment).X;
+					if (currentLength + segmentLength > optimalSize.X)
+						break;
+					currentLine = LineTruncating == UILabelLineTruncating.Head ? segment + currentLine : currentLine + segment;
+					currentLength += segmentLength;
+				}
+
+				currentLine = LineTruncating == UILabelLineTruncating.Head ? ellipsis + currentLine : currentLine + ellipsis;
+				results[LineTruncating == UILabelLineTruncating.Head ? 0 : ^1] = (currentLine, GetMeasure(currentLine));
+			}
+
+			return (lines: results, isTruncated: removedAnyLines);
 		}
 	}
 
