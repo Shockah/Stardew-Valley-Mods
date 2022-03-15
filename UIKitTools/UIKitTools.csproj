@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<RootNamespace>Shockah.UIKit</RootNamespace>
+		<RootNamespace>Shockah.UIKit.Tools</RootNamespace>
 		<Version>0.0.1</Version>
 		<TargetFramework>net5.0</TargetFramework>
 		<BundleExtraAssemblies>ThirdParty</BundleExtraAssemblies>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>Nullable</WarningsAsErrors>
-		<EnableGameDebugging>false</EnableGameDebugging>
-		<EnableModDeploy>false</EnableModDeploy>
-		<EnableModZip>false</EnableModZip>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Cassowary" Version="4.0.0" />
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.0" />
 		<PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0">
 			<Private>True</Private>
 		</PackageReference>
 	</ItemGroup>
-	<Import Project="..\_Common\_Common.projitems" Label="Shared" />
+	<ItemGroup>
+		<ProjectReference Include="..\UIKit\UIKit.csproj">
+			<Private>True</Private>
+		</ProjectReference>
+	</ItemGroup>
 </Project>
