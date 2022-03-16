@@ -1,8 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.CommonModCode;
 using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Shockah.UIKit.Tools
@@ -14,7 +16,15 @@ namespace Shockah.UIKit.Tools
 		private DebugFrames DebugFrames = null!;
 		private ExampleUI ExampleUI = null!;
 
+		private readonly IList<WeakReference<UIView>> KnownViewReferences = new List<WeakReference<UIView>>();
 		private readonly IDictionary<UIView, string> ViewIdentifiers = new Dictionary<UIView, string>();
+
+		private IEnumerable<UIRootView> KnownRootViews => KnownViewReferences
+			.Select(r => r.GetTargetOrNull())
+			.Select(r => r?.Root ?? r as UIRootView)
+			.Where(r => r is not null)
+			.Select(r => r!)
+			.Distinct();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -34,7 +44,8 @@ namespace Shockah.UIKit.Tools
 		{
 			var prefix = "uikit_";
 
-			Helper.ConsoleCommands.Add($"{prefix}list_views", "TODO", ListViewsCommand);
+			foreach (var alias in new[] { "print_views", "pv" })
+				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", PrintViewsCommand);
 
 			foreach (var alias in new[] { "show_debug_frames", "sdf" })
 				Helper.ConsoleCommands.Add($"{prefix}{alias}", "TODO", ShowDebugFramesCommand);
@@ -71,11 +82,40 @@ namespace Shockah.UIKit.Tools
 			return matchingViews;
 		}
 
-		private void ListViewsCommand(string command, string[] args)
+		private void PrintViewsCommand(string command, string[] args)
 		{
-			var viewEntries = ParseViewsArgument(args.Length == 0 ? null : args[0])
-				.Select(kv => $"ID: {kv.Value} | Type: {kv.Key.GetType().Name} | Depth: {kv.Key.GetViewHierarchy(false).Count()}");
-			Monitor.Log($"Matching view(s):\n{string.Join('\n', viewEntries)}", LogLevel.Info);
+			string ViewToString(UIView view, int depth)
+			{
+				var sb = new StringBuilder();
+				for (int i = 1; i < depth; i++)
+					sb.Append("  ");
+				if (depth != 0)
+					sb.Append("|-");
+
+				sb.Append(view.ToString());
+				if (ViewIdentifiers.TryGetValue(view, out var identifier))
+					sb.Append($" '{identifier}'");
+				sb.Append($" | Type: {view.GetType().Name}");
+				sb.Append($" | IsVisible: {view.IsVisible}");
+				sb.Append($" | {view.Width}x{view.Height} @ {view.TopLeft}"); // TODO: configuration to print a different coordinate instead, maybe
+
+				foreach (var subview in view.Subviews)
+					sb.Append($"\n{ViewToString(subview, depth + 1)}");
+
+				return sb.ToString();
+			}
+
+			var knownRootViews = KnownRootViews.ToList();
+			if (knownRootViews.Count == 0)
+			{
+				Monitor.Log("No views to print.", LogLevel.Info);
+			}
+			else
+			{
+				Monitor.Log($"Printing {knownRootViews.Count} view hierarch(y/ies):", LogLevel.Info);
+				foreach (var root in knownRootViews)
+					Monitor.Log(ViewToString(root, 0), LogLevel.Info);
+			}
 		}
 
 		private void ShowDebugFramesCommand(string command, string[] args)
@@ -122,9 +162,22 @@ namespace Shockah.UIKit.Tools
 		public void SetViewIdentifier(UIView view, string? identifier)
 		{
 			if (identifier is null)
+			{
 				ViewIdentifiers.Remove(view);
+			}
 			else
+			{
 				ViewIdentifiers[view] = identifier;
+				RegisterView(view);
+			}
+		}
+
+		public void RegisterView(UIView view)
+		{
+			foreach (var reference in KnownViewReferences)
+				if (reference.GetTargetOrNull() == view)
+					return;
+			KnownViewReferences.Add(new(view));
 		}
 
 		#endregion
@@ -148,7 +201,7 @@ namespace Shockah.UIKit.Tools
 				DebugFrames.ColorOverrides[view] = color.Value;
 		}
 
-		public bool IsDebugFrameVisible(UIView view)
+		public bool GetDebugFrameVisible(UIView view)
 			=> DebugFrames.IsObservingView(view);
 
 		public void SetDebugFrameVisible(bool visible, UIView view)
@@ -159,16 +212,7 @@ namespace Shockah.UIKit.Tools
 				DebugFrames.StopObservingView(view);
 		}
 
-		public void ToggleDebugFrameVisibility(UIView view)
-			=> SetDebugFrameVisible(!IsDebugFrameVisible(view), view);
-
-		public void ShowDebugFrame(UIView view)
-			=> DebugFrames.ObserveView(view);
-
-		public void HideDebugFrame(UIView view)
-			=> DebugFrames.StopObservingView(view);
-
-		public bool AreHierarchyDebugFramesVisible(UIView hierarchy)
+		public bool GetHierarchyDebugFramesVisible(UIView hierarchy)
 			=> DebugFrames.IsObservingViewHierarchy(hierarchy);
 
 		public void SetHierarchyDebugFramesVisible(bool visible, UIView hierarchy)
@@ -178,15 +222,6 @@ namespace Shockah.UIKit.Tools
 			else
 				DebugFrames.StopObservingViewHierarchy(hierarchy);
 		}
-
-		public void ToggleHierarchyDebugFramesVisibility(UIView hierarchy)
-			=> SetHierarchyDebugFramesVisible(!AreHierarchyDebugFramesVisible(hierarchy), hierarchy);
-
-		public void ShowHierarchyDebugFrames(UIView hierarchy)
-			=> DebugFrames.ObserveViewHierarchy(hierarchy);
-
-		public void HideHierarchyDebugFrames(UIView hierarchy)
-			=> DebugFrames.StopObservingViewHierarchy(hierarchy);
 
 		#endregion
 
