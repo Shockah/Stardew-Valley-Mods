@@ -8,6 +8,7 @@ namespace Shockah.UIKit.Tools
 		#region Identifiers
 		string? GetViewIdentifier(UIView view);
 		void SetViewIdentifier(UIView view, string? identifier);
+		void RegisterView(UIView view);
 		#endregion
 
 		#region Debug Frames
@@ -16,17 +17,11 @@ namespace Shockah.UIKit.Tools
 		Color? GetDebugFrameColorOverride(UIView view);
 		void SetDebugFrameColorOverride(Color? color, UIView view);
 
-		bool IsDebugFrameVisible(UIView view);
+		bool GetDebugFrameVisible(UIView view);
 		void SetDebugFrameVisible(bool visible, UIView view);
-		void ToggleDebugFrameVisibility(UIView view);
-		void ShowDebugFrame(UIView view);
-		void HideDebugFrame(UIView view);
 
-		bool AreHierarchyDebugFramesVisible(UIView hierarchy);
+		bool GetHierarchyDebugFramesVisible(UIView hierarchy);
 		void SetHierarchyDebugFramesVisible(bool visible, UIView hierarchy);
-		void ToggleHierarchyDebugFramesVisibility(UIView hierarchy);
-		void ShowHierarchyDebugFrames(UIView hierarchy);
-		void HideHierarchyDebugFrames(UIView hierarchy);
 		#endregion
 	}
 }
