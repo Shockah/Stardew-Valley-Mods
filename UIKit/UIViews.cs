@@ -40,16 +40,6 @@ namespace Shockah.UIKit
 			return point;
 		}
 
-		public static void AddToSuperview(this UIView subview, UIView superview)
-			=> superview.AddSubview(subview);
-
-		public static void RemoveSubview(this UIView superview, UIView subview)
-		{
-			if (subview.Superview != superview)
-				throw new InvalidOperationException($"View {subview} is not a subview of {superview}.");
-			subview.RemoveFromSuperview();
-		}
-
 		[Pure]
 		public static IEnumerable<UIView> GetViewHierarchy(this UIView self, bool includeSelf)
 		{

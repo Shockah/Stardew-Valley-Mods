@@ -111,7 +111,7 @@ namespace Shockah.UIKit
 		public float? IntrinsicWidth
 		{
 			get => _intrinsicWidth;
-			set
+			protected set
 			{
 				if (_intrinsicWidth == value)
 					return;
@@ -124,7 +124,7 @@ namespace Shockah.UIKit
 		public float? IntrinsicHeight
 		{
 			get => _intrinsicHeight;
-			set
+			protected set
 			{
 				if (_intrinsicHeight == value)
 					return;
