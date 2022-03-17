@@ -5,49 +5,24 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.UIKit
 {
-	public static class UIAnchors
+	public static class UIPositionalAnchors
 	{
 		[Pure]
-		public static UILayoutConstraint MakeConstraint(
-			this IUIAnchor self,
+		public static UILayoutConstraint MakeConstraintTo<ConstrainableType>(
+			this IUIAnchor.Typed<ConstrainableType>.Positional self,
 			string? identifier,
-			float constant,
-			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
-			UILayoutConstraintPriority? priority = null
-		)
-			=> new(identifier, self, constant, relation: relation, priority: priority);
-
-		[Pure]
-		public static UILayoutConstraint MakeConstraint(
-			this IUIAnchor self,
-			float constant,
-			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
-			UILayoutConstraintPriority? priority = null,
-			[CallerFilePath] string? callerFilePath = null,
-			[CallerMemberName] string? callerMemberName = null,
-			[CallerLineNumber] int? callerLineNumber = null
-		)
-			=> self.MakeConstraint(
-				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber),
-				constant, relation, priority
-			);
-
-		[Pure]
-		public static UILayoutConstraint MakeConstraintTo(
-			this IUIAnchor self,
-			string? identifier,
-			IUIAnchor other,
+			IUIAnchor.Typed<ConstrainableType>.Positional other,
 			float constant = 0f,
 			float multiplier = 1f,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
 			UILayoutConstraintPriority? priority = null
-		)
+		) where ConstrainableType : IConstrainable
 			=> new(identifier, self, constant, multiplier, other, relation, priority);
 
 		[Pure]
-		public static UILayoutConstraint MakeConstraintTo(
-			this IUIAnchor self,
-			IUIAnchor other,
+		public static UILayoutConstraint MakeConstraintTo<ConstrainableType>(
+			this IUIAnchor.Typed<ConstrainableType>.Positional self,
+			IUIAnchor.Typed<ConstrainableType>.Positional other,
 			float constant = 0f,
 			float multiplier = 1f,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
@@ -55,7 +30,7 @@ namespace Shockah.UIKit
 			[CallerFilePath] string? callerFilePath = null,
 			[CallerMemberName] string? callerMemberName = null,
 			[CallerLineNumber] int? callerLineNumber = null
-		)
+		) where ConstrainableType : IConstrainable
 			=> self.MakeConstraintTo(
 				CallerIdentifiers.GetCallerIdentifier(callerFilePath, callerMemberName, callerLineNumber),
 				other, constant, multiplier, relation, priority
@@ -63,7 +38,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintTo<ConstrainableType>(
-			this IUITypedAnchor<ConstrainableType> self,
+			this IUIAnchor.Typed<ConstrainableType>.Positional self,
 			string? identifier,
 			ConstrainableType other,
 			float constant = 0f,
@@ -75,7 +50,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintTo<ConstrainableType>(
-			this IUITypedAnchor<ConstrainableType> self,
+			this IUIAnchor.Typed<ConstrainableType>.Positional self,
 			ConstrainableType other,
 			float constant = 0f,
 			float multiplier = 1f,
@@ -92,7 +67,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToOpposite<ConstrainableType>(
-			this IUITypedAnchorWithOpposite<ConstrainableType> self,
+			this IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite self,
 			string? identifier,
 			ConstrainableType other,
 			float constant = 0f,
@@ -104,7 +79,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToOpposite<ConstrainableType>(
-			this IUITypedAnchorWithOpposite<ConstrainableType> self,
+			this IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite self,
 			ConstrainableType other,
 			float constant = 0f,
 			float multiplier = 1f,
@@ -121,7 +96,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperview(
-			this IUITypedAnchor<UIView> self,
+			this IUIAnchor.Typed<UIView>.Positional self,
 			string? identifier,
 			float constant = 0f,
 			float multiplier = 1f,
@@ -136,7 +111,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperview(
-			this IUITypedAnchor<UIView> self,
+			this IUIAnchor.Typed<UIView>.Positional self,
 			float constant = 0f,
 			float multiplier = 1f,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,
@@ -152,7 +127,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperviewOpposite(
-			this IUITypedAnchorWithOpposite<UIView> self,
+			this IUIAnchor.Typed<UIView>.Positional.WithOpposite self,
 			string? identifier,
 			float constant = 0f,
 			float multiplier = 1f,
@@ -167,7 +142,7 @@ namespace Shockah.UIKit
 
 		[Pure]
 		public static UILayoutConstraint MakeConstraintToSuperviewOpposite(
-			this IUITypedAnchorWithOpposite<UIView> self,
+			this IUIAnchor.Typed<UIView>.Positional.WithOpposite self,
 			float constant = 0f,
 			float multiplier = 1f,
 			UILayoutConstraintRelation relation = UILayoutConstraintRelation.Equal,

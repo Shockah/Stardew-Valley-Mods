@@ -24,8 +24,8 @@ namespace Shockah.UIKit
 		private ClConstraint? TopConstraint;
 		private ClConstraint? BottomConstraint;
 
-		private readonly ISet<UILayoutConstraint> QueuedConstraintsToAdd = new HashSet<UILayoutConstraint>();
-		private readonly ISet<UILayoutConstraint> QueuedConstraintsToRemove = new HashSet<UILayoutConstraint>();
+		private readonly ISet<IUILayoutConstraint> QueuedConstraintsToAdd = new HashSet<IUILayoutConstraint>();
+		private readonly ISet<IUILayoutConstraint> QueuedConstraintsToRemove = new HashSet<IUILayoutConstraint>();
 
 		public UIRootView(IGestureRecognizerManager gestureRecognizerManager)
 		{
@@ -35,7 +35,7 @@ namespace Shockah.UIKit
 		public void SolveLayout()
 		{
 			foreach (var constraint in QueuedConstraintsToRemove)
-				ConstraintSolver.RemoveConstraintIfExists(constraint.CassowaryConstraint.Value);
+				ConstraintSolver.RemoveConstraintIfExists(constraint.CassowaryConstraint);
 			QueuedConstraintsToRemove.Clear();
 
 			if (X1 != LastX1 || LeftConstraint is null)
@@ -75,11 +75,10 @@ namespace Shockah.UIKit
 			{
 				try
 				{
-					ConstraintSolver.AddConstraint(constraint.CassowaryConstraint.Value);
+					ConstraintSolver.AddConstraint(constraint.CassowaryConstraint);
 				}
 				catch
 				{
-					constraint.IsUnsatisfied = true;
 					UnsatifiableConstraintEvent?.Invoke(this, constraint);
 				}
 			}
@@ -114,13 +113,17 @@ namespace Shockah.UIKit
 			base.OnLayoutIfNeeded();
 		}
 
-		internal void QueueAddConstraint(UILayoutConstraint constraint)
+		internal void QueueAddConstraint(IUILayoutConstraint constraint)
 		{
+			foreach (var anchorView in constraint.Anchors.Select(a => a.Owner.ConstrainableOwnerView).Distinct())
+				anchorView.AddConstraint(constraint);
 			QueuedConstraintsToAdd.Add(constraint);
 		}
 
-		internal void QueueRemoveConstraint(UILayoutConstraint constraint)
+		internal void QueueRemoveConstraint(IUILayoutConstraint constraint)
 		{
+			foreach (var anchorView in constraint.Anchors.Select(a => a.Owner.ConstrainableOwnerView).Distinct())
+				anchorView.RemoveConstraint(constraint);
 			QueuedConstraintsToRemove.Add(constraint);
 		}
 	}

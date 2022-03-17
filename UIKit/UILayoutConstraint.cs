@@ -1,6 +1,7 @@
 ﻿using Cassowary;
 using Shockah.CommonModCode;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -85,8 +86,21 @@ namespace Shockah.UIKit
 				_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 			};
 	}
+
+	public interface IUILayoutConstraint : IEquatable<IUILayoutConstraint>
+	{
+		UIView? Holder { get; }
+		UILayoutConstraintPriority Priority { get; }
+		ClConstraint CassowaryConstraint { get; }
+		IReadOnlyCollection<IUIAnchor> Anchors { get; }
+
+		void Activate();
+		void Deactivate();
+
+		bool IsActive => Holder is not null;
+	}
 	
-	public class UILayoutConstraint: IEquatable<UILayoutConstraint>
+	public class UILayoutConstraint: IUILayoutConstraint
 	{
 		public IUIAnchor Anchor1 { get; }
 		public IUIAnchor? Anchor2 { get; }
@@ -96,9 +110,11 @@ namespace Shockah.UIKit
 		public UILayoutConstraintPriority Priority { get; }
 		public string? Identifier { get; }
 
-		public bool IsActive { get; private set; } = false;
-		public bool IsUnsatisfied { get; internal set; } = false;
-		internal readonly Lazy<ClConstraint> CassowaryConstraint;
+		public UIView? Holder { get; private set; }
+		public ClConstraint CassowaryConstraint => LazyCassowaryConstraint.Value;
+		public IReadOnlyCollection<IUIAnchor> Anchors => Anchor2 is null ? new[] { Anchor1 } : new[] { Anchor1, Anchor2 };
+
+		private readonly Lazy<ClConstraint> LazyCassowaryConstraint;
 
 		public UILayoutConstraint(
 			IUIAnchor anchor1,
@@ -127,6 +143,8 @@ namespace Shockah.UIKit
 			UILayoutConstraintPriority? priority = null
 		)
 		{
+			if (anchor2 is not null && !anchor1.IsCompatibleWithAnchor(anchor2))
+				throw new ArgumentException($"Anchors {anchor1} and {anchor2} are not compatible with each other.");
 			this.Identifier = identifier;
 			this.Anchor1 = anchor1;
 			this.Constant = constant;
@@ -134,7 +152,7 @@ namespace Shockah.UIKit
 			this.Anchor2 = anchor2;
 			this.Relation = relation;
 			this.Priority = priority ?? UILayoutConstraintPriority.Required;
-			CassowaryConstraint = new(() => CreateCassowaryConstraint());
+			LazyCassowaryConstraint = new(() => CreateCassowaryConstraint());
 		}
 
 		public override string ToString()
@@ -164,26 +182,16 @@ namespace Shockah.UIKit
 
 		private ClConstraint CreateCassowaryConstraint()
 		{
-			var anchor1 = Anchor1 as IUIAnchor.Internal ?? throw new InvalidOperationException();
-			IUIAnchor.Internal? anchor2 = null;
-			if (Anchor2 is not null)
-			{
-				if (Anchor2 is IUIAnchor.Internal @internal)
-					anchor2 = @internal;
-				else
-					throw new InvalidOperationException();
-			}
-
-			if (anchor2 is null)
+			if (Anchor2 is null)
 			{
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(anchor1.Expression, new ClLinearExpression(Constant), Priority.Strength),
+						new ClLinearEquation(Anchor1.Expression, new ClLinearExpression(Constant), Priority.Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
+						new ClLinearInequality(Anchor1.Expression, Cl.Operator.LessThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
+						new ClLinearInequality(Anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, new ClLinearExpression(Constant), Priority.Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}
@@ -192,11 +200,11 @@ namespace Shockah.UIKit
 				return Relation switch
 				{
 					UILayoutConstraintRelation.Equal =>
-						new ClLinearEquation(anchor1.Expression, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
+						new ClLinearEquation(Anchor1.Expression, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					UILayoutConstraintRelation.LessThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.LessThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
+						new ClLinearInequality(Anchor1.Expression, Cl.Operator.LessThanOrEqualTo, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					UILayoutConstraintRelation.GreaterThanOrEqual =>
-						new ClLinearInequality(anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
+						new ClLinearInequality(Anchor1.Expression, Cl.Operator.GreaterThanOrEqualTo, Anchor2.Expression.Times(Multiplier).Plus(new ClLinearExpression(Constant)), Priority.Strength),
 					_ => throw new InvalidOperationException($"{nameof(UILayoutConstraintRelation)} has an invalid value."),
 				};
 			}
@@ -204,28 +212,21 @@ namespace Shockah.UIKit
 
 		public void Activate()
 		{
-			if (IsActive)
+			if (Holder is not null)
 				return;
-			IsUnsatisfied = false;
 			var constraintOwningView = GetViewToPutConstraintOn();
 			(constraintOwningView.Root ?? constraintOwningView as UIRootView)?.QueueAddConstraint(this);
 			constraintOwningView.HeldConstraints.Add(this);
-			Anchor1.Owner.ConstrainableOwnerView.AddConstraint(this);
-			Anchor2?.Owner.ConstrainableOwnerView.AddConstraint(this);
-			IsActive = true;
+			Holder = constraintOwningView;
 		}
 
 		public void Deactivate()
 		{
-			if (!IsActive)
+			if (Holder is null)
 				return;
-			IsUnsatisfied = false;
-			var constraintOwningView = GetViewToPutConstraintOn();
-			constraintOwningView.HeldConstraints.Remove(this);
-			(constraintOwningView.Root ?? constraintOwningView as UIRootView)?.QueueRemoveConstraint(this);
-			Anchor1.Owner.ConstrainableOwnerView.RemoveConstraint(this);
-			Anchor2?.Owner.ConstrainableOwnerView.RemoveConstraint(this);
-			IsActive = false;
+			Holder.HeldConstraints.Remove(this);
+			(Holder.Root ?? Holder as UIRootView)?.QueueRemoveConstraint(this);
+			Holder = null;
 		}
 
 		private UIView GetViewToPutConstraintOn()
@@ -245,8 +246,8 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public bool Equals(UILayoutConstraint? other)
-			=> other is not null
+		public bool Equals(IUILayoutConstraint? obj)
+			=> obj is UILayoutConstraint other
 			&& other.Anchor1 == Anchor1
 			&& other.Anchor2 == Anchor2
 			&& other.Constant == Constant

@@ -11,28 +11,28 @@ namespace Shockah.UIKit
 	{
 		public UIView ConstrainableOwnerView => Owner;
 
-		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> LeftAnchor => LazyLeft.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> RightAnchor => LazyRight.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> TopAnchor => LazyTop.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> BottomAnchor => LazyBottom.Value;
-		public IUITypedAnchor<IConstrainable.Horizontal> WidthAnchor => LazyWidth.Value;
-		public IUITypedAnchor<IConstrainable.Vertical> HeightAnchor => LazyHeight.Value;
-		public IUITypedAnchor<IConstrainable.Horizontal> CenterXAnchor => LazyCenterX.Value;
-		public IUITypedAnchor<IConstrainable.Vertical> CenterYAnchor => LazyCenterY.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional.WithOpposite LeftAnchor => LazyLeft.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional.WithOpposite RightAnchor => LazyRight.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional.WithOpposite TopAnchor => LazyTop.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional.WithOpposite BottomAnchor => LazyBottom.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Length WidthAnchor => LazyWidth.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Length HeightAnchor => LazyHeight.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional CenterXAnchor => LazyCenterX.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional CenterYAnchor => LazyCenterY.Value;
 
 		internal readonly Lazy<ClVariable> LeftVariable;
 		internal readonly Lazy<ClVariable> RightVariable;
 		internal readonly Lazy<ClVariable> TopVariable;
 		internal readonly Lazy<ClVariable> BottomVariable;
 
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyLeft;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyRight;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyTop;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyBottom;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyWidth;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyHeight;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyCenterX;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyCenterY;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Horizontal>> LazyLeft;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Horizontal>> LazyRight;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Vertical>> LazyTop;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Vertical>> LazyBottom;
+		private readonly Lazy<UILengthAnchor<IConstrainable.Horizontal>> LazyWidth;
+		private readonly Lazy<UILengthAnchor<IConstrainable.Vertical>> LazyHeight;
+		private readonly Lazy<UICenterAnchor<IConstrainable.Horizontal>> LazyCenterX;
+		private readonly Lazy<UICenterAnchor<IConstrainable.Vertical>> LazyCenterY;
 
 		internal readonly Lazy<UILayoutConstraint> RightAfterLeftConstraint;
 		internal readonly Lazy<UILayoutConstraint> BottomAfterTopConstraint;
@@ -54,8 +54,8 @@ namespace Shockah.UIKit
 			LazyBottom = new(() => new(this, new(BottomVariable.Value), "ContentFrame.Bottom", c => c.BottomAnchor, c => c.TopAnchor));
 			LazyWidth = new(() => new(this, new ClLinearExpression(RightVariable.Value).Minus(LeftVariable.Value), "ContentFrame.Width", c => c.WidthAnchor));
 			LazyHeight = new(() => new(this, new ClLinearExpression(BottomVariable.Value).Minus(TopVariable.Value), "ContentFrame.Height", c => c.HeightAnchor));
-			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(((IUIAnchor.Internal)WidthAnchor).Expression.Times(0.5)), "ContentFrame.CenterX", c => c.CenterXAnchor));
-			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(((IUIAnchor.Internal)HeightAnchor).Expression.Times(0.5)), "ContentFrame.CenterY", c => c.CenterYAnchor));
+			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(WidthAnchor.Expression.Times(0.5)), "ContentFrame.CenterX", c => c.CenterXAnchor));
+			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(HeightAnchor.Expression.Times(0.5)), "ContentFrame.CenterY", c => c.CenterYAnchor));
 
 			RightAfterLeftConstraint = new(() => RightAnchor.MakeConstraintTo(LeftAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));
 			BottomAfterTopConstraint = new(() => BottomAnchor.MakeConstraintTo(TopAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));

@@ -17,6 +17,6 @@ namespace Shockah.UIKit
 	public delegate void OwnerCollectionValueEvent<Owner, T>(Owner owner, T value);
 	public delegate void OwnerActualCollectionValueEvent<Owner, Collection, T>(Owner owner, T value) where Collection : ICollection<T>;
 
-	public delegate void UnsatisfiableConstraintEvent(UIRootView root, UILayoutConstraint constraint);
+	public delegate void UnsatisfiableConstraintEvent(UIRootView root, IUILayoutConstraint constraint);
 	public delegate void RenderedView(UIRootView root, UIView view, RenderContext context);
 }

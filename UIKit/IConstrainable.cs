@@ -6,18 +6,18 @@
 
 		public interface Horizontal: IConstrainable
 		{
-			public IUITypedAnchorWithOpposite<Horizontal> LeftAnchor { get; }
-			public IUITypedAnchorWithOpposite<Horizontal> RightAnchor { get; }
-			public IUITypedAnchor<Horizontal> WidthAnchor { get; }
-			public IUITypedAnchor<Horizontal> CenterXAnchor { get; }
+			public IUIAnchor.Typed<Horizontal>.Positional.WithOpposite LeftAnchor { get; }
+			public IUIAnchor.Typed<Horizontal>.Positional.WithOpposite RightAnchor { get; }
+			public IUIAnchor.Typed<Horizontal>.Length WidthAnchor { get; }
+			public IUIAnchor.Typed<Horizontal>.Positional CenterXAnchor { get; }
 		}
 
 		public interface Vertical: IConstrainable
 		{
-			public IUITypedAnchorWithOpposite<Vertical> TopAnchor { get; }
-			public IUITypedAnchorWithOpposite<Vertical> BottomAnchor { get; }
-			public IUITypedAnchor<Vertical> HeightAnchor { get; }
-			public IUITypedAnchor<Vertical> CenterYAnchor { get; }
+			public IUIAnchor.Typed<Vertical>.Positional.WithOpposite TopAnchor { get; }
+			public IUIAnchor.Typed<Vertical>.Positional.WithOpposite BottomAnchor { get; }
+			public IUIAnchor.Typed<Vertical>.Length HeightAnchor { get; }
+			public IUIAnchor.Typed<Vertical>.Positional CenterYAnchor { get; }
 		}
 	}
 }

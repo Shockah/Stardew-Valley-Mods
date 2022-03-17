@@ -216,9 +216,9 @@ namespace Shockah.UIKit
 				=> CustomSpacing?.Invoke(precedingView, succeedingView) ?? Spacing;
 
 			void UpdateOrientationalDistributionConstraints<ConstrainableType>(
-				Func<UIView, IUITypedAnchorWithOpposite<ConstrainableType>> leadingAnchor,
-				Func<UIView, IUITypedAnchorWithOpposite<ConstrainableType>> trailingAnchor,
-				Func<UIView, IUITypedAnchor<ConstrainableType>> lengthAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite> leadingAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite> trailingAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Length> lengthAnchor,
 				float leadingInset,
 				float trailingInset
 			) where ConstrainableType : IConstrainable
@@ -292,10 +292,10 @@ namespace Shockah.UIKit
 			}
 
 			void UpdateOrientationalAlignmentConstraints<ConstrainableType>(
-				Func<UIView, IUITypedAnchorWithOpposite<ConstrainableType>> leadingAnchor,
-				Func<UIView, IUITypedAnchorWithOpposite<ConstrainableType>> trailingAnchor,
-				Func<UIView, IUITypedAnchor<ConstrainableType>> lengthAnchor,
-				Func<UIView, IUITypedAnchor<ConstrainableType>> centerAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite> leadingAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Positional.WithOpposite> trailingAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Length> lengthAnchor,
+				Func<UIView, IUIAnchor.Typed<ConstrainableType>.Positional> centerAnchor,
 				float leadingInset,
 				float trailingInset
 			) where ConstrainableType : IConstrainable

@@ -34,10 +34,10 @@ namespace Shockah.UIKit
 
 		public UIView? Superview { get; private set; }
 		public IReadOnlyList<UIView> Subviews => (IReadOnlyList<UIView>)_subviews;
-		public IReadOnlySet<UILayoutConstraint> Constraints => (IReadOnlySet<UILayoutConstraint>)_constraints;
+		public IReadOnlySet<IUILayoutConstraint> Constraints => (IReadOnlySet<IUILayoutConstraint>)_constraints;
 		public IReadOnlyList<UIGestureRecognizer> GestureRecognizers => (IReadOnlyList<UIGestureRecognizer>)_gestureRecognizers;
 
-		public IEnumerable<UILayoutConstraint> AllDownstreamConstraints
+		public IEnumerable<IUILayoutConstraint> AllDownstreamConstraints
 		{
 			get
 			{
@@ -49,7 +49,7 @@ namespace Shockah.UIKit
 			}
 		}
 
-		public IEnumerable<UILayoutConstraint> AllUpstreamConstraints
+		public IEnumerable<IUILayoutConstraint> AllUpstreamConstraints
 		{
 			get
 			{
@@ -99,14 +99,14 @@ namespace Shockah.UIKit
 
 		public UIVector2 Size => new(Width, Height);
 
-		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> LeftAnchor => LazyLeft.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Horizontal> RightAnchor => LazyRight.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> TopAnchor => LazyTop.Value;
-		public IUITypedAnchorWithOpposite<IConstrainable.Vertical> BottomAnchor => LazyBottom.Value;
-		public IUITypedAnchor<IConstrainable.Horizontal> WidthAnchor => LazyWidth.Value;
-		public IUITypedAnchor<IConstrainable.Vertical> HeightAnchor => LazyHeight.Value;
-		public IUITypedAnchor<IConstrainable.Horizontal> CenterXAnchor => LazyCenterX.Value;
-		public IUITypedAnchor<IConstrainable.Vertical> CenterYAnchor => LazyCenterY.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional.WithOpposite LeftAnchor => LazyLeft.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional.WithOpposite RightAnchor => LazyRight.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional.WithOpposite TopAnchor => LazyTop.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional.WithOpposite BottomAnchor => LazyBottom.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Length WidthAnchor => LazyWidth.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Length HeightAnchor => LazyHeight.Value;
+		public IUIAnchor.Typed<IConstrainable.Horizontal>.Positional CenterXAnchor => LazyCenterX.Value;
+		public IUIAnchor.Typed<IConstrainable.Vertical>.Positional CenterYAnchor => LazyCenterY.Value;
 
 		public float? IntrinsicWidth
 		{
@@ -215,14 +215,14 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UIView, IReadOnlyList<(UITouch touch, HoverState hover)>>? HoverPointersChanged;
 		public event OwnerValueChangeEvent<UIView, bool>? HoverChanged;
 		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
-		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintAdded;
-		public event OwnerCollectionValueEvent<UIView, UILayoutConstraint>? ConstraintRemoved;
+		public event OwnerCollectionValueEvent<UIView, IUILayoutConstraint>? ConstraintAdded;
+		public event OwnerCollectionValueEvent<UIView, IUILayoutConstraint>? ConstraintRemoved;
 
-		internal readonly ISet<UILayoutConstraint> HeldConstraints = new HashSet<UILayoutConstraint>();
+		public ISet<IUILayoutConstraint> HeldConstraints { get; set; } = new HashSet<IUILayoutConstraint>();
 
 		private UIRootView? _root;
 		private readonly IList<UIView> _subviews = new List<UIView>();
-		private readonly ISet<UILayoutConstraint> _constraints = new HashSet<UILayoutConstraint>();
+		private readonly ISet<IUILayoutConstraint> _constraints = new HashSet<IUILayoutConstraint>();
 		private readonly IList<UIGestureRecognizer> _gestureRecognizers = new List<UIGestureRecognizer>();
 		private bool _isVisible = true;
 		private readonly IList<(UITouch touch, HoverState hover)> _hoverPointers = new List<(UITouch touch, HoverState hover)>();
@@ -234,14 +234,14 @@ namespace Shockah.UIKit
 		internal readonly Lazy<ClVariable> TopVariable;
 		internal readonly Lazy<ClVariable> BottomVariable;
 
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyLeft;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Horizontal>> LazyRight;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyTop;
-		private readonly Lazy<UITypedAnchorWithOpposite<IConstrainable.Vertical>> LazyBottom;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyWidth;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyHeight;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Horizontal>> LazyCenterX;
-		private readonly Lazy<UITypedAnchor<IConstrainable.Vertical>> LazyCenterY;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Horizontal>> LazyLeft;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Horizontal>> LazyRight;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Vertical>> LazyTop;
+		private readonly Lazy<UIEdgeAnchor<IConstrainable.Vertical>> LazyBottom;
+		private readonly Lazy<UILengthAnchor<IConstrainable.Horizontal>> LazyWidth;
+		private readonly Lazy<UILengthAnchor<IConstrainable.Vertical>> LazyHeight;
+		private readonly Lazy<UICenterAnchor<IConstrainable.Horizontal>> LazyCenterX;
+		private readonly Lazy<UICenterAnchor<IConstrainable.Vertical>> LazyCenterY;
 
 		private readonly Lazy<UILayoutConstraint> RightAfterLeftConstraint;
 		private readonly Lazy<UILayoutConstraint> BottomAfterTopConstraint;
@@ -276,8 +276,8 @@ namespace Shockah.UIKit
 			LazyBottom = new(() => new(this, new(BottomVariable.Value), "Bottom", c => c.BottomAnchor, c => c.TopAnchor));
 			LazyWidth = new(() => new(this, new ClLinearExpression(RightVariable.Value).Minus(LeftVariable.Value), "Width", c => c.WidthAnchor));
 			LazyHeight = new(() => new(this, new ClLinearExpression(BottomVariable.Value).Minus(TopVariable.Value), "Height", c => c.HeightAnchor));
-			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(((IUIAnchor.Internal)WidthAnchor).Expression.Times(0.5)), "CenterX", c => c.CenterXAnchor));
-			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(((IUIAnchor.Internal)HeightAnchor).Expression.Times(0.5)), "CenterY", c => c.CenterYAnchor));
+			LazyCenterX = new(() => new(this, new ClLinearExpression(LeftVariable.Value).Plus(WidthAnchor.Expression.Times(0.5)), "CenterX", c => c.CenterXAnchor));
+			LazyCenterY = new(() => new(this, new ClLinearExpression(TopVariable.Value).Plus(HeightAnchor.Expression.Times(0.5)), "CenterY", c => c.CenterYAnchor));
 
 			RightAfterLeftConstraint = new(() => RightAnchor.MakeConstraintTo(LeftAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));
 			BottomAfterTopConstraint = new(() => BottomAnchor.MakeConstraintTo(TopAnchor, relation: UILayoutConstraintRelation.GreaterThanOrEqual));
@@ -351,7 +351,7 @@ namespace Shockah.UIKit
 			var superview = Superview;
 			if (superview is null)
 				return;
-			foreach (var constraint in new List<UILayoutConstraint>(Constraints))
+			foreach (var constraint in new List<IUILayoutConstraint>(Constraints))
 				constraint.Deactivate();
 			superview._subviews.Remove(this);
 			Superview = null;
@@ -618,13 +618,13 @@ namespace Shockah.UIKit
 			}
 		}
 
-		internal void AddConstraint(UILayoutConstraint constraint)
+		internal void AddConstraint(IUILayoutConstraint constraint)
 		{
 			if (_constraints.Add(constraint))
 				ConstraintAdded?.Invoke(this, constraint);
 		}
 
-		internal void RemoveConstraint(UILayoutConstraint constraint)
+		internal void RemoveConstraint(IUILayoutConstraint constraint)
 		{
 			if (_constraints.Remove(constraint))
 				ConstraintRemoved?.Invoke(this, constraint);
