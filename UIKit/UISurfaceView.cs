@@ -63,6 +63,8 @@ namespace Shockah.UIKit
 
 		public bool UsesSurface { get; set; } = true;
 
+		public Texture2D? RenderedTexture => DidDraw ? RenderTarget : null;
+
 		public event OwnerValueChangeEvent<UISurfaceView, Color>? ColorChanged;
 		public event OwnerValueChangeEvent<UISurfaceView, UIVector2>? OriginChanged;
 		public event OwnerValueChangeEvent<UISurfaceView, UIVector2>? RenderScaleChanged;
@@ -73,6 +75,7 @@ namespace Shockah.UIKit
 		private UIVector2 _origin = new(0.5f);
 		private UIVector2 _renderScale = UIVector2.One;
 		private float _renderRotation = 0f;
+		private bool DidDraw = false;
 
 		public UISurfaceView()
 		{
@@ -89,6 +92,8 @@ namespace Shockah.UIKit
 		private void UpdateRenderTarget()
 		{
 			RenderTarget?.Dispose();
+			RenderTarget = null;
+			DidDraw = false;
 			if (Width <= 0 || Height <= 0)
 				return;
 			RenderTarget = new RenderTarget2D(Game1.graphics.GraphicsDevice, (int)Math.Ceiling(Width), (int)Math.Ceiling(Height));
@@ -116,6 +121,7 @@ namespace Shockah.UIKit
 			base.DrawChildren(new RenderContext(context.SpriteBatch));
 			context.SpriteBatch.End();
 			context.SpriteBatch.GraphicsDevice.SetRenderTarget(oldRenderTarget);
+			DidDraw = true;
 
 			if (wasInProgress)
 				context.SpriteBatch.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);

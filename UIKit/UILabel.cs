@@ -289,7 +289,7 @@ namespace Shockah.UIKit
 
 			// line truncating
 
-			if (removedAnyLines && LineTruncating != UILabelLineTruncating.None)
+			if (LineTruncating != UILabelLineTruncating.None && (removedAnyLines || results.Any(r => r.size.X > optimalSize.X)))
 			{
 				string ellipsis = "...";
 				var lineToTruncate = results[LineTruncating == UILabelLineTruncating.Head ? 0 : ^1].text;
