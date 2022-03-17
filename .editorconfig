@@ -33,6 +33,5 @@ dotnet_naming_rule.public_members_must_be_capitalized.severity = warning
 # warn/error overrides
 dotnet_diagnostic.CA1806.severity = error
 dotnet_code_quality.CA1822.api_surface = private, internal
-
-# IDE0037: Use inferred member name
 dotnet_style_prefer_inferred_tuple_names = false
+dotnet_diagnostic.IDE0005.severity = warning

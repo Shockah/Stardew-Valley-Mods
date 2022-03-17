@@ -1,8 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.UIKit.Geometry;
-using StardewValley;
-using System;
 
 namespace Shockah.UIKit
 {
