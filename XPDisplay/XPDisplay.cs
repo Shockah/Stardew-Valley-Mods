@@ -338,45 +338,33 @@ namespace Shockah.XPDisplay
 			if (currentLevel >= 10 && Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
 				(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar() : WalkOfLifeBridge.GetExtendedSmallBar();
 
+			Vector2 barPosition;
 			switch (orientation)
 			{
 				case Orientation.Horizontal:
 					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					SkillsPageDrawQueuedDelegates.Add(() =>
-					{
-						b.Draw(
-							barTexture,
-							new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56),
-							new Rectangle(
-								barTextureRectangle.Left,
-								barTextureRectangle.Top,
-								rectangleWidthPixels,
-								barTextureRectangle.Height
-							),
-							Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-						);
-					});
+					barPosition = new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
+					barTextureRectangle = new(
+						barTextureRectangle.Left,
+						barTextureRectangle.Top,
+						rectangleWidthPixels,
+						barTextureRectangle.Height
+					);
 					break;
 				case Orientation.Vertical:
 					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					SkillsPageDrawQueuedDelegates.Add(() =>
-					{
-						b.Draw(
-							barTexture,
-							new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale),
-							new Rectangle(
-								barTextureRectangle.Left,
-								barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
-								barTextureRectangle.Width,
-								rectangleHeightPixels
-							),
-							Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f
-						);
-					});
+					barPosition = new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale);
+					barTextureRectangle = new(
+						barTextureRectangle.Left,
+						barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
+						barTextureRectangle.Width,
+						rectangleHeightPixels
+					);
 					break;
 				default:
 					throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
 			}
+			SkillsPageDrawQueuedDelegates.Add(() => b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f));
 		}
 
 		public static void SkillsPage_draw_CallQueuedDelegates()
