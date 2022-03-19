@@ -54,6 +54,7 @@ namespace Shockah.XPDisplay
 
 				harmony.Patch(
 					original: AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), new Type[] { typeof(SpriteBatch) }),
+					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 				);
 
@@ -69,6 +70,7 @@ namespace Shockah.XPDisplay
 				{
 					harmony.Patch(
 						original: AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", new Type[] { typeof(SpriteBatch) }),
+						postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Postfix)),
 						transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
 					);
 				}
@@ -127,6 +129,11 @@ namespace Shockah.XPDisplay
 
 			Instance.XPValues = xpValues.OrderBy(v => v).ToArray();
 			return instructions;
+		}
+
+		private static void SkillsPage_draw_Postfix(SpriteBatch b)
+		{
+			DrawSkillsPageExperienceTooltip(b);
 		}
 
 		private static IEnumerable<CodeInstruction> SkillsPage_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -226,6 +233,11 @@ namespace Shockah.XPDisplay
 			});
 
 			return instructions;
+		}
+
+		private static void SpaceCore_NewSkillsPage_draw_Postfix(SpriteBatch b)
+		{
+			DrawSkillsPageExperienceTooltip(b);
 		}
 
 		private static IEnumerable<CodeInstruction> SpaceCore_NewSkillsPage_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -394,7 +406,10 @@ namespace Shockah.XPDisplay
 			foreach (var @delegate in SkillsPageDrawQueuedDelegates)
 				@delegate();
 			SkillsPageDrawQueuedDelegates.Clear();
+		}
 
+		private static void DrawSkillsPageExperienceTooltip(SpriteBatch b)
+		{
 			int mouseX = Game1.getMouseX();
 			int mouseY = Game1.getMouseY();
 			bool isHoverExcluded = SkillBarHoverExclusions.Any(e => mouseX >= e.Item1.X && mouseY >= e.Item1.Y && mouseX < e.Item2.X && mouseY < e.Item2.Y);
