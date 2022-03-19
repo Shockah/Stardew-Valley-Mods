@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.IL;
 using Shockah.CommonModCode.UI;
@@ -28,6 +29,8 @@ namespace Shockah.XPDisplay
 		private bool IsWalkOfLifeInstalled = false;
 		private int[] XPValues = null!;
 
+		private static readonly IDictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)> SkillBarCorners = new Dictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)>();
+		private static readonly IList<(Vector2, Vector2)> SkillBarHoverExclusions = new List<(Vector2, Vector2)>();
 		private static readonly IList<Action> SkillsPageDrawQueuedDelegates = new List<Action>();
 
 		public override void Entry(IModHelper helper)
@@ -180,6 +183,7 @@ namespace Shockah.XPDisplay
 
 			worker.Insert(1, new[]
 			{
+				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
 			});
 
@@ -313,6 +317,7 @@ namespace Shockah.XPDisplay
 
 			worker.Insert(1, new[]
 			{
+				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
 			});
 
@@ -321,7 +326,28 @@ namespace Shockah.XPDisplay
 
 		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
+			bool isBigLevel = (levelIndex + 1) % 5 == 0;
+			Texture2D barTexture = Game1.mouseCursors;
+			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
+			float scale = 4f;
+
+			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
+			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
+			if (levelIndex is 0 or 9)
+			{
+				var key = (uiSkillIndex, spaceCoreSkillName);
+				if (!SkillBarCorners.ContainsKey(key))
+					SkillBarCorners[key] = (null, null);
+				if (levelIndex == 0)
+					SkillBarCorners[key] = (topLeft, SkillBarCorners[key].Item2);
+				else if (levelIndex == 9)
+					SkillBarCorners[key] = (SkillBarCorners[key].Item1, bottomRight);
+			}
+
 			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+			if (levelIndex is 4 or 9 && currentLevel >= levelIndex)
+				SkillBarHoverExclusions.Add((topLeft, bottomRight));
+
 			if (currentLevel % 10 != levelIndex)
 				return;
 			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
@@ -329,10 +355,6 @@ namespace Shockah.XPDisplay
 			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
-			float scale = 4f;
-			bool isBigLevel = (levelIndex + 1) % 5 == 0;
-			Texture2D barTexture = Game1.mouseCursors;
-			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
 			Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
 
 			if (currentLevel >= 10 && Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
@@ -343,7 +365,7 @@ namespace Shockah.XPDisplay
 			{
 				case Orientation.Horizontal:
 					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					barPosition = new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
+					barPosition = topLeft;
 					barTextureRectangle = new(
 						barTextureRectangle.Left,
 						barTextureRectangle.Top,
@@ -353,7 +375,7 @@ namespace Shockah.XPDisplay
 					break;
 				case Orientation.Vertical:
 					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					barPosition = new Vector2(x + levelIndex * 36, y - 4 + uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale);
+					barPosition = topLeft + new Vector2(0f, uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale);
 					barTextureRectangle = new(
 						barTextureRectangle.Left,
 						barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
@@ -367,11 +389,53 @@ namespace Shockah.XPDisplay
 			SkillsPageDrawQueuedDelegates.Add(() => b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f));
 		}
 
-		public static void SkillsPage_draw_CallQueuedDelegates()
+		public static void SkillsPage_draw_CallQueuedDelegates(SpriteBatch b)
 		{
 			foreach (var @delegate in SkillsPageDrawQueuedDelegates)
 				@delegate();
 			SkillsPageDrawQueuedDelegates.Clear();
+
+			int mouseX = Game1.getMouseX();
+			int mouseY = Game1.getMouseY();
+			bool isHoverExcluded = SkillBarHoverExclusions.Any(e => mouseX >= e.Item1.X && mouseY >= e.Item1.Y && mouseX < e.Item2.X && mouseY < e.Item2.Y);
+			if (!isHoverExcluded)
+			{
+				(int uiSkillIndex, string? spaceCoreSkillName)? hoveredUiSkill = SkillBarCorners
+				.Where(kv => kv.Value.Item1 is not null && kv.Value.Item2 is not null)
+				.Where(kv => mouseX >= kv.Value.Item1!.Value.X && mouseY >= kv.Value.Item1!.Value.Y && mouseX < kv.Value.Item2!.Value.X && mouseY < kv.Value.Item2!.Value.Y)
+				.FirstOrNull()
+				?.Key;
+				if (hoveredUiSkill is not null)
+				{
+					var (uiSkillIndex, spaceCoreSkillName) = hoveredUiSkill.Value;
+					int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+					int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
+					int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
+					int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
+					float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
+
+					if (currentXP < nextLevelXP)
+					{
+						string tooltip = Instance.Helper.Translation.Get(
+							"tooltip.text",
+							new
+							{
+								CurrentXP = currentXP - currentLevelXP,
+								NextLevelXP = nextLevelXP - currentLevelXP,
+								LevelPercent = (int)(nextLevelProgress * 100f)
+							}
+						);
+						IClickableMenu.drawToolTip(
+							b,
+							tooltip,
+							null,
+							null
+						);
+					}
+				}
+			}
+			SkillBarCorners.Clear();
+			SkillBarHoverExclusions.Clear();
 		}
 
 		private static int GetUnmodifiedSkillLevel(int uiSkillIndex, string? spaceCoreSkillName)
