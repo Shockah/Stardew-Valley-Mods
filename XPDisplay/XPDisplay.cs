@@ -364,7 +364,7 @@ namespace Shockah.XPDisplay
 			switch (orientation)
 			{
 				case Orientation.Horizontal:
-					int rectangleWidthPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
+					int rectangleWidthPixels = (int)(barTextureRectangle.Width * nextLevelProgress);
 					barPosition = topLeft;
 					barTextureRectangle = new(
 						barTextureRectangle.Left,
@@ -375,7 +375,7 @@ namespace Shockah.XPDisplay
 					break;
 				case Orientation.Vertical:
 					int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-					barPosition = topLeft + new Vector2(0f, uiSkillIndex * 56 + (barTextureRectangle.Height - rectangleHeightPixels) * scale);
+					barPosition = topLeft + new Vector2(0f, (barTextureRectangle.Height - rectangleHeightPixels) * scale);
 					barTextureRectangle = new(
 						barTextureRectangle.Left,
 						barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
