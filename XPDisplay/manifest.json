@@ -9,7 +9,7 @@
 	"UpdateKeys": [ "Nexus:11089" ],
 	"Dependencies": [
 		{
-			"UniqueID": "DaLion.AwesomeProfessions",
+			"UniqueID": "DaLion.ImmersiveProfessions",
 			"IsRequired": false
 		}
 	]

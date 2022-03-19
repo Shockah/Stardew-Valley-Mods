@@ -8,9 +8,9 @@ namespace Shockah.XPDisplay
 {
 	internal static class WalkOfLifeBridge
 	{
-		private static readonly string WalkOfLifeModEntryQualifiedName = "DaLion.Stardew.Professions.ModEntry, AwesomeProfessions";
-		private static readonly string WalkOfLifeModConfigQualifiedName = "DaLion.Stardew.Professions.ModConfig, AwesomeProfessions";
-		private static readonly string WalkOfLifeTexturesQualifiedName = "DaLion.Stardew.Professions.Framework.Utility.Textures, AwesomeProfessions";
+		private static readonly string WalkOfLifeModEntryQualifiedName = "DaLion.Stardew.Professions.ModEntry, ImmersiveProfessions";
+		private static readonly string WalkOfLifeModConfigQualifiedName = "DaLion.Stardew.Professions.ModConfig, ImmersiveProfessions";
+		private static readonly string WalkOfLifeTexturesQualifiedName = "DaLion.Stardew.Professions.Framework.Utility.Textures, ImmersiveProfessions";
 
 		private static bool IsReflectionSetup = false;
 		private static Func<object /* ModConfig */> ConfigDelegate = null!;

@@ -70,11 +70,11 @@ namespace Shockah.XPDisplay
 					);
 				}
 
-				IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.AwesomeProfessions");
+				IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.ImmersiveProfessions");
 			}
 			catch (Exception ex)
 			{
-				Monitor.Log($"Could not patch methods - XP View probably won't work.\nReason: {ex}", LogLevel.Error);
+				Monitor.Log($"Could not patch methods - XP Display probably won't work.\nReason: {ex}", LogLevel.Error);
 			}
 		}
 
