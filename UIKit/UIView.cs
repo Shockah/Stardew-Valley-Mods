@@ -213,7 +213,7 @@ namespace Shockah.UIKit
 		public event OwnerValueChangeEvent<UIView, (float? X, float? Y)>? IntrinsicSizeChanged;
 		public event OwnerValueChangeEvent<UIView, bool>? IsVisibleChanged;
 		public event OwnerValueChangeEvent<UIView, IReadOnlyList<(UITouch touch, HoverState hover)>>? HoverPointersChanged;
-		public event OwnerValueChangeEvent<UIView, bool>? HoverChanged;
+		public event OwnerValueChangeEvent<UIView, HoverState>? HoverChanged;
 		public event OwnerValueChangeEvent<UIView, UIVector2>? SizeChanged;
 		public event OwnerCollectionValueEvent<UIView, IUILayoutConstraint>? ConstraintAdded;
 		public event OwnerCollectionValueEvent<UIView, IUILayoutConstraint>? ConstraintRemoved;
@@ -700,10 +700,10 @@ namespace Shockah.UIKit
 
 		private void OnHoverPointersChanged(IReadOnlyList<(UITouch touch, HoverState hover)> oldValue, IReadOnlyList<(UITouch touch, HoverState hover)> newValue)
 		{
-			var oldEmpty = oldValue.Count == 0;
-			var newEmpty = newValue.Count == 0;
-			if (oldEmpty != newEmpty)
-				HoverChanged?.Invoke(this, !oldEmpty, !newEmpty);
+			var oldState = oldValue.Count == 0 ? HoverState.None : (HoverState)oldValue.Max(p => (int)p.hover);
+			var newState = newValue.Count == 0 ? HoverState.None : (HoverState)newValue.Max(p => (int)p.hover);
+			if (oldState != newState)
+				HoverChanged?.Invoke(this, oldState, newState);
 		}
 
 		public abstract class Drawable: UIView

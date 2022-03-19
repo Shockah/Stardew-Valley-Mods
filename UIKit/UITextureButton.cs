@@ -185,7 +185,7 @@ namespace Shockah.UIKit
 
 			HoverChanged += (_, _, newValue) =>
 			{
-				var soundName = newValue ? HoverSoundName : UnhoverSoundName;
+				var soundName = newValue == HoverState.Direct ? HoverSoundName : UnhoverSoundName;
 				if (soundName is not null)
 					Game1.playSound(soundName);
 			};
