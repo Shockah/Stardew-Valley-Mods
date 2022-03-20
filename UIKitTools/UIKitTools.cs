@@ -9,9 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace Shockah.UIKit.Tools
 {
-	public class UIKit: Mod, IUIKitToolsApi
+	public class UIKitTools: Mod, IUIKitToolsApi
 	{
-		internal static UIKit Instance = null!;
+		internal static UIKitTools Instance = null!;
 
 		private DebugFrames DebugFrames = null!;
 		private ExampleUI ExampleUI = null!;

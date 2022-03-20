@@ -81,8 +81,8 @@ namespace Shockah.UIKit
 					sourceRectangle: new(
 						wholeSourceRect.Right - (int)NinePatchInsets.Right,
 						wholeSourceRect.Top,
-						(int)(NinePatchInsets.Right * Scale.X),
-						(int)(NinePatchInsets.Top * Scale.Y)
+						(int)NinePatchInsets.Right,
+						(int)NinePatchInsets.Top
 					),
 					color: Color,
 					rotation: 0f,
@@ -105,8 +105,8 @@ namespace Shockah.UIKit
 					sourceRectangle: new(
 						wholeSourceRect.Left,
 						wholeSourceRect.Bottom - (int)NinePatchInsets.Bottom,
-						(int)(NinePatchInsets.Left * Scale.X),
-						(int)(NinePatchInsets.Bottom * Scale.Y)
+						(int)NinePatchInsets.Left,
+						(int)NinePatchInsets.Bottom
 					),
 					color: Color,
 					rotation: 0f,
@@ -160,7 +160,7 @@ namespace Shockah.UIKit
 					rotation: 0f,
 					origin: Vector2.Zero,
 					scale: new Vector2(
-						(Width - NinePatchInsets.Horizontal) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
+						(Width - NinePatchInsets.Horizontal * Scale.X) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
 						Scale.Y
 					),
 					effects: SpriteEffects.None,
@@ -187,7 +187,7 @@ namespace Shockah.UIKit
 					rotation: 0f,
 					origin: Vector2.Zero,
 					scale: new Vector2(
-						(Width - NinePatchInsets.Horizontal) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
+						(Width - NinePatchInsets.Horizontal * Scale.X) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
 						Scale.Y
 					),
 					effects: SpriteEffects.None,
@@ -215,7 +215,7 @@ namespace Shockah.UIKit
 					origin: Vector2.Zero,
 					scale: new Vector2(
 						Scale.X,
-						(Height - NinePatchInsets.Vertical) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
+						(Height - NinePatchInsets.Vertical * Scale.Y) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
 					),
 					effects: SpriteEffects.None,
 					layerDepth: 0f
@@ -242,7 +242,7 @@ namespace Shockah.UIKit
 					origin: Vector2.Zero,
 					scale: new Vector2(
 						Scale.X,
-						(Height - NinePatchInsets.Vertical) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
+						(Height - NinePatchInsets.Vertical * Scale.Y) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
 					),
 					effects: SpriteEffects.None,
 					layerDepth: 0f
@@ -266,8 +266,8 @@ namespace Shockah.UIKit
 				rotation: 0f,
 				origin: Vector2.Zero,
 				scale: new Vector2(
-					(Width - NinePatchInsets.Horizontal) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
-					(Height - NinePatchInsets.Vertical) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
+					(Width - NinePatchInsets.Horizontal * Scale.X) / (wholeSourceRect.Width - (int)NinePatchInsets.Horizontal),
+					(Height - NinePatchInsets.Vertical * Scale.Y) / (wholeSourceRect.Height - (int)NinePatchInsets.Vertical)
 				),
 				effects: SpriteEffects.None,
 				layerDepth: 0f
