@@ -21,7 +21,6 @@ namespace Shockah.XPDisplay
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
-		private static readonly string LuckSkillModQualifiedName = "LuckSkill.Mod, LuckSkill";
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
 		private static XPDisplay Instance = null!;
@@ -57,14 +56,6 @@ namespace Shockah.XPDisplay
 					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 				);
-
-				if (Helper.ModRegistry.IsLoaded("spacechase0.LuckSkill"))
-				{
-					harmony.Patch(
-						original: AccessTools.Method(AccessTools.TypeByName(LuckSkillModQualifiedName), "DrawLuckSkill", new Type[] { typeof(SkillsPage) }),
-						transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(LuckSkill_DrawLuckSkill_Transpiler))
-					);
-				}
 
 				if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 				{
@@ -197,44 +188,6 @@ namespace Shockah.XPDisplay
 			return instructions;
 		}
 
-		private static IEnumerable<CodeInstruction> LuckSkill_DrawLuckSkill_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
-		{
-			var instructions = enumerableInstructions.ToList();
-
-			// IL to find:
-			// IL_0381: ldloc.s 7
-			// IL_0383: ldc.i4.s 9
-			// IL_0385: bne.un IL_044a
-			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
-			{
-				i => i.IsLdloc(),
-				i => i.IsLdcI4(9),
-				i => i.IsBneUn()
-			});
-			if (worker is null)
-			{
-				Instance.Monitor.Log($"Could not patch Luck Skill methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
-				return instructions;
-			}
-
-			worker.Insert(1, new[]
-			{
-				new CodeInstruction(OpCodes.Ldloc_0), // this *should* be the `sb` local (SpriteBatch)
-
-				new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `num` local
-				new CodeInstruction(OpCodes.Ldloc, 6), // this *should* be the `num3` local
-				new CodeInstruction(OpCodes.Add),
-
-				new CodeInstruction(OpCodes.Ldloc, 5), // this *should* be the `y` local
-				new CodeInstruction(OpCodes.Ldloc, 7), // this *should* be the `i` local - the currently drawn level index (0-9)
-				new CodeInstruction(OpCodes.Ldc_I4, 5), // the skill index of the luck skill
-				new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a "built-in" one
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
-			});
-
-			return instructions;
-		}
-
 		private static void SpaceCore_NewSkillsPage_draw_Postfix(SpriteBatch b)
 		{
 			DrawSkillsPageExperienceTooltip(b);
@@ -257,6 +210,7 @@ namespace Shockah.XPDisplay
 			if (worker is null)
 			{
 				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
 			}
 			else
 			{
@@ -290,6 +244,7 @@ namespace Shockah.XPDisplay
 			if (worker is null)
 			{
 				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				return instructions;
 			}
 			else
 			{
