@@ -40,6 +40,7 @@ namespace Shockah.UIKit
 		private UITouch<int, ISet<SButton>>? CurrentTouch;
 		private bool SuppressTouch = false;
 		private UIVector2? LastMouseScroll = null;
+		private ISet<SButton> LastButtonsDown = new HashSet<SButton>();
 
 		public StardewRootView(IInputHelper inputHelper) : base(new PrivateGestureRecognizerManager())
 		{
@@ -87,8 +88,9 @@ namespace Shockah.UIKit
 
 			var currentMouseState = Mouse.GetState();
 			var mouseButtons = new[] { SButton.MouseLeft, SButton.MouseRight, SButton.MouseMiddle, SButton.MouseX1, SButton.MouseX2 };
-			var oldDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: Game1.oldMouseState)).ToHashSet();
+			var oldDown = LastButtonsDown;
 			var newDown = mouseButtons.Where(b => Game1.game1.IsActive && b.IsPressed(mouseState: currentMouseState)).ToHashSet();
+			LastButtonsDown = newDown;
 
 			UIVector2 currentMouseScroll = new(
 				-currentMouseState.HorizontalScrollWheelValue,
