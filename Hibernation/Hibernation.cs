@@ -95,7 +95,8 @@ namespace Shockah.Hibernation
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
-			NightsToSleep = Math.Max(NightsToSleep - 1, 0);
+			if (NightsToSleep != int.MaxValue)
+				NightsToSleep = Math.Max(NightsToSleep - 1, 0);
 			if (NightsToSleep == 0)
 				EarlyWakeUpTrigger = null;
 		}
@@ -385,12 +386,14 @@ namespace Shockah.Hibernation
 
 			AddLine(Utility.getDateStringFor(Game1.Date.DayOfMonth, Game1.Date.SeasonIndex, Game1.Date.Year), 1.5f);
 			AddLine(
-				Instance.NightsToSleep > 1
-					? (
-						Instance.EarlyWakeUpTrigger is null
-							? Instance.Helper.Translation.Get("hibernation.nightsLeft", new { Value = Instance.NightsToSleep })
-							: Instance.Helper.Translation.Get("hibernation.nightsLeft.upTo", new { Value = Instance.NightsToSleep })
-					) : Instance.Helper.Translation.Get("hibernation.wakingUp"),
+				Instance.NightsToSleep switch
+				{
+					<= 1 => Instance.Helper.Translation.Get("hibernation.wakingUp"),
+					int.MaxValue => Instance.Helper.Translation.Get("hibernation.forever"),
+					_ => Instance.EarlyWakeUpTrigger is null
+								? Instance.Helper.Translation.Get("hibernation.nightsLeft", new { Value = Instance.NightsToSleep })
+								: Instance.Helper.Translation.Get("hibernation.nightsLeft.upTo", new { Value = Instance.NightsToSleep })
+				},
 				1f
 			);
 			if (Instance.NightsToSleep > 1)

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Shockah.Hibernation
 {
-	public enum HibernateLengthUnit { Nights, Weeks, Seasons, Years }
+	public enum HibernateLengthUnit { Nights, Weeks, Seasons, Years, Forever }
 
 	public readonly struct HibernateLength
 	{
@@ -21,6 +21,9 @@ namespace Shockah.Hibernation
 
 		public static HibernateLength? ParseOrNull(string toParse)
 		{
+			if (toParse.Trim().Equals("forever", StringComparison.OrdinalIgnoreCase))
+				return new(1, HibernateLengthUnit.Forever);
+
 			var match = LengthRegex.Match(toParse);
 			if (!match.Success)
 				return null;
@@ -43,6 +46,7 @@ namespace Shockah.Hibernation
 				HibernateLengthUnit.Weeks => $"{Value}w",
 				HibernateLengthUnit.Seasons => $"{Value}s",
 				HibernateLengthUnit.Years => $"{Value}y",
+				HibernateLengthUnit.Forever => "Forever",
 				_ => throw new ArgumentException($"{nameof(HibernateLengthUnit)} has an invalid value.")
 			};
 		}
@@ -55,6 +59,7 @@ namespace Shockah.Hibernation
 				HibernateLengthUnit.Weeks => Value * 7,
 				HibernateLengthUnit.Seasons => Value * WorldDateExt.DaysPerSeason,
 				HibernateLengthUnit.Years => Value * WorldDateExt.DaysPerSeason * 4,
+				HibernateLengthUnit.Forever => int.MaxValue,
 				_ => throw new ArgumentException($"{nameof(HibernateLengthUnit)} has an invalid value.")
 			};
 		}
@@ -67,6 +72,7 @@ namespace Shockah.Hibernation
 				HibernateLengthUnit.Weeks => Hibernation.Instance.Helper.Translation.Get("hibernateLength.unit.weeks", new { Value = Value }),
 				HibernateLengthUnit.Seasons => Hibernation.Instance.Helper.Translation.Get("hibernateLength.unit.seasons", new { Value = Value }),
 				HibernateLengthUnit.Years => Hibernation.Instance.Helper.Translation.Get("hibernateLength.unit.years", new { Value = Value }),
+				HibernateLengthUnit.Forever => Hibernation.Instance.Helper.Translation.Get("hibernateLength.unit.forever"),
 				_ => throw new ArgumentException($"{nameof(HibernateLengthUnit)} has an invalid value.")
 			};
 		}
