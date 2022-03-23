@@ -23,7 +23,6 @@ namespace Shockah.Hibernation
 		internal ModConfig Config { get; private set; } = null!;
 
 		private bool TouchSleepActionInProgress = false;
-
 		private int NightsToSleep = 0;
 		private Func<bool>? EarlyWakeUpTrigger = null;
 		private bool PostponingHibernation = false;
@@ -35,6 +34,7 @@ namespace Shockah.Hibernation
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 		}
@@ -91,6 +91,16 @@ namespace Shockah.Hibernation
 				original: () => AccessTools.Method(typeof(FarmEvent), nameof(FarmEvent.setUp)),
 				postfix: new HarmonyMethod(typeof(Hibernation), nameof(FarmEvent_setUp_Postfix))
 			);
+		}
+
+		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+		{
+			TouchSleepActionInProgress = false;
+			NightsToSleep = 0;
+			EarlyWakeUpTrigger = null;
+			PostponingHibernation = false;
+			InstantPostponedHibernation = true;
+			AnyEventTriggered = false;
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
