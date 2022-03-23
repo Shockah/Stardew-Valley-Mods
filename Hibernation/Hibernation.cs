@@ -22,6 +22,13 @@ namespace Shockah.Hibernation
 		internal static Hibernation Instance { get; private set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
+		private const float BearScale = 4f;
+		private const float SleepEmojiScale = 4f;
+		private static readonly Rectangle[] SleepEmojiTextureSourceRects = new Rectangle[] { new(0, 96, 16, 16), new(16, 96, 16, 16), new(32, 96, 16, 16), new(48, 96, 16, 16) };
+		private static readonly Rectangle BearTextureAwakeSourceRect = new(0, 0, 32, 32);
+		private static readonly Rectangle[] BearTextureSourceRects = new Rectangle[] { new(0, 128, 32, 32), new(32, 128, 32, 32) };
+		private Lazy<Texture2D> BearTexture = null!;
+
 		private bool TouchSleepActionInProgress = false;
 		private int NightsToSleep = 0;
 		private Func<bool>? EarlyWakeUpTrigger = null;
@@ -126,8 +133,14 @@ namespace Shockah.Hibernation
 			}
 		}
 
+		private void RefreshBearTexture()
+		{
+			BearTexture = new(() => Game1.content.Load<Texture2D>("Characters/Bear"));
+		}
+
 		private void ContinueHibernation()
 		{
+			RefreshBearTexture();
 			var doSleepMethod = AccessTools.Method(typeof(GameLocation), "doSleep");
 			doSleepMethod!.Invoke(Game1.player.currentLocation, null);
 
@@ -149,6 +162,7 @@ namespace Shockah.Hibernation
 
 		private void Hibernate(HibernateLength length, Func<bool>? earlyTrigger = null)
 		{
+			RefreshBearTexture();
 			NightsToSleep = length.GetDayCount();
 			EarlyWakeUpTrigger = earlyTrigger;
 			InstantPostponedHibernation = false;
@@ -263,7 +277,7 @@ namespace Shockah.Hibernation
 							var nextFestivalDate = GetNextFestivalDate();
 							if (nextFestivalDate is not null)
 							{
-								var festivalDates = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\FestivalDates");
+								var festivalDates = Game1.temporaryContent.Load<Dictionary<string, string>>("Data/Festivals/FestivalDates");
 								responses.Add(new Response(
 									"Festival",
 									Instance.Helper.Translation.Get(
@@ -383,6 +397,7 @@ namespace Shockah.Hibernation
 			if (Game1.input.GetKeyboardState().IsKeyDown(Keys.Escape) && Instance.NightsToSleep > 2)
 				Instance.NightsToSleep = 2;
 
+			float bearToTextSpacing = 48f;
 			float spacing = 4f;
 			IList<(string, Vector2, float)> lines = new List<(string, Vector2, float)>();
 			float totalHeight = 0f;
@@ -423,7 +438,34 @@ namespace Shockah.Hibernation
 			if (Instance.NightsToSleep > 1)
 				Game1.spriteBatch.Draw(Game1.mouseCursors, new Rectangle(0, 0, viewport.Width, viewport.Height), new Rectangle(128, 1884, 4, 4), Color.Black * alpha);
 
-			var yy = viewport.Height * 0.5f - totalHeight * 0.5f;
+			var yy = viewport.Height * 0.5f - (totalHeight + bearToTextSpacing + BearTextureSourceRects[0].Height * BearScale) * 0.5f;
+			Game1.spriteBatch.Draw(
+				Instance.BearTexture.Value,
+				new Vector2(viewport.Width * 0.5f - BearTextureSourceRects[0].Width * BearScale * 0.5f, yy),
+				Instance.NightsToSleep > 1 ? BearTextureSourceRects[Game1.Date.TotalDays % BearTextureSourceRects.Length] : BearTextureAwakeSourceRect,
+				Color.White * alpha,
+				0f,
+				Vector2.Zero,
+				BearScale,
+				SpriteEffects.None,
+				0f
+			);
+			if (Instance.NightsToSleep > 1)
+			{
+				Game1.spriteBatch.Draw(
+					Game1.emoteSpriteSheet,
+					new Vector2(viewport.Width * 0.5f, yy + BearTextureSourceRects[0].Height * 0.2f * BearScale),
+					SleepEmojiTextureSourceRects[Game1.Date.TotalDays % SleepEmojiTextureSourceRects.Length],
+					Color.White * alpha,
+					0f,
+					new Vector2(SleepEmojiTextureSourceRects[0].Width * 0.5f, SleepEmojiTextureSourceRects[0].Height),
+					SleepEmojiScale,
+					SpriteEffects.None,
+					0f
+				);
+			}
+			yy += BearTextureSourceRects[0].Height * BearScale + bearToTextSpacing;
+
 			for (int i = 0; i < lines.Count; i++)
 			{
 				var (line, measure, scale) = lines[i];
