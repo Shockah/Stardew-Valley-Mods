@@ -4,7 +4,7 @@
 	"sleepDialogue.response.hibernateUntil.nextBirthday": "Next birthday ({{NpcName}})",
 	"sleepDialogue.response.hibernateUntil.nextFestival": "Next festival ({{FestivalName}})",
 	"sleepDialogue.response.hibernateUntil.nextSeason": "Next season ({{SeasonName}})",
-	"sleepDialogue.response.hibernateUntil.nextKidQuestion": "Spouse asks if we want a kid",
+	"sleepDialogue.response.hibernateUntil.nextEvent": "Next event (or a year passes)",
 	"sleepDialogue.response.cancel": "Cancel",
 
 	"hibernateLength.unit.nights": "{{Value}} night(s)",
@@ -13,6 +13,7 @@
 	"hibernateLength.unit.years": "{{Value}} year(s)",
 
 	"hibernation.nightsLeft": "Sleeping through {{Value}} more nights...",
+	"hibernation.nightsLeft.upTo": "Sleeping through up to {{Value}} more nights...",
 	"hibernation.wakingUp": "Waking up...",
 	"hibernation.escapeToWakeUp": "(Hold Escape to wake up right away)"
 }

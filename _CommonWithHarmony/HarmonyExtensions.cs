@@ -105,6 +105,8 @@ namespace Shockah.CommonModCode
 						continue;
 					if (!subtypeOriginal.IsDeclaredMember())
 						continue;
+					if (!subtypeOriginal.HasMethodBody())
+						continue;
 
 					static bool ContainsNonSpecialArguments(HarmonyMethod patch)
 						=> patch.method.GetParameters().Any(p => !(p.Name ?? "").StartsWith("__"));
@@ -121,7 +123,7 @@ namespace Shockah.CommonModCode
 								throw new InvalidOperationException($"Method {declaringType.Name}.{original.Name} cannot be automatically patched for subtype {subtype.Name}, because argument #{i} has a mismatched name: `{originalParameters[i].Name}` vs `{subtypeOriginalParameters[i].Name}`.");
 					}
 
-					self.Patch(subtypeOriginal, prefix, postfix, null, finalizer);
+					self.Patch(subtypeOriginal, prefix, subtypeOriginal.HasMethodBody() ? postfix : null, null, finalizer);
 					monitor.Log($"Patched method {subtypeOriginal.FullDescription()}.", successLogLevel);
 				}
 			}
@@ -178,6 +180,8 @@ namespace Shockah.CommonModCode
 							if (subtypeOriginal is null)
 								continue;
 							if (!subtypeOriginal.IsDeclaredMember())
+								continue;
+							if (!subtypeOriginal.HasMethodBody())
 								continue;
 
 							static bool ContainsNonSpecialArguments(HarmonyMethod patch)

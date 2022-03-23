@@ -8,6 +8,7 @@ using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Events;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
@@ -24,8 +25,10 @@ namespace Shockah.Hibernation
 		private bool TouchSleepActionInProgress = false;
 
 		private int NightsToSleep = 0;
+		private Func<bool>? EarlyWakeUpTrigger = null;
 		private bool PostponingHibernation = false;
 		private bool InstantPostponedHibernation = true;
+		private bool AnyEventTriggered = false;
 
 		public override void Entry(IModHelper helper)
 		{
@@ -82,11 +85,19 @@ namespace Shockah.Hibernation
 				original: () => AccessTools.Method(typeof(ModHooks), nameof(ModHooks.OnGame1_ShowEndOfNightStuff)),
 				postfix: new HarmonyMethod(typeof(Hibernation), nameof(ModHooks_OnGame1_ShowEndOfNightStuff_Postfix))
 			);
+
+			harmony.TryPatchVirtual(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(FarmEvent), nameof(FarmEvent.setUp)),
+				postfix: new HarmonyMethod(typeof(Hibernation), nameof(FarmEvent_setUp_Postfix))
+			);
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			NightsToSleep = Math.Max(NightsToSleep - 1, 0);
+			if (NightsToSleep == 0)
+				EarlyWakeUpTrigger = null;
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -117,21 +128,27 @@ namespace Shockah.Hibernation
 			}
 		}
 
-		private bool ShouldPostponeHibernation()
-			=> Game1.activeClickableMenu is not null || Game1.endOfNightMenus.Count != 0 || Game1.dialogueUp || Game1.eventUp || Game1.farmEvent is not null || !string.IsNullOrEmpty(Game1.messageAfterPause);
+		private static bool ShouldPostponeHibernation()
+			=> Game1.activeClickableMenu is not null
+			|| Game1.endOfNightMenus.Count != 0
+			|| Game1.dialogueUp
+			|| Game1.eventUp
+			|| Game1.farmEvent is not null
+			|| !string.IsNullOrEmpty(Game1.messageAfterPause);
 
-		private void Hibernate(HibernateLength length)
+		private void Hibernate(HibernateLength length, Func<bool>? earlyTrigger = null)
 		{
 			NightsToSleep = length.GetDayCount();
+			EarlyWakeUpTrigger = earlyTrigger;
 			InstantPostponedHibernation = false;
 			Game1.currentLocation.answerDialogueAction("Sleep_Yes", Array.Empty<string>());
 		}
 
-		private void HibernateUntilDate(WorldDate date)
+		private void HibernateUntilDate(WorldDate date, Func<bool>? earlyTrigger = null)
 		{
 			if (date.TotalDays <= Game1.Date.TotalDays)
 				return;
-			Hibernate(new(date.TotalDays - Game1.Date.TotalDays, HibernateLengthUnit.Nights));
+			Hibernate(new(date.TotalDays - Game1.Date.TotalDays, HibernateLengthUnit.Nights), earlyTrigger);
 		}
 
 		private WorldDate? GetNextBirthdayDate()
@@ -253,6 +270,10 @@ namespace Shockah.Hibernation
 								)
 							));
 						}
+						responses.Add(new Response(
+							"NextEvent",
+							Instance.Helper.Translation.Get("sleepDialogue.response.hibernateUntil.nextEvent")
+						));
 						responses.Add(new Response("Cancel", Instance.Helper.Translation.Get("sleepDialogue.response.cancel")).SetHotKey(Keys.Escape));
 
 						__instance.createQuestionDialogue(
@@ -287,6 +308,22 @@ namespace Shockah.Hibernation
 											}
 											var nextSeasonDate = WorldDateExt.New(year, season, 1);
 											Instance.HibernateUntilDate(nextSeasonDate);
+										}
+										break;
+									case "NextEvent":
+										{
+											static bool EarlyTrigger()
+											{
+												if (Instance.AnyEventTriggered)
+												{
+													Instance.AnyEventTriggered = false;
+													return true;
+												}
+												return false;
+											}
+
+											var limitDate = Game1.Date.GetByAddingDays(WorldDateExt.DaysPerSeason * 4);
+											Instance.HibernateUntilDate(limitDate, EarlyTrigger);
 										}
 										break;
 									case "Cancel":
@@ -349,8 +386,11 @@ namespace Shockah.Hibernation
 			AddLine(Utility.getDateStringFor(Game1.Date.DayOfMonth, Game1.Date.SeasonIndex, Game1.Date.Year), 1.5f);
 			AddLine(
 				Instance.NightsToSleep > 1
-					? Instance.Helper.Translation.Get("hibernation.nightsLeft", new { Value = Instance.NightsToSleep })
-					: Instance.Helper.Translation.Get("hibernation.wakingUp"),
+					? (
+						Instance.EarlyWakeUpTrigger is null
+							? Instance.Helper.Translation.Get("hibernation.nightsLeft", new { Value = Instance.NightsToSleep })
+							: Instance.Helper.Translation.Get("hibernation.nightsLeft.upTo", new { Value = Instance.NightsToSleep })
+					) : Instance.Helper.Translation.Get("hibernation.wakingUp"),
 				1f
 			);
 			if (Instance.NightsToSleep > 1)
@@ -392,12 +432,21 @@ namespace Shockah.Hibernation
 
 		private static void ModHooks_OnGame1_ShowEndOfNightStuff_Postfix()
 		{
+			if (Instance.EarlyWakeUpTrigger?.Invoke() == true)
+				Instance.NightsToSleep = 1;
 			if (Instance.NightsToSleep > 1)
 			{
 				var saveMenu = Game1.activeClickableMenu as SaveGameMenu ?? Game1.endOfNightMenus.OfType<SaveGameMenu>().LastOrDefault();
 				if (saveMenu is not null)
 					saveMenu.quit = true;
 			}
+		}
+
+		private static void FarmEvent_setUp_Postfix(FarmEvent __instance, bool __result)
+		{
+			if (Instance.NightsToSleep <= 0 || __result)
+				return;
+			Instance.AnyEventTriggered = true;
 		}
 	}
 }
