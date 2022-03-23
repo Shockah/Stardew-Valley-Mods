@@ -35,6 +35,7 @@ namespace Shockah.Hibernation
 		private bool PostponingHibernation = false;
 		private bool InstantPostponedHibernation = true;
 		private bool AnyEventTriggered = false;
+		private float OverlayAlpha = 0f;
 
 		public override void Entry(IModHelper helper)
 		{
@@ -108,6 +109,7 @@ namespace Shockah.Hibernation
 			PostponingHibernation = false;
 			InstantPostponedHibernation = true;
 			AnyEventTriggered = false;
+			Instance.OverlayAlpha = 0f;
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
@@ -392,7 +394,15 @@ namespace Shockah.Hibernation
 		[HarmonyPriority(Priority.High)]
 		private static void Game1__draw_Postfix()
 		{
-			if (!(Instance.NightsToSleep > 0 && (Game1.activeClickableMenu is SaveGameMenu || (Game1.endOfNightMenus.Count == 0 && Game1.activeClickableMenu is null && Game1.fadeToBlackAlpha > 0f))))
+			bool shouldDisplayOverlay = Instance.NightsToSleep > 0 && (Game1.activeClickableMenu is SaveGameMenu || (Game1.endOfNightMenus.Count == 0 && Game1.activeClickableMenu is null && Game1.fadeToBlackAlpha > 0f));
+			float targetOverlayAlpha = shouldDisplayOverlay ? 1f : 0f;
+			Instance.OverlayAlpha += (targetOverlayAlpha - Instance.OverlayAlpha) * 0.1f;
+			if (Instance.OverlayAlpha > 0.98f)
+				Instance.OverlayAlpha = 1f;
+			else if (Instance.OverlayAlpha < 0.02f)
+				Instance.OverlayAlpha = 0f;
+
+			if (Instance.OverlayAlpha <= 0f)
 				return;
 			if (Game1.input.GetKeyboardState().IsKeyDown(Keys.Escape) && Instance.NightsToSleep > 2)
 				Instance.NightsToSleep = 2;
@@ -429,21 +439,25 @@ namespace Shockah.Hibernation
 				AddLine(Instance.Helper.Translation.Get("hibernation.escapeToWakeUp"), 0.75f);
 			}
 
-			var alpha = Game1.activeClickableMenu is SaveGameMenu ? 1f : Math.Clamp(Game1.fadeToBlackAlpha, 0f, 1f);
 			Game1.PushUIMode();
 			Game1.spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
 			var viewport = Game1.viewport.Size;
 
 			if (Instance.NightsToSleep > 1)
-				Game1.spriteBatch.Draw(Game1.mouseCursors, new Rectangle(0, 0, viewport.Width, viewport.Height), new Rectangle(128, 1884, 4, 4), Color.Black * alpha);
+				Game1.spriteBatch.Draw(
+					Game1.mouseCursors,
+					new Rectangle(0, 0, viewport.Width, viewport.Height),
+					new Rectangle(128, 1884, 4, 4),
+					Color.Black * Instance.OverlayAlpha
+				);
 
 			var yy = viewport.Height * 0.5f - (totalHeight + bearToTextSpacing + BearTextureSourceRects[0].Height * BearScale) * 0.5f;
 			Game1.spriteBatch.Draw(
 				Instance.BearTexture.Value,
 				new Vector2(viewport.Width * 0.5f - BearTextureSourceRects[0].Width * BearScale * 0.5f, yy),
 				Instance.NightsToSleep > 1 ? BearTextureSourceRects[Game1.Date.TotalDays % BearTextureSourceRects.Length] : BearTextureAwakeSourceRect,
-				Color.White * alpha,
+				Color.White * Instance.OverlayAlpha,
 				0f,
 				Vector2.Zero,
 				BearScale,
@@ -456,7 +470,7 @@ namespace Shockah.Hibernation
 					Game1.emoteSpriteSheet,
 					new Vector2(viewport.Width * 0.5f, yy + BearTextureSourceRects[0].Height * 0.2f * BearScale),
 					SleepEmojiTextureSourceRects[Game1.Date.TotalDays % SleepEmojiTextureSourceRects.Length],
-					Color.White * alpha,
+					Color.White * Instance.OverlayAlpha,
 					0f,
 					new Vector2(SleepEmojiTextureSourceRects[0].Width * 0.5f, SleepEmojiTextureSourceRects[0].Height),
 					SleepEmojiScale,
@@ -473,7 +487,7 @@ namespace Shockah.Hibernation
 					Game1.dialogueFont,
 					line,
 					new(viewport.Width * 0.5f - measure.X * 0.5f * scale, yy),
-					Color.White * alpha,
+					Color.White * Instance.OverlayAlpha,
 					0f,
 					Vector2.Zero,
 					scale,
