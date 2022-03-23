@@ -31,6 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\GiftTaste.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\Season.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\SObjectExt.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stardew\WorldDateExt.cs" />
     <Compile Include="..\_Common\UI\SplitScreenScreens.cs" />
     <Compile Include="..\_Common\Stardew\GameExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\FlowDirection.cs" />
