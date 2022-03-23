@@ -152,7 +152,7 @@ namespace Shockah.Hibernation
 			Hibernate(new(date.TotalDays - Game1.Date.TotalDays, HibernateLengthUnit.Nights), earlyTrigger);
 		}
 
-		private WorldDate? GetNextBirthdayDate()
+		private static WorldDate? GetNextBirthdayDate()
 		{
 			var currentDate = Game1.Date;
 			var maxDays = currentDate.TotalDays + WorldDateExt.DaysPerSeason * 4; // safety net
@@ -165,7 +165,7 @@ namespace Shockah.Hibernation
 			return null;
 		}
 
-		private WorldDate? GetNextFestivalDate()
+		private static WorldDate? GetNextFestivalDate()
 		{
 			var currentDate = Game1.Date;
 			var maxDays = currentDate.TotalDays + WorldDateExt.DaysPerSeason * 4 * 2; // safety net
@@ -193,6 +193,8 @@ namespace Shockah.Hibernation
 		private static void GameLocation_createYesNoResponses_Postfix(ref Response[] __result)
 		{
 			if (!Instance.TouchSleepActionInProgress)
+				return;
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.SinglePlayer)
 				return;
 
 			IList<Response> responses = new List<Response>
@@ -235,7 +237,7 @@ namespace Shockah.Hibernation
 						__result = true;
 						IList<Response> responses = new List<Response>();
 						{
-							var nextBirthdayDate = Instance.GetNextBirthdayDate();
+							var nextBirthdayDate = GetNextBirthdayDate();
 							if (nextBirthdayDate is not null)
 							{
 								responses.Add(new Response(
@@ -248,7 +250,7 @@ namespace Shockah.Hibernation
 							}
 						}
 						{
-							var nextFestivalDate = Instance.GetNextFestivalDate();
+							var nextFestivalDate = GetNextFestivalDate();
 							if (nextFestivalDate is not null)
 							{
 								var festivalDates = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\FestivalDates");
@@ -286,14 +288,14 @@ namespace Shockah.Hibernation
 								{
 									case "Birthday":
 										{
-											var nextFestivalDate = Instance.GetNextBirthdayDate();
+											var nextFestivalDate = GetNextBirthdayDate();
 											if (nextFestivalDate is not null)
 												Instance.HibernateUntilDate(nextFestivalDate);
 										}
 										break;
 									case "Festival":
 										{
-											var nextFestivalDate = Instance.GetNextFestivalDate();
+											var nextFestivalDate = GetNextFestivalDate();
 											if (nextFestivalDate is not null)
 												Instance.HibernateUntilDate(nextFestivalDate);
 										}
