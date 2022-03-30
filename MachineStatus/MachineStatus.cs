@@ -857,9 +857,13 @@ namespace Shockah.MachineStatus
 
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
-			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory && @object is not CrabPot)
-				return false;
+			if (@object is CrabPot)
+				return true;
 			if (@object.IsSprinkler())
+				return false;
+			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory)
+				return false;
+			if (@object.ParentSheetIndex <= 0)
 				return false;
 			return true;
 		}
@@ -869,7 +873,11 @@ namespace Shockah.MachineStatus
 			var newState = GetMachineState(machine);
 			var locationDescriptor = LocationDescriptor.Create(location);
 			var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine.Name == machine.Name && e.machine.TileLocation == machine.TileLocation);
-			if (existingEntry is not null)
+			if (existingEntry is null)
+			{
+				Monitor.Log($"Added {newState} machine {{Name: {machine.Name}, DisplayName: {machine.DisplayName}, Type: {machine.GetType().GetBestName()}}} in location {locationDescriptor}", LogLevel.Trace);
+			}
+			else
 			{
 				if (existingEntry.Value.state == newState)
 					return false;
@@ -895,6 +903,7 @@ namespace Shockah.MachineStatus
 					() => NetMessage.MachineRemove.Create(location, machine),
 					new[] { ModManifest.UniqueID }
 				);
+				Monitor.Log($"Removed {existingEntry.Value.state} machine {{Name: {machine.Name}, DisplayName: {machine.DisplayName}, Type: {machine.GetType().GetBestName()}}} in location {locationDescriptor}", LogLevel.Trace);
 				AreVisibleMachinesDirty = true;
 			}
 			return existingEntry is not null;

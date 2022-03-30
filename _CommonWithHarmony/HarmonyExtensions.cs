@@ -32,7 +32,8 @@ namespace Shockah.CommonModCode
 				monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
 				return;
 			}
-			WarnOnDebugAssembly(monitor, original.DeclaringType?.Assembly);
+			if (transpiler is not null)
+				WarnOnDebugAssembly(monitor, original.DeclaringType?.Assembly);
 			self.Patch(original, prefix, postfix, transpiler, finalizer);
 			monitor.Log($"Patched method {original.FullDescription()}.", successLogLevel);
 		}
@@ -57,7 +58,8 @@ namespace Shockah.CommonModCode
 					monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
 					return false;
 				}
-				WarnOnDebugAssembly(monitor, originalMethod.DeclaringType?.Assembly);
+				if (transpiler is not null)
+					WarnOnDebugAssembly(monitor, originalMethod.DeclaringType?.Assembly);
 				self.Patch(originalMethod, prefix, postfix, transpiler, finalizer);
 				monitor.Log($"Patched method {originalMethod.FullDescription()}.", successLogLevel);
 				return true;
@@ -115,7 +117,6 @@ namespace Shockah.CommonModCode
 						continue;
 					if (!subtypeOriginal.HasMethodBody())
 						continue;
-					WarnOnDebugAssembly(monitor, subtypeOriginal.DeclaringType?.Assembly);
 
 					static bool ContainsNonSpecialArguments(HarmonyMethod patch)
 						=> patch.method.GetParameters().Any(p => !(p.Name ?? "").StartsWith("__"));
@@ -192,7 +193,6 @@ namespace Shockah.CommonModCode
 								continue;
 							if (!subtypeOriginal.HasMethodBody())
 								continue;
-							WarnOnDebugAssembly(monitor, subtypeOriginal.DeclaringType?.Assembly);
 
 							static bool ContainsNonSpecialArguments(HarmonyMethod patch)
 								=> patch.method.GetParameters().Any(p => !(p.Name ?? "").StartsWith("__"));
