@@ -23,10 +23,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MailPersistenceFramework", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hibernation", "Hibernation\Hibernation.csproj", "{7ED542FC-8015-4D98-A5EC-EFA429D34A3B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SafeLightning", "SafeLightning\SafeLightning.csproj", "{2C253073-438B-4475-8AFB-87D74EE1EC10}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{2270e272-3de2-4e0d-8907-29e32ecf68fe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{2270e272-3de2-4e0d-8907-29e32ecf68fe}*SharedItemsImports = 5
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{2c253073-438b-4475-8afb-87d74ee1ec10}*SharedItemsImports = 5
+		_Common\_Common.projitems*{2c253073-438b-4475-8afb-87d74ee1ec10}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{2fcb0a9c-fbe0-480d-a896-72300866bfbe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{2fcb0a9c-fbe0-480d-a896-72300866bfbe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{5755b5e3-ac9d-4a3e-9c01-2731828b9caa}*SharedItemsImports = 13
@@ -78,6 +82,10 @@ Global
 		{7ED542FC-8015-4D98-A5EC-EFA429D34A3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7ED542FC-8015-4D98-A5EC-EFA429D34A3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7ED542FC-8015-4D98-A5EC-EFA429D34A3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C253073-438B-4475-8AFB-87D74EE1EC10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C253073-438B-4475-8AFB-87D74EE1EC10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C253073-438B-4475-8AFB-87D74EE1EC10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C253073-438B-4475-8AFB-87D74EE1EC10}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
