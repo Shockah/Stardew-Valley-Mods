@@ -833,6 +833,9 @@ namespace Shockah.MachineStatus
 			if (machine is CrabPot crabPot)
 				if (crabPot.bait.Value is not null && crabPot.heldObject.Value is null)
 					return MachineState.Busy;
+			if (machine is WoodChipper woodChipper)
+				if (woodChipper.depositedItem.Value is not null && woodChipper.heldObject.Value is null)
+					return MachineState.Busy;
 			return GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.GetAnyHeldObject());
 		}
 
@@ -857,13 +860,15 @@ namespace Shockah.MachineStatus
 
 		private bool IsMachine(GameLocation location, SObject @object)
 		{
-			if (@object is CrabPot)
+			if (@object is CrabPot || @object is WoodChipper)
 				return true;
 			if (@object.IsSprinkler())
 				return false;
 			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory)
 				return false;
 			if (@object.ParentSheetIndex <= 0)
+				return false;
+			if (@object.heldObject.Value is Chest || @object.heldObject.Value?.Name == "Chest")
 				return false;
 			return true;
 		}
