@@ -236,6 +236,7 @@ namespace Shockah.MachineStatus
 			helper.AddKeybindList("config.appearance.visibilityKeybind", () => Config.VisibilityKeybind);
 			helper.AddNumberOption("config.appearance.alpha.focused", () => Config.FocusedAlpha, min: 0f, max: 1f, interval: 0.05f);
 			helper.AddNumberOption("config.appearance.alpha.normal", () => Config.NormalAlpha, min: 0f, max: 1f, interval: 0.05f);
+			helper.AddBoolOption("config.appearance.busyDancing", () => Config.BusyDancing);
 
 			helper.AddSectionTitle("config.groupingSorting.section");
 			helper.AddEnumOption("config.groupingSorting.grouping", () => Config.Grouping);
@@ -412,8 +413,12 @@ namespace Shockah.MachineStatus
 				var machineLocation = panelLocation + machineUnscaledOffset * Config.Scale;
 				var machineState = GetMachineState(machine);
 
-				Vector2 scaleFactor = (SingleMachineSize + machine.getScale() * new Vector2(3f, 1f)) / SingleMachineSize;
-				scaleFactor = new Vector2(scaleFactor.X, 1f / scaleFactor.Y);
+				Vector2 scaleFactor = Vector2.One;
+				if (Config.BusyDancing)
+				{
+					scaleFactor = (SingleMachineSize + machine.getScale() * new Vector2(3f, 1f)) / SingleMachineSize;
+					scaleFactor = new Vector2(scaleFactor.X, 1f / scaleFactor.Y);
+				}
 				ItemRenderer.DrawItem(
 					e.SpriteBatch, machine,
 					machineLocation + new Vector2((SingleMachineSize.X - RealSingleMachineSize.X) / 2, 0) * Config.Scale, RealSingleMachineSize * Config.Scale,
