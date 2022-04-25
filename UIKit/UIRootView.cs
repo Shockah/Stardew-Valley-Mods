@@ -2,6 +2,7 @@
 using Shockah.UIKit.Gesture;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Shockah.UIKit
@@ -89,14 +90,14 @@ namespace Shockah.UIKit
 
 		public void AddVariables(params ClVariable[] variables)
 		{
-			foreach (var variable in variables)
-				ConstraintSolver.AddVar(variable);
+			//foreach (var variable in variables)
+			//	ConstraintSolver.AddVar(variable);
 		}
 
 		public void RemoveVariables(params ClVariable[] variables)
 		{
-			foreach (var variable in variables)
-				ConstraintSolver.NoteRemovedVariable(variable, variable);
+			//foreach (var variable in variables)
+			//	ConstraintSolver.NoteRemovedVariable(variable, variable);
 		}
 
 		internal void FireRenderedViewEvent(UIView view, RenderContext context)

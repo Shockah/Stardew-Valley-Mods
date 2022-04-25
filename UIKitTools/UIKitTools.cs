@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,10 +35,19 @@ namespace Shockah.UIKit.Tools
 			SetupCommands();
 
 			ExampleUI = new(helper, Monitor);
-			helper.Events.GameLoop.GameLaunched += ExampleUI.OnGameLaunched;
+			helper.Events.GameLoop.GameLaunched += (_, _) => ExampleUI.RecreateViews();
+			helper.Events.Input.ButtonPressed += OnButtonPressed;
 			helper.Events.GameLoop.UpdateTicking += ExampleUI.OnUpdateTicking;
 			helper.Events.Display.RenderedHud += ExampleUI.OnRenderedHud;
 			ExampleUI.Root.SetIdentifier($"{ModManifest.UniqueID}.example");
+		}
+
+		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
+		{
+			if (!Context.IsPlayerFree)
+				return;
+			if (e.Button == SButton.K)
+				ExampleUI.RecreateViews();
 		}
 
 		private void SetupCommands()

@@ -29,8 +29,11 @@ namespace Shockah.UIKit.Tools
 			Root.UnsatifiableConstraintEvent += (_, constraint) => Monitor.Log($"Could not satisfy constraint {constraint}.", LogLevel.Error);
 		}
 
-		internal void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		internal void RecreateViews()
 		{
+			Monitor.Log("wtf");
+			Root.Subviews.ToList().ForEach(v => v.RemoveFromSuperview());
+
 			new UIScalableColorableLabel(new UISpriteFont(Game1.dialogueFont), "Top-left label.").With(Root, (self, parent) =>
 			{
 				self.Scale = 2f;
