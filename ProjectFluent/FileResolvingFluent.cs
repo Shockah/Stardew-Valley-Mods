@@ -7,18 +7,18 @@ namespace Shockah.ProjectFluent
 {
 	internal class FileResolvingFluent: IFluent<string>
 	{
-		private readonly Lazy<IFluent<string>> wrapped;
+		private readonly Lazy<IFluent<string>> Wrapped;
 		
 		public FileResolvingFluent(IGameLocale locale, IEnumerable<string> filePathCandidates, IFluent<string> fallback)
 		{
-			wrapped = new(() =>
+			Wrapped = new(() =>
 			{
 				foreach (var filePathCandidate in filePathCandidates)
 				{
 					if (!File.Exists(filePathCandidate))
 						continue;
 
-					String content;
+					string content;
 					try
 					{
 						content = File.ReadAllText(filePathCandidate);
@@ -48,9 +48,9 @@ namespace Shockah.ProjectFluent
 			});
 		}
 
-		public string Get(string key, object tokens)
+		public string Get(string key, object? tokens)
 		{
-			return wrapped.Value.Get(key, tokens);
+			return Wrapped.Value.Get(key, tokens);
 		}
 	}
 }

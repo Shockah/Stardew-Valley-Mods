@@ -5,20 +5,20 @@ namespace Shockah.ProjectFluent
 {
 	internal class EnumFluent<EnumType>: IEnumFluent<EnumType> where EnumType: Enum
 	{
-		private readonly IFluent<string> wrapped;
-		private readonly string keyPrefix;
+		private readonly IFluent<string> Wrapped;
+		private readonly string KeyPrefix;
 
 		public EnumFluent(IFluent<string> wrapped, string keyPrefix)
 		{
 			if (!typeof(EnumType).IsEnum)
 				throw new ArgumentException($"{typeof(EnumType)} is not an enum.");
-			this.wrapped = wrapped;
-			this.keyPrefix = keyPrefix;
+			this.Wrapped = wrapped;
+			this.KeyPrefix = keyPrefix;
 		}
 
-		public string Get(EnumType key, object tokens)
+		public string Get(EnumType key, object? tokens)
 		{
-			return wrapped.Get($"{keyPrefix}{Enum.GetName(typeof(EnumType), key)}", tokens);
+			return Wrapped.Get($"{KeyPrefix}{Enum.GetName(typeof(EnumType), key)}", tokens);
 		}
 
 		public EnumType GetFromLocalizedName(string localizedName)

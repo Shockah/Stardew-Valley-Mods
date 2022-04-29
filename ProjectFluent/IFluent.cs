@@ -13,7 +13,7 @@ namespace Shockah.ProjectFluent
 		string this[Key key]
 			=> Get(key, null);
 
-		string Get(Key key, object tokens);
+		string Get(Key key, object? tokens);
 	}
 
 	public interface IEnumFluent<EnumType>: IFluent<EnumType> where EnumType: Enum

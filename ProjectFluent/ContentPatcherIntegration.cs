@@ -11,9 +11,9 @@ namespace Shockah.ProjectFluent
 		private static readonly string RegisterFluentTokenManifestKey = "UsesFluentContentPatcherTokens";
 		private static readonly string TokenName = "Fluent";
 
-		private static bool didTryGetTokenWithNamespace = false;
-		private static Func<object, string> getScope;
-		private static Func<object, string, bool, object> getToken;
+		private static bool DidTryGetTokenWithNamespace = false;
+		private static Func<object, string> GetScopeDelegate = null!;
+		private static Func<object, string, bool, object?> GetTokenDelegate = null!;
 
 		internal static void Setup(Harmony harmony)
 		{
@@ -41,10 +41,10 @@ namespace Shockah.ProjectFluent
 					ProjectFluent.Instance.Monitor.Log($"{ContentPatcherModTokenContextQualifiedName}.GetToken already patched by some mod, probably doing the same thing. Skipping. If Content Patcher integration doesn't work, please contact Project Fluent's author.", LogLevel.Warn);
 					return;
 				}
-				getToken = (context, name, enforceContext) => getTokenMethod.Invoke(context, new object[] { name, enforceContext });
+				GetTokenDelegate = (context, name, enforceContext) => getTokenMethod.Invoke(context, new object[] { name, enforceContext });
 
 				var getScopeField = AccessTools.Field(modTokenContextType, "Scope");
-				getScope = (context) => (string)getScopeField.GetValue(context);
+				GetScopeDelegate = (context) => (string)getScopeField.GetValue(context)!;
 
 				harmony.Patch(
 					original: getTokenMethod,
@@ -63,12 +63,12 @@ namespace Shockah.ProjectFluent
 			{
 				if (modInfo.Manifest.ContentPackFor?.UniqueID != ContentPatcherModID)
 					continue;
-				if (modInfo.Manifest.ExtraFields.TryGetValue(RegisterFluentTokenManifestKey, out object value) && value is true)
+				if (modInfo.Manifest.ExtraFields.TryGetValue(RegisterFluentTokenManifestKey, out object? value) && value is true)
 					api.RegisterToken(modInfo.Manifest, TokenName, new ContentPatcherToken(modInfo.Manifest));
 			}
 		}
 
-		private static void ModTokenContext_GetToken_Postfix(ref object __instance, ref object __result, string name, bool enforceContext)
+		private static void ModTokenContext_GetToken_Postfix(ref object __instance, ref object? __result, string name, bool enforceContext)
 		{
 			switch (ProjectFluent.Instance.Config.ContentPatcherPatchingMode)
 			{
@@ -84,14 +84,14 @@ namespace Shockah.ProjectFluent
 			
 			if (__result != null)
 				return;
-			if (didTryGetTokenWithNamespace)
+			if (DidTryGetTokenWithNamespace)
 				return;
 			if (name.Contains('/'))
 				return;
 
-			didTryGetTokenWithNamespace = true;
-			__result = getToken(__instance, $"{getScope(__instance)}/{name}", enforceContext);
-			didTryGetTokenWithNamespace = false;
+			DidTryGetTokenWithNamespace = true;
+			__result = GetTokenDelegate(__instance, $"{GetScopeDelegate(__instance)}/{name}", enforceContext);
+			DidTryGetTokenWithNamespace = false;
 		}
 	}
 }

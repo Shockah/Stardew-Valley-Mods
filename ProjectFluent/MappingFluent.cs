@@ -1,18 +1,18 @@
 ﻿namespace Shockah.ProjectFluent
 {
-	internal class MappingFluent<Key>: IFluent<Key>
+	internal class MappingFluent<Key>: IFluent<Key> where Key : notnull
 	{
-		private readonly IFluent<string> wrapped;
+		private readonly IFluent<string> Wrapped;
 
 		public MappingFluent(IFluent<string> wrapped)
 		{
-			this.wrapped = wrapped;
+			this.Wrapped = wrapped;
 		}
 
-		public string Get(Key key, object tokens)
+		public string Get(Key key, object? tokens)
 		{
-			var mappedKey = key is IFluentKey fluentKey ? fluentKey.FluentKey : key.ToString();
-			return wrapped.Get(mappedKey, tokens);
+			string mappedKey = key is IFluentKey fluentKey ? fluentKey.FluentKey : $"{key}";
+			return Wrapped.Get(mappedKey, tokens);
 		}
 	}
 }

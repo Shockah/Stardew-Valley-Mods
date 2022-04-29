@@ -4,32 +4,32 @@ namespace Shockah.ProjectFluent
 {
 	internal class CurrentLocaleFluent<Key>: IFluent<Key>
 	{
-		private readonly IManifest mod;
-		private readonly string name;
+		private readonly IManifest Mod;
+		private readonly string? Name;
 
-		private IGameLocale locale;
-		private IFluent<Key> wrapped;
+		private IGameLocale? Locale;
+		private IFluent<Key> Wrapped = null!;
 
-		public CurrentLocaleFluent(IManifest mod, string name = null)
+		public CurrentLocaleFluent(IManifest mod, string? name = null)
 		{
-			this.mod = mod;
-			this.name = name;
+			this.Mod = mod;
+			this.Name = name;
 		}
 
 		private IFluent<Key> CurrentFluent
 		{
 			get
 			{
-				if (locale is null || locale.LanguageCode != ProjectFluent.Instance.Api.CurrentLocale.LanguageCode)
+				if (Locale is null || Locale.LanguageCode != ProjectFluent.Instance.Api.CurrentLocale.LanguageCode)
 				{
-					locale = ProjectFluent.Instance.Api.CurrentLocale;
-					wrapped = ProjectFluent.Instance.Api.GetLocalizations<Key>(locale, mod, name);
+					Locale = ProjectFluent.Instance.Api.CurrentLocale;
+					Wrapped = ProjectFluent.Instance.Api.GetLocalizations<Key>(Locale, Mod, Name);
 				}
-				return wrapped;
+				return Wrapped;
 			}
 		}
 
-		public string Get(Key key, object tokens)
+		public string Get(Key key, object? tokens)
 		{
 			return CurrentFluent.Get(key, tokens);
 		}

@@ -1,19 +1,21 @@
 ﻿using StardewModdingAPI;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
 	internal class ContentPatcherToken
 	{
-		private readonly IManifest mod;
-		private readonly IDictionary<string, IFluent<string>> fluents = new Dictionary<string, IFluent<string>>();
+		private readonly IManifest Mod;
+		private readonly IDictionary<string, IFluent<string>> Fluents = new Dictionary<string, IFluent<string>>();
+		private IFluent<string>? DefaultFluent;
 
-		private bool isUpdated = false;
+		private bool IsUpdated = false;
 
 		public ContentPatcherToken(IManifest mod)
 		{
-			this.mod = mod;
+			this.Mod = mod;
 		}
 
 		public bool IsReady() => true;
@@ -22,19 +24,19 @@ namespace Shockah.ProjectFluent
 
 		public bool RequiresInput() => true;
 
-		public bool CanHaveMultipleValues(string input = null) => false;
+		public bool CanHaveMultipleValues(string? input = null) => false;
 
 		public bool UpdateContext()
 		{
-			var wasUpdated = isUpdated;
-			isUpdated = true;
+			var wasUpdated = IsUpdated;
+			IsUpdated = true;
 			return !wasUpdated;
 		}
 
 		public IEnumerable<string> GetValues(string input)
 		{
 			var args = ParseArgs(input);
-			if (args.Named.TryGetValue("file", out string localizationsName))
+			if (args.Named.TryGetValue("file", out string? localizationsName))
 				args.Named.Remove("file");
 			else
 				localizationsName = null;
@@ -60,12 +62,35 @@ namespace Shockah.ProjectFluent
 			return new Args(key, named);
 		}
 
-		private IFluent<string> ObtainFluent(string name)
+		private bool TryGetFluent(string? name, [NotNullWhen(true)] out IFluent<string>? fluent)
 		{
-			if (fluents.TryGetValue(name, out IFluent<string> fluent))
+			if (name is null)
+			{
+				if (DefaultFluent is not null)
+				{
+					fluent = DefaultFluent;
+					return true;
+				}
+			}
+			else
+			{
+				return Fluents.TryGetValue(name, out fluent);
+			}
+
+			fluent = null;
+			return false;
+		}
+
+		private IFluent<string> ObtainFluent(string? name)
+		{
+			if (TryGetFluent(name, out IFluent<string>? fluent))
 				return fluent;
-			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale<string>(mod, name);
-			fluents[name] = fluent;
+			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale<string>(Mod, name);
+
+			if (name is null)
+				DefaultFluent = fluent;
+			else
+				Fluents[name] = fluent;
 			return fluent;
 		}
 

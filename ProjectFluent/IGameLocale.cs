@@ -13,6 +13,7 @@ namespace Shockah.ProjectFluent
 
 		bool IsBuiltInLocale
 			=> this is BuiltIn;
+
 		bool IsModLocale
 			=> this is Mod;
 
