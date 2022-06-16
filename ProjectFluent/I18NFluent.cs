@@ -11,6 +11,11 @@ namespace Shockah.ProjectFluent
 			this.Translations = translations;
 		}
 
+		public bool ContainsKey(string key)
+		{
+			return Translations.Get(key).HasValue();
+		}
+
 		public string Get(string key, object? tokens)
 		{
 			return Translations.Get(key, tokens);

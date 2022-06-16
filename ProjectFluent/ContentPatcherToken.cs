@@ -85,7 +85,7 @@ namespace Shockah.ProjectFluent
 		{
 			if (TryGetFluent(name, out IFluent<string>? fluent))
 				return fluent;
-			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale<string>(Mod, name);
+			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale(Mod, name);
 
 			if (name is null)
 				DefaultFluent = fluent;

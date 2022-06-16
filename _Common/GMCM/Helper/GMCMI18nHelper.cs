@@ -1,37 +1,61 @@
-﻿using StardewModdingAPI;
+﻿using Shockah.CommonModCode.SMAPI;
+using StardewModdingAPI;
 using StardewModdingAPI.Utilities;
 using System;
 using System.Linq.Expressions;
 
 namespace Shockah.CommonModCode.GMCM
 {
-	public class GMCMI18nHelper
+	public sealed class GMCMI18nHelper
 	{
-		public readonly IGenericModConfigMenuApi Api;
-		public readonly IManifest Mod;
-		public readonly ITranslationHelper Translations;
+		public IGenericModConfigMenuApi Api { get; private set; }
+		public IManifest Mod { get; private set; }
+		public ITranslationSet<string> Translations { get; private set; }
 
-		public GMCMI18nHelper(IGenericModConfigMenuApi api, IManifest mod, ITranslationHelper translations)
+		private string NamePattern { get; set; }
+		private string TooltipPattern { get; set; }
+		private string ValuePattern { get; set; }
+
+		public GMCMI18nHelper(
+			IGenericModConfigMenuApi api,
+			IManifest mod,
+			ITranslationSet<string> translations,
+			string namePattern = "{Key}.name",
+			string tooltipPattern = "{Key}.tooltip",
+			string valuePattern = "{Key}.value.{Value}"
+		)
 		{
 			this.Api = api;
 			this.Mod = mod;
 			this.Translations = translations;
+			this.NamePattern = namePattern;
+			this.TooltipPattern = tooltipPattern;
+			this.ValuePattern = valuePattern;
 		}
+
+		public GMCMI18nHelper(
+			IGenericModConfigMenuApi api,
+			IManifest mod,
+			ITranslationHelper translations,
+			string namePattern = "{Key}.name",
+			string tooltipPattern = "{Key}.tooltip",
+			string valuePattern = "{Key}.value.{Value}"
+		) : this(api, mod, new SMAPITranslationSetWrapper(translations), namePattern, tooltipPattern, valuePattern) { }
 
 		public void AddSectionTitle(string keyPrefix)
 		{
 			Api.AddSectionTitle(
 				mod: Mod,
-				text: () => Translations.Get($"{keyPrefix}.name"),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip")
+				text: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix)),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix))
 			);
 		}
 
-		public void AddParagraph(string key)
+		public void AddParagraph(string key, object? tokens = null)
 		{
 			Api.AddParagraph(
 				mod: Mod,
-				text: () => Translations.Get(key)
+				text: () => Translations.Get(key, tokens)
 			);
 		}
 
@@ -39,8 +63,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddBoolOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -53,8 +77,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddBoolOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -65,8 +89,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddNumberOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				min: min,
@@ -83,8 +107,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddNumberOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				min: min,
@@ -99,8 +123,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddNumberOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				min: min,
@@ -117,8 +141,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddNumberOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				min: min,
@@ -133,8 +157,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddTextOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				allowedValues: allowedValues,
@@ -149,8 +173,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddTextOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				allowedValues: allowedValues,
@@ -165,12 +189,12 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddTextOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: () => Enum.GetName(getValue())!,
 				setValue: value => setValue(Enum.Parse<EnumType>(value)),
 				allowedValues: Enum.GetNames<EnumType>(),
-				formatAllowedValue: value => Translations.Get($"{valuePrefix ?? keyPrefix}.value.{value}", tokens),
+				formatAllowedValue: value => Translations.Get(ValuePattern.Replace("{Key}", valuePrefix ?? keyPrefix).Replace("{Value}", value), tokens),
 				fieldId: fieldId
 			);
 		}
@@ -179,12 +203,12 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddTextOption(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: () => Enum.GetName(getValue())!,
 				setValue: value => setValue(Enum.Parse<EnumType>(value)),
 				allowedValues: Enum.GetNames<EnumType>(),
-				formatAllowedValue: value => Translations.Get($"{valuePrefix ?? keyPrefix}.value.{value}", tokens),
+				formatAllowedValue: value => Translations.Get(ValuePattern.Replace("{Key}", valuePrefix ?? keyPrefix).Replace("{Value}", value), tokens),
 				fieldId: fieldId
 			);
 		}
@@ -193,8 +217,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddKeybind(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -207,8 +231,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddKeybind(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -219,8 +243,8 @@ namespace Shockah.CommonModCode.GMCM
 		{
 			Api.AddKeybindList(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -233,8 +257,8 @@ namespace Shockah.CommonModCode.GMCM
 			var setValue = CreateSetter(property).Compile()!;
 			Api.AddKeybindList(
 				mod: Mod,
-				name: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens),
+				name: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens),
 				getValue: getValue,
 				setValue: setValue,
 				fieldId: fieldId
@@ -246,7 +270,7 @@ namespace Shockah.CommonModCode.GMCM
 			Api.AddPage(
 				mod: Mod,
 				pageId: pageId,
-				pageTitle: () => Translations.Get($"{keyPrefix}.name", tokens)
+				pageTitle: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens)
 			);
 		}
 
@@ -255,14 +279,14 @@ namespace Shockah.CommonModCode.GMCM
 			Api.AddPageLink(
 				mod: Mod,
 				pageId: pageId,
-				text: () => Translations.Get($"{keyPrefix}.name", tokens),
-				tooltip: GetOptionalTranslatedStringDelegate($"{keyPrefix}.tooltip", tokens)
+				text: () => Translations.Get(NamePattern.Replace("{Key}", keyPrefix), tokens),
+				tooltip: GetOptionalTranslatedStringDelegate(TooltipPattern.Replace("{Key}", keyPrefix), tokens)
 			);
 		}
 
 		public Func<string>? GetOptionalTranslatedStringDelegate(string key, object? tokens = null)
 		{
-			return Translations.Get(key, tokens).HasValue() ? () => Translations.Get(key, tokens) : null;
+			return Translations.ContainsKey(key) ? () => Translations.Get(key, tokens) : null;
 		}
 
 		public static Expression<Action<T>> CreateSetter<T>(Expression<Func<T>> getter)

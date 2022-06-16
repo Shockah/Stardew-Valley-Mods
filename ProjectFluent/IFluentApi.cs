@@ -12,9 +12,9 @@ namespace Shockah.ProjectFluent
 		IGameLocale GetBuiltInLocale(LocalizedContentManager.LanguageCode languageCode);
 		IGameLocale GetModLocale(ModLanguage language);
 
-		IFluent<Key> GetLocalizations<Key>(IGameLocale locale, IManifest mod, string? name = null) where Key : notnull;
-		IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string? name = null);
+		IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null);
+		IFluent<string> GetLocalizationsForCurrentLocale(IManifest mod, string? name = null);
 
-		IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix = "") where EnumType: Enum;
+		IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix = "") where EnumType : Enum;
 	}
 }

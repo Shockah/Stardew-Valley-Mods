@@ -29,7 +29,7 @@ namespace Shockah.ProjectFluent
 			Instance = this;
 			Api = new FluentApi(this);
 			Config = helper.ReadConfig<ModConfig>();
-			Fluent = Api.GetLocalizationsForCurrentLocale<string>(ModManifest);
+			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
 			FluentContentPatcherPatchingMode = Api.GetEnumFluent<ContentPatcherPatchingMode>(Fluent, "config-contentPatcherPatchingMode-value.");
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 
@@ -53,7 +53,15 @@ namespace Shockah.ProjectFluent
 
 		private void SetupConfig()
 		{
-			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			GMCMI18nHelper helper = new(
+				api, ModManifest, new FluentTranslationSet<string>(Fluent),
+				namePattern: "{Key}",
+				tooltipPattern: "{Key}.tooltip",
+				valuePattern: "{Key}.{Value}"
+			);
 
 			static IEnumerable<string> GetBuiltInLocales()
 			{
@@ -66,33 +74,25 @@ namespace Shockah.ProjectFluent
 				}
 			}
 
-			configMenu?.Register(
+			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
 				save: () => Helper.WriteConfig(Config)
 			);
 
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => Fluent["config-contentPatcherPatchingMode"],
-				tooltip: () => Fluent["config-contentPatcherPatchingMode.tooltip"],
-				getValue: () => FluentContentPatcherPatchingMode[Config.ContentPatcherPatchingMode],
-				setValue: value => Config.ContentPatcherPatchingMode = FluentContentPatcherPatchingMode.GetFromLocalizedName(value),
-				allowedValues: FluentContentPatcherPatchingMode.GetAllLocalizedNames().ToArray()
+			helper.AddEnumOption(
+				keyPrefix: "config-contentPatcherPatchingMode",
+				property: () => Config.ContentPatcherPatchingMode
 			);
 
-			configMenu?.AddTextOption(
-				mod: ModManifest,
-				name: () => Fluent["config-localeOverride"],
-				tooltip: () => Fluent["config-localeOverride.tooltip"],
-				getValue: () => string.IsNullOrEmpty(Config.CurrentLocaleOverride) ? "" : Config.CurrentLocaleOverride,
-				setValue: value => Config.CurrentLocaleOverride = string.IsNullOrEmpty(value) ? null : value,
-				fieldId: "localeOverride-custom"
+			helper.AddTextOption(
+				keyPrefix: "config-localeOverride",
+				property: () => Config.CurrentLocaleOverride
 			);
 
-			configMenu?.AddParagraph(
-				mod: ModManifest,
-				text: () => Fluent.Get("config-localeOverride.subtitle", new { Values = GetBuiltInLocales().Join() })
+			helper.AddParagraph(
+				"config-localeOverrideSubtitle",
+				new { Values = GetBuiltInLocales().Join() }
 			);
 		}
 
@@ -107,6 +107,7 @@ namespace Shockah.ProjectFluent
 				string fileNameWithoutExtension = $"{(string.IsNullOrEmpty(name) ? "" : $"{name}.")}{relevantLocale}";
 				yield return Path.Combine(baseModPath, "i18n", $"{fileNameWithoutExtension}.ftl");
 			}
+			yield return Path.Combine(baseModPath, "i18n", "default.ftl");
 		}
 
 		#region APIs
@@ -123,7 +124,7 @@ namespace Shockah.ProjectFluent
 			}
 		}
 
-		public IFluent<Key> GetLocalizations<Key>(IGameLocale locale, IManifest mod, string? name = null) where Key : notnull
+		public IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null)
 		{
 			var rootKey = (modID: mod.UniqueID, name: name);
 			if (!LocalizationCache.ContainsKey(rootKey))
@@ -133,8 +134,7 @@ namespace Shockah.ProjectFluent
 			if (!specificCache.ContainsKey(locale))
 				specificCache[locale] = new FileResolvingFluent(locale, GetFilePathCandidates(mod, name, locale), NoOpFluent);
 
-			var baseFluent = specificCache[locale];
-			return typeof(Key) == typeof(string) ? (IFluent<Key>)baseFluent : new MappingFluent<Key>(baseFluent);
+			return specificCache[locale];
 		}
 
 		#endregion

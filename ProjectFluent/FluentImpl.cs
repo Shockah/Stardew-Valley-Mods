@@ -1,4 +1,5 @@
 ﻿using Fluent.Net;
+using Fluent.Net.RuntimeAst;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace Shockah.ProjectFluent
 			this.Context = context;
 		}
 
-		private IDictionary<string, object?> ExtractTokens(object? tokens)
+		private static IDictionary<string, object?> ExtractTokens(object? tokens)
 		{
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Translation.cs
 
@@ -52,6 +53,22 @@ namespace Shockah.ProjectFluent
 			return results;
 		}
 
+		public bool ContainsKey(string key)
+		{
+			int dotIndex = key.IndexOf('.');
+			string? messageKey = dotIndex == -1 ? key : key[..dotIndex];
+			string? attributeKey = dotIndex == -1 ? null : key[(dotIndex + 1)..];
+
+			if (!Context.HasMessage(messageKey))
+				return false;
+			var message = Context.GetMessage(messageKey);
+
+			if (attributeKey is not null && !message.Attributes.ContainsKey(attributeKey))
+				return false;
+
+			return true;
+		}
+
 		public string Get(string key, object? tokens)
 		{
 			var dotIndex = key.IndexOf('.');
@@ -61,7 +78,14 @@ namespace Shockah.ProjectFluent
 			if (Context.HasMessage(messageKey))
 			{
 				var message = Context.GetMessage(messageKey);
-				var node = attributeKey == null ? message : message.Attributes[attributeKey];
+				Node? node = message;
+
+				if (attributeKey is not null)
+				{
+					if (!message.Attributes.TryGetValue(attributeKey, out node))
+						return Fallback.Get(key, tokens);
+				}
+
 				if (node == null)
 					return Fallback.Get(key, tokens);
 				return Context.Format(node, ExtractTokens(tokens)).Replace("\u2068", "").Replace("\u2069", "");

@@ -24,7 +24,7 @@ namespace Shockah.ProjectFluent
 						content = File.ReadAllText(filePathCandidate);
 						if (content.Contains('\t'))
 						{
-							ProjectFluent.Instance.Monitor.Log($"Fluent file \"{filePathCandidate}\" contains tab (\\t) characters. Those aren't officially supported and may cause problems; replacing with 4 spaces.", LogLevel.Warn);
+							ProjectFluent.Instance.Monitor.Log($"Fluent file \"{filePathCandidate}\" contains tab (\\t) characters. Those aren't officially supported and may cause problems. Replacing with 4 spaces.", LogLevel.Warn);
 							content = content.Replace("\t", "    ");
 						}
 					}
@@ -46,6 +46,11 @@ namespace Shockah.ProjectFluent
 
 				return fallback;
 			});
+		}
+
+		public bool ContainsKey(string key)
+		{
+			return Wrapped.Value.ContainsKey(key);
 		}
 
 		public string Get(string key, object? tokens)

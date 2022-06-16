@@ -18,12 +18,12 @@ namespace Shockah.ProjectFluent
 		internal static void Setup(Harmony harmony)
 		{
 			var api = ProjectFluent.Instance.Helper.ModRegistry.GetApi<IContentPatcherApi>(ContentPatcherModID);
-			if (api == null)
+			if (api is null)
 				return;
 
-			var version = ProjectFluent.Instance.Helper.ModRegistry.Get(ContentPatcherModID).Manifest.Version;
-			if (version.MajorVersion > 1 || version.MinorVersion > 24)
-				ProjectFluent.Instance.Monitor.Log("Detected newer Content Patcher than 1.24.x, integration might not behave correctly.", LogLevel.Warn);
+			var version = ProjectFluent.Instance.Helper.ModRegistry.Get(ContentPatcherModID)!.Manifest.Version;
+			if (version.MajorVersion > 1)
+				ProjectFluent.Instance.Monitor.Log("Detected newer Content Patcher than 1.x, integration might not behave correctly.", LogLevel.Warn);
 
 			Patch(harmony);
 			RegisterTokenInContentPacks(api);
@@ -36,11 +36,6 @@ namespace Shockah.ProjectFluent
 				var modTokenContextType = Type.GetType(ContentPatcherModTokenContextQualifiedName);
 
 				var getTokenMethod = AccessTools.Method(modTokenContextType, "GetToken");
-				if (Harmony.GetPatchInfo(getTokenMethod) != null)
-				{
-					ProjectFluent.Instance.Monitor.Log($"{ContentPatcherModTokenContextQualifiedName}.GetToken already patched by some mod, probably doing the same thing. Skipping. If Content Patcher integration doesn't work, please contact Project Fluent's author.", LogLevel.Warn);
-					return;
-				}
 				GetTokenDelegate = (context, name, enforceContext) => getTokenMethod.Invoke(context, new object[] { name, enforceContext });
 
 				var getScopeField = AccessTools.Field(modTokenContextType, "Scope");

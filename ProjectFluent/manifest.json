@@ -5,6 +5,6 @@
 	"Description": "A modern localization/translation framework.",
 	"UniqueID": "Shockah.ProjectFluent",
 	"EntryDll": "ProjectFluent.dll",
-	"MinimumApiVersion": "3.0.0",
+	"MinimumApiVersion": "3.14.0",
 	"UpdateKeys": [ "Nexus:0" ]
 }

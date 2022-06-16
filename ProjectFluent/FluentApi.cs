@@ -21,11 +21,11 @@ namespace Shockah.ProjectFluent
 		public IGameLocale GetModLocale(ModLanguage language)
 			=> new IGameLocale.Mod(language);
 
-		public IFluent<Key> GetLocalizations<Key>(IGameLocale locale, IManifest mod, string? name = null) where Key : notnull
-			=> Instance.GetLocalizations<Key>(locale, mod, name);
+		public IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null)
+			=> Instance.GetLocalizations(locale, mod, name);
 
-		public IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string? name = null)
-			=> new CurrentLocaleFluent<Key>(mod, name);
+		public IFluent<string> GetLocalizationsForCurrentLocale(IManifest mod, string? name = null)
+			=> new CurrentLocaleFluent(mod, name);
 
 		IEnumFluent<EnumType> IFluentApi.GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix)
 			=> new EnumFluent<EnumType>(baseFluent, keyPrefix);

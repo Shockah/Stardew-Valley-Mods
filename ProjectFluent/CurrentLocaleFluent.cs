@@ -2,13 +2,13 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class CurrentLocaleFluent<Key>: IFluent<Key>
+	internal class CurrentLocaleFluent: IFluent<string>
 	{
-		private readonly IManifest Mod;
-		private readonly string? Name;
+		private IManifest Mod { get; set; }
+		private string? Name { get; set; }
 
-		private IGameLocale? Locale;
-		private IFluent<Key> Wrapped = null!;
+		private IGameLocale? Locale { get; set; }
+		private IFluent<string> Wrapped { get; set; } = null!;
 
 		public CurrentLocaleFluent(IManifest mod, string? name = null)
 		{
@@ -16,20 +16,25 @@ namespace Shockah.ProjectFluent
 			this.Name = name;
 		}
 
-		private IFluent<Key> CurrentFluent
+		private IFluent<string> CurrentFluent
 		{
 			get
 			{
 				if (Locale is null || Locale.LanguageCode != ProjectFluent.Instance.Api.CurrentLocale.LanguageCode)
 				{
 					Locale = ProjectFluent.Instance.Api.CurrentLocale;
-					Wrapped = ProjectFluent.Instance.Api.GetLocalizations<Key>(Locale, Mod, Name);
+					Wrapped = ProjectFluent.Instance.Api.GetLocalizations(Locale, Mod, Name);
 				}
 				return Wrapped;
 			}
 		}
 
-		public string Get(Key key, object? tokens)
+		public bool ContainsKey(string key)
+		{
+			return CurrentFluent.ContainsKey(key);
+		}
+
+		public string Get(string key, object? tokens)
 		{
 			return CurrentFluent.Get(key, tokens);
 		}
