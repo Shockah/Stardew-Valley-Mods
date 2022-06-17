@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.ProjectFluent
+namespace Shockah.ProjectFluent.ContentPatcher
 {
 	/// <summary>The Content Patcher API which other mods can access.</summary>
 	public interface IContentPatcherApi

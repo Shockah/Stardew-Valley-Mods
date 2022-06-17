@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Shockah.ProjectFluent
+namespace Shockah.ProjectFluent.ContentPatcher
 {
 	internal class ContentPatcherToken
 	{

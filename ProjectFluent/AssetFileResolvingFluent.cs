@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
-	internal class AssetOverrideFileResolvingFluent: IFluent<string>
+	internal class AssetFileResolvingFluent: IFluent<string>
 	{
 		internal IGameLocale Locale { get; private set; }
 		internal IManifest Mod { get; private set; }
@@ -26,7 +26,7 @@ namespace Shockah.ProjectFluent
 			}
 		}
 
-		public AssetOverrideFileResolvingFluent(
+		public AssetFileResolvingFluent(
 			IGameLocale locale,
 			IManifest mod,
 			string? name,
@@ -77,12 +77,20 @@ namespace Shockah.ProjectFluent
 						string uniqueModID = split[0];
 						IManifest? mod = ProjectFluent.Instance.Helper.ModRegistry.Get(uniqueModID)?.Manifest;
 						if (mod is not null)
-							yield return (Path.Combine(ProjectFluent.Instance.GetModDirectoryPath(mod), "i18n"), name);
+						{
+							var modPath = ProjectFluent.Instance.GetModDirectoryPath(mod);
+							if (modPath is not null)
+								yield return (Path.Combine(modPath, "i18n"), name);
+						}
 					}
 				}
 			}
 
-			yield return (Path.Combine(ProjectFluent.Instance.GetModDirectoryPath(Mod), "i18n"), Name);
+			{
+				var modPath = ProjectFluent.Instance.GetModDirectoryPath(Mod);
+				if (modPath is not null)
+					yield return (Path.Combine(modPath, "i18n"), Name);
+			}
 		}
 
 		private IEnumerable<string> GetFilePathCandidates()

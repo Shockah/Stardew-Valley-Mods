@@ -11,29 +11,35 @@ namespace Shockah.ProjectFluent
 	internal class AssetManager
 	{
 		private static readonly string FluentPathsAssetPath = "Shockah.ProjectFluent/Fluent";
+		internal static readonly string I18nPathsAssetPath = "Shockah.ProjectFluent/i18n";
 
-		private bool DidRegisterEvents { get; set; } = false;
+		private bool DidSetup { get; set; } = false;
+
 		private IList<(IContentPack pack, ContentPackContent content)> ContentPackContents { get; set; } = new List<(IContentPack pack, ContentPackContent content)>();
-		private IList<WeakReference<AssetOverrideFileResolvingFluent>> Fluents { get; set; } = new List<WeakReference<AssetOverrideFileResolvingFluent>>();
+		private IList<WeakReference<AssetFileResolvingFluent>> Fluents { get; set; } = new List<WeakReference<AssetFileResolvingFluent>>();
 
-		internal void RegisterEvents(IModEvents events)
+		internal void Setup(IModHelper helper)
 		{
-			if (DidRegisterEvents)
+			if (DidSetup)
 				return;
-			events.Content.AssetRequested += OnAssetRequested;
-			events.Content.AssetReady += OnAssetReady;
-			events.Content.AssetsInvalidated += OnAssetsInvalidated;
-			DidRegisterEvents = true;
+
+			helper.Events.Content.AssetRequested += OnAssetRequested;
+			helper.Events.Content.AssetReady += OnAssetReady;
+			helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
+
+			RegisterContentPacks(helper.ContentPacks, helper.GameContent);
+
+			DidSetup = true;
 		}
 
-		internal void RegisterContentPacks(IContentPackHelper helper, IGameContentHelper contentHelper)
+		private void RegisterContentPacks(IContentPackHelper helper, IGameContentHelper contentHelper)
 		{
 			ProjectFluent.Instance.Monitor.Log("Loading content packs...", LogLevel.Info);
 			foreach (var pack in helper.GetOwned())
 				RegisterContentPack(pack, contentHelper);
 		}
 
-		internal void RegisterContentPack(IContentPack pack, IGameContentHelper contentHelper)
+		private void RegisterContentPack(IContentPack pack, IGameContentHelper contentHelper)
 		{
 			ProjectFluent.Instance.Monitor.Log($"Loading content pack `{pack.Manifest.UniqueID}`", LogLevel.Info);
 
@@ -41,8 +47,10 @@ namespace Shockah.ProjectFluent
 			if (existingEntry is not null)
 			{
 				ContentPackContents.Remove(existingEntry.Value);
-				if (existingEntry.Value.content.Fluent.Count != 0)
+				if ((existingEntry.Value.content.Fluent?.Count ?? 0) != 0)
 					contentHelper.InvalidateCache(FluentPathsAssetPath);
+				if ((existingEntry.Value.content.I18n?.Count ?? 0) != 0)
+					contentHelper.InvalidateCache(I18nPathsAssetPath);
 			}
 
 			if (!pack.HasFile("content.json"))
@@ -55,8 +63,10 @@ namespace Shockah.ProjectFluent
 					return;
 
 				ContentPackContents.Add((pack: pack, content: content));
-				if (content.Fluent.Count != 0)
+				if ((content.Fluent?.Count ?? 0) != 0)
 					contentHelper.InvalidateCache(FluentPathsAssetPath);
+				if ((content.I18n?.Count ?? 0) != 0)
+					contentHelper.InvalidateCache(I18nPathsAssetPath);
 			}
 			catch (Exception ex)
 			{
@@ -78,10 +88,10 @@ namespace Shockah.ProjectFluent
 					return cached;
 			}
 
-			var fluent = new AssetOverrideFileResolvingFluent(locale, mod, name, ProjectFluent.Instance.GetFallbackFluent(mod));
+			var fluent = new AssetFileResolvingFluent(locale, mod, name, ProjectFluent.Instance.GetFallbackFluent(mod));
 			var asset = Game1.content.Load<Dictionary<string, List<string>>>(FluentPathsAssetPath);
 			fluent.OnAssetChanged(asset);
-			Fluents.Add(new WeakReference<AssetOverrideFileResolvingFluent>(fluent));
+			Fluents.Add(new WeakReference<AssetFileResolvingFluent>(fluent));
 			return fluent;
 		}
 
@@ -94,7 +104,31 @@ namespace Shockah.ProjectFluent
 					var asset = new Dictionary<string, List<string>>();
 					foreach (var (pack, content) in ContentPackContents)
 					{
+						if (content.Fluent is null)
+							continue;
 						foreach (var (key, value) in content.Fluent)
+						{
+							if (!asset.TryGetValue(key, out var values))
+							{
+								values = new List<string>();
+								asset[key] = values;
+							}
+							values.Add(value.Equals("<this>", StringComparison.InvariantCultureIgnoreCase) ? pack.Manifest.UniqueID : value);
+						}
+					}
+					return asset;
+				}, AssetLoadPriority.Medium);
+			}
+			else if (e.Name.IsEquivalentTo(I18nPathsAssetPath))
+			{
+				e.LoadFrom(() =>
+				{
+					var asset = new Dictionary<string, List<string>>();
+					foreach (var (pack, content) in ContentPackContents)
+					{
+						if (content.I18n is null)
+							continue;
+						foreach (var (key, value) in content.I18n)
 						{
 							if (!asset.TryGetValue(key, out var values))
 							{
@@ -119,6 +153,10 @@ namespace Shockah.ProjectFluent
 						continue;
 					cached.OnAssetChanged(null);
 				}
+			}
+			else if (e.Names.Any(n => n.IsEquivalentTo(I18nPathsAssetPath)))
+			{
+				I18nIntegration.ReloadTranslations();
 			}
 		}
 

@@ -1,6 +1,7 @@
 ﻿using StardewModdingAPI;
 using StardewValley;
 using StardewValley.GameData;
+using System;
 
 namespace Shockah.ProjectFluent
 {
@@ -27,7 +28,10 @@ namespace Shockah.ProjectFluent
 		public IFluent<string> GetLocalizationsForCurrentLocale(IManifest mod, string? name = null)
 			=> new CurrentLocaleFluent(mod, name);
 
-		IEnumFluent<EnumType> IFluentApi.GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix)
+		public IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix) where EnumType : Enum
 			=> new EnumFluent<EnumType>(baseFluent, keyPrefix);
+
+		public IFluent<T> GetMappingFluent<T>(IFluent<string> baseFluent, Func<T, string> mapper)
+			=> new MappingFluent<T>(baseFluent, mapper);
 	}
 }

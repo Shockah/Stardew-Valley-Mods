@@ -16,5 +16,6 @@ namespace Shockah.ProjectFluent
 		IFluent<string> GetLocalizationsForCurrentLocale(IManifest mod, string? name = null);
 
 		IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix = "") where EnumType : Enum;
+		IFluent<T> GetMappingFluent<T>(IFluent<string> baseFluent, Func<T, string> mapper);
 	}
 }

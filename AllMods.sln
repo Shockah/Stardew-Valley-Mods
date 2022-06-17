@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hibernation", "Hibernation\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SafeLightning", "SafeLightning\SafeLightning.csproj", "{2C253073-438B-4475-8AFB-87D74EE1EC10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackSizeChanger", "StackSizeChanger\StackSizeChanger.csproj", "{D6905067-62FF-4CEC-A157-0E2FB214804A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackSizeChanger", "StackSizeChanger\StackSizeChanger.csproj", "{D6905067-62FF-4CEC-A157-0E2FB214804A}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -42,6 +42,7 @@ Global
 		_Common\_Common.projitems*{5ae05c77-966b-49a8-8000-2fb2486dd82f}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{7ed542fc-8015-4d98-a5ec-efa429d34a3b}*SharedItemsImports = 5
 		_Common\_Common.projitems*{7ed542fc-8015-4d98-a5ec-efa429d34a3b}*SharedItemsImports = 5
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{88dcf9e3-845d-4c5b-a029-43201f9e651f}*SharedItemsImports = 5
 		_Common\_Common.projitems*{88dcf9e3-845d-4c5b-a029-43201f9e651f}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{99e6295d-7903-48c2-9855-1c5a21fa5717}*SharedItemsImports = 5
 		_Common\_Common.projitems*{99e6295d-7903-48c2-9855-1c5a21fa5717}*SharedItemsImports = 5

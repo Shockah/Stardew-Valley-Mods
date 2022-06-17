@@ -2,7 +2,7 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class MappingFluent<Key>: IFluent<Key> where Key : notnull
+	internal class MappingFluent<Key>: IFluent<Key>
 	{
 		private IFluent<string> Wrapped { get; set; }
 		private Func<Key, string> Mapper { get; set; }

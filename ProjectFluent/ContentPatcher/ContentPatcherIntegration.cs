@@ -2,7 +2,7 @@
 using StardewModdingAPI;
 using System;
 
-namespace Shockah.ProjectFluent
+namespace Shockah.ProjectFluent.ContentPatcher
 {
 	internal static class ContentPatcherIntegration
 	{

@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Shockah.CommonModCode.GMCM;
+using Shockah.ProjectFluent.ContentPatcher;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -16,11 +17,18 @@ namespace Shockah.ProjectFluent
 		public IFluentApi Api { get; private set; } = null!;
 		private AssetManager AssetManager { get; set; } = null!;
 
+		private Harmony Harmony { get; set; }
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
 
 		private Func<IManifest, string> GetModDirectoryPathDelegate { get; set; } = null!;
 		private Func<IManifest, ITranslationHelper?> GetModTranslationsDelegate { get; set; } = null!;
+
+		public ProjectFluent()
+		{
+			Harmony = new Harmony("Shockah.ProjectFluent");
+			I18nIntegration.SetupEarly(Harmony);
+		}
 
 		public override void Entry(IModHelper helper)
 		{
@@ -30,10 +38,6 @@ namespace Shockah.ProjectFluent
 
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
-
-			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-			AssetManager.RegisterEvents(helper.Events);
-			AssetManager.RegisterContentPacks(helper.ContentPacks, helper.GameContent);
 
 			var directoryPathGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "DirectoryPath");
 			GetModDirectoryPathDelegate = (manifest) =>
@@ -48,6 +52,11 @@ namespace Shockah.ProjectFluent
 				var modInfo = helper.ModRegistry.Get(manifest.UniqueID);
 				return translationsGetter.Invoke(modInfo, null) as ITranslationHelper;
 			};
+
+			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			AssetManager.Setup(helper);
+			I18nIntegration.Setup(Harmony);
+			I18nIntegration.ReloadTranslations();
 		}
 
 		public override object GetApi() => Api;
@@ -134,7 +143,7 @@ namespace Shockah.ProjectFluent
 		internal IFluent<string> GetFallbackFluent(IManifest mod)
 		{
 			var translations = GetModTranslationsDelegate(mod);
-			return translations is null ? new NoOpFluent() : new I18NFluent(translations);
+			return translations is null ? new NoOpFluent() : new I18nFluent(translations);
 		}
 
 		#region APIs

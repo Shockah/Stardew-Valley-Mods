@@ -1,4 +1,6 @@
-﻿namespace Shockah.ProjectFluent
+﻿using Shockah.ProjectFluent.ContentPatcher;
+
+namespace Shockah.ProjectFluent
 {
 	internal class ModConfig
 	{

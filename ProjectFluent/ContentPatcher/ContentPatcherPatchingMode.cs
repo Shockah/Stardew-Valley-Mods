@@ -1,4 +1,4 @@
-﻿namespace Shockah.ProjectFluent
+﻿namespace Shockah.ProjectFluent.ContentPatcher
 {
 	internal enum ContentPatcherPatchingMode
 	{
