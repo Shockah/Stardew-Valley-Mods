@@ -44,7 +44,7 @@ namespace Shockah.ProjectFluent
 
 	internal static class IGameLocaleExtensions
 	{
-		internal static IEnumerable<string> GetRelevantLanguageCodes(this IGameLocale self)
+		internal static IEnumerable<string> GetRelevantLocaleCodes(this IGameLocale self)
 		{
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Framework/Translator.cs
 

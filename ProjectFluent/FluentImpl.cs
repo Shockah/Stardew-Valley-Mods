@@ -20,7 +20,7 @@ namespace Shockah.ProjectFluent
 			var context = new MessageContext(locale.LanguageCode);
 			var errors = context.AddMessages(content);
 			if (errors.Count > 0)
-				throw new ArgumentException($"Errors parsing Fluent:\n{String.Join('\n', errors.Select(e => $"\t{e.Message}"))}");
+				throw new ArgumentException($"Errors parsing Fluent:\n{string.Join('\n', errors.Select(e => $"\t{e.Message}"))}");
 			this.Context = context;
 		}
 

@@ -14,30 +14,39 @@ namespace Shockah.ProjectFluent
 	{
 		public static ProjectFluent Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;
+		private AssetManager AssetManager { get; set; } = null!;
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
-		internal IEnumFluent<ContentPatcherPatchingMode> FluentContentPatcherPatchingMode { get; private set; } = null!;
 
 		private Func<IManifest, string> GetModDirectoryPathDelegate { get; set; } = null!;
-
-		private readonly IFluent<string> NoOpFluent = new NoOpFluent();
-		private readonly IDictionary<(string modID, string? name), IDictionary<IGameLocale, IFluent<string>>> LocalizationCache = new Dictionary<(string modID, string? name), IDictionary<IGameLocale, IFluent<string>>>();
+		private Func<IManifest, ITranslationHelper?> GetModTranslationsDelegate { get; set; } = null!;
 
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
 			Api = new FluentApi(this);
+			AssetManager = new AssetManager();
+
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
-			FluentContentPatcherPatchingMode = Api.GetEnumFluent<ContentPatcherPatchingMode>(Fluent, "config-contentPatcherPatchingMode-value.");
+
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			AssetManager.RegisterEvents(helper.Events);
+			AssetManager.RegisterContentPacks(helper.ContentPacks, helper.GameContent);
 
 			var directoryPathGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "DirectoryPath");
 			GetModDirectoryPathDelegate = (manifest) =>
 			{
 				var modInfo = helper.ModRegistry.Get(manifest.UniqueID);
 				return (string)directoryPathGetter.Invoke(modInfo, null)!;
+			};
+
+			var translationsGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "Translations");
+			GetModTranslationsDelegate = (manifest) =>
+			{
+				var modInfo = helper.ModRegistry.Get(manifest.UniqueID);
+				return translationsGetter.Invoke(modInfo, null) as ITranslationHelper;
 			};
 		}
 
@@ -96,18 +105,36 @@ namespace Shockah.ProjectFluent
 			);
 		}
 
-		private IEnumerable<string> GetFilePathCandidates(IManifest mod, string? name, IGameLocale locale)
+		internal IEnumerable<string> GetFilePathCandidates(IManifest mod, string? name, IGameLocale locale)
 		{
 			var baseModPath = GetModDirectoryPathDelegate(mod);
 			if (baseModPath is null)
 				yield break;
+			foreach (var candidate in GetFilePathCandidates(Path.Combine(baseModPath, "i18n"), name, locale))
+				yield return candidate;
+		}
 
-			foreach (var relevantLocale in locale.GetRelevantLanguageCodes())
+		internal IEnumerable<string> GetFilePathCandidates(string directory, string? name, IGameLocale locale)
+		{
+			foreach (var relevantLocale in locale.GetRelevantLocaleCodes())
 			{
 				string fileNameWithoutExtension = $"{(string.IsNullOrEmpty(name) ? "" : $"{name}.")}{relevantLocale}";
-				yield return Path.Combine(baseModPath, "i18n", $"{fileNameWithoutExtension}.ftl");
+				yield return Path.Combine(directory, $"{fileNameWithoutExtension}.ftl");
 			}
-			yield return Path.Combine(baseModPath, "i18n", "default.ftl");
+			foreach (var relevantLocale in new IGameLocale.BuiltIn(LocalizedContentManager.LanguageCode.en).GetRelevantLocaleCodes())
+			{
+				string fileNameWithoutExtension = $"{(string.IsNullOrEmpty(name) ? "" : $"{name}.")}{relevantLocale}";
+				yield return Path.Combine(directory, $"{fileNameWithoutExtension}.ftl");
+			}
+		}
+
+		internal string GetModDirectoryPath(IManifest mod)
+			=> GetModDirectoryPathDelegate(mod);
+
+		internal IFluent<string> GetFallbackFluent(IManifest mod)
+		{
+			var translations = GetModTranslationsDelegate(mod);
+			return translations is null ? new NoOpFluent() : new I18NFluent(translations);
 		}
 
 		#region APIs
@@ -125,17 +152,7 @@ namespace Shockah.ProjectFluent
 		}
 
 		public IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null)
-		{
-			var rootKey = (modID: mod.UniqueID, name: name);
-			if (!LocalizationCache.ContainsKey(rootKey))
-				LocalizationCache[rootKey] = new Dictionary<IGameLocale, IFluent<string>>();
-
-			var specificCache = LocalizationCache[rootKey];
-			if (!specificCache.ContainsKey(locale))
-				specificCache[locale] = new FileResolvingFluent(locale, GetFilePathCandidates(mod, name, locale), NoOpFluent);
-
-			return specificCache[locale];
-		}
+			=> AssetManager.GetFluent(locale, mod, name);
 
 		#endregion
 	}
