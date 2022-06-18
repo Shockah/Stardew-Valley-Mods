@@ -6,7 +6,6 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
@@ -21,8 +20,11 @@ namespace Shockah.ProjectFluent
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
 
-		private Func<IManifest, string> GetModDirectoryPathDelegate { get; set; } = null!;
-		private Func<IManifest, ITranslationHelper?> GetModTranslationsDelegate { get; set; } = null!;
+		internal IModDirectoryProvider ModDirectoryProvider { get; set; } = null!;
+		internal IFluentPathProvider FluentPathProvider { get; set; } = null!;
+		internal IModDirectoryFluentPathProvider ModDirectoryFluentPathProvider { get; set; } = null!;
+		internal IModTranslationsProvider ModTranslationsProvider { get; set; } = null!;
+		internal IFallbackFluentProvider FallbackFluentProvider { get; set; } = null!;
 
 		public ProjectFluent()
 		{
@@ -33,25 +35,17 @@ namespace Shockah.ProjectFluent
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			ModDirectoryProvider = new ModDirectoryProvider();
+			FluentPathProvider = new FluentPathProvider();
+			ModDirectoryFluentPathProvider = new ModDirectoryFluentPathProvider(ModDirectoryProvider, FluentPathProvider);
+			ModTranslationsProvider = new ModTranslationsProvider();
+			FallbackFluentProvider = new FallbackFluentProvider(ModTranslationsProvider);
+
 			Api = new FluentApi(this);
 			AssetManager = new AssetManager();
 
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
-
-			var directoryPathGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "DirectoryPath");
-			GetModDirectoryPathDelegate = (manifest) =>
-			{
-				var modInfo = helper.ModRegistry.Get(manifest.UniqueID);
-				return (string)directoryPathGetter.Invoke(modInfo, null)!;
-			};
-
-			var translationsGetter = AccessTools.PropertyGetter(Type.GetType("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI"), "Translations");
-			GetModTranslationsDelegate = (manifest) =>
-			{
-				var modInfo = helper.ModRegistry.Get(manifest.UniqueID);
-				return translationsGetter.Invoke(modInfo, null) as ITranslationHelper;
-			};
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			AssetManager.Setup(helper);
@@ -81,14 +75,13 @@ namespace Shockah.ProjectFluent
 				valuePattern: "{Key}.{Value}"
 			);
 
-			static IEnumerable<string> GetBuiltInLocales()
+			static IEnumerable<string> GetBuiltInLocaleCodes()
 			{
-				foreach (var value in Enum.GetValues(typeof(LocalizedContentManager.LanguageCode)))
+				foreach (LocalizedContentManager.LanguageCode value in Enum.GetValues<LocalizedContentManager.LanguageCode>())
 				{
-					var typedValue = (LocalizedContentManager.LanguageCode)value;
-					if (typedValue == LocalizedContentManager.LanguageCode.mod)
+					if (value == LocalizedContentManager.LanguageCode.mod)
 						continue;
-					yield return typedValue == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(typedValue);
+					yield return value == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(value);
 				}
 			}
 
@@ -110,40 +103,8 @@ namespace Shockah.ProjectFluent
 
 			helper.AddParagraph(
 				"config-localeOverrideSubtitle",
-				new { Values = GetBuiltInLocales().Join() }
+				new { Values = GetBuiltInLocaleCodes().Join() }
 			);
-		}
-
-		internal IEnumerable<string> GetFilePathCandidates(IManifest mod, string? name, IGameLocale locale)
-		{
-			var baseModPath = GetModDirectoryPathDelegate(mod);
-			if (baseModPath is null)
-				yield break;
-			foreach (var candidate in GetFilePathCandidates(Path.Combine(baseModPath, "i18n"), name, locale))
-				yield return candidate;
-		}
-
-		internal IEnumerable<string> GetFilePathCandidates(string directory, string? name, IGameLocale locale)
-		{
-			foreach (var relevantLocale in locale.GetRelevantLocaleCodes())
-			{
-				string fileNameWithoutExtension = $"{(string.IsNullOrEmpty(name) ? "" : $"{name}.")}{relevantLocale}";
-				yield return Path.Combine(directory, $"{fileNameWithoutExtension}.ftl");
-			}
-			foreach (var relevantLocale in new IGameLocale.BuiltIn(LocalizedContentManager.LanguageCode.en).GetRelevantLocaleCodes())
-			{
-				string fileNameWithoutExtension = $"{(string.IsNullOrEmpty(name) ? "" : $"{name}.")}{relevantLocale}";
-				yield return Path.Combine(directory, $"{fileNameWithoutExtension}.ftl");
-			}
-		}
-
-		internal string GetModDirectoryPath(IManifest mod)
-			=> GetModDirectoryPathDelegate(mod);
-
-		internal IFluent<string> GetFallbackFluent(IManifest mod)
-		{
-			var translations = GetModTranslationsDelegate(mod);
-			return translations is null ? new NoOpFluent() : new I18nFluent(translations);
 		}
 
 		#region APIs

@@ -78,7 +78,7 @@ namespace Shockah.ProjectFluent
 						IManifest? mod = ProjectFluent.Instance.Helper.ModRegistry.Get(uniqueModID)?.Manifest;
 						if (mod is not null)
 						{
-							var modPath = ProjectFluent.Instance.GetModDirectoryPath(mod);
+							var modPath = ProjectFluent.Instance.ModDirectoryProvider.GetModDirectoryPath(mod);
 							if (modPath is not null)
 								yield return (Path.Combine(modPath, "i18n"), name);
 						}
@@ -87,7 +87,7 @@ namespace Shockah.ProjectFluent
 			}
 
 			{
-				var modPath = ProjectFluent.Instance.GetModDirectoryPath(Mod);
+				var modPath = ProjectFluent.Instance.ModDirectoryProvider.GetModDirectoryPath(Mod);
 				if (modPath is not null)
 					yield return (Path.Combine(modPath, "i18n"), Name);
 			}
@@ -98,7 +98,7 @@ namespace Shockah.ProjectFluent
 			if (CachedPaths is null)
 				yield break;
 			foreach (var (directoryPath, name) in CachedPaths)
-				foreach (var candidate in ProjectFluent.Instance.GetFilePathCandidates(directoryPath, name, Locale))
+				foreach (var candidate in ProjectFluent.Instance.FluentPathProvider.GetFilePathCandidates(directoryPath, name, Locale))
 					yield return candidate;
 		}
 

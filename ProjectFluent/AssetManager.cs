@@ -5,23 +5,27 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Shockah.ProjectFluent
 {
 	internal class AssetManager
 	{
-		private static readonly string FluentPathsAssetPath = "Shockah.ProjectFluent/Fluent";
-		internal static readonly string I18nPathsAssetPath = "Shockah.ProjectFluent/i18n";
+		private static readonly string FluentPathsAssetPath = "Shockah.ProjectFluent/FluentPaths";
+		internal static readonly string I18nPathsAssetPath = "Shockah.ProjectFluent/i18nPaths";
 
-		private bool DidSetup { get; set; } = false;
+		private bool IsSetup { get; set; } = false;
+		private Regex ModRegex { get; set; } = null!;
 
 		private IList<(IContentPack pack, ContentPackContent content)> ContentPackContents { get; set; } = new List<(IContentPack pack, ContentPackContent content)>();
 		private IList<WeakReference<AssetFileResolvingFluent>> Fluents { get; set; } = new List<WeakReference<AssetFileResolvingFluent>>();
 
 		internal void Setup(IModHelper helper)
 		{
-			if (DidSetup)
+			if (IsSetup)
 				return;
+
+			ModRegex = new Regex("\\{\\{\\s*?([a-z0-9_\\-\\.]+?)\\s*?\\}\\}", RegexOptions.IgnoreCase);
 
 			helper.Events.Content.AssetRequested += OnAssetRequested;
 			helper.Events.Content.AssetReady += OnAssetReady;
@@ -29,7 +33,7 @@ namespace Shockah.ProjectFluent
 
 			RegisterContentPacks(helper.ContentPacks, helper.GameContent);
 
-			DidSetup = true;
+			IsSetup = true;
 		}
 
 		private void RegisterContentPacks(IContentPackHelper helper, IGameContentHelper contentHelper)
@@ -88,11 +92,32 @@ namespace Shockah.ProjectFluent
 					return cached;
 			}
 
-			var fluent = new AssetFileResolvingFluent(locale, mod, name, ProjectFluent.Instance.GetFallbackFluent(mod));
+			var fluent = new AssetFileResolvingFluent(locale, mod, name, ProjectFluent.Instance.FallbackFluentProvider.GetFallbackFluent(mod));
 			var asset = Game1.content.Load<Dictionary<string, List<string>>>(FluentPathsAssetPath);
 			fluent.OnAssetChanged(asset);
 			Fluents.Add(new WeakReference<AssetFileResolvingFluent>(fluent));
 			return fluent;
+		}
+
+		private string ReplacePathTokens(string path, string contextUniqueModID)
+		{
+			while (true)
+			{
+				string oldPath = path;
+
+				{
+					var match = ModRegex.Match(path);
+					if (match.Success)
+					{
+						string content = match.Groups[1].Value;
+						if (content.Equals("this", StringComparison.InvariantCultureIgnoreCase))
+							content = contextUniqueModID;
+					}
+				}
+
+				if (oldPath == path)
+					return path;
+			}
 		}
 
 		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)

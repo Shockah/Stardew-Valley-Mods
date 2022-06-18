@@ -165,7 +165,7 @@ namespace Shockah.ProjectFluent
 						IManifest? mod = ProjectFluent.Instance.Helper.ModRegistry.Get(entry)?.Manifest;
 						if (mod is not null)
 						{
-							var modPath = ProjectFluent.Instance.GetModDirectoryPath(mod);
+							var modPath = ProjectFluent.Instance.ModDirectoryProvider.GetModDirectoryPath(mod);
 							if (modPath is not null)
 								directory = Path.Combine(modPath, "i18n");
 						}
