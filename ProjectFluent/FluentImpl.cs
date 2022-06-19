@@ -1,9 +1,11 @@
-﻿using Fluent.Net;
-using Fluent.Net.RuntimeAst;
+﻿using Linguini.Bundle;
+using Linguini.Bundle.Builder;
+using Linguini.Shared.Types.Bundle;
+using Linguini.Syntax.Ast;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -12,50 +14,64 @@ namespace Shockah.ProjectFluent
 	internal class FluentImpl: IFluent<string>
 	{
 		private IFluent<string> Fallback { get; set; }
-		private MessageContext Context { get; set; }
+		private FluentBundle Bundle { get; set; }
 
 		public FluentImpl(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IGameLocale locale, string content, IFluent<string>? fallback = null)
 		{
 			this.Fallback = fallback ?? new NoOpFluent();
 
-			var context = new MessageContext(locale.LanguageCode);
-			foreach (var (functionName, function) in functions)
+			try
 			{
-				if (context.Functions.ContainsKey(functionName))
-					continue;
-				context.Functions[functionName] = (fluentPositionalArguments, _) =>
+				Bundle = LinguiniBuilder.Builder()
+					.CultureInfo(new CultureInfo(locale.LanguageCode))
+					.AddResources(content)
+					.SetUseIsolating(false)
+					.UncheckedBuild();
+
+				foreach (var (functionName, function) in functions)
 				{
-					var positionalArguments = fluentPositionalArguments.Select(a =>
+					var identifier = new Identifier(new ReadOnlyMemory<char>(functionName.ToCharArray()));
+
+					if (Bundle.TryGetFunction(identifier, out _))
+						continue;
+					Bundle.AddFunction(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
 					{
-						if (a is IFluentType fluentValue)
-							return new FluentFunctionValue(fluentValue);
+						var positionalArguments = fluentPositionalArguments.Select(a => new FluentFunctionValue(a)).ToList();
+						var namedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>();
+						foreach (var (key, a) in fluentNamedArguments)
+							namedArguments[key] = new FluentFunctionValue(a);
+
+						var result = function(locale, positionalArguments, namedArguments);
+						var fluentResult = result.AsFluentValue();
+
+						if (fluentResult is IFluentType fluentResultValue)
+							return fluentResultValue;
 						else
-							throw new ArgumentException($"Unsupported Fluent function argument type `{a.GetType()}`.");
-					}).ToList();
-
-					var result = function(locale, positionalArguments, ImmutableDictionary.Create<string, IFluentApi.IFluentFunctionValue>());
-					var fluentResult = result.AsFluentValue();
-
-					if (fluentResult is FluentType fluentResultValue)
-						return fluentResultValue;
-					else
-						throw new ArgumentException($"Function `{functionName}` returned a value that is not a `{nameof(FluentType)}`.");
-				};
+							throw new ArgumentException($"Function `{functionName}` returned a value that is not a `{nameof(IFluentType)}`.");
+					}, out _);
+				}
 			}
-
-			var errors = context.AddMessages(content);
-			if (errors.Count > 0)
-				throw new ArgumentException($"Errors parsing Fluent:\n{string.Join('\n', errors.Select(e => $"\t{e.Message}"))}");
-			this.Context = context;
+			catch (Exception ex)
+			{
+				throw new ArgumentException($"Errors parsing Fluent:\n{ex}");
+			}
 		}
 
-		private static IDictionary<string, object?> ExtractTokens(object? tokens)
+		private static IDictionary<string, IFluentType> ExtractTokens(object? tokens)
 		{
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Translation.cs
 
-			var results = new Dictionary<string, object?>();
+			Dictionary<string, IFluentType> results = new();
 			if (tokens == null)
 				return results;
+
+			void AddResult(string key, object? value)
+			{
+				if (value is double or float or int or long)
+					results[key] = FluentNumber.FromString($"{value}");
+				else if (value is not null)
+					results[key] = new FluentString($"{value}");
+			}
 
 			if (tokens is IDictionary dictionary)
 			{
@@ -63,16 +79,16 @@ namespace Shockah.ProjectFluent
 				{
 					string? key = entry.Key?.ToString()?.Trim();
 					if (key is not null)
-						results[key] = entry.Value;
+						AddResult(key, entry.Value);
 				}
 			}
 			else
 			{
 				Type type = tokens.GetType();
 				foreach (FieldInfo field in type.GetFields())
-					results[field.Name] = field.GetValue(tokens);
+					AddResult(field.Name, field.GetValue(tokens));
 				foreach (PropertyInfo prop in type.GetProperties())
-					results[prop.Name] = prop.GetValue(tokens);
+					AddResult(prop.Name, prop.GetValue(tokens));
 			}
 
 			return results;
@@ -80,45 +96,13 @@ namespace Shockah.ProjectFluent
 
 		public bool ContainsKey(string key)
 		{
-			int dotIndex = key.IndexOf('.');
-			string? messageKey = dotIndex == -1 ? key : key[..dotIndex];
-			string? attributeKey = dotIndex == -1 ? null : key[(dotIndex + 1)..];
-
-			if (!Context.HasMessage(messageKey))
-				return false;
-			var message = Context.GetMessage(messageKey);
-
-			if (attributeKey is not null && !message.Attributes.ContainsKey(attributeKey))
-				return false;
-
-			return true;
+			return Bundle.TryGetAttrMsg(key, null, out _, out _);
 		}
 
 		public string Get(string key, object? tokens)
 		{
-			var dotIndex = key.IndexOf('.');
-			var messageKey = dotIndex == -1 ? key : key[..dotIndex];
-			var attributeKey = dotIndex == -1 ? null : key[(dotIndex + 1)..];
-			
-			if (Context.HasMessage(messageKey))
-			{
-				var message = Context.GetMessage(messageKey);
-				Node? node = message;
-
-				if (attributeKey is not null)
-				{
-					if (!message.Attributes.TryGetValue(attributeKey, out node))
-						return Fallback.Get(key, tokens);
-				}
-
-				if (node == null)
-					return Fallback.Get(key, tokens);
-				return Context.Format(node, ExtractTokens(tokens)).Replace("\u2068", "").Replace("\u2069", "");
-			}
-			else
-			{
-				return Fallback.Get(key, tokens);
-			}
+			var extractedTokens = ExtractTokens(tokens);
+			return Bundle.GetAttrMessage(key, extractedTokens) ?? Fallback.Get(key, tokens);
 		}
 	}
 
@@ -135,19 +119,19 @@ namespace Shockah.ProjectFluent
 			=> Value;
 
 		public string AsString()
-			=> Value.Value;
+			=> Value.AsString();
 
 		public int? AsIntOrNull()
-			=> int.TryParse(Value.Value, out var @int) ? @int : null;
+			=> int.TryParse(AsString(), out var @int) ? @int : null;
 
 		public long? AsLongOrNull()
-			=> int.TryParse(Value.Value, out var @int) ? @int : null;
+			=> int.TryParse(AsString(), out var @int) ? @int : null;
 
 		public float? AsFloatOrNull()
-			=> float.TryParse(Value.Value, out var @int) ? @int : null;
+			=> float.TryParse(AsString(), out var @int) ? @int : null;
 
 		public double? AsDoubleOrNull()
-			=> double.TryParse(Value.Value, out var @int) ? @int : null;
+			=> double.TryParse(AsString(), out var @int) ? @int : null;
 	}
 
 	internal class FluentValueFactory: IFluentValueFactory
@@ -156,15 +140,15 @@ namespace Shockah.ProjectFluent
 			=> new FluentFunctionValue(new FluentString(value));
 
 		public IFluentApi.IFluentFunctionValue CreateIntValue(int value)
-			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
 		public IFluentApi.IFluentFunctionValue CreateLongValue(long value)
-			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
 		public IFluentApi.IFluentFunctionValue CreateFloatValue(float value)
-			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
 		public IFluentApi.IFluentFunctionValue CreateDoubleValue(double value)
-			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 	}
 }
