@@ -6,6 +6,8 @@
     "config.sprinklerBehavior.value.Flexible": "Vanilla > Flood fill",
     "config.sprinklerBehavior.value.FlexibleWithoutVanilla": "Flood fill",
     "config.sprinklerBehavior.value.Vanilla": "Vanilla",
+    "config.ignoreRange.name": "Ignore range",
+    "config.ignoreRange.tooltip": "If enabled, custom sprinkler behaviors will ignore sprinklers' range (calculated basing on their power and coverage shape).",
     "config.compatibilityMode.name": "Compatibility mode",
     "config.compatibilityMode.tooltip": "Patch the game code in a more mod-compatible way, at the cost of some performance.",
 

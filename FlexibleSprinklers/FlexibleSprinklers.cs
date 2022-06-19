@@ -211,6 +211,7 @@ namespace Shockah.FlexibleSprinklers
 			);
 
 			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior);
+			helper.AddBoolOption("config.ignoreRange", () => Config.IgnoreRange);
 			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
 			helper.AddSectionTitle("config.cluster.section");
@@ -356,7 +357,10 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (coverage.Count == 0)
 				return 0;
-			return (int)coverage.Max(t => Math.Abs(t.X)) + (int)coverage.Max(t => Math.Abs(t.Y));
+			int manhattanDistance = (int)coverage.Max(t => Math.Abs(t.X)) + (int)coverage.Max(t => Math.Abs(t.Y));
+			Vector2 sum = coverage.Aggregate((a, b) => a + b);
+			sum.Normalize();
+			return (int)(Math.Max(Math.Abs(sum.X), Math.Abs(sum.Y)) * manhattanDistance);
 		}
 
 		public int GetSprinklerMaxRange(SObject sprinkler)

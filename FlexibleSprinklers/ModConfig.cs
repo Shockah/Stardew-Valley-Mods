@@ -5,6 +5,7 @@
 		internal enum SprinklerBehaviorEnum { Cluster, ClusterWithoutVanilla, Flexible, FlexibleWithoutVanilla, Vanilla }
 
 		public SprinklerBehaviorEnum SprinklerBehavior { get; set; } = SprinklerBehaviorEnum.Cluster;
+		public bool IgnoreRange { get; set; } = false;
 		public FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode { get; set; } = FlexibleSprinklerBehaviorTileWaterBalanceMode.Relaxed;
 		public bool SplitDisconnectedClusters { get; set; } = true;
 		public ClusterSprinklerBehaviorClusterOrdering ClusterBehaviorClusterOrdering { get; set; } = ClusterSprinklerBehaviorClusterOrdering.BiggerFirst;
