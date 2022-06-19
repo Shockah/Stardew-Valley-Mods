@@ -12,8 +12,15 @@ namespace Shockah.ProjectFluent
 
 	internal class ModTranslationsProvider: IModTranslationsProvider
 	{
+		private IModRegistry ModRegistry { get; set; }
+
 		private bool IsReflectionSetup { get; set; } = false;
 		private Func<IManifest, ITranslationHelper?> GetModTranslationsDelegate { get; set; } = null!;
+
+		public ModTranslationsProvider(IModRegistry modRegistry)
+		{
+			this.ModRegistry = modRegistry;
+		}
 
 		private void SetupReflectionIfNeeded()
 		{
@@ -22,7 +29,13 @@ namespace Shockah.ProjectFluent
 
 			Type modMetadataType = AccessTools.TypeByName("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI")!;
 			MethodInfo translationsGetter = AccessTools.PropertyGetter(modMetadataType, "Translations");
-			GetModTranslationsDelegate = (manifest) => translationsGetter.Invoke(manifest, null) as ITranslationHelper;
+			GetModTranslationsDelegate = (manifest) =>
+			{
+				var modInfo = ModRegistry.Get(manifest.UniqueID);
+				if (modInfo is null)
+					return null;
+				return translationsGetter.Invoke(modInfo, null) as ITranslationHelper;
+			};
 
 			IsReflectionSetup = true;
 		}

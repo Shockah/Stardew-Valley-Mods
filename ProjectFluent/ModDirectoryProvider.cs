@@ -12,8 +12,15 @@ namespace Shockah.ProjectFluent
 
 	internal class ModDirectoryProvider: IModDirectoryProvider
 	{
+		private IModRegistry ModRegistry { get; set; }
+
 		private bool IsReflectionSetup { get; set; } = false;
 		private Func<IManifest, string> GetModDirectoryPathDelegate { get; set; } = null!;
+
+		public ModDirectoryProvider(IModRegistry modRegistry)
+		{
+			this.ModRegistry = modRegistry;
+		}
 
 		private void SetupReflectionIfNeeded()
 		{
@@ -22,7 +29,11 @@ namespace Shockah.ProjectFluent
 
 			Type modMetadataType = AccessTools.TypeByName("StardewModdingAPI.Framework.IModMetadata, StardewModdingAPI")!;
 			MethodInfo directoryPathGetter = AccessTools.PropertyGetter(modMetadataType, "DirectoryPath");
-			GetModDirectoryPathDelegate = (manifest) => (string)directoryPathGetter.Invoke(manifest, null)!;
+			GetModDirectoryPathDelegate = (manifest) =>
+			{
+				var modInfo = ModRegistry.Get(manifest.UniqueID);
+				return (string)directoryPathGetter.Invoke(modInfo, null)!;
+			};
 
 			IsReflectionSetup = true;
 		}

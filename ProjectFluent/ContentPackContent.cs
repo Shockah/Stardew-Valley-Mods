@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using StardewModdingAPI;
+﻿using StardewModdingAPI;
 using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
@@ -7,17 +6,18 @@ namespace Shockah.ProjectFluent
 	public class ContentPackContent
 	{
 		public ISemanticVersion Format { get; set; }
-		public IDictionary<string, string>? Fluent { get; set; }
-		[JsonProperty("i18n")] public IDictionary<string, string>? I18n { get; set; }
+		public IDictionary<string, string>? AdditionalFluentPaths { get; set; }
+		public IDictionary<string, string>? AdditionalI18nPaths { get; set; }
 
 		public ContentPackContent(
 			ISemanticVersion format,
-			IDictionary<string, string>? fluent,
-			IDictionary<string, string>? i18n
+			IDictionary<string, string>? additionalFluentPaths,
+			IDictionary<string, string>? additionalI18nPaths
 		)
 		{
 			this.Format = format;
-			this.I18n = i18n;
+			this.AdditionalFluentPaths = additionalFluentPaths;
+			this.AdditionalI18nPaths = additionalI18nPaths;
 		}
 	}
 }
