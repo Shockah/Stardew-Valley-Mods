@@ -190,6 +190,7 @@ namespace Shockah.FlexibleSprinklers
 				ActivateSprinkler(@object, location);
 			if (Config.ShowCoverageOnAction)
 				DisplaySprinklerCoverage();
+			Helper.Input.Suppress(e.Button);
 		}
 
 		private void SetupConfig()
