@@ -247,6 +247,8 @@ namespace Shockah.FlexibleSprinklers
 
 		private void SetupSprinklerBehavior()
 		{
+			if (Config.SprinklerBehavior == ModConfig.SprinklerBehaviorEnum.Flexible || Config.SprinklerBehavior == ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla)
+				Monitor.LogOnce("The \"Flood fill\"-family behaviors are obsolete and will be removed in a future update. Please switch to using the \"Cluster\"-family behaviors.", LogLevel.Warn);
 			SprinklerBehavior = Config.SprinklerBehavior switch
 			{
 				ModConfig.SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, new VanillaSprinklerBehavior()),
@@ -337,9 +339,38 @@ namespace Shockah.FlexibleSprinklers
 			return GetSprinklerInfo(sprinkler).Power;
 		}
 
+		[Obsolete("Sprinkler range now also depends on its unmodified coverage shape. Use `GetSprinklerSpreadRange` instead to achieve the same result as before. This method will be removed in a future update.")]
 		public int GetFloodFillSprinklerRange(int power)
 		{
+			Monitor.LogOnce("An obsolete method `GetFloodFillSprinklerRange` was called, most likely by another mod. This method will be removed in a future update. Any mods using it should be updated before then.", LogLevel.Warn);
+			return GetSprinklerSpreadRange(power);
+		}
+
+		public int GetSprinklerSpreadRange(int power)
+		{
 			return (int)Math.Floor(Math.Pow(power, 0.62) + 1);
+		}
+
+		public int GetSprinklerFocusedRange(IReadOnlyCollection<Vector2> coverage)
+		{
+			if (coverage.Count == 0)
+				return 0;
+			return (int)coverage.Max(t => Math.Abs(t.X)) + (int)coverage.Max(t => Math.Abs(t.Y));
+		}
+
+		public int GetSprinklerMaxRange(SObject sprinkler)
+		{
+			if (!sprinkler.IsSprinkler())
+				return 0;
+			SprinklerInfo info = GetSprinklerInfo(sprinkler);
+			return GetSprinklerMaxRange(info);
+		}
+
+		internal int GetSprinklerMaxRange(SprinklerInfo info)
+		{
+			int spreadRange = GetSprinklerSpreadRange(info.Power);
+			int focusedRange = GetSprinklerFocusedRange(info.Layout.ToArray());
+			return Math.Max(spreadRange, focusedRange);
 		}
 
 		public bool IsTileInRangeOfSprinkler(SObject sprinkler, GameLocation location, Vector2 tileLocation)
@@ -349,7 +380,7 @@ namespace Shockah.FlexibleSprinklers
 
 			var info = GetSprinklerInfo(sprinkler);
 			var manhattanDistance = ((int)tileLocation.X - (int)sprinkler.TileLocation.X) + ((int)tileLocation.Y - (int)sprinkler.TileLocation.Y);
-			if (manhattanDistance > GetFloodFillSprinklerRange(info.Power))
+			if (manhattanDistance > GetSprinklerMaxRange(info))
 			{
 				if (!info.Layout.Contains(tileLocation - sprinkler.TileLocation))
 					return false;
@@ -379,7 +410,7 @@ namespace Shockah.FlexibleSprinklers
 
 				var info = GetSprinklerInfo(sprinkler);
 				var manhattanDistance = ((int)tileLocation.X - (int)sprinkler.TileLocation.X) + ((int)tileLocation.Y - (int)sprinkler.TileLocation.Y);
-				if (manhattanDistance > GetFloodFillSprinklerRange(info.Power))
+				if (manhattanDistance > GetSprinklerMaxRange(info))
 				{
 					if (SprinklerBehavior is not ISprinklerBehavior.Independent || !info.Layout.Contains(tileLocation - sprinkler.TileLocation))
 						continue;

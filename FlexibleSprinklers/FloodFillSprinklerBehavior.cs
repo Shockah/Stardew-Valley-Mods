@@ -85,7 +85,7 @@ namespace Shockah.FlexibleSprinklers
 			if (unwateredTileCount <= 0)
 				goto finish;
 
-			var sprinklerRange = FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(info.Power);
+			var sprinklerRange = FlexibleSprinklers.Instance.GetSprinklerMaxRange(info);
 			var waterableTiles = new HashSet<IntPoint>();
 			ISet<IntPoint> otherSprinklers = new HashSet<IntPoint>();
 			var @checked = new HashSet<IntPoint>();

@@ -147,8 +147,7 @@ namespace Shockah.FlexibleSprinklers
 			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
 			IsVanillaQueryInProgress = true;
 			var manhattanDistance = Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y);
-			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetFloodFillSprinklerRange(FlexibleSprinklers.Instance.GetSprinklerPower(__instance))
-				&& FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target);
+			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetSprinklerMaxRange(__instance) && FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target);
 			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			if (result)
 				SprinklerTileOverride = target;

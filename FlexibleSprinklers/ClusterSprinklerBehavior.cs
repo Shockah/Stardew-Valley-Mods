@@ -92,7 +92,9 @@ namespace Shockah.FlexibleSprinklers
 				foreach (var (sprinklerPosition, info) in cluster.Sprinklers)
 				{
 					var sprinklerClusterCount = GetClustersForSprinkler(sprinklerPosition, allClusters).Count();
-					var sprinklerRange = FlexibleSprinklers.Instance.GetFloodFillSprinklerRange((int)Math.Ceiling(1.0 * info.Power / sprinklerClusterCount));
+					var sprinklerSpreadRange = FlexibleSprinklers.Instance.GetSprinklerSpreadRange((int)Math.Ceiling(1.0 * info.Power / sprinklerClusterCount));
+					var sprinklerFocusedRange = FlexibleSprinklers.Instance.GetSprinklerFocusedRange(info.Layout.ToArray());
+					var sprinklerRange = Math.Max(sprinklerSpreadRange, sprinklerFocusedRange);
 
 					ISet<IntPoint> @checked = new HashSet<IntPoint>();
 					var toCheck = new LinkedList<(IntPoint point, int pathLength)>();
