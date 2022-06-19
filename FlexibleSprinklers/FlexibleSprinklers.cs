@@ -212,6 +212,7 @@ namespace Shockah.FlexibleSprinklers
 
 			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior);
 			helper.AddBoolOption("config.ignoreRange", () => Config.IgnoreRange);
+			helper.AddBoolOption("config.waterGardenPots", () => Config.WaterGardenPots);
 			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
 			helper.AddSectionTitle("config.cluster.section");

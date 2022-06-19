@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using StardewValley;
+using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using System;
@@ -41,8 +42,14 @@ namespace Shockah.FlexibleSprinklers
 			get
 			{
 				var tileVector = new Vector2(point.X, point.Y);
-				if (Location.Objects.TryGetValue(tileVector, out SObject @object) && @object.IsSprinkler())
-					return SoilType.Sprinkler;
+
+				if (Location.Objects.TryGetValue(tileVector, out SObject @object))
+				{
+					if (@object.IsSprinkler())
+						return SoilType.Sprinkler;
+					if (FlexibleSprinklers.Instance.Config.WaterGardenPots && @object is IndoorPot)
+						return SoilType.Waterable;
+				}
 
 				foreach (var provider in CustomWaterableTileProviders)
 				{

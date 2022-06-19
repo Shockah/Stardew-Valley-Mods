@@ -29,5 +29,6 @@
 		public int Tier7Power { get; set; } = 13 * 13 - 1;
 		public int Tier8Power { get; set; } = 15 * 15 - 1;
 		public bool CompatibilityMode { get; set; } = true;
+		public bool WaterGardenPots { get; set; } = false;
 	}
 }
