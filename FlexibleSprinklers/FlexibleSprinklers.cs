@@ -418,6 +418,12 @@ namespace Shockah.FlexibleSprinklers
 			return PrivateIsTileInRangeOfSprinklers(sprinklers, location, tileLocation, false);
 		}
 
+		public IReadOnlySet<Vector2> GetAllTilesInRangeOfSprinklers(GameLocation location)
+		{
+			IMap map = new GameLocationMap(location, CustomWaterableTileProviders);
+			return SprinklerBehavior.GetSprinklerTiles(map).Select(t => new Vector2(t.X, t.Y)).ToHashSet();
+		}
+
 		private bool PrivateIsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation, bool isForAllSprinklers)
 		{
 			var sprinklersList = sprinklers.ToList();

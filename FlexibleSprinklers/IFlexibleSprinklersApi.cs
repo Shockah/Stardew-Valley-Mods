@@ -76,6 +76,9 @@ namespace Shockah.FlexibleSprinklers
 		/// <exception cref="InvalidOperationException">Thrown when the current sprinkler behavior does not allow independent sprinkler activation.</exception>
 		bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation);
 
+		/// <summary>Returns all tiles that are currently in range of any sprinkler in the location.</summary>
+		IReadOnlySet<Vector2> GetAllTilesInRangeOfSprinklers(GameLocation location);
+
 		/// <summary>Displays the sprinkler coverage for the specified time.</summary>
 		/// <param name="seconds">The amount of seconds to display the coverage for. Pass `null` to use the value configured by the user.</param>
 		void DisplaySprinklerCoverage(float? seconds = null);
