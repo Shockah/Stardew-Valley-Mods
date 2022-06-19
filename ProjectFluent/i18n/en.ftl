@@ -15,7 +15,7 @@ config-contentPatcherPatchingMode = { -content-patcher-mod-name } patching
         By default (as of { -content-patcher-mod-name } version 1.x), { -content-patcher-mod-name } mods
         have to spell out the whole name of the Fluent localization token, including their ID.
         Enabling the "Patch all tokens" is discouraged, but if you are working on your own C# mod
-        adding tokens for { -content-patcher-mod-name } mods, it will allow those to also be used directly.
+        which adds tokens for { -content-patcher-mod-name } mods, it will allow those to also be used directly.
     .Disabled = Disabled
     .PatchFluentToken = Only patch {"{{"}Fluent{"}}"}
     .PatchAllTokens = Patch all tokens
