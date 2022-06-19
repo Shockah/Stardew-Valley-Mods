@@ -57,6 +57,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 
 			RegisterCustomWaterableTileProvider((location, v) => (location is SlimeHutch && v.X == 16f && v.Y >= 6f && v.Y <= 9f) ? true : null);
+			RegisterCustomWaterableTileProvider((location, v) => Config.WaterPetBowl && location.getTileIndexAt((int)v.X, (int)v.Y, "Buildings") == 1938 ? true : null);
 
 			SetupSprinklerBehavior();
 		}
@@ -213,6 +214,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior);
 			helper.AddBoolOption("config.ignoreRange", () => Config.IgnoreRange);
 			helper.AddBoolOption("config.waterGardenPots", () => Config.WaterGardenPots);
+			helper.AddBoolOption("config.waterPetBowl", () => Config.WaterPetBowl);
 			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
 			helper.AddSectionTitle("config.cluster.section");
