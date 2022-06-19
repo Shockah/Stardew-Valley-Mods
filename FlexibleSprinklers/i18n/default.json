@@ -1,6 +1,6 @@
 ﻿{
     "config.sprinklerBehavior.name": "Sprinkler behavior",
-    "config.sprinklerBehavior.tooltip": "> Cluster: Groups sprinklers by nearby clustered tiles and tries to water as much as possible.\n   Note: Sprinklers will no longer be able to be activated manually.\n> Flood fill: Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Uses the default game behavior.",
+    "config.sprinklerBehavior.tooltip": "> Cluster: Groups sprinklers by nearby clustered tiles and tries to water as much as possible.\n   Note: Sprinklers will no longer be able to be activated manually.\n> Flood fill: OBSOLETE! Please use the Cluster-family behaviors instead!\n   Custom-made algorithm. Tries to flood fill from the sprinkler/watered tiles.\n   Will also change behavior if next to other sprinklers.\n> Vanilla: Uses the default game behavior.",
     "config.sprinklerBehavior.value.Cluster": "Vanilla > Cluster",
     "config.sprinklerBehavior.value.ClusterWithoutVanilla": "Cluster",
     "config.sprinklerBehavior.value.Flexible": "Vanilla > Flood fill",
