@@ -15,12 +15,14 @@ namespace Shockah.ProjectFluent
 			public string? LocalizingMod { get; set; }
 			public string? LocalizedFile { get; set; }
 			public string? LocalizingFile { get; set; }
+			public string? LocalizingSubdirectory { get; set; }
 		}
 
 		public class AdditionalI18nPath
 		{
 			public string? LocalizedMod { get; set; }
 			public string? LocalizingMod { get; set; }
+			public string? LocalizingSubdirectory { get; set; }
 		}
 	}
 
@@ -43,13 +45,15 @@ namespace Shockah.ProjectFluent
 			public string LocalizingMod { get; init; }
 			public string? LocalizedFile { get; init; }
 			public string? LocalizingFile { get; init; }
+			public string? LocalizingSubdirectory { get; set; }
 
-			public AdditionalFluentPath(string localizedMod, string localizingMod, string? localizedFile, string? localizingFile)
+			public AdditionalFluentPath(string localizedMod, string localizingMod, string? localizedFile, string? localizingFile, string? localizingSubdirectory)
 			{
 				this.LocalizedMod = localizedMod;
 				this.LocalizingMod = localizingMod;
 				this.LocalizedFile = localizedFile;
 				this.LocalizingFile = localizingFile;
+				this.LocalizingSubdirectory = localizingSubdirectory;
 			}
 		}
 
@@ -57,11 +61,13 @@ namespace Shockah.ProjectFluent
 		{
 			public string LocalizedMod { get; init; }
 			public string LocalizingMod { get; init; }
+			public string? LocalizingSubdirectory { get; set; }
 
-			public AdditionalI18nPath(string localizedMod, string localizingMod)
+			public AdditionalI18nPath(string localizedMod, string localizingMod, string? localizingSubdirectory)
 			{
 				this.LocalizedMod = localizedMod;
 				this.LocalizingMod = localizingMod;
+				this.LocalizingSubdirectory = localizingSubdirectory;
 			}
 		}
 	}

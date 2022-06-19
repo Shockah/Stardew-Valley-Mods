@@ -28,6 +28,9 @@ namespace Shockah.ProjectFluent
 					throw new ArgumentException("`mod` is not a valid built-in locale.");
 				this.BuiltInLanguageCode = code;
 			}
+
+			public override string ToString()
+				=> LanguageCode;
 		}
 
 		public sealed class Mod: IGameLocale
@@ -39,6 +42,9 @@ namespace Shockah.ProjectFluent
 			{
 				this.Language = language;
 			}
+
+			public override string ToString()
+				=> LanguageCode;
 		}
 	}
 

@@ -23,14 +23,16 @@ namespace Shockah.ProjectFluent
 	{
 		public event Action<IContentPackManager>? ContentPacksContentsChanged;
 
+		private ISemanticVersion ProjectFluentVersion { get; set; }
 		private IMonitor Monitor { get; set; }
 		private IModRegistry ModRegistry { get; set; }
 		private IContentPackHelper ContentPackHelper { get; set; }
 
 		private IList<(IContentPack pack, ContentPackContent content)> ContentPackContents { get; set; } = new List<(IContentPack pack, ContentPackContent content)>();
 
-		public ContentPackManager(IMonitor monitor, IModRegistry modRegistry, IContentPackHelper contentPackHelper)
+		public ContentPackManager(ISemanticVersion projectFluentVersion, IMonitor monitor, IModRegistry modRegistry, IContentPackHelper contentPackHelper)
 		{
+			this.ProjectFluentVersion = projectFluentVersion;
 			this.Monitor = monitor;
 			this.ModRegistry = modRegistry;
 			this.ContentPackHelper = contentPackHelper;
@@ -94,18 +96,24 @@ namespace Shockah.ProjectFluent
 				return null;
 			}
 
+			if (content.Format.IsNewerThan(ProjectFluentVersion))
+			{
+				Monitor.Log($"`{pack.Manifest.UniqueID}`: `content.json`: `Format` is newer than {ProjectFluentVersion} and cannot be parsed.", LogLevel.Error);
+				return null;
+			}
+
 			List<ContentPackContent.AdditionalFluentPath> additionalFluentPaths = new();
 			if (content.AdditionalFluentPaths is not null)
 			{
-				foreach (var additionalFluentPath in content.AdditionalFluentPaths)
+				foreach (var entry in content.AdditionalFluentPaths)
 				{
-					if (additionalFluentPath.LocalizedMod is null)
+					if (entry.LocalizedMod is null)
 					{
 						Monitor.Log($"`{pack.Manifest.UniqueID}`: `content.json`: `AdditionalFluentPaths`: An entry is missing the `LocalizedMod` field.", LogLevel.Error);
 						return null;
 					}
 
-					string localizingMod = additionalFluentPath.LocalizingMod ?? "this";
+					string localizingMod = entry.LocalizingMod ?? "this";
 					if (!localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
 					{
 						var localizingModInstance = ModRegistry.Get(localizingMod);
@@ -117,10 +125,11 @@ namespace Shockah.ProjectFluent
 					}
 
 					additionalFluentPaths.Add(new(
-						additionalFluentPath.LocalizedMod,
+						entry.LocalizedMod,
 						localizingMod,
-						additionalFluentPath.LocalizingFile,
-						additionalFluentPath.LocalizedFile
+						entry.LocalizingFile,
+						entry.LocalizedFile,
+						entry.LocalizingSubdirectory
 					));
 				}
 			}
@@ -128,15 +137,15 @@ namespace Shockah.ProjectFluent
 			List<ContentPackContent.AdditionalI18nPath> additionalI18nPaths = new();
 			if (content.AdditionalI18nPaths is not null)
 			{
-				foreach (var additionalI18nPath in content.AdditionalI18nPaths)
+				foreach (var entry in content.AdditionalI18nPaths)
 				{
-					if (additionalI18nPath.LocalizedMod is null)
+					if (entry.LocalizedMod is null)
 					{
 						Monitor.Log($"`{pack.Manifest.UniqueID}`: `content.json`: `AdditionalI18nPaths`: An entry is missing the `LocalizedMod` field.", LogLevel.Error);
 						return null;
 					}
 
-					string localizingMod = additionalI18nPath.LocalizingMod ?? "this";
+					string localizingMod = entry.LocalizingMod ?? "this";
 					if (!localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
 					{
 						var localizingModInstance = ModRegistry.Get(localizingMod);
@@ -148,8 +157,9 @@ namespace Shockah.ProjectFluent
 					}
 
 					additionalI18nPaths.Add(new(
-						additionalI18nPath.LocalizedMod,
-						localizingMod
+						entry.LocalizedMod,
+						localizingMod,
+						entry.LocalizingSubdirectory
 					));
 				}
 			}

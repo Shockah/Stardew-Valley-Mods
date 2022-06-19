@@ -200,8 +200,10 @@ namespace Shockah.ProjectFluent
 						entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
 					}
 
-					var i18nPath = Path.Combine(entryPath, "i18n");
-					foreach (var candidate in FluentPathProvider.GetFilePathCandidates(locale, i18nPath, entry.LocalizingFile))
+					string localizationsPath = Path.Combine(entryPath, "i18n");
+					if (entry.LocalizingSubdirectory is not null)
+						localizationsPath = Path.Combine(localizationsPath, entry.LocalizingSubdirectory);
+					foreach (var candidate in FluentPathProvider.GetFilePathCandidates(locale, localizationsPath, entry.LocalizingFile))
 						yield return candidate;
 				}
 			}

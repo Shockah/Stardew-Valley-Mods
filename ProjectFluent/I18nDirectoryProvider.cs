@@ -149,7 +149,11 @@ namespace Shockah.ProjectFluent
 							continue;
 						entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
 					}
-					yield return Path.Combine(entryPath, "i18n");
+
+					string localizationsPath = Path.Combine(entryPath, "i18n");
+					if (entry.LocalizingSubdirectory is not null)
+						localizationsPath = Path.Combine(localizationsPath, entry.LocalizingSubdirectory);
+					yield return localizationsPath;
 				}
 			}
 		}

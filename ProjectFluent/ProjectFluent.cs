@@ -40,7 +40,7 @@ namespace Shockah.ProjectFluent
 			ModTranslationsProvider = new ModTranslationsProvider(helper.ModRegistry);
 			FallbackFluentProvider = new FallbackFluentProvider(ModTranslationsProvider);
 			PathTokenReplacer = new ModDirectoryPathTokenReplacer(helper.ModRegistry, ModDirectoryProvider);
-			ContentPackManager = new ContentPackManager(Monitor, helper.ModRegistry, helper.ContentPacks);
+			ContentPackManager = new ContentPackManager(ModManifest.Version, Monitor, helper.ModRegistry, helper.ContentPacks);
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
 				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackManager, FluentPathProvider, ModDirectoryProvider),
