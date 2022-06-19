@@ -3,6 +3,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
@@ -104,16 +105,15 @@ namespace Shockah.ProjectFluent
 	{
 		public event Action<II18nDirectoryProvider>? DirectoriesChanged;
 
+		private IModRegistry ModRegistry { get; set; }
 		private IContentPackManager ContentPackManager { get; set; }
-		private IPathTokenReplacer PathTokenReplacer { get; set; }
+		private IModDirectoryProvider ModDirectoryProvider { get; set; }
 
-		public ContentPackI18nDirectoryProvider(
-			IContentPackManager contentPackManager,
-			IPathTokenReplacer pathTokenReplacer
-		)
+		public ContentPackI18nDirectoryProvider(IModRegistry modRegistry, IContentPackManager contentPackManager, IModDirectoryProvider modDirectoryProvider)
 		{
+			this.ModRegistry = modRegistry;
 			this.ContentPackManager = contentPackManager;
-			this.PathTokenReplacer = pathTokenReplacer;
+			this.ModDirectoryProvider = modDirectoryProvider;
 
 			contentPackManager.ContentPacksContentsChanged += OnContentPacksContentsChanges;
 		}
@@ -132,15 +132,24 @@ namespace Shockah.ProjectFluent
 			{
 				if (content.AdditionalI18nPaths is null)
 					continue;
-				foreach (var (localizedModID, entry) in content.AdditionalI18nPaths)
+				foreach (var entry in content.AdditionalI18nPaths)
 				{
-					if (!localizedModID.Equals(mod.UniqueID, StringComparison.InvariantCultureIgnoreCase))
+					if (!entry.LocalizedMod.Equals(mod.UniqueID, StringComparison.InvariantCultureIgnoreCase))
 						continue;
 
-					string entryPath = entry;
-					entryPath = entryPath.Replace("%this%", pack.DirectoryPath, StringComparison.InvariantCultureIgnoreCase);
-					entryPath = PathTokenReplacer.ReplaceTokens(entryPath, mod, null);
-					yield return entryPath;
+					string entryPath;
+					if (entry.LocalizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
+					{
+						entryPath = pack.DirectoryPath;
+					}
+					else
+					{
+						var localizingMod = ModRegistry.Get(entry.LocalizingMod);
+						if (localizingMod is null)
+							continue;
+						entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
+					}
+					yield return Path.Combine(entryPath, "i18n");
 				}
 			}
 		}

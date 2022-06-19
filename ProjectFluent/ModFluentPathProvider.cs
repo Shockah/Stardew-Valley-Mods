@@ -144,19 +144,22 @@ namespace Shockah.ProjectFluent
 	{
 		public event Action<IModFluentPathProvider>? CandidatesChanged;
 
+		private IModRegistry ModRegistry { get; set; }
 		private IContentPackManager ContentPackManager { get; set; }
 		private IFluentPathProvider FluentPathProvider { get; set; }
-		private IPathTokenReplacer PathTokenReplacer { get; set; }
+		private IModDirectoryProvider ModDirectoryProvider { get; set; }
 
 		public ContentPackAdditionalModFluentPathProvider(
+			IModRegistry modRegistry,
 			IContentPackManager contentPackManager,
 			IFluentPathProvider fluentPathProvider,
-			IPathTokenReplacer pathTokenReplacer
+			IModDirectoryProvider modDirectoryProvider
 		)
 		{
+			this.ModRegistry = modRegistry;
 			this.ContentPackManager = contentPackManager;
 			this.FluentPathProvider = fluentPathProvider;
-			this.PathTokenReplacer = pathTokenReplacer;
+			this.ModDirectoryProvider = modDirectoryProvider;
 
 			contentPackManager.ContentPacksContentsChanged += OnContentPacksContentsChanges;
 		}
@@ -171,23 +174,34 @@ namespace Shockah.ProjectFluent
 
 		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
 		{
-			string requestedKey = name is null ? mod.UniqueID : $"{mod.UniqueID}::{name}";
 			foreach (var (pack, content) in ContentPackManager.GetContentPackContents())
 			{
 				if (content.AdditionalFluentPaths is null)
 					continue;
-				foreach (var (localizedModKey, entry) in content.AdditionalFluentPaths)
+				foreach (var entry in content.AdditionalFluentPaths)
 				{
-					if (!localizedModKey.Equals(requestedKey, StringComparison.InvariantCultureIgnoreCase))
+					if (!entry.LocalizedMod.Equals(mod.UniqueID, StringComparison.InvariantCultureIgnoreCase))
+						continue;
+					if ((entry.LocalizedFile is null) != (name is null))
+						continue;
+					if (entry.LocalizedFile is not null && !entry.LocalizedFile.Equals(name, StringComparison.InvariantCultureIgnoreCase))
 						continue;
 
-					var split = entry.Split("::");
-					string entryPath = split[0];
-					string? entryName = split.Length >= 2 ? split[1] : null;
+					string entryPath;
+					if (entry.LocalizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
+					{
+						entryPath = pack.DirectoryPath;
+					}
+					else
+					{
+						var localizingMod = ModRegistry.Get(entry.LocalizingMod);
+						if (localizingMod is null)
+							continue;
+						entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
+					}
 
-					entryPath = entryPath.Replace("%this%", pack.DirectoryPath, StringComparison.InvariantCultureIgnoreCase);
-					entryPath = PathTokenReplacer.ReplaceTokens(entryPath, mod, locale);
-					foreach (var candidate in FluentPathProvider.GetFilePathCandidates(locale, entryPath, entryName))
+					var i18nPath = Path.Combine(entryPath, "i18n");
+					foreach (var candidate in FluentPathProvider.GetFilePathCandidates(locale, i18nPath, entry.LocalizingFile))
 						yield return candidate;
 				}
 			}

@@ -3,21 +3,66 @@ using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
-	public class ContentPackContent
+	public class RawContentPackContent
 	{
-		public ISemanticVersion Format { get; set; }
-		public IDictionary<string, string>? AdditionalFluentPaths { get; set; }
-		public IDictionary<string, string>? AdditionalI18nPaths { get; set; }
+		public ISemanticVersion? Format { get; set; }
+		public IList<AdditionalFluentPath>? AdditionalFluentPaths { get; set; }
+		public IList<AdditionalI18nPath>? AdditionalI18nPaths { get; set; }
 
-		public ContentPackContent(
-			ISemanticVersion format,
-			IDictionary<string, string>? additionalFluentPaths,
-			IDictionary<string, string>? additionalI18nPaths
-		)
+		public class AdditionalFluentPath
+		{
+			public string? LocalizedMod { get; set; }
+			public string? LocalizingMod { get; set; }
+			public string? LocalizedFile { get; set; }
+			public string? LocalizingFile { get; set; }
+		}
+
+		public class AdditionalI18nPath
+		{
+			public string? LocalizedMod { get; set; }
+			public string? LocalizingMod { get; set; }
+		}
+	}
+
+	public record ContentPackContent
+	{
+		public ISemanticVersion Format { get; init; }
+		public IList<AdditionalFluentPath> AdditionalFluentPaths { get; init; }
+		public IList<AdditionalI18nPath> AdditionalI18nPaths { get; init; }
+
+		public ContentPackContent(ISemanticVersion format, IList<AdditionalFluentPath> additionalFluentPaths, IList<AdditionalI18nPath> additionalI18nPaths)
 		{
 			this.Format = format;
 			this.AdditionalFluentPaths = additionalFluentPaths;
 			this.AdditionalI18nPaths = additionalI18nPaths;
+		}
+
+		public record AdditionalFluentPath
+		{
+			public string LocalizedMod { get; init; }
+			public string LocalizingMod { get; init; }
+			public string? LocalizedFile { get; init; }
+			public string? LocalizingFile { get; init; }
+
+			public AdditionalFluentPath(string localizedMod, string localizingMod, string? localizedFile, string? localizingFile)
+			{
+				this.LocalizedMod = localizedMod;
+				this.LocalizingMod = localizingMod;
+				this.LocalizedFile = localizedFile;
+				this.LocalizingFile = localizingFile;
+			}
+		}
+
+		public record AdditionalI18nPath
+		{
+			public string LocalizedMod { get; init; }
+			public string LocalizingMod { get; init; }
+
+			public AdditionalI18nPath(string localizedMod, string localizingMod)
+			{
+				this.LocalizedMod = localizedMod;
+				this.LocalizingMod = localizingMod;
+			}
 		}
 	}
 }

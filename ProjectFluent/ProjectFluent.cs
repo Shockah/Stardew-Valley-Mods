@@ -14,6 +14,7 @@ namespace Shockah.ProjectFluent
 	{
 		public static ProjectFluent Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;
+		private Harmony Harmony { get; set; } = null!;
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
@@ -23,7 +24,7 @@ namespace Shockah.ProjectFluent
 		private IModTranslationsProvider ModTranslationsProvider { get; set; } = null!;
 		private IFallbackFluentProvider FallbackFluentProvider { get; set; } = null!;
 		private IPathTokenReplacer PathTokenReplacer { get; set; } = null!;
-		private IContentPackManager ContentPackManager { get; set; } = null!;
+		private IContentPackManager.WithRegisteringCapability ContentPackManager { get; set; } = null!;
 		private IModFluentPathProvider ModFluentPathProvider { get; set; } = null!;
 		private II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
 		private IFluentProvider FluentProvider { get; set; } = null!;
@@ -31,40 +32,42 @@ namespace Shockah.ProjectFluent
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			Api = new FluentApi(this);
+			Harmony = new Harmony(ModManifest.UniqueID);
+
 			ModDirectoryProvider = new ModDirectoryProvider(helper.ModRegistry);
 			FluentPathProvider = new FluentPathProvider();
 			ModTranslationsProvider = new ModTranslationsProvider(helper.ModRegistry);
 			FallbackFluentProvider = new FallbackFluentProvider(ModTranslationsProvider);
 			PathTokenReplacer = new ModDirectoryPathTokenReplacer(helper.ModRegistry, ModDirectoryProvider);
-			ContentPackManager = new ContentPackManager(Monitor, helper.ContentPacks);
+			ContentPackManager = new ContentPackManager(Monitor, helper.ModRegistry, helper.ContentPacks);
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
-				new ContentPackAdditionalModFluentPathProvider(ContentPackManager, FluentPathProvider, PathTokenReplacer),
+				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackManager, FluentPathProvider, ModDirectoryProvider),
 				new AssetAdditionalModFluentPathProvider(helper.Events.Content, FluentPathProvider, PathTokenReplacer),
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, IGameLocale.Default)
 			);
 			I18nDirectoryProvider = new SerialI18nDirectoryProvider(
-				new ContentPackI18nDirectoryProvider(ContentPackManager, PathTokenReplacer),
+				new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackManager, ModDirectoryProvider),
 				new AssetI18nDirectoryProvider(helper.Events.Content, PathTokenReplacer)
 			);
 			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider);
 
-			Api = new FluentApi(this);
 
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-			I18nIntegration.Setup(Monitor, new Harmony(ModManifest.UniqueID), I18nDirectoryProvider);
-			I18nIntegration.ReloadTranslations();
+			I18nIntegration.Setup(Monitor, Harmony, I18nDirectoryProvider);
 		}
 
 		public override object GetApi() => Api;
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			var harmony = new Harmony(ModManifest.UniqueID);
-			ContentPatcherIntegration.Setup(harmony);
+			ContentPackManager.RegisterAllContentPacks();
+			I18nIntegration.ReloadTranslations();
+			ContentPatcherIntegration.Setup(Harmony);
 
 			SetupConfig();
 		}
