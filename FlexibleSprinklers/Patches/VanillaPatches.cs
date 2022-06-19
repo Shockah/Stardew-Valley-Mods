@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewValley;
 using System;
@@ -82,6 +83,16 @@ namespace Shockah.FlexibleSprinklers
 			done:;
 		}
 
+		private static GameLocation? RetrieveGameLocationForObject(SObject @object)
+		{
+			var location = FlexibleSprinklers.Instance.RetrieveGameLocationForObject(@object, CurrentLocation);
+			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
+				FlexibleSprinklers.Instance.Monitor.LogOnce("Could not find the location the sprinkler is in, but we're a multiplayer client, so this is *probably* safe.", LogLevel.Debug);
+			else
+				FlexibleSprinklers.Instance.Monitor.Log("Could not find the location the sprinkler is in.", LogLevel.Error);
+			return location;
+		}
+
 		private static List<Vector2> Object_GetSprinklerTiles_Result(SObject __instance)
 		{
 			if (SprinklerTileOverride is not null)
@@ -90,17 +101,15 @@ namespace Shockah.FlexibleSprinklers
 				SprinklerTileOverride = null;
 				return result;
 			}
-			
-			if (CurrentLocation is null)
-			{
-				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", LogLevel.Error);
+
+			var location = RetrieveGameLocationForObject(__instance);
+			if (location is null)
 				return new List<Vector2>();
-			}
 
 			if (FlexibleSprinklers.Instance.SprinklerBehavior is ISprinklerBehavior.Independent independent)
 			{
 				return independent.GetSprinklerTiles(
-					new GameLocationMap(CurrentLocation, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
+					new GameLocationMap(location, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
 					new IntPoint((int)__instance.TileLocation.X, (int)__instance.TileLocation.Y),
 					FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
 				).Select(e => new Vector2(e.X, e.Y)).ToList();
@@ -138,16 +147,14 @@ namespace Shockah.FlexibleSprinklers
 
 		private static bool Object_IsInSprinklerRangeBroadphase_Result(SObject __instance, Vector2 target)
 		{
-			if (CurrentLocation is null)
-			{
-				FlexibleSprinklers.Instance.Monitor.Log("Location should not be null - potential mod conflict.", LogLevel.Error);
+			var location = RetrieveGameLocationForObject(__instance);
+			if (location is null)
 				return true;
-			}
 
 			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
 			IsVanillaQueryInProgress = true;
 			var manhattanDistance = Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y);
-			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetSprinklerMaxRange(__instance) && FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(CurrentLocation, target);
+			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetSprinklerMaxRange(__instance) && FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(location, target);
 			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			if (result)
 				SprinklerTileOverride = target;

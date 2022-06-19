@@ -262,6 +262,19 @@ namespace Shockah.FlexibleSprinklers
 			};
 		}
 
+		internal GameLocation? RetrieveGameLocationForObject(SObject @object, GameLocation? potentialLocation = null)
+		{
+			static bool IsObjectInLocation(SObject @object, GameLocation location)
+				=> location.getObjectAtTile((int)@object.TileLocation.X, (int)@object.TileLocation.Y) == @object;
+
+			if (potentialLocation is not null && IsObjectInLocation(@object, potentialLocation))
+				return potentialLocation;
+			foreach (GameLocation location in GameExt.GetAllLocations())
+				if (IsObjectInLocation(@object, location))
+					return location;
+			return null;
+		}
+
 		public void ActivateAllSprinklers()
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
