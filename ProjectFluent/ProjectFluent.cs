@@ -24,6 +24,7 @@ namespace Shockah.ProjectFluent
 		private IModTranslationsProvider ModTranslationsProvider { get; set; } = null!;
 		private IFallbackFluentProvider FallbackFluentProvider { get; set; } = null!;
 		private IPathTokenReplacer PathTokenReplacer { get; set; } = null!;
+		private IContentPackParser ContentPackParser { get; set; } = null!;
 		private IContentPackManager.WithRegisteringCapability ContentPackManager { get; set; } = null!;
 		private IModFluentPathProvider ModFluentPathProvider { get; set; } = null!;
 		private II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
@@ -40,7 +41,8 @@ namespace Shockah.ProjectFluent
 			ModTranslationsProvider = new ModTranslationsProvider(helper.ModRegistry);
 			FallbackFluentProvider = new FallbackFluentProvider(ModTranslationsProvider);
 			PathTokenReplacer = new ModDirectoryPathTokenReplacer(helper.ModRegistry, ModDirectoryProvider);
-			ContentPackManager = new ContentPackManager(ModManifest.Version, Monitor, helper.ModRegistry, helper.ContentPacks);
+			ContentPackParser = new ContentPackParser(ModManifest.Version, helper.ModRegistry);
+			ContentPackManager = new ContentPackManager(Monitor, helper.ContentPacks, ContentPackParser);
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
 				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackManager, FluentPathProvider, ModDirectoryProvider),
