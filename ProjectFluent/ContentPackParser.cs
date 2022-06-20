@@ -44,7 +44,7 @@ namespace Shockah.ProjectFluent
 			if (raw.Format is null)
 				errors.Add("Missing `Format` field.");
 			else if (raw.Format.IsNewerThan(ProjectFluentVersion))
-				errors.Add("`Format` is newer than {ProjectFluentVersion} and cannot be parsed.");
+				errors.Add($"`Format` is newer than {ProjectFluentVersion} and cannot be parsed.");
 
 			if (errors.Count != 0)
 				return new(null, warnings.ToImmutableList(), errors.ToImmutableList());
