@@ -62,7 +62,7 @@ namespace Shockah.ProjectFluent
 					var parseResult = ContentPackParser.Parse(pack.Manifest, rawContent);
 					foreach (var error in parseResult.Errors)
 						Monitor.Log($"`{pack.Manifest.UniqueID}`: `content.json`: {error}", LogLevel.Error);
-					foreach (var warning in parseResult.Errors)
+					foreach (var warning in parseResult.Warnings)
 						Monitor.Log($"`{pack.Manifest.UniqueID}`: `content.json`: {warning}", LogLevel.Warn);
 					if (parseResult.Parsed is not null)
 					{

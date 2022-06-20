@@ -139,7 +139,7 @@ namespace Shockah.ProjectFluent
 				var parseResult = ContentPackParser.Parse(null, rawContent);
 				foreach (var error in parseResult.Errors)
 					Monitor.Log($"Asset content pack: {error}", LogLevel.Error);
-				foreach (var warning in parseResult.Errors)
+				foreach (var warning in parseResult.Warnings)
 					Monitor.Log($"Asset content pack: {warning}", LogLevel.Warn);
 				if (parseResult.Parsed is not null)
 					results.Add(parseResult.Parsed);
