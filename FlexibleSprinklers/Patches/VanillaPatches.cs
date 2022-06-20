@@ -52,12 +52,6 @@ namespace Shockah.FlexibleSprinklers
 				prefix: new HarmonyMethod(typeof(VanillaPatches), nameof(SlimeHutch_DayUpdate_Prefix))
 			);
 
-			harmony.TryPatch(
-				monitor: FlexibleSprinklers.Instance.Monitor,
-				original: () => AccessTools.Method(typeof(Game1), "handlePostFarmEventActions"),
-				postfix: new HarmonyMethod(typeof(VanillaPatches), nameof(Game1_handlePostFarmEventActions_Postfix))
-			);
-
 			foreach (var nestedType in typeof(SObject).GetTypeInfo().DeclaredNestedTypes)
 			{
 				if (!nestedType.DeclaredFields.Where(f => f.FieldType == typeof(SObject) && f.Name.EndsWith("__this")).Any())
@@ -187,18 +181,9 @@ namespace Shockah.FlexibleSprinklers
 			CurrentLocation = __instance;
 		}
 
-		private static bool Object_DayUpdatePostFarmEventOvernightActionsDelegate_Prefix(object __instance)
+		private static bool Object_DayUpdatePostFarmEventOvernightActionsDelegate_Prefix()
 		{
-			var locationField = __instance.GetType().GetTypeInfo().DeclaredFields.First(f => f.FieldType == typeof(GameLocation) && f.Name == "location");
-			CurrentLocation = (GameLocation?)locationField.GetValue(__instance);
-			IsVanillaQueryInProgress = false;
-			return FlexibleSprinklers.Instance.SprinklerBehavior is ISprinklerBehavior.Independent;
-		}
-
-		private static void Game1_handlePostFarmEventActions_Postfix()
-		{
-			if (FlexibleSprinklers.Instance.SprinklerBehavior is not ISprinklerBehavior.Independent)
-				FlexibleSprinklers.Instance.ActivateAllSprinklers();
+			return false;
 		}
 	}
 }

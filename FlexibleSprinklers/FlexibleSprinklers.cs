@@ -50,6 +50,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.Display.RenderedWorld += OnRenderedWorld;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+			helper.Events.GameLoop.DayStarted += OnDayStarted;
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
 			helper.Events.World.TerrainFeatureListChanged += OnTerrainFeatureListChanged;
@@ -62,10 +63,7 @@ namespace Shockah.FlexibleSprinklers
 			SetupSprinklerBehavior();
 		}
 
-		public override object GetApi()
-		{
-			return this;
-		}
+		public override object GetApi() => this;
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
@@ -128,6 +126,15 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
+		// Solid Foundations compatibility: watering late, after SF restores the locations
+		[EventPriority(EventPriority.Low - 2)]
+		private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		{
+			ActivateAllSprinklers();
+		}
+
+		// Solid Foundations compatibility: watering early, before SF hides the locations
+		[EventPriority(EventPriority.High + 2)]
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
 			if (!Config.ActivateBeforeSleep)
