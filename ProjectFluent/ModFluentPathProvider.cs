@@ -1,6 +1,4 @@
 ﻿using StardewModdingAPI;
-using StardewModdingAPI.Events;
-using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,108 +71,41 @@ namespace Shockah.ProjectFluent
 		}
 	}
 
-	internal class AssetAdditionalModFluentPathProvider: IModFluentPathProvider, IDisposable
-	{
-		private static readonly string AssetPath = "Shockah.ProjectFluent/AdditionalFluentPaths";
-
-		public event Action<IModFluentPathProvider>? CandidatesChanged;
-
-		private IContentEvents ContentEvents { get; set; }
-		private IFluentPathProvider FluentPathProvider { get; set; }
-		private IPathTokenReplacer PathTokenReplacer { get; set; }
-
-		public AssetAdditionalModFluentPathProvider(IContentEvents contentEvents, IFluentPathProvider fluentPathProvider, IPathTokenReplacer pathTokenReplacer)
-		{
-			this.ContentEvents = contentEvents;
-			this.FluentPathProvider = fluentPathProvider;
-			this.PathTokenReplacer = pathTokenReplacer;
-
-			contentEvents.AssetRequested += OnAssetRequested;
-			contentEvents.AssetsInvalidated += OnAssetsInvalidated;
-		}
-
-		public void Dispose()
-		{
-			ContentEvents.AssetRequested -= OnAssetRequested;
-			ContentEvents.AssetsInvalidated -= OnAssetsInvalidated;
-		}
-
-		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
-		{
-			if (e.Name.IsEquivalentTo(AssetPath))
-				e.LoadFrom(() => new Dictionary<string, List<string>>(), AssetLoadPriority.Exclusive);
-		}
-
-		private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
-		{
-			foreach (var name in e.Names)
-			{
-				if (name.IsEquivalentTo(AssetPath))
-				{
-					CandidatesChanged?.Invoke(this);
-					break;
-				}
-			}
-		}
-
-		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
-		{
-			var asset = Game1.content.Load<Dictionary<string, List<string>>>(AssetPath);
-			if (asset is null)
-				yield break;
-
-			string requestedKey = name is null ? mod.UniqueID : $"{mod.UniqueID}::{name}";
-			if (asset.TryGetValue(requestedKey, out var entries))
-			{
-				foreach (string entry in entries)
-				{
-					var split = entry.Split("::");
-					string entryPath = split[0];
-					string? entryName = split.Length >= 2 ? split[1] : null;
-
-					entryPath = PathTokenReplacer.ReplaceTokens(entryPath, mod, locale);
-					foreach (var candidate in FluentPathProvider.GetFilePathCandidates(locale, entryPath, entryName))
-						yield return candidate;
-				}
-			}
-		}
-	}
-
 	internal class ContentPackAdditionalModFluentPathProvider: IModFluentPathProvider, IDisposable
 	{
 		public event Action<IModFluentPathProvider>? CandidatesChanged;
 
 		private IModRegistry ModRegistry { get; set; }
-		private IContentPackManager ContentPackManager { get; set; }
+		private IContentPackProvider ContentPackProvider { get; set; }
 		private IFluentPathProvider FluentPathProvider { get; set; }
 		private IModDirectoryProvider ModDirectoryProvider { get; set; }
 
 		public ContentPackAdditionalModFluentPathProvider(
 			IModRegistry modRegistry,
-			IContentPackManager contentPackManager,
+			IContentPackProvider contentPackProvider,
 			IFluentPathProvider fluentPathProvider,
 			IModDirectoryProvider modDirectoryProvider
 		)
 		{
 			this.ModRegistry = modRegistry;
-			this.ContentPackManager = contentPackManager;
+			this.ContentPackProvider = contentPackProvider;
 			this.FluentPathProvider = fluentPathProvider;
 			this.ModDirectoryProvider = modDirectoryProvider;
 
-			contentPackManager.ContentPacksContentsChanged += OnContentPacksContentsChanges;
+			contentPackProvider.ContentPacksContentsChanged += OnContentPacksContentsChanges;
 		}
 
 		public void Dispose()
 		{
-			ContentPackManager.ContentPacksContentsChanged -= OnContentPacksContentsChanges;
+			ContentPackProvider.ContentPacksContentsChanged -= OnContentPacksContentsChanges;
 		}
 
-		private void OnContentPacksContentsChanges(IContentPackManager contentPackManager)
+		private void OnContentPacksContentsChanges(IContentPackProvider contentPackProvider)
 			=> CandidatesChanged?.Invoke(this);
 
 		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
 		{
-			foreach (var (pack, content) in ContentPackManager.GetContentPackContents())
+			foreach (var content in ContentPackProvider.GetContentPackContents())
 			{
 				if (content.AdditionalFluentPaths is null)
 					continue;
@@ -187,18 +118,10 @@ namespace Shockah.ProjectFluent
 					if (entry.LocalizedFile is not null && !entry.LocalizedFile.Equals(name, StringComparison.InvariantCultureIgnoreCase))
 						continue;
 
-					string entryPath;
-					if (entry.LocalizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
-					{
-						entryPath = pack.DirectoryPath;
-					}
-					else
-					{
-						var localizingMod = ModRegistry.Get(entry.LocalizingMod);
-						if (localizingMod is null)
-							continue;
-						entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
-					}
+					var localizingMod = ModRegistry.Get(entry.LocalizingMod);
+					if (localizingMod is null)
+						continue;
+					string entryPath = ModDirectoryProvider.GetModDirectoryPath(localizingMod.Manifest);
 
 					string localizationsPath = Path.Combine(entryPath, "i18n");
 					if (entry.LocalizingSubdirectory is not null)

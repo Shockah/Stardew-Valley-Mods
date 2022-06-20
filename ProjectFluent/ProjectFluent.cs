@@ -23,9 +23,9 @@ namespace Shockah.ProjectFluent
 		private IFluentPathProvider FluentPathProvider { get; set; } = null!;
 		private IModTranslationsProvider ModTranslationsProvider { get; set; } = null!;
 		private IFallbackFluentProvider FallbackFluentProvider { get; set; } = null!;
-		private IPathTokenReplacer PathTokenReplacer { get; set; } = null!;
 		private IContentPackParser ContentPackParser { get; set; } = null!;
-		private IContentPackManager.WithRegisteringCapability ContentPackManager { get; set; } = null!;
+		private IContentPackManager ContentPackManager { get; set; } = null!;
+		private IContentPackProvider ContentPackProvider { get; set; } = null!;
 		private IModFluentPathProvider ModFluentPathProvider { get; set; } = null!;
 		private II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
 		private IFluentProvider FluentProvider { get; set; } = null!;
@@ -40,21 +40,20 @@ namespace Shockah.ProjectFluent
 			FluentPathProvider = new FluentPathProvider();
 			ModTranslationsProvider = new ModTranslationsProvider(helper.ModRegistry);
 			FallbackFluentProvider = new FallbackFluentProvider(ModTranslationsProvider);
-			PathTokenReplacer = new ModDirectoryPathTokenReplacer(helper.ModRegistry, ModDirectoryProvider);
 			ContentPackParser = new ContentPackParser(ModManifest.Version, helper.ModRegistry);
-			ContentPackManager = new ContentPackManager(Monitor, helper.ContentPacks, ContentPackParser);
+			var contentPackManager = new ContentPackManager(Monitor, helper.ContentPacks, ContentPackParser);
+			ContentPackManager = contentPackManager;
+			ContentPackProvider = new SerialContentPackProvider(
+				contentPackManager,
+				new AssetContentPackProvider(Monitor, helper.Data, helper.Events.Content, ContentPackParser)
+			);
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
-				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackManager, FluentPathProvider, ModDirectoryProvider),
-				new AssetAdditionalModFluentPathProvider(helper.Events.Content, FluentPathProvider, PathTokenReplacer),
+				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackProvider, FluentPathProvider, ModDirectoryProvider),
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, IGameLocale.Default)
 			);
-			I18nDirectoryProvider = new SerialI18nDirectoryProvider(
-				new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackManager, ModDirectoryProvider),
-				new AssetI18nDirectoryProvider(helper.Events.Content, PathTokenReplacer)
-			);
+			I18nDirectoryProvider = new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackProvider, ModDirectoryProvider);
 			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider);
-
 
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);

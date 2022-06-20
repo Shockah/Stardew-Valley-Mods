@@ -2,26 +2,19 @@
 using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
 	internal interface IContentPackManager
 	{
-		event Action<IContentPackManager>? ContentPacksContentsChanged;
-
-		IEnumerable<(IContentPack pack, ContentPackContent content)> GetContentPackContents();
-
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interfaces")]
-		internal interface WithRegisteringCapability: IContentPackManager
-		{
-			void RegisterAllContentPacks();
-			void RegisterContentPack(IContentPack pack);
-		}
+		void RegisterAllContentPacks();
+		void RegisterContentPack(IContentPack pack);
 	}
 
-	internal class ContentPackManager: IContentPackManager.WithRegisteringCapability
+	internal class ContentPackManager: IContentPackManager, IContentPackProvider
 	{
-		public event Action<IContentPackManager>? ContentPacksContentsChanged;
+		public event Action<IContentPackProvider>? ContentPacksContentsChanged;
 
 		private IMonitor Monitor { get; set; }
 		private IContentPackHelper ContentPackHelper { get; set; }
@@ -87,10 +80,9 @@ namespace Shockah.ProjectFluent
 				if (changedContentPacks)
 					ContentPacksContentsChanged?.Invoke(this);
 			}
-			
 		}
 
-		public IEnumerable<(IContentPack pack, ContentPackContent content)> GetContentPackContents()
-			=> ContentPackContents;
+		public IEnumerable<ContentPackContent> GetContentPackContents()
+			=> ContentPackContents.Select(c => c.content);
 	}
 }
