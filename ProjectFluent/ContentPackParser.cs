@@ -42,23 +42,23 @@ namespace Shockah.ProjectFluent
 
 		public ParseResult<ContentPackContent> Parse(IManifest? context, RawContentPackContent raw)
 		{
-			List<string> warnings = new();
 			List<string> errors = new();
+			List<string> warnings = new();
 
 			if (raw.ID is null && context is null)
-				warnings.Add("Missing `ID` field. The field is not required, but it is recommended when asset editing to allow patching by other mods.");
+				warnings.Add($"Missing `{nameof(raw.ID)}` field. The field is not required, but it is recommended when asset editing to allow patching by other mods.");
 			else if (raw.ID is not null && context is not null)
-				warnings.Add("Unnecessary `ID` field. The field is only requred when asset editing to allow patching by other mods.");
+				warnings.Add($"Unnecessary `{nameof(raw.ID)}` field. The field is only requred when asset editing to allow patching by other mods.");
 
 			if (raw.Format is null)
-				errors.Add("Missing `Format` field.");
+				errors.Add($"Missing `{nameof(raw.Format)}` field.");
 			else if (raw.Format.IsNewerThan(ProjectFluentVersion))
-				errors.Add($"`Format` is newer than {ProjectFluentVersion} and cannot be parsed.");
+				errors.Add($"`{nameof(raw.Format)}` is newer than {ProjectFluentVersion} and cannot be parsed.");
 			else if (raw.Format.IsOlderThan(OldestVersion))
-				errors.Add($"`Format` is older than {OldestVersion} and cannot be parsed.");
+				errors.Add($"`{nameof(raw.Format)}` is older than {OldestVersion} and cannot be parsed.");
 
 			if (errors.Count != 0)
-				return new(null, errors.ToImmutableList(), warnings.ToImmutableList());
+				return new(null, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 
 			List<ContentPackContent.AdditionalFluentPath> additionalFluentPaths = new();
 			if (raw.AdditionalFluentPaths is not null)
@@ -66,10 +66,10 @@ namespace Shockah.ProjectFluent
 				foreach (var (entry, entryIndex) in raw.AdditionalFluentPaths.Select((e, i) => (e, i)))
 				{
 					var entryParseResult = ParseAdditionalFluentPath(context, entry, raw.Format!);
-					foreach (var warning in entryParseResult.Warnings)
-						warnings.Add($"`AdditionalFluentPaths`: #{entryIndex}: {warning}");
 					foreach (var error in entryParseResult.Errors)
-						warnings.Add($"`AdditionalFluentPaths`: #{entryIndex}: {error}");
+						errors.Add($"`{nameof(raw.AdditionalFluentPaths)}`: #{entryIndex}: {error}");
+					foreach (var warning in entryParseResult.Warnings)
+						warnings.Add($"`{nameof(raw.AdditionalFluentPaths)}`: #{entryIndex}: {warning}");
 					if (entryParseResult.Parsed is not null)
 						additionalFluentPaths.Add(entryParseResult.Parsed);
 				}
@@ -81,10 +81,10 @@ namespace Shockah.ProjectFluent
 				foreach (var (entry, entryIndex) in raw.AdditionalI18nPaths.Select((e, i) => (e, i)))
 				{
 					var entryParseResult = ParseAdditionalI18nPath(context, entry, raw.Format!);
-					foreach (var warning in entryParseResult.Warnings)
-						warnings.Add($"`AdditionalI18nPaths`: #{entryIndex}: {warning}");
 					foreach (var error in entryParseResult.Errors)
-						warnings.Add($"`AdditionalI18nPaths`: #{entryIndex}: {error}");
+						errors.Add($"`{nameof(raw.AdditionalI18nPaths)}`: #{entryIndex}: {error}");
+					foreach (var warning in entryParseResult.Warnings)
+						warnings.Add($"`{nameof(raw.AdditionalI18nPaths)}`: #{entryIndex}: {warning}");
 					if (entryParseResult.Parsed is not null)
 						additionalI18nPaths.Add(entryParseResult.Parsed);
 				}
@@ -96,16 +96,16 @@ namespace Shockah.ProjectFluent
 				additionalFluentPaths,
 				additionalI18nPaths
 			) : null;
-			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
+			return new(parsed, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 		}
 
 		private ParseResult<ContentPackContent.AdditionalFluentPath> ParseAdditionalFluentPath(IManifest? context, RawContentPackContent.AdditionalFluentPath raw, ISemanticVersion format)
 		{
-			List<string> warnings = new();
 			List<string> errors = new();
+			List<string> warnings = new();
 
 			if (raw.LocalizedMod is null)
-				errors.Add("Missing `LocalizedMod` field.");
+				errors.Add($"Missing `{nameof(raw.LocalizedMod)}` field.");
 
 			string? localizingMod = null;
 			if (raw.LocalizingMod is not null)
@@ -113,7 +113,7 @@ namespace Shockah.ProjectFluent
 			else if (context is not null)
 				localizingMod = context.UniqueID;
 			else
-				errors.Add("Missing `LocalizingMod` field.");
+				errors.Add($"Missing `{nameof(raw.LocalizingMod)}` field.");
 
 			if (localizingMod is not null)
 			{
@@ -121,7 +121,7 @@ namespace Shockah.ProjectFluent
 				{
 					if (context is null)
 					{
-						errors.Add("`LocalizingMod` is `this`, but we do not know the context of `this` (are you trying to use `this` while asset editing?).");
+						errors.Add($"`{nameof(raw.LocalizingMod)}` is `this`, but we do not know the context of `this` (are you trying to use `this` while asset editing?).");
 						localizingMod = null;
 					}
 					else
@@ -133,7 +133,7 @@ namespace Shockah.ProjectFluent
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
 					if (localizingModInstance is null)
-						warnings.Add($"`LocalizingMod` specifies mod {localizingMod} that is not currently loaded.");
+						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}
 
@@ -144,16 +144,16 @@ namespace Shockah.ProjectFluent
 				raw.LocalizedFile,
 				raw.LocalizingSubdirectory
 			) : null;
-			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
+			return new(parsed, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 		}
 
 		private ParseResult<ContentPackContent.AdditionalI18nPath> ParseAdditionalI18nPath(IManifest? context, RawContentPackContent.AdditionalI18nPath raw, ISemanticVersion format)
 		{
-			List<string> warnings = new();
 			List<string> errors = new();
+			List<string> warnings = new();
 
 			if (raw.LocalizedMod is null)
-				errors.Add("Missing `LocalizedMod` field.");
+				errors.Add($"Missing `{nameof(raw.LocalizedMod)}` field.");
 
 			string? localizingMod = null;
 			if (raw.LocalizingMod is not null)
@@ -161,7 +161,7 @@ namespace Shockah.ProjectFluent
 			else if (context is not null)
 				localizingMod = context.UniqueID;
 			else
-				errors.Add("Missing `LocalizingMod` field.");
+				errors.Add($"Missing `{nameof(raw.LocalizingMod)}` field.");
 
 			if (localizingMod is not null)
 			{
@@ -169,7 +169,7 @@ namespace Shockah.ProjectFluent
 				{
 					if (context is null)
 					{
-						errors.Add("`LocalizingMod` is `this`, but we do not know the context of `this` (are you trying to use `this` while asset editing?).");
+						errors.Add($"`{nameof(raw.LocalizingMod)}` is `this`, but we do not know the context of `this` (are you trying to use `this` while asset editing?).");
 						localizingMod = null;
 					}
 					else
@@ -181,7 +181,7 @@ namespace Shockah.ProjectFluent
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
 					if (localizingModInstance is null)
-						warnings.Add($"`LocalizingMod` specifies mod {localizingMod} that is not currently loaded.");
+						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}
 
@@ -190,7 +190,7 @@ namespace Shockah.ProjectFluent
 				localizingMod!,
 				raw.LocalizingSubdirectory
 			) : null;
-			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
+			return new(parsed, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 		}
 	}
 }
