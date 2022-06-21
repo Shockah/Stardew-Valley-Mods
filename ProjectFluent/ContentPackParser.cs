@@ -30,10 +30,14 @@ namespace Shockah.ProjectFluent
 		private ISemanticVersion ProjectFluentVersion { get; set; }
 		private IModRegistry ModRegistry { get; set; }
 
+		private ISemanticVersion OldestVersion { get; set; }
+
 		public ContentPackParser(ISemanticVersion projectFluentVersion, IModRegistry modRegistry)
 		{
 			this.ProjectFluentVersion = projectFluentVersion;
 			this.ModRegistry = modRegistry;
+
+			this.OldestVersion = new SemanticVersion(1, 0, 0);
 		}
 
 		public ParseResult<ContentPackContent> Parse(IManifest? context, RawContentPackContent raw)
@@ -41,13 +45,20 @@ namespace Shockah.ProjectFluent
 			List<string> warnings = new();
 			List<string> errors = new();
 
+			if (raw.ID is null && context is null)
+				warnings.Add("Missing `ID` field. The field is not required, but it is recommended when asset editing to allow patching by other mods.");
+			else if (raw.ID is not null && context is not null)
+				warnings.Add("Unnecessary `ID` field. The field is only requred when asset editing to allow patching by other mods.");
+
 			if (raw.Format is null)
 				errors.Add("Missing `Format` field.");
 			else if (raw.Format.IsNewerThan(ProjectFluentVersion))
 				errors.Add($"`Format` is newer than {ProjectFluentVersion} and cannot be parsed.");
+			else if (raw.Format.IsOlderThan(OldestVersion))
+				errors.Add($"`Format` is older than {OldestVersion} and cannot be parsed.");
 
 			if (errors.Count != 0)
-				return new(null, warnings.ToImmutableList(), errors.ToImmutableList());
+				return new(null, errors.ToImmutableList(), warnings.ToImmutableList());
 
 			List<ContentPackContent.AdditionalFluentPath> additionalFluentPaths = new();
 			if (raw.AdditionalFluentPaths is not null)
@@ -56,9 +67,9 @@ namespace Shockah.ProjectFluent
 				{
 					var entryParseResult = ParseAdditionalFluentPath(context, entry, raw.Format!);
 					foreach (var warning in entryParseResult.Warnings)
-						warnings.Add($"`AdditionalFluentPaths`: {entryIndex}: {warning}");
+						warnings.Add($"`AdditionalFluentPaths`: #{entryIndex}: {warning}");
 					foreach (var error in entryParseResult.Errors)
-						warnings.Add($"`AdditionalFluentPaths`: {entryIndex}: {error}");
+						warnings.Add($"`AdditionalFluentPaths`: #{entryIndex}: {error}");
 					if (entryParseResult.Parsed is not null)
 						additionalFluentPaths.Add(entryParseResult.Parsed);
 				}
@@ -71,20 +82,21 @@ namespace Shockah.ProjectFluent
 				{
 					var entryParseResult = ParseAdditionalI18nPath(context, entry, raw.Format!);
 					foreach (var warning in entryParseResult.Warnings)
-						warnings.Add($"`AdditionalI18nPaths`: {entryIndex}: {warning}");
+						warnings.Add($"`AdditionalI18nPaths`: #{entryIndex}: {warning}");
 					foreach (var error in entryParseResult.Errors)
-						warnings.Add($"`AdditionalI18nPaths`: {entryIndex}: {error}");
+						warnings.Add($"`AdditionalI18nPaths`: #{entryIndex}: {error}");
 					if (entryParseResult.Parsed is not null)
 						additionalI18nPaths.Add(entryParseResult.Parsed);
 				}
 			}
 
 			ContentPackContent? parsed = errors.Count == 0 ? new(
+				raw.ID,
 				raw.Format!,
 				additionalFluentPaths,
 				additionalI18nPaths
 			) : null;
-			return new(parsed, warnings.ToImmutableList(), errors.ToImmutableList());
+			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
 		}
 
 		private ParseResult<ContentPackContent.AdditionalFluentPath> ParseAdditionalFluentPath(IManifest? context, RawContentPackContent.AdditionalFluentPath raw, ISemanticVersion format)
@@ -132,7 +144,7 @@ namespace Shockah.ProjectFluent
 				raw.LocalizedFile,
 				raw.LocalizingSubdirectory
 			) : null;
-			return new(parsed, warnings.ToImmutableList(), errors.ToImmutableList());
+			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
 		}
 
 		private ParseResult<ContentPackContent.AdditionalI18nPath> ParseAdditionalI18nPath(IManifest? context, RawContentPackContent.AdditionalI18nPath raw, ISemanticVersion format)
@@ -178,7 +190,7 @@ namespace Shockah.ProjectFluent
 				localizingMod!,
 				raw.LocalizingSubdirectory
 			) : null;
-			return new(parsed, warnings.ToImmutableList(), errors.ToImmutableList());
+			return new(parsed, errors.ToImmutableList(), warnings.ToImmutableList());
 		}
 	}
 }

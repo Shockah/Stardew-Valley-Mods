@@ -5,6 +5,7 @@ namespace Shockah.ProjectFluent
 {
 	public class RawContentPackContent
 	{
+		public string? ID { get; set; }
 		public ISemanticVersion? Format { get; set; }
 		public IList<AdditionalFluentPath>? AdditionalFluentPaths { get; set; }
 		public IList<AdditionalI18nPath>? AdditionalI18nPaths { get; set; }
@@ -28,12 +29,14 @@ namespace Shockah.ProjectFluent
 
 	public record ContentPackContent
 	{
+		public string? ID { get; set; }
 		public ISemanticVersion Format { get; init; }
 		public IList<AdditionalFluentPath> AdditionalFluentPaths { get; init; }
 		public IList<AdditionalI18nPath> AdditionalI18nPaths { get; init; }
 
-		public ContentPackContent(ISemanticVersion format, IList<AdditionalFluentPath> additionalFluentPaths, IList<AdditionalI18nPath> additionalI18nPaths)
+		public ContentPackContent(string? id, ISemanticVersion format, IList<AdditionalFluentPath> additionalFluentPaths, IList<AdditionalI18nPath> additionalI18nPaths)
 		{
+			this.ID = id;
 			this.Format = format;
 			this.AdditionalFluentPaths = additionalFluentPaths;
 			this.AdditionalI18nPaths = additionalI18nPaths;
