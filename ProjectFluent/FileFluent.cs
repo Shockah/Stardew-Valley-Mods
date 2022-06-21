@@ -1,5 +1,6 @@
 ﻿using StardewModdingAPI;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Shockah.ProjectFluent
@@ -8,7 +9,7 @@ namespace Shockah.ProjectFluent
 	{
 		private IFluent<string> Wrapped { get; set; }
 
-		public FileFluent(IGameLocale locale, string path, IFluent<string> fallback)
+		public FileFluent(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IGameLocale locale, string path, IFluent<string> fallback)
 		{
 			if (!File.Exists(path))
 			{
@@ -35,7 +36,7 @@ namespace Shockah.ProjectFluent
 
 			try
 			{
-				Wrapped = new FluentImpl(locale, content, fallback);
+				Wrapped = new FluentImpl(functions, locale, content, fallback);
 			}
 			catch (Exception e)
 			{

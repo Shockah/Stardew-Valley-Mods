@@ -28,12 +28,14 @@ namespace Shockah.ProjectFluent
 		private IContentPackProvider ContentPackProvider { get; set; } = null!;
 		private IModFluentPathProvider ModFluentPathProvider { get; set; } = null!;
 		private II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
+		private IFluentFunctionManager FluentFunctionManager { get; set; } = null!;
+		private IFluentFunctionProvider FluentFunctionProvider { get; set; } = null!;
+		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; } = null!;
 		private IFluentProvider FluentProvider { get; set; } = null!;
 
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
-			Api = new FluentApi(this);
 			Harmony = new Harmony(ModManifest.UniqueID);
 
 			ModDirectoryProvider = new ModDirectoryProvider(helper.ModRegistry);
@@ -53,8 +55,16 @@ namespace Shockah.ProjectFluent
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, IGameLocale.Default)
 			);
 			I18nDirectoryProvider = new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackProvider, ModDirectoryProvider);
-			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider);
+			var fluentFunctionManager = new FluentFunctionManager();
+			FluentFunctionManager = fluentFunctionManager;
+			FluentFunctionProvider = new SerialFluentFunctionProvider(
+				new BuiltInFluentFunctionProvider(ModManifest),
+				fluentFunctionManager
+			);
+			ContextfulFluentFunctionProvider = new ContextfulFluentFunctionProvider(ModManifest, FluentFunctionProvider);
+			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 
+			Api = new FluentApi(FluentProvider, FluentFunctionManager);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
 
@@ -130,9 +140,6 @@ namespace Shockah.ProjectFluent
 				};
 			}
 		}
-
-		public IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null)
-			=> FluentProvider.GetFluent(locale, mod, name);
 
 		#endregion
 	}

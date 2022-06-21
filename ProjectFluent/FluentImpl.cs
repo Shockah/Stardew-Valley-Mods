@@ -10,14 +10,28 @@ namespace Shockah.ProjectFluent
 {
 	internal class FluentImpl: IFluent<string>
 	{
-		private readonly IFluent<string> Fallback;
-		private readonly MessageContext Context;
+		private IFluent<string> Fallback { get; set; }
+		private MessageContext Context { get; set; }
 
-		public FluentImpl(IGameLocale locale, string content, IFluent<string>? fallback = null)
+		public FluentImpl(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IGameLocale locale, string content, IFluent<string>? fallback = null)
 		{
 			this.Fallback = fallback ?? new NoOpFluent();
 
 			var context = new MessageContext(locale.LanguageCode);
+			foreach (var (functionName, function) in functions)
+			{
+				if (context.Functions.ContainsKey(functionName))
+					continue;
+				context.Functions[functionName] = (arguments, _) =>
+				{
+					var result = function(locale, (IReadOnlyList<object>)arguments);
+					if (result is int or long or float or double)
+						return new FluentNumber($"{result}");
+					else
+						return new FluentString($"{result}");
+				};
+			}
+
 			var errors = context.AddMessages(content);
 			if (errors.Count > 0)
 				throw new ArgumentException($"Errors parsing Fluent:\n{string.Join('\n', errors.Select(e => $"\t{e.Message}"))}");
