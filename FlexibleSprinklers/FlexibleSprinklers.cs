@@ -127,14 +127,14 @@ namespace Shockah.FlexibleSprinklers
 		}
 
 		// Solid Foundations compatibility: watering late, after SF restores the locations
-		[EventPriority(EventPriority.Low - 2)]
+		[EventPriority(EventPriority.Low - 10)]
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			ActivateAllSprinklers();
 		}
 
 		// Solid Foundations compatibility: watering early, before SF hides the locations
-		[EventPriority(EventPriority.High + 2)]
+		[EventPriority(EventPriority.High + 10)]
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
 			if (!Config.ActivateBeforeSleep)
