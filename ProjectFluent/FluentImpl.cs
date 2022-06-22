@@ -22,10 +22,20 @@ namespace Shockah.ProjectFluent
 			{
 				if (context.Functions.ContainsKey(functionName))
 					continue;
-				context.Functions[functionName] = (arguments, _) =>
+				context.Functions[functionName] = (fluentArguments, _) =>
 				{
-					var result = function(locale, (IReadOnlyList<object>)arguments);
-					if (result is int or long or float or double)
+					var arguments = fluentArguments.Select(a =>
+					{
+						if (a is FluentString @string)
+							return @string.Value;
+						else if (a is FluentNumber number)
+							return (object)decimal.Parse(number.Value);
+						else
+							throw new ArgumentException($"Unsupported Fluent function argument type {a.GetType()}.");
+					}).ToList();
+
+					var result = function(locale, arguments);
+					if (result is int or long or float or double or decimal)
 						return new FluentNumber($"{result}");
 					else
 						return new FluentString($"{result}");

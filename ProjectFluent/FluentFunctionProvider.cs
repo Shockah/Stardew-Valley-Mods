@@ -29,13 +29,25 @@ namespace Shockah.ProjectFluent
 
 	internal class BuiltInFluentFunctionProvider: IFluentFunctionProvider
 	{
-		private static IFluentApi.FluentFunction ModNameFunction { get; set; } = (locale, mod, arguments) => mod.Name;
-
 		private IManifest ProjectFluentMod { get; set; }
+		private IModRegistry ModRegistry { get; set; }
 
-		public BuiltInFluentFunctionProvider(IManifest projectFluentMod)
+		private IFluentApi.FluentFunction ModNameFunction { get; set; }
+
+		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry)
 		{
 			this.ProjectFluentMod = projectFluentMod;
+			this.ModRegistry = modRegistry;
+
+			ModNameFunction = (locale, mod, arguments) =>
+			{
+				var modID = mod.UniqueID;
+				if (arguments.Count >= 1 && arguments[0] is string argumentModID)
+					modID = argumentModID;
+
+				var otherMod = ModRegistry.Get(modID);
+				return otherMod?.Manifest.Name ?? modID;
+			};
 		}
 
 		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()

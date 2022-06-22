@@ -58,7 +58,7 @@ namespace Shockah.ProjectFluent
 			var fluentFunctionManager = new FluentFunctionManager();
 			FluentFunctionManager = fluentFunctionManager;
 			FluentFunctionProvider = new SerialFluentFunctionProvider(
-				new BuiltInFluentFunctionProvider(ModManifest),
+				new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry),
 				fluentFunctionManager
 			);
 			ContextfulFluentFunctionProvider = new ContextfulFluentFunctionProvider(ModManifest, FluentFunctionProvider);
