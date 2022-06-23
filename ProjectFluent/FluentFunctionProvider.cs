@@ -33,21 +33,24 @@ namespace Shockah.ProjectFluent
 		private IManifest ProjectFluentMod { get; set; }
 		private IModRegistry ModRegistry { get; set; }
 		private IFluentValueFactory FluentValueFactory { get; set; }
+		private IModTranslationsProvider ModTranslationsProvider { get; set; }
 		internal IFluentProvider FluentProvider { get; set; } = null!;
 
 		private IDictionary<(IGameLocale locale, string mod, string? name), IFluent<string>> FluentCache { get; set; } = new Dictionary<(IGameLocale locale, string mod, string? name), IFluent<string>>();
 
-		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry, IFluentValueFactory fluentValueFactory)
+		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry, IFluentValueFactory fluentValueFactory, IModTranslationsProvider modTranslationsProvider)
 		{
 			this.ProjectFluentMod = projectFluentMod;
 			this.ModRegistry = modRegistry;
 			this.FluentValueFactory = fluentValueFactory;
+			this.ModTranslationsProvider = modTranslationsProvider;
 		}
 
 		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()
 		{
 			yield return (ProjectFluentMod, "MOD_NAME", ModNameFunction);
 			yield return (ProjectFluentMod, "FLUENT", FluentFunction);
+			yield return (ProjectFluentMod, "I18N", I18nFunction);
 		}
 
 		private IFluentApi.IFluentFunctionValue ModNameFunction(
@@ -78,10 +81,16 @@ namespace Shockah.ProjectFluent
 			string? targetFluentName = null;
 
 			var remainingNamedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>(namedArguments);
-			if (remainingNamedArguments.TryGetValue("Mod", out var modArg))
+			if (remainingNamedArguments.TryGetValue("mod", out var modArg))
+			{
 				targetFluentMod = modArg.AsString();
-			if (remainingNamedArguments.TryGetValue("Name", out var nameArg))
+				remainingNamedArguments.Remove("mod");
+			}
+			if (remainingNamedArguments.TryGetValue("name", out var nameArg))
+			{
 				targetFluentName = nameArg.AsString();
+				remainingNamedArguments.Remove("name");
+			}
 
 			if (!FluentCache.TryGetValue((locale, targetFluentMod, targetFluentName), out var fluent))
 			{
@@ -91,7 +100,45 @@ namespace Shockah.ProjectFluent
 				fluent = FluentProvider.GetFluent(locale, otherMod.Manifest, targetFluentName);
 				FluentCache[(locale, targetFluentMod, targetFluentName)] = fluent;
 			}
-			return FluentValueFactory.CreateStringValue(fluent.Get(targetKey));
+
+			var remainingStringNamedArguments = new Dictionary<string, string>();
+			foreach (var (key, arg) in remainingNamedArguments)
+				remainingStringNamedArguments[key] = arg.AsString();
+
+			return FluentValueFactory.CreateStringValue(fluent.Get(targetKey, remainingStringNamedArguments));
+		}
+
+		private IFluentApi.IFluentFunctionValue I18nFunction(
+			IGameLocale locale,
+			IManifest mod,
+			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+		{
+			if (positionalArguments.Count == 0)
+				throw new ArgumentException("Missing `Key` positional argument.");
+			string targetKey = positionalArguments[0].AsString();
+
+			string targetI18nMod = mod.UniqueID;
+			var remainingNamedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>(namedArguments);
+			if (remainingNamedArguments.TryGetValue("mod", out var modArg))
+			{
+				targetI18nMod = modArg.AsString();
+				remainingNamedArguments.Remove("mod");
+			}
+
+			var otherMod = ModRegistry.Get(targetI18nMod);
+			if (otherMod is null)
+				throw new ArgumentException($"Mod `{targetI18nMod}` is not installed.");
+			var translations = ModTranslationsProvider.GetModTranslations(otherMod.Manifest);
+
+			if (translations is null)
+				return FluentValueFactory.CreateStringValue(targetKey);
+
+			var remainingStringNamedArguments = new Dictionary<string, string>();
+			foreach (var (key, arg) in remainingNamedArguments)
+				remainingStringNamedArguments[key] = arg.AsString();
+
+			return FluentValueFactory.CreateStringValue(translations.Get(targetKey, remainingStringNamedArguments));
 		}
 	}
 }

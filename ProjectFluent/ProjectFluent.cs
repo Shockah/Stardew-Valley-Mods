@@ -59,7 +59,7 @@ namespace Shockah.ProjectFluent
 			FluentValueFactory = new FluentValueFactory();
 			var fluentFunctionManager = new FluentFunctionManager();
 			FluentFunctionManager = fluentFunctionManager;
-			var builtInFluentFunctionProvider = new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry, FluentValueFactory);
+			var builtInFluentFunctionProvider = new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry, FluentValueFactory, ModTranslationsProvider);
 			FluentFunctionProvider = new SerialFluentFunctionProvider(
 				builtInFluentFunctionProvider,
 				fluentFunctionManager
