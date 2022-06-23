@@ -4,12 +4,18 @@ namespace Shockah.PredictableRetainingSoil
 {
 	public interface IFluent<Key>
 	{
-		string this[Key key] { get; }
+		bool ContainsKey(Key key);
+
+		string Get(Key key)
+			=> Get(key, null);
 		string Get(Key key, object tokens);
+
+		string this[Key key]
+			=> Get(key, null);
 	}
 
 	public interface IFluentApi
 	{
-		IFluent<Key> GetLocalizationsForCurrentLocale<Key>(IManifest mod, string name = null);
+		IFluent<string> GetLocalizationsForCurrentLocale(IManifest mod, string name = null);
 	}
 }

@@ -72,7 +72,7 @@ namespace Shockah.PredictableRetainingSoil
 		private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
 		{
 			var fluentApi = Helper.ModRegistry.GetApi<IFluentApi>("Shockah.ProjectFluent");
-			fluent = fluentApi.GetLocalizationsForCurrentLocale<string>(ModManifest, null);
+			fluent = fluentApi.GetLocalizationsForCurrentLocale(ModManifest, null);
 
 			if (Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer"))
 			{
@@ -245,16 +245,6 @@ namespace Shockah.PredictableRetainingSoil
 			if (retainingSoilDays == null)
 				return;
 
-			// old:
-			__result = retainingSoilDays.Value switch
-			{
-				-1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.infinite"),
-				0 => Instance.Helper.Translation.Get("retainingSoil.tooltip.zero"),
-				1 => Instance.Helper.Translation.Get("retainingSoil.tooltip.one"),
-				_ => Instance.Helper.Translation.Get("retainingSoil.tooltip.other", new { Days = retainingSoilDays.Value })
-			};
-
-			// new:
 			__result = Instance.fluent.Get("retainingSoil-tooltip", new { Days = retainingSoilDays.Value });
 		}
 
