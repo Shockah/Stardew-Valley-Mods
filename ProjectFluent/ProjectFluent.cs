@@ -59,13 +59,15 @@ namespace Shockah.ProjectFluent
 			FluentValueFactory = new FluentValueFactory();
 			var fluentFunctionManager = new FluentFunctionManager();
 			FluentFunctionManager = fluentFunctionManager;
+			var builtInFluentFunctionProvider = new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry, FluentValueFactory);
 			FluentFunctionProvider = new SerialFluentFunctionProvider(
-				new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry, FluentValueFactory),
+				builtInFluentFunctionProvider,
 				fluentFunctionManager
 			);
 			ContextfulFluentFunctionProvider = new ContextfulFluentFunctionProvider(ModManifest, FluentFunctionProvider);
 			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 
+			builtInFluentFunctionProvider.FluentProvider = FluentProvider;
 			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
