@@ -31,22 +31,24 @@ namespace Shockah.ProjectFluent
 	{
 		private IManifest ProjectFluentMod { get; set; }
 		private IModRegistry ModRegistry { get; set; }
+		private IFluentValueFactory FluentValueFactory { get; set; }
 
 		private IFluentApi.FluentFunction ModNameFunction { get; set; }
 
-		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry)
+		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry, IFluentValueFactory fluentValueFactory)
 		{
 			this.ProjectFluentMod = projectFluentMod;
 			this.ModRegistry = modRegistry;
+			this.FluentValueFactory = fluentValueFactory;
 
-			ModNameFunction = (locale, mod, arguments) =>
+			ModNameFunction = (locale, mod, positionalArguments, namedArguments) =>
 			{
 				var modID = mod.UniqueID;
-				if (arguments.Count >= 1 && arguments[0] is string argumentModID)
-					modID = argumentModID;
+				if (positionalArguments.Count >= 1)
+					modID = positionalArguments[0].AsString();
 
 				var otherMod = ModRegistry.Get(modID);
-				return otherMod?.Manifest.Name ?? modID;
+				return fluentValueFactory.CreateStringValue(otherMod?.Manifest.Name ?? modID);
 			};
 		}
 

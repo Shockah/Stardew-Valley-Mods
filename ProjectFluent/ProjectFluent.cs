@@ -28,6 +28,7 @@ namespace Shockah.ProjectFluent
 		private IContentPackProvider ContentPackProvider { get; set; } = null!;
 		private IModFluentPathProvider ModFluentPathProvider { get; set; } = null!;
 		private II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
+		private IFluentValueFactory FluentValueFactory { get; set; } = null!;
 		private IFluentFunctionManager FluentFunctionManager { get; set; } = null!;
 		private IFluentFunctionProvider FluentFunctionProvider { get; set; } = null!;
 		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; } = null!;
@@ -55,16 +56,17 @@ namespace Shockah.ProjectFluent
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, IGameLocale.Default)
 			);
 			I18nDirectoryProvider = new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackProvider, ModDirectoryProvider);
+			FluentValueFactory = new FluentValueFactory();
 			var fluentFunctionManager = new FluentFunctionManager();
 			FluentFunctionManager = fluentFunctionManager;
 			FluentFunctionProvider = new SerialFluentFunctionProvider(
-				new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry),
+				new BuiltInFluentFunctionProvider(ModManifest, helper.ModRegistry, FluentValueFactory),
 				fluentFunctionManager
 			);
 			ContextfulFluentFunctionProvider = new ContextfulFluentFunctionProvider(ModManifest, FluentFunctionProvider);
 			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 
-			Api = new FluentApi(FluentProvider, FluentFunctionManager);
+			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
 

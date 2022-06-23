@@ -3,6 +3,7 @@ using Fluent.Net.RuntimeAst;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 
@@ -22,23 +23,23 @@ namespace Shockah.ProjectFluent
 			{
 				if (context.Functions.ContainsKey(functionName))
 					continue;
-				context.Functions[functionName] = (fluentArguments, _) =>
+				context.Functions[functionName] = (fluentPositionalArguments, _) =>
 				{
-					var arguments = fluentArguments.Select(a =>
+					var positionalArguments = fluentPositionalArguments.Select(a =>
 					{
-						if (a is FluentString @string)
-							return @string.Value;
-						else if (a is FluentNumber number)
-							return (object)decimal.Parse(number.Value);
+						if (a is IFluentType fluentValue)
+							return new FluentFunctionValue(fluentValue);
 						else
-							throw new ArgumentException($"Unsupported Fluent function argument type {a.GetType()}.");
+							throw new ArgumentException($"Unsupported Fluent function argument type `{a.GetType()}`.");
 					}).ToList();
 
-					var result = function(locale, arguments);
-					if (result is int or long or float or double or decimal)
-						return new FluentNumber($"{result}");
+					var result = function(locale, positionalArguments, ImmutableDictionary.Create<string, IFluentApi.IFluentFunctionValue>());
+					var fluentResult = result.AsFluentValue();
+
+					if (fluentResult is FluentType fluentResultValue)
+						return fluentResultValue;
 					else
-						return new FluentString($"{result}");
+						throw new ArgumentException($"Function `{functionName}` returned a value that is not a `{nameof(FluentType)}`.");
 				};
 			}
 
@@ -119,5 +120,51 @@ namespace Shockah.ProjectFluent
 				return Fallback.Get(key, tokens);
 			}
 		}
+	}
+
+	internal record FluentFunctionValue: IFluentApi.IFluentFunctionValue
+	{
+		internal IFluentType Value { get; set; }
+
+		public FluentFunctionValue(IFluentType value)
+		{
+			this.Value = value;
+		}
+
+		public object AsFluentValue()
+			=> Value;
+
+		public string AsString()
+			=> Value.Value;
+
+		public int? AsIntOrNull()
+			=> int.TryParse(Value.Value, out var @int) ? @int : null;
+
+		public long? AsLongOrNull()
+			=> int.TryParse(Value.Value, out var @int) ? @int : null;
+
+		public float? AsFloatOrNull()
+			=> float.TryParse(Value.Value, out var @int) ? @int : null;
+
+		public double? AsDoubleOrNull()
+			=> double.TryParse(Value.Value, out var @int) ? @int : null;
+	}
+
+	internal class FluentValueFactory: IFluentValueFactory
+	{
+		public IFluentApi.IFluentFunctionValue CreateStringValue(string value)
+			=> new FluentFunctionValue(new FluentString(value));
+
+		public IFluentApi.IFluentFunctionValue CreateIntValue(int value)
+			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+
+		public IFluentApi.IFluentFunctionValue CreateLongValue(long value)
+			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+
+		public IFluentApi.IFluentFunctionValue CreateFloatValue(float value)
+			=> new FluentFunctionValue(new FluentNumber($"{value}"));
+
+		public IFluentApi.IFluentFunctionValue CreateDoubleValue(double value)
+			=> new FluentFunctionValue(new FluentNumber($"{value}"));
 	}
 }

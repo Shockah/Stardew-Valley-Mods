@@ -9,7 +9,7 @@ namespace Shockah.ProjectFluent
 		IEnumerable<(string name, ContextfulFluentFunction function)> GetFluentFunctionsForMod(IManifest mod);
 	}
 
-	internal delegate object ContextfulFluentFunction(IGameLocale locale, IReadOnlyList<object> arguments);
+	internal delegate IFluentApi.IFluentFunctionValue ContextfulFluentFunction(IGameLocale locale, IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments);
 
 	internal class ContextfulFluentFunctionProvider: IContextfulFluentFunctionProvider
 	{
@@ -38,9 +38,11 @@ namespace Shockah.ProjectFluent
 			{
 				foreach (var function in input)
 				{
-					ContextfulFluentFunction contextfulFunction = (locale, arguments) => function.function(locale, mod, arguments);
-					yield return (function.name, contextfulFunction);
-					yield return ($"{ProjectFluentMod.UniqueID}/{function.name}", contextfulFunction);
+					IFluentApi.IFluentFunctionValue ContextfulFunction(IGameLocale locale, IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+						=> function.function(locale, mod, positionalArguments, namedArguments);
+
+					yield return (function.name, ContextfulFunction);
+					yield return ($"{ProjectFluentMod.UniqueID}/{function.name}", ContextfulFunction);
 				}
 			}
 

@@ -9,11 +9,13 @@ namespace Shockah.ProjectFluent
 	{
 		private IFluentProvider FluentProvider { get; set; }
 		private IFluentFunctionManager FluentFunctionManager { get; set; }
+		private IFluentValueFactory FluentValueFactory { get; set; }
 
-		internal FluentApi(IFluentProvider fluentProvider, IFluentFunctionManager fluentFunctionManager)
+		internal FluentApi(IFluentProvider fluentProvider, IFluentFunctionManager fluentFunctionManager, IFluentValueFactory fluentValueFactory)
 		{
 			this.FluentProvider = fluentProvider;
 			this.FluentFunctionManager = fluentFunctionManager;
+			this.FluentValueFactory = fluentValueFactory;
 		}
 
 		public IGameLocale CurrentLocale =>
@@ -42,5 +44,20 @@ namespace Shockah.ProjectFluent
 
 		public void UnregisterFunction(IManifest mod, string name)
 			=> FluentFunctionManager.UnregisterFunction(mod, name);
+
+		public IFluentApi.IFluentFunctionValue CreateStringValue(string value)
+			=> FluentValueFactory.CreateStringValue(value);
+
+		public IFluentApi.IFluentFunctionValue CreateIntValue(int value)
+			=> FluentValueFactory.CreateIntValue(value);
+
+		public IFluentApi.IFluentFunctionValue CreateLongValue(long value)
+			=> FluentValueFactory.CreateLongValue(value);
+
+		public IFluentApi.IFluentFunctionValue CreateFloatValue(float value)
+			=> FluentValueFactory.CreateFloatValue(value);
+
+		public IFluentApi.IFluentFunctionValue CreateDoubleValue(double value)
+			=> FluentValueFactory.CreateDoubleValue(value);
 	}
 }
