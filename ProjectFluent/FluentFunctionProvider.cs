@@ -33,28 +33,30 @@ namespace Shockah.ProjectFluent
 		private IModRegistry ModRegistry { get; set; }
 		private IFluentValueFactory FluentValueFactory { get; set; }
 
-		private IFluentApi.FluentFunction ModNameFunction { get; set; }
-
 		public BuiltInFluentFunctionProvider(IManifest projectFluentMod, IModRegistry modRegistry, IFluentValueFactory fluentValueFactory)
 		{
 			this.ProjectFluentMod = projectFluentMod;
 			this.ModRegistry = modRegistry;
 			this.FluentValueFactory = fluentValueFactory;
-
-			ModNameFunction = (locale, mod, positionalArguments, namedArguments) =>
-			{
-				var modID = mod.UniqueID;
-				if (positionalArguments.Count >= 1)
-					modID = positionalArguments[0].AsString();
-
-				var otherMod = ModRegistry.Get(modID);
-				return fluentValueFactory.CreateStringValue(otherMod?.Manifest.Name ?? modID);
-			};
 		}
 
 		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()
 		{
 			yield return (ProjectFluentMod, "MOD_NAME", ModNameFunction);
+		}
+
+		private IFluentApi.IFluentFunctionValue ModNameFunction(
+			IGameLocale locale,
+			IManifest mod,
+			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+		{
+			var modID = mod.UniqueID;
+			if (positionalArguments.Count >= 1)
+				modID = positionalArguments[0].AsString();
+
+			var otherMod = ModRegistry.Get(modID);
+			return FluentValueFactory.CreateStringValue(otherMod?.Manifest.Name ?? modID);
 		}
 	}
 }

@@ -42,7 +42,7 @@ namespace Shockah.ProjectFluent
 						=> function.function(locale, mod, positionalArguments, namedArguments);
 
 					yield return (function.name, ContextfulFunction);
-					yield return ($"{ProjectFluentMod.UniqueID}/{function.name}", ContextfulFunction);
+					yield return ($"{function.mod.UniqueID.Replace(".", "_").ToUpper()}_{function.name}", ContextfulFunction);
 				}
 			}
 

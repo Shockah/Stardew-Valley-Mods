@@ -1,6 +1,8 @@
 ﻿using Shockah.CommonModCode;
 using StardewModdingAPI;
+using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Shockah.ProjectFluent
 {
@@ -14,9 +16,12 @@ namespace Shockah.ProjectFluent
 	{
 		private IList<(IManifest mod, string name, IFluentApi.FluentFunction function)> Functions { get; set; } = new List<(IManifest mod, string name, IFluentApi.FluentFunction function)>();
 
+		private Regex ValidationRegex { get; set; } = new("^[A-Z][A-Z0-9_\\-]*$");
+
 		public void RegisterFunction(IManifest mod, string name, IFluentApi.FluentFunction function)
 		{
-			// TODO: check for existing entries
+			if (!ValidationRegex.IsMatch(name))
+				throw new ArgumentException("Fluent function names can only use uppercase letters, digits, the _, or the - character. They must also start with an uppercase letter.");
 			Functions.Add((mod, name, function));
 		}
 
