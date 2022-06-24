@@ -1,6 +1,7 @@
 ﻿using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
@@ -51,6 +52,8 @@ namespace Shockah.ProjectFluent
 			yield return (ProjectFluentMod, "MOD_NAME", ModNameFunction);
 			yield return (ProjectFluentMod, "FLUENT", FluentFunction);
 			yield return (ProjectFluentMod, "I18N", I18nFunction);
+			yield return (ProjectFluentMod, "TOUPPER", ToUpperFunction);
+			yield return (ProjectFluentMod, "TOLOWER", ToLowerFunction);
 		}
 
 		private IFluentApi.IFluentFunctionValue ModNameFunction(
@@ -139,6 +142,30 @@ namespace Shockah.ProjectFluent
 				remainingStringNamedArguments[key] = arg.AsString();
 
 			return FluentValueFactory.CreateStringValue(translations.Get(targetKey, remainingStringNamedArguments));
+		}
+
+		private IFluentApi.IFluentFunctionValue ToUpperFunction(
+			IGameLocale locale,
+			IManifest mod,
+			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+		{
+			if (positionalArguments.Count == 0)
+				throw new ArgumentException("Missing `Value` positional argument.");
+			string value = positionalArguments[0].AsString();
+			return FluentValueFactory.CreateStringValue(value.ToUpper(new CultureInfo(locale.LanguageCode)));
+		}
+
+		private IFluentApi.IFluentFunctionValue ToLowerFunction(
+			IGameLocale locale,
+			IManifest mod,
+			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+		{
+			if (positionalArguments.Count == 0)
+				throw new ArgumentException("Missing `Value` positional argument.");
+			string value = positionalArguments[0].AsString();
+			return FluentValueFactory.CreateStringValue(value.ToLower(new CultureInfo(locale.LanguageCode)));
 		}
 	}
 }

@@ -21,7 +21,7 @@ namespace Shockah.ProjectFluent
 		public void RegisterFunction(IManifest mod, string name, IFluentApi.FluentFunction function)
 		{
 			if (!ValidationRegex.IsMatch(name))
-				throw new ArgumentException("Fluent function names can only use uppercase letters, digits, the _, or the - character. They must also start with an uppercase letter.");
+				throw new ArgumentException("Fluent function names can only contain uppercase letters, digits, the _, or the - character. They must also start with an uppercase letter.");
 			Functions.Add((mod, name, function));
 		}
 
