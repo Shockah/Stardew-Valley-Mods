@@ -5,13 +5,14 @@
     "Description": "A Polish translation for the Automate mod. / Spolszczenie do moda Automate.",
     "UniqueID": "Shockah.Fluent.Automate.PL",
     "MinimumApiVersion": "3.14.0",
-    "UpdateKeys": [ "Nexus:0" ],
+    "UpdateKeys": [ "Nexus:12639" ],
     "ContentPackFor": {
         "UniqueID": "Shockah.ProjectFluent"
     },
     "Dependencies": [
         {
-            "UniqueID": "Pathoschild.Automate"
+            "UniqueID": "Pathoschild.Automate",
+            "MinimumVersion": "1.25.3"
         }
     ]
 }
