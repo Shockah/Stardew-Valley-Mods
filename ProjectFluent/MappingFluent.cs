@@ -2,21 +2,21 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class MappingFluent<Key>: IFluent<Key>
+	internal class MappingFluent<Input, Output>: IFluent<Input>
 	{
-		private IFluent<string> Wrapped { get; set; }
-		private Func<Key, string> Mapper { get; set; }
+		private IFluent<Output> Wrapped { get; set; }
+		private Func<Input, Output> Mapper { get; set; }
 
-		public MappingFluent(IFluent<string> wrapped, Func<Key, string> mapper)
+		public MappingFluent(IFluent<Output> wrapped, Func<Input, Output> mapper)
 		{
 			this.Wrapped = wrapped;
 			this.Mapper = mapper;
 		}
 
-		public bool ContainsKey(Key key)
+		public bool ContainsKey(Input key)
 			=> Wrapped.ContainsKey(Mapper(key));
 
-		public string Get(Key key, object? tokens)
+		public string Get(Input key, object? tokens)
 			=> Wrapped.Get(Mapper(key), tokens);
 	}
 }

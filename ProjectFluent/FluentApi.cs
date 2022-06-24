@@ -39,8 +39,8 @@ namespace Shockah.ProjectFluent
 		public IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix) where EnumType : Enum
 			=> new EnumFluent<EnumType>(baseFluent, keyPrefix);
 
-		public IFluent<T> GetMappingFluent<T>(IFluent<string> baseFluent, Func<T, string> mapper)
-			=> new MappingFluent<T>(baseFluent, mapper);
+		public IFluent<Input> GetMappingFluent<Input, Output>(IFluent<Output> baseFluent, Func<Input, Output> mapper)
+			=> new MappingFluent<Input, Output>(baseFluent, mapper);
 
 		public void RegisterFunction(IManifest mod, string name, FluentFunction function)
 			=> FluentFunctionManager.RegisterFunction(mod, name, function);
