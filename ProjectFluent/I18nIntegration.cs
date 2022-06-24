@@ -113,7 +113,7 @@ namespace Shockah.ProjectFluent
 			ref IList<string> errors
 		)
 		{
-			foreach (var directory in I18nDirectoryProvider.GetI18nDirectories(modInfo.Manifest))
+			foreach (var directory in I18nDirectoryProvider.GetI18nDirectories(modInfo.Manifest).Reverse())
 			{
 				var newTranslations = ReadTranslationFilesDelegate(directory, out var newErrors);
 				foreach (var error in newErrors)

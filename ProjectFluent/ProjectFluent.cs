@@ -51,8 +51,8 @@ namespace Shockah.ProjectFluent
 				new AssetContentPackProvider(Monitor, helper.Data, helper.Events.Content, ContentPackParser)
 			);
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
-				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
 				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackProvider, FluentPathProvider, ModDirectoryProvider),
+				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, DefaultLocale)
 			);
 			I18nDirectoryProvider = new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackProvider, ModDirectoryProvider);
