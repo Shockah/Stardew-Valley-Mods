@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
-	internal class EnumFluent<EnumType>: IEnumFluent<EnumType> where EnumType: Enum
+	internal class EnumFluent<EnumType>: IEnumFluent<EnumType> where EnumType: struct, Enum
 	{
 		private readonly IFluent<string> Wrapped;
 		private readonly string KeyPrefix;
@@ -25,23 +25,23 @@ namespace Shockah.ProjectFluent
 		public string Get(EnumType key, object? tokens)
 			=> Wrapped.Get(GetUnderlyingKey(key), tokens);
 
-		public EnumType GetFromLocalizedName(string localizedName)
+		public EnumType? GetFromLocalizedName(string localizedName)
 		{
-			foreach (var value in Enum.GetValues(typeof(EnumType)))
+			foreach (var value in Enum.GetValues<EnumType>())
 			{
-				var valueLocalizedName = ((IFluent<EnumType>)this)[(EnumType)value];
+				var valueLocalizedName = ((IFluent<EnumType>)this)[value];
 				if (valueLocalizedName == localizedName)
-					return (EnumType)value;
+					return value;
 			}
-			throw new ArgumentException($"{typeof(EnumType)} is not an enum.");
+			return default;
 		}
 
 		public IEnumerable<string> GetAllLocalizedNames()
 		{
 			if (!typeof(EnumType).IsEnum)
 				throw new ArgumentException($"{typeof(EnumType)} is not an enum.");
-			foreach (var value in Enum.GetValues(typeof(EnumType)))
-				yield return ((IFluent<EnumType>)this)[(EnumType)value];
+			foreach (var value in Enum.GetValues<EnumType>())
+				yield return ((IFluent<EnumType>)this)[value];
 		}
 	}
 }

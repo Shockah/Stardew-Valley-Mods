@@ -49,7 +49,7 @@ namespace Shockah.ProjectFluent
 		/// <typeparam name="EnumType">The <see cref="Enum"/> type to retrieve translations for.</typeparam>
 		/// <param name="baseFluent">The underlying <see cref="IFluent{}"/> instance.</param>
 		/// <param name="keyPrefix">The prefix all of the <see cref="Enum"/> values are prefixed with.</param>
-		IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix) where EnumType : Enum;
+		IEnumFluent<EnumType> GetEnumFluent<EnumType>(IFluent<string> baseFluent, string keyPrefix) where EnumType : struct, Enum;
 
 		/// <summary>Get a specialized <see cref="IFluent{}"/> instance that allows retrieving Project Fluent translations for values of a given generic type Input.</summary>
 		/// <typeparam name="T">The type to retrieve translations for.</typeparam>
