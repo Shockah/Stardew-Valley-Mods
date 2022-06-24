@@ -1,0 +1,17 @@
+{
+    "Name": "Automate - Polish Translation / Spolszczenie",
+    "Author": "Shockah",
+    "Version": "1.0.0",
+    "Description": "A Polish translation for the Automate mod. / Spolszczenie do moda Automate.",
+    "UniqueID": "Shockah.Fluent.Automate.PL",
+    "MinimumApiVersion": "3.14.0",
+    "UpdateKeys": [ "Nexus:0" ],
+    "ContentPackFor": {
+        "UniqueID": "Shockah.ProjectFluent"
+    },
+    "Dependencies": [
+        {
+            "UniqueID": "Pathoschild.Automate"
+        }
+    ]
+}

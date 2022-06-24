@@ -1,0 +1,8 @@
+{
+	"Format": "1.0.0",
+	"AdditionalI18nPaths": [
+		{
+			"LocalizedMod": "Pathoschild.Automate"
+		}
+	]
+}
