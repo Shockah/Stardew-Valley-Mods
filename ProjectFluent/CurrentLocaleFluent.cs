@@ -20,7 +20,7 @@ namespace Shockah.ProjectFluent
 		{
 			get
 			{
-				if (Locale is null || Locale.LanguageCode != ProjectFluent.Instance.CurrentLocale.LanguageCode)
+				if (Locale is null || Locale.LocaleCode != ProjectFluent.Instance.CurrentLocale.LocaleCode)
 				{
 					Locale = ProjectFluent.Instance.CurrentLocale;
 					Wrapped = ProjectFluent.Instance.Api.GetLocalizations(Locale, Mod, Name);

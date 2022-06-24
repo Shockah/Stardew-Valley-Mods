@@ -52,7 +52,7 @@ namespace Shockah.ProjectFluent
 			{
 				if (!reference.TryGetTarget(out var cached))
 					continue;
-				if (cached.Locale.LanguageCode == locale.LanguageCode && cached.Mod.UniqueID == mod.UniqueID && cached.Name == name)
+				if (cached.Locale.LocaleCode == locale.LocaleCode && cached.Mod.UniqueID == mod.UniqueID && cached.Name == name)
 					return cached;
 			}
 

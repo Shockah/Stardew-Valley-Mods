@@ -25,10 +25,10 @@ namespace Shockah.ProjectFluent
 			ProjectFluent.Instance.CurrentLocale;
 
 		public IGameLocale GetBuiltInLocale(LocalizedContentManager.LanguageCode languageCode)
-			=> new IGameLocale.BuiltIn(languageCode);
+			=> new BuiltInGameLocale(languageCode);
 
 		public IGameLocale GetModLocale(ModLanguage language)
-			=> new IGameLocale.Mod(language);
+			=> new ModGameLocale(language);
 
 		public IFluent<string> GetLocalizations(IGameLocale locale, IManifest mod, string? name = null)
 			=> FluentProvider.GetFluent(locale, mod, name);

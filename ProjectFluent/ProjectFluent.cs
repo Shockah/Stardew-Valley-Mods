@@ -134,7 +134,7 @@ namespace Shockah.ProjectFluent
 		#region APIs
 
 		public IGameLocale DefaultLocale
-			=> new IGameLocale.BuiltIn(LocalizedContentManager.LanguageCode.en);
+			=> new BuiltInGameLocale(LocalizedContentManager.LanguageCode.en);
 
 		public IGameLocale CurrentLocale
 		{
@@ -142,8 +142,8 @@ namespace Shockah.ProjectFluent
 			{
 				return LocalizedContentManager.CurrentLanguageCode switch
 				{
-					LocalizedContentManager.LanguageCode.mod => new IGameLocale.Mod(LocalizedContentManager.CurrentModLanguage),
-					_ => new IGameLocale.BuiltIn(LocalizedContentManager.CurrentLanguageCode),
+					LocalizedContentManager.LanguageCode.mod => new ModGameLocale(LocalizedContentManager.CurrentModLanguage),
+					_ => new BuiltInGameLocale(LocalizedContentManager.CurrentLanguageCode),
 				};
 			}
 		}
