@@ -17,19 +17,13 @@ namespace Shockah.ProjectFluent
 		}
 
 		private string GetUnderlyingKey(EnumType key)
-		{
-			return $"{KeyPrefix}{Enum.GetName(typeof(EnumType), key)}";
-		}
+			=> $"{KeyPrefix}{Enum.GetName(typeof(EnumType), key)}";
 
 		public bool ContainsKey(EnumType key)
-		{
-			return Wrapped.ContainsKey(GetUnderlyingKey(key));
-		}
+			=> Wrapped.ContainsKey(GetUnderlyingKey(key));
 
 		public string Get(EnumType key, object? tokens)
-		{
-			return Wrapped.Get(GetUnderlyingKey(key), tokens);
-		}
+			=> Wrapped.Get(GetUnderlyingKey(key), tokens);
 
 		public EnumType GetFromLocalizedName(string localizedName)
 		{

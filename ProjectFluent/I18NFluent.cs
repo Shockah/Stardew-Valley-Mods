@@ -12,13 +12,9 @@ namespace Shockah.ProjectFluent
 		}
 
 		public bool ContainsKey(string key)
-		{
-			return Translations.Get(key).HasValue();
-		}
+			=> Translations.Get(key).HasValue();
 
 		public string Get(string key, object? tokens)
-		{
-			return Translations.Get(key, tokens);
-		}
+			=> Translations.Get(key, tokens);
 	}
 }

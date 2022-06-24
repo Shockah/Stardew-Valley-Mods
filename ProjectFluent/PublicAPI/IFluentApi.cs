@@ -2,7 +2,6 @@
 using StardewValley;
 using StardewValley.GameData;
 using System;
-using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
@@ -10,6 +9,7 @@ namespace Shockah.ProjectFluent
 	{
 		#region Locale
 
+		IGameLocale DefaultLocale { get; }
 		IGameLocale CurrentLocale { get; }
 
 		IGameLocale GetBuiltInLocale(LocalizedContentManager.LanguageCode languageCode);
@@ -32,19 +32,6 @@ namespace Shockah.ProjectFluent
 		#endregion
 
 		#region Custom Fluent functions
-
-		public interface IFluentFunctionValue
-		{
-			object /* IFluentType */ AsFluentValue();
-
-			string AsString();
-			int? AsIntOrNull();
-			long? AsLongOrNull();
-			float? AsFloatOrNull();
-			double? AsDoubleOrNull();
-		}
-
-		public delegate IFluentFunctionValue FluentFunction(IGameLocale locale, IManifest mod, IReadOnlyList<IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments);
 
 		IFluentFunctionValue CreateStringValue(string value);
 		IFluentFunctionValue CreateIntValue(int value);

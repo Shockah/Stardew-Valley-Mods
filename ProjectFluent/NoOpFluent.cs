@@ -3,13 +3,9 @@
 	internal class NoOpFluent: IFluent<string>
 	{
 		public bool ContainsKey(string key)
-		{
-			return false;
-		}
+			=> false;
 
 		public string Get(string key, object? tokens)
-		{
-			return key;
-		}
+			=> key;
 	}
 }

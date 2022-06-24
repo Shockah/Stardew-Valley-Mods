@@ -46,13 +46,9 @@ namespace Shockah.ProjectFluent
 		}
 
 		public bool ContainsKey(string key)
-		{
-			return Wrapped.ContainsKey(key);
-		}
+			=> Wrapped.ContainsKey(key);
 
 		public string Get(string key, object? tokens)
-		{
-			return Wrapped.Get(key, tokens);
-		}
+			=> Wrapped.Get(key, tokens);
 	}
 }

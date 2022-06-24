@@ -53,7 +53,7 @@ namespace Shockah.ProjectFluent
 			ModFluentPathProvider = new SerialModDirectoryFluentPathProvider(
 				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider),
 				new ContentPackAdditionalModFluentPathProvider(helper.ModRegistry, ContentPackProvider, FluentPathProvider, ModDirectoryProvider),
-				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, IGameLocale.Default)
+				new ModFluentPathProvider(ModDirectoryProvider, FluentPathProvider, DefaultLocale)
 			);
 			I18nDirectoryProvider = new ContentPackI18nDirectoryProvider(helper.ModRegistry, ContentPackProvider, ModDirectoryProvider);
 			FluentValueFactory = new FluentValueFactory();
@@ -68,7 +68,7 @@ namespace Shockah.ProjectFluent
 			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 
 			builtInFluentFunctionProvider.FluentProvider = FluentProvider;
-			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory);
+			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory, DefaultLocale);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
 
@@ -132,6 +132,9 @@ namespace Shockah.ProjectFluent
 		}
 
 		#region APIs
+
+		public IGameLocale DefaultLocale
+			=> new IGameLocale.BuiltIn(LocalizedContentManager.LanguageCode.en);
 
 		public IGameLocale CurrentLocale
 		{

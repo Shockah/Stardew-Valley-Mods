@@ -1,14 +1,13 @@
 ﻿using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
 	internal interface IFluentFunctionProvider
 	{
-		IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions();
+		IEnumerable<(IManifest mod, string name, FluentFunction function)> GetFluentFunctions();
 	}
 
 	internal class SerialFluentFunctionProvider: IFluentFunctionProvider
@@ -21,7 +20,7 @@ namespace Shockah.ProjectFluent
 			this.Providers = providers.ToArray();
 		}
 
-		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()
+		public IEnumerable<(IManifest mod, string name, FluentFunction function)> GetFluentFunctions()
 		{
 			foreach (var provider in Providers)
 				foreach (var function in provider.GetFluentFunctions())
@@ -47,7 +46,7 @@ namespace Shockah.ProjectFluent
 			this.ModTranslationsProvider = modTranslationsProvider;
 		}
 
-		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()
+		public IEnumerable<(IManifest mod, string name, FluentFunction function)> GetFluentFunctions()
 		{
 			yield return (ProjectFluentMod, "MOD_NAME", ModNameFunction);
 			yield return (ProjectFluentMod, "FLUENT", FluentFunction);
@@ -57,11 +56,11 @@ namespace Shockah.ProjectFluent
 			yield return (ProjectFluentMod, "CAPITALIZE_WORDS", CapitalizeWordsFunction);
 		}
 
-		private IFluentApi.IFluentFunctionValue ModNameFunction(
+		private IFluentFunctionValue ModNameFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			var modID = mod.UniqueID;
 			if (positionalArguments.Count >= 1)
@@ -71,11 +70,11 @@ namespace Shockah.ProjectFluent
 			return FluentValueFactory.CreateStringValue(otherMod?.Manifest.Name ?? modID);
 		}
 
-		private IFluentApi.IFluentFunctionValue FluentFunction(
+		private IFluentFunctionValue FluentFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			if (positionalArguments.Count == 0)
 				throw new ArgumentException("Missing `Key` positional argument.");
@@ -84,7 +83,7 @@ namespace Shockah.ProjectFluent
 			string targetFluentMod = mod.UniqueID;
 			string? targetFluentName = null;
 
-			var remainingNamedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>(namedArguments);
+			var remainingNamedArguments = new Dictionary<string, IFluentFunctionValue>(namedArguments);
 			if (remainingNamedArguments.TryGetValue("mod", out var modArg))
 			{
 				targetFluentMod = modArg.AsString();
@@ -112,18 +111,18 @@ namespace Shockah.ProjectFluent
 			return FluentValueFactory.CreateStringValue(fluent.Get(targetKey, remainingStringNamedArguments));
 		}
 
-		private IFluentApi.IFluentFunctionValue I18nFunction(
+		private IFluentFunctionValue I18nFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			if (positionalArguments.Count == 0)
 				throw new ArgumentException("Missing `Key` positional argument.");
 			string targetKey = positionalArguments[0].AsString();
 
 			string targetI18nMod = mod.UniqueID;
-			var remainingNamedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>(namedArguments);
+			var remainingNamedArguments = new Dictionary<string, IFluentFunctionValue>(namedArguments);
 			if (remainingNamedArguments.TryGetValue("mod", out var modArg))
 			{
 				targetI18nMod = modArg.AsString();
@@ -145,40 +144,40 @@ namespace Shockah.ProjectFluent
 			return FluentValueFactory.CreateStringValue(translations.Get(targetKey, remainingStringNamedArguments));
 		}
 
-		private IFluentApi.IFluentFunctionValue ToUpperFunction(
+		private IFluentFunctionValue ToUpperFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			if (positionalArguments.Count == 0)
 				throw new ArgumentException("Missing `Value` positional argument.");
 			string value = positionalArguments[0].AsString();
-			return FluentValueFactory.CreateStringValue(value.ToUpper(new CultureInfo(locale.LanguageCode)));
+			return FluentValueFactory.CreateStringValue(value.ToUpper(locale.CultureInfo));
 		}
 
-		private IFluentApi.IFluentFunctionValue ToLowerFunction(
+		private IFluentFunctionValue ToLowerFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			if (positionalArguments.Count == 0)
 				throw new ArgumentException("Missing `Value` positional argument.");
 			string value = positionalArguments[0].AsString();
-			return FluentValueFactory.CreateStringValue(value.ToLower(new CultureInfo(locale.LanguageCode)));
+			return FluentValueFactory.CreateStringValue(value.ToLower(locale.CultureInfo));
 		}
 
-		private IFluentApi.IFluentFunctionValue CapitalizeWordsFunction(
+		private IFluentFunctionValue CapitalizeWordsFunction(
 			IGameLocale locale,
 			IManifest mod,
-			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
-			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+			IReadOnlyList<IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 		{
 			if (positionalArguments.Count == 0)
 				throw new ArgumentException("Missing `Value` positional argument.");
 			string value = positionalArguments[0].AsString();
-			return FluentValueFactory.CreateStringValue(new CultureInfo(locale.LanguageCode).TextInfo.ToTitleCase(value));
+			return FluentValueFactory.CreateStringValue(locale.CultureInfo.TextInfo.ToTitleCase(value));
 		}
 	}
 }

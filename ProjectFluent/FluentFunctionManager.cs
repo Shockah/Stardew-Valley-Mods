@@ -8,17 +8,17 @@ namespace Shockah.ProjectFluent
 {
 	internal interface IFluentFunctionManager
 	{
-		void RegisterFunction(IManifest mod, string name, IFluentApi.FluentFunction function);
+		void RegisterFunction(IManifest mod, string name, FluentFunction function);
 		void UnregisterFunction(IManifest mod, string name);
 	}
 
 	internal class FluentFunctionManager: IFluentFunctionManager, IFluentFunctionProvider
 	{
-		private IList<(IManifest mod, string name, IFluentApi.FluentFunction function)> Functions { get; set; } = new List<(IManifest mod, string name, IFluentApi.FluentFunction function)>();
+		private IList<(IManifest mod, string name, FluentFunction function)> Functions { get; set; } = new List<(IManifest mod, string name, FluentFunction function)>();
 
 		private Regex ValidationRegex { get; set; } = new("^[A-Z][A-Z0-9_\\-]*$");
 
-		public void RegisterFunction(IManifest mod, string name, IFluentApi.FluentFunction function)
+		public void RegisterFunction(IManifest mod, string name, FluentFunction function)
 		{
 			if (!ValidationRegex.IsMatch(name))
 				throw new ArgumentException("Fluent function names can only contain uppercase letters, digits, the _, or the - character. They must also start with an uppercase letter.");
@@ -32,7 +32,7 @@ namespace Shockah.ProjectFluent
 				Functions.RemoveAt(index.Value);
 		}
 
-		public IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> GetFluentFunctions()
+		public IEnumerable<(IManifest mod, string name, FluentFunction function)> GetFluentFunctions()
 			=> Functions;
 	}
 }

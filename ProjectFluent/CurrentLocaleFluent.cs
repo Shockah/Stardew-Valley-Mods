@@ -30,13 +30,9 @@ namespace Shockah.ProjectFluent
 		}
 
 		public bool ContainsKey(string key)
-		{
-			return CurrentFluent.ContainsKey(key);
-		}
+			=> CurrentFluent.ContainsKey(key);
 
 		public string Get(string key, object? tokens)
-		{
-			return CurrentFluent.Get(key, tokens);
-		}
+			=> CurrentFluent.Get(key, tokens);
 	}
 }

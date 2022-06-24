@@ -2,10 +2,10 @@
 {
 	internal interface IFluentValueFactory
 	{
-		IFluentApi.IFluentFunctionValue CreateStringValue(string value);
-		IFluentApi.IFluentFunctionValue CreateIntValue(int value);
-		IFluentApi.IFluentFunctionValue CreateLongValue(long value);
-		IFluentApi.IFluentFunctionValue CreateFloatValue(float value);
-		IFluentApi.IFluentFunctionValue CreateDoubleValue(double value);
+		IFluentFunctionValue CreateStringValue(string value);
+		IFluentFunctionValue CreateIntValue(int value);
+		IFluentFunctionValue CreateLongValue(long value);
+		IFluentFunctionValue CreateFloatValue(float value);
+		IFluentFunctionValue CreateDoubleValue(double value);
 	}
 }

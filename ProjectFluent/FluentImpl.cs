@@ -5,7 +5,6 @@ using Linguini.Syntax.Ast;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -23,7 +22,7 @@ namespace Shockah.ProjectFluent
 			try
 			{
 				Bundle = LinguiniBuilder.Builder()
-					.CultureInfo(new CultureInfo(locale.LanguageCode))
+					.CultureInfo(locale.CultureInfo)
 					.AddResources(content)
 					.SetUseIsolating(false)
 					.UncheckedBuild();
@@ -37,7 +36,7 @@ namespace Shockah.ProjectFluent
 					Bundle.AddFunction(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
 					{
 						var positionalArguments = fluentPositionalArguments.Select(a => new FluentFunctionValue(a)).ToList();
-						var namedArguments = new Dictionary<string, IFluentApi.IFluentFunctionValue>();
+						var namedArguments = new Dictionary<string, IFluentFunctionValue>();
 						foreach (var (key, a) in fluentNamedArguments)
 							namedArguments[key] = new FluentFunctionValue(a);
 
@@ -106,7 +105,7 @@ namespace Shockah.ProjectFluent
 		}
 	}
 
-	internal record FluentFunctionValue: IFluentApi.IFluentFunctionValue
+	internal record FluentFunctionValue: IFluentFunctionValue
 	{
 		internal IFluentType Value { get; set; }
 
@@ -136,19 +135,19 @@ namespace Shockah.ProjectFluent
 
 	internal class FluentValueFactory: IFluentValueFactory
 	{
-		public IFluentApi.IFluentFunctionValue CreateStringValue(string value)
+		public IFluentFunctionValue CreateStringValue(string value)
 			=> new FluentFunctionValue(new FluentString(value));
 
-		public IFluentApi.IFluentFunctionValue CreateIntValue(int value)
+		public IFluentFunctionValue CreateIntValue(int value)
 			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
-		public IFluentApi.IFluentFunctionValue CreateLongValue(long value)
+		public IFluentFunctionValue CreateLongValue(long value)
 			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
-		public IFluentApi.IFluentFunctionValue CreateFloatValue(float value)
+		public IFluentFunctionValue CreateFloatValue(float value)
 			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 
-		public IFluentApi.IFluentFunctionValue CreateDoubleValue(double value)
+		public IFluentFunctionValue CreateDoubleValue(double value)
 			=> new FluentFunctionValue(FluentNumber.FromString($"{value}"));
 	}
 }

@@ -11,11 +11,14 @@ namespace Shockah.ProjectFluent
 		private IFluentFunctionManager FluentFunctionManager { get; set; }
 		private IFluentValueFactory FluentValueFactory { get; set; }
 
-		internal FluentApi(IFluentProvider fluentProvider, IFluentFunctionManager fluentFunctionManager, IFluentValueFactory fluentValueFactory)
+		public IGameLocale DefaultLocale { get; private set; }
+
+		internal FluentApi(IFluentProvider fluentProvider, IFluentFunctionManager fluentFunctionManager, IFluentValueFactory fluentValueFactory, IGameLocale defaultLocale)
 		{
 			this.FluentProvider = fluentProvider;
 			this.FluentFunctionManager = fluentFunctionManager;
 			this.FluentValueFactory = fluentValueFactory;
+			this.DefaultLocale = defaultLocale;
 		}
 
 		public IGameLocale CurrentLocale =>
@@ -39,25 +42,25 @@ namespace Shockah.ProjectFluent
 		public IFluent<T> GetMappingFluent<T>(IFluent<string> baseFluent, Func<T, string> mapper)
 			=> new MappingFluent<T>(baseFluent, mapper);
 
-		public void RegisterFunction(IManifest mod, string name, IFluentApi.FluentFunction function)
+		public void RegisterFunction(IManifest mod, string name, FluentFunction function)
 			=> FluentFunctionManager.RegisterFunction(mod, name, function);
 
 		public void UnregisterFunction(IManifest mod, string name)
 			=> FluentFunctionManager.UnregisterFunction(mod, name);
 
-		public IFluentApi.IFluentFunctionValue CreateStringValue(string value)
+		public IFluentFunctionValue CreateStringValue(string value)
 			=> FluentValueFactory.CreateStringValue(value);
 
-		public IFluentApi.IFluentFunctionValue CreateIntValue(int value)
+		public IFluentFunctionValue CreateIntValue(int value)
 			=> FluentValueFactory.CreateIntValue(value);
 
-		public IFluentApi.IFluentFunctionValue CreateLongValue(long value)
+		public IFluentFunctionValue CreateLongValue(long value)
 			=> FluentValueFactory.CreateLongValue(value);
 
-		public IFluentApi.IFluentFunctionValue CreateFloatValue(float value)
+		public IFluentFunctionValue CreateFloatValue(float value)
 			=> FluentValueFactory.CreateFloatValue(value);
 
-		public IFluentApi.IFluentFunctionValue CreateDoubleValue(double value)
+		public IFluentFunctionValue CreateDoubleValue(double value)
 			=> FluentValueFactory.CreateDoubleValue(value);
 	}
 }

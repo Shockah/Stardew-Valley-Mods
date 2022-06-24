@@ -9,7 +9,11 @@ namespace Shockah.ProjectFluent
 		IEnumerable<(string name, ContextfulFluentFunction function)> GetFluentFunctionsForMod(IManifest mod);
 	}
 
-	internal delegate IFluentApi.IFluentFunctionValue ContextfulFluentFunction(IGameLocale locale, IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments);
+	internal delegate IFluentFunctionValue ContextfulFluentFunction(
+		IGameLocale locale,
+		IReadOnlyList<IFluentFunctionValue> positionalArguments,
+		IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments
+	);
 
 	internal class ContextfulFluentFunctionProvider: IContextfulFluentFunctionProvider
 	{
@@ -34,11 +38,11 @@ namespace Shockah.ProjectFluent
 			foreach (var function in modFunctions)
 				remainingFunctions.Remove(function);
 
-			IEnumerable<(string name, ContextfulFluentFunction function)> EnumerableFunctions(IEnumerable<(IManifest mod, string name, IFluentApi.FluentFunction function)> input)
+			IEnumerable<(string name, ContextfulFluentFunction function)> EnumerableFunctions(IEnumerable<(IManifest mod, string name, FluentFunction function)> input)
 			{
 				foreach (var function in input)
 				{
-					IFluentApi.IFluentFunctionValue ContextfulFunction(IGameLocale locale, IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+					IFluentFunctionValue ContextfulFunction(IGameLocale locale, IReadOnlyList<IFluentFunctionValue> positionalArguments, IReadOnlyDictionary<string, IFluentFunctionValue> namedArguments)
 						=> function.function(locale, mod, positionalArguments, namedArguments);
 
 					yield return (function.name, ContextfulFunction);

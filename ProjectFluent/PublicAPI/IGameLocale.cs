@@ -2,14 +2,16 @@
 using StardewValley.GameData;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Shockah.ProjectFluent
 {
 	public interface IGameLocale
 	{
-		static readonly IGameLocale Default = new BuiltIn(LocalizedContentManager.LanguageCode.en);
-
 		string LanguageCode { get; }
+
+		CultureInfo CultureInfo
+			=> new(LanguageCode);
 
 		bool IsBuiltInLocale
 			=> this is BuiltIn;
