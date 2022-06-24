@@ -81,7 +81,7 @@ namespace Shockah.ProjectFluent
 			string targetKey = positionalArguments[0].AsString();
 
 			string targetFluentMod = mod.UniqueID;
-			string? targetFluentName = null;
+			string? targetFluentFile = null;
 
 			var remainingNamedArguments = new Dictionary<string, IFluentFunctionValue>(namedArguments);
 			if (remainingNamedArguments.TryGetValue("mod", out var modArg))
@@ -89,19 +89,19 @@ namespace Shockah.ProjectFluent
 				targetFluentMod = modArg.AsString();
 				remainingNamedArguments.Remove("mod");
 			}
-			if (remainingNamedArguments.TryGetValue("name", out var nameArg))
+			if (remainingNamedArguments.TryGetValue("file", out var fileArg))
 			{
-				targetFluentName = nameArg.AsString();
-				remainingNamedArguments.Remove("name");
+				targetFluentFile = fileArg.AsString();
+				remainingNamedArguments.Remove("file");
 			}
 
-			if (!FluentCache.TryGetValue((locale, targetFluentMod, targetFluentName), out var fluent))
+			if (!FluentCache.TryGetValue((locale, targetFluentMod, targetFluentFile), out var fluent))
 			{
 				var otherMod = ModRegistry.Get(targetFluentMod);
 				if (otherMod is null)
 					throw new ArgumentException($"Mod `{targetFluentMod}` is not installed.");
-				fluent = FluentProvider.GetFluent(locale, otherMod.Manifest, targetFluentName);
-				FluentCache[(locale, targetFluentMod, targetFluentName)] = fluent;
+				fluent = FluentProvider.GetFluent(locale, otherMod.Manifest, targetFluentFile);
+				FluentCache[(locale, targetFluentMod, targetFluentFile)] = fluent;
 			}
 
 			var remainingStringNamedArguments = new Dictionary<string, string>();

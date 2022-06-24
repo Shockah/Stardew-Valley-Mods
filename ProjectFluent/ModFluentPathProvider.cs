@@ -10,7 +10,7 @@ namespace Shockah.ProjectFluent
 	{
 		event Action<IModFluentPathProvider>? CandidatesChanged;
 
-		IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name);
+		IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? file);
 	}
 
 	internal class SerialModDirectoryFluentPathProvider: IModFluentPathProvider, IDisposable
@@ -34,10 +34,10 @@ namespace Shockah.ProjectFluent
 				provider.CandidatesChanged -= OnCandidatesChanged;
 		}
 
-		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
+		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? file)
 		{
 			foreach (var provider in Providers)
-				foreach (var candidate in provider.GetFilePathCandidates(locale, mod, name))
+				foreach (var candidate in provider.GetFilePathCandidates(locale, mod, file))
 					yield return candidate;
 		}
 
@@ -61,12 +61,12 @@ namespace Shockah.ProjectFluent
 			this.LocaleOverride = localeOverride;
 		}
 
-		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
+		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? file)
 		{
 			var baseModPath = ModDirectoryProvider.GetModDirectoryPath(mod);
 			if (baseModPath is null)
 				yield break;
-			foreach (var candidate in FluentPathProvider.GetFilePathCandidates(LocaleOverride ?? locale, Path.Combine(baseModPath, "i18n"), name))
+			foreach (var candidate in FluentPathProvider.GetFilePathCandidates(LocaleOverride ?? locale, Path.Combine(baseModPath, "i18n"), file))
 				yield return candidate;
 		}
 	}
@@ -103,7 +103,7 @@ namespace Shockah.ProjectFluent
 		private void OnContentPacksContentsChanges(IContentPackProvider contentPackProvider)
 			=> CandidatesChanged?.Invoke(this);
 
-		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? name)
+		public IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? file)
 		{
 			foreach (var content in ContentPackProvider.GetContentPackContents())
 			{
@@ -113,9 +113,9 @@ namespace Shockah.ProjectFluent
 				{
 					if (!entry.LocalizedMod.Equals(mod.UniqueID, StringComparison.InvariantCultureIgnoreCase))
 						continue;
-					if ((entry.LocalizedFile is null) != (name is null))
+					if ((entry.LocalizedFile is null) != (file is null))
 						continue;
-					if (entry.LocalizedFile is not null && !entry.LocalizedFile.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+					if (entry.LocalizedFile is not null && !entry.LocalizedFile.Equals(file, StringComparison.InvariantCultureIgnoreCase))
 						continue;
 
 					var localizingMod = ModRegistry.Get(entry.LocalizingMod);

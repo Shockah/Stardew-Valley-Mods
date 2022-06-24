@@ -5,15 +5,15 @@ namespace Shockah.ProjectFluent
 	internal class CurrentLocaleFluent: IFluent<string>
 	{
 		private IManifest Mod { get; set; }
-		private string? Name { get; set; }
+		private string? File { get; set; }
 
 		private IGameLocale? Locale { get; set; }
 		private IFluent<string> Wrapped { get; set; } = null!;
 
-		public CurrentLocaleFluent(IManifest mod, string? name = null)
+		public CurrentLocaleFluent(IManifest mod, string? file = null)
 		{
 			this.Mod = mod;
-			this.Name = name;
+			this.File = file;
 		}
 
 		private IFluent<string> CurrentFluent
@@ -23,7 +23,7 @@ namespace Shockah.ProjectFluent
 				if (Locale is null || Locale.LocaleCode != ProjectFluent.Instance.CurrentLocale.LocaleCode)
 				{
 					Locale = ProjectFluent.Instance.CurrentLocale;
-					Wrapped = ProjectFluent.Instance.Api.GetLocalizations(Locale, Mod, Name);
+					Wrapped = ProjectFluent.Instance.Api.GetLocalizations(Locale, Mod, File);
 				}
 				return Wrapped;
 			}

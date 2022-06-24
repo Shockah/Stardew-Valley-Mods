@@ -7,7 +7,7 @@ namespace Shockah.ProjectFluent
 {
 	internal interface IFluentProvider
 	{
-		IFluent<string> GetFluent(IGameLocale locale, IManifest mod, string? name = null);
+		IFluent<string> GetFluent(IGameLocale locale, IManifest mod, string? file = null);
 	}
 
 	internal class FluentProvider: IFluentProvider, IDisposable
@@ -42,7 +42,7 @@ namespace Shockah.ProjectFluent
 			}
 		}
 
-		public IFluent<string> GetFluent(IGameLocale locale, IManifest mod, string? name = null)
+		public IFluent<string> GetFluent(IGameLocale locale, IManifest mod, string? file = null)
 		{
 			var toRemove = Fluents.Where(r => !r.TryGetTarget(out _)).ToList();
 			foreach (var reference in toRemove)
@@ -52,11 +52,11 @@ namespace Shockah.ProjectFluent
 			{
 				if (!reference.TryGetTarget(out var cached))
 					continue;
-				if (cached.Locale.LocaleCode == locale.LocaleCode && cached.Mod.UniqueID == mod.UniqueID && cached.Name == name)
+				if (cached.Locale.LocaleCode == locale.LocaleCode && cached.Mod.UniqueID == mod.UniqueID && cached.File == file)
 					return cached;
 			}
 
-			var fluent = new Fluent(locale, mod, name, FallbackFluentProvider.GetFallbackFluent(mod), ModFluentPathProvider, ContextfulFluentFunctionProvider);
+			var fluent = new Fluent(locale, mod, file, FallbackFluentProvider.GetFallbackFluent(mod), ModFluentPathProvider, ContextfulFluentFunctionProvider);
 			Fluents.Add(new WeakReference<Fluent>(fluent));
 			return fluent;
 		}
@@ -65,7 +65,7 @@ namespace Shockah.ProjectFluent
 		{
 			internal IGameLocale Locale { get; private set; }
 			internal IManifest Mod { get; private set; }
-			internal string? Name { get; private set; }
+			internal string? File { get; private set; }
 			private IFluent<string> Fallback { get; set; }
 
 			private IModFluentPathProvider ModFluentPathProvider { get; set; }
@@ -80,21 +80,21 @@ namespace Shockah.ProjectFluent
 					if (CachedFluent is null)
 						CachedFluent = new FileResolvingFluent(
 							ContextfulFluentFunctionProvider.GetFluentFunctionsForMod(Mod),
-							Locale, ModFluentPathProvider.GetFilePathCandidates(Locale, Mod, Name), Fallback
+							Locale, ModFluentPathProvider.GetFilePathCandidates(Locale, Mod, File), Fallback
 						);
 					return CachedFluent;
 				}
 			}
 
 			public Fluent(
-				IGameLocale locale, IManifest mod, string? name, IFluent<string> fallback,
+				IGameLocale locale, IManifest mod, string? file, IFluent<string> fallback,
 				IModFluentPathProvider modFluentPathProvider,
 				IContextfulFluentFunctionProvider contextfulFluentFunctionProvider
 			)
 			{
 				this.Locale = locale;
 				this.Mod = mod;
-				this.Name = name;
+				this.File = file;
 				this.Fallback = fallback;
 
 				this.ModFluentPathProvider = modFluentPathProvider;

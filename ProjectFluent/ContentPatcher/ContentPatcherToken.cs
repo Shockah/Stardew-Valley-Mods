@@ -36,12 +36,12 @@ namespace Shockah.ProjectFluent.ContentPatcher
 		public IEnumerable<string> GetValues(string input)
 		{
 			var args = ParseArgs(input);
-			if (args.Named.TryGetValue("file", out string? localizationsName))
+			if (args.Named.TryGetValue("file", out string? localizationsFile))
 				args.Named.Remove("file");
 			else
-				localizationsName = null;
+				localizationsFile = null;
 
-			yield return ObtainFluent(localizationsName).Get(args.Key, args.Named);
+			yield return ObtainFluent(localizationsFile).Get(args.Key, args.Named);
 		}
 
 		private Args ParseArgs(string input)
@@ -62,9 +62,9 @@ namespace Shockah.ProjectFluent.ContentPatcher
 			return new Args(key, named);
 		}
 
-		private bool TryGetFluent(string? name, [NotNullWhen(true)] out IFluent<string>? fluent)
+		private bool TryGetFluent(string? file, [NotNullWhen(true)] out IFluent<string>? fluent)
 		{
-			if (name is null)
+			if (file is null)
 			{
 				if (DefaultFluent is not null)
 				{
@@ -74,23 +74,23 @@ namespace Shockah.ProjectFluent.ContentPatcher
 			}
 			else
 			{
-				return Fluents.TryGetValue(name, out fluent);
+				return Fluents.TryGetValue(file, out fluent);
 			}
 
 			fluent = null;
 			return false;
 		}
 
-		private IFluent<string> ObtainFluent(string? name)
+		private IFluent<string> ObtainFluent(string? file)
 		{
-			if (TryGetFluent(name, out IFluent<string>? fluent))
+			if (TryGetFluent(file, out IFluent<string>? fluent))
 				return fluent;
-			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale(Mod, name);
+			fluent = ProjectFluent.Instance.Api.GetLocalizationsForCurrentLocale(Mod, file);
 
-			if (name is null)
+			if (file is null)
 				DefaultFluent = fluent;
 			else
-				Fluents[name] = fluent;
+				Fluents[file] = fluent;
 			return fluent;
 		}
 
