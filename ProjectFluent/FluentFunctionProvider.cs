@@ -54,6 +54,7 @@ namespace Shockah.ProjectFluent
 			yield return (ProjectFluentMod, "I18N", I18nFunction);
 			yield return (ProjectFluentMod, "TOUPPER", ToUpperFunction);
 			yield return (ProjectFluentMod, "TOLOWER", ToLowerFunction);
+			yield return (ProjectFluentMod, "CAPITALIZE_WORDS", CapitalizeWordsFunction);
 		}
 
 		private IFluentApi.IFluentFunctionValue ModNameFunction(
@@ -166,6 +167,18 @@ namespace Shockah.ProjectFluent
 				throw new ArgumentException("Missing `Value` positional argument.");
 			string value = positionalArguments[0].AsString();
 			return FluentValueFactory.CreateStringValue(value.ToLower(new CultureInfo(locale.LanguageCode)));
+		}
+
+		private IFluentApi.IFluentFunctionValue CapitalizeWordsFunction(
+			IGameLocale locale,
+			IManifest mod,
+			IReadOnlyList<IFluentApi.IFluentFunctionValue> positionalArguments,
+			IReadOnlyDictionary<string, IFluentApi.IFluentFunctionValue> namedArguments)
+		{
+			if (positionalArguments.Count == 0)
+				throw new ArgumentException("Missing `Value` positional argument.");
+			string value = positionalArguments[0].AsString();
+			return FluentValueFactory.CreateStringValue(new CultureInfo(locale.LanguageCode).TextInfo.ToTitleCase(value));
 		}
 	}
 }
