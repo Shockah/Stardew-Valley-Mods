@@ -2,6 +2,7 @@
 using StardewValley;
 using StardewValley.GameData;
 using System;
+using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
@@ -15,6 +16,9 @@ namespace Shockah.ProjectFluent
 
 		/// <summary>The current locale of the game.</summary>
 		IGameLocale CurrentLocale { get; }
+
+		/// <summary>All of the currently known locales.</summary>
+		IEnumerable<IGameLocale> AllKnownLocales { get; }
 
 		/// <summary>Get a locale built into the vanilla game.</summary>
 		/// <remarks>The <see cref="LocalizedContentManager.LanguageCode.mod"/> is not a valid argument for this method, as it is not a real language code.</remarks>

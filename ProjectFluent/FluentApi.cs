@@ -2,6 +2,7 @@
 using StardewValley;
 using StardewValley.GameData;
 using System;
+using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
@@ -23,6 +24,18 @@ namespace Shockah.ProjectFluent
 
 		public IGameLocale CurrentLocale =>
 			ProjectFluent.Instance.CurrentLocale;
+
+		public IEnumerable<IGameLocale> AllKnownLocales
+		{
+			get
+			{
+				foreach (var languageCode in Enum.GetValues<LocalizedContentManager.LanguageCode>())
+					if (languageCode != LocalizedContentManager.LanguageCode.mod)
+						yield return GetBuiltInLocale(languageCode);
+				foreach (var modLanguage in Game1.content.Load<List<ModLanguage>>("Data/AdditionalLanguages"))
+					yield return GetModLocale(modLanguage);
+			}
+		}
 
 		public IGameLocale GetBuiltInLocale(LocalizedContentManager.LanguageCode languageCode)
 			=> new BuiltInGameLocale(languageCode);

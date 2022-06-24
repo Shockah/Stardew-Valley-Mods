@@ -8,7 +8,9 @@ namespace Shockah.ProjectFluent
 	public sealed class BuiltInGameLocale: IGameLocale
 	{
 		internal LocalizedContentManager.LanguageCode BuiltInLanguageCode { get; private set; }
-		public string LocaleCode => BuiltInLanguageCode == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(BuiltInLanguageCode);
+
+		public string LocaleCode
+			=> BuiltInLanguageCode == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(BuiltInLanguageCode);
 
 		public BuiltInGameLocale(LocalizedContentManager.LanguageCode code)
 		{

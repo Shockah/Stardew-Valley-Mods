@@ -4,8 +4,6 @@ using Shockah.ProjectFluent.ContentPatcher;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.ProjectFluent
@@ -15,6 +13,8 @@ namespace Shockah.ProjectFluent
 		public static ProjectFluent Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;
 		private Harmony Harmony { get; set; } = null!;
+		private IGameLocale? LocaleOverride { get; set; }
+		private bool IsConfigRegistered { get; set; } = false;
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
@@ -71,8 +71,10 @@ namespace Shockah.ProjectFluent
 			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory, DefaultLocale);
 			Config = helper.ReadConfig<ModConfig>();
 			Fluent = Api.GetLocalizationsForCurrentLocale(ModManifest);
+			UpdateLocaleOverride();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 			I18nIntegration.Setup(Monitor, Harmony, I18nDirectoryProvider);
 		}
 
@@ -87,6 +89,18 @@ namespace Shockah.ProjectFluent
 			SetupConfig();
 		}
 
+		private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
+		{
+			foreach (var name in e.Names)
+			{
+				if (name.IsEquivalentTo("Data/AdditionalLanguages"))
+				{
+					SetupConfig();
+					break;
+				}
+			}
+		}
+
 		private void SetupConfig()
 		{
 			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -99,20 +113,18 @@ namespace Shockah.ProjectFluent
 				valuePattern: "{Key}.{Value}"
 			);
 
-			static IEnumerable<string> GetBuiltInLocaleCodes()
-			{
-				foreach (LocalizedContentManager.LanguageCode value in Enum.GetValues<LocalizedContentManager.LanguageCode>())
-				{
-					if (value == LocalizedContentManager.LanguageCode.mod)
-						continue;
-					yield return value == LocalizedContentManager.LanguageCode.en ? "en-US" : Game1.content.LanguageCodeString(value);
-				}
-			}
+			if (IsConfigRegistered)
+				api.Unregister(ModManifest);
 
 			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
-				save: () => Helper.WriteConfig(Config)
+				save: () =>
+				{
+					Helper.WriteConfig(Config);
+					UpdateLocaleOverride();
+					SetupConfig();
+				}
 			);
 
 			helper.AddEnumOption(
@@ -127,8 +139,17 @@ namespace Shockah.ProjectFluent
 
 			helper.AddParagraph(
 				"config-localeOverrideSubtitle",
-				new { Values = GetBuiltInLocaleCodes().Join() }
+				new { Values = Api.AllKnownLocales.Select(l => l.LocaleCode).Join() }
 			);
+
+			IsConfigRegistered = true;
+		}
+
+		private void UpdateLocaleOverride()
+		{
+			LocaleOverride = Config.CurrentLocaleOverride == ""
+				? null
+				: Api.AllKnownLocales.FirstOrDefault(l => l.LocaleCode.Equals(Config.CurrentLocaleOverride, System.StringComparison.InvariantCultureIgnoreCase));
 		}
 
 		#region APIs
@@ -140,7 +161,7 @@ namespace Shockah.ProjectFluent
 		{
 			get
 			{
-				return LocalizedContentManager.CurrentLanguageCode switch
+				return LocaleOverride ?? LocalizedContentManager.CurrentLanguageCode switch
 				{
 					LocalizedContentManager.LanguageCode.mod => new ModGameLocale(LocalizedContentManager.CurrentModLanguage),
 					_ => new BuiltInGameLocale(LocalizedContentManager.CurrentLanguageCode),
