@@ -19,18 +19,12 @@ namespace Shockah.CommonModCode.SMAPI
 		}
 
 		public bool ContainsKey(string key)
-		{
-			return Helper.Get(key).HasValue();
-		}
+			=> Helper.Get(key).HasValue();
 
 		public string Get(string key)
-		{
-			return Helper.Get(key);
-		}
+			=> Helper.Get(key);
 
 		public string Get(string key, object? tokens)
-		{
-			return Helper.Get(key, tokens);
-		}
+			=> Helper.Get(key, tokens);
 	}
 }
