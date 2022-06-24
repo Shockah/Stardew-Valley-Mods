@@ -1,12 +1,12 @@
 ﻿## Config
 
-config-daysToRetain-section-text = Days to retain water
-config-daysToRetain-section-tooltip =
-    0: will never retain water
-    -1: will always retain water
-config-daysToRetain-basic-name = Basic Retaining Soil
-config-daysToRetain-quality-name = Quality Retaining Soil
-config-daysToRetain-deluxe-name = Deluxe Retaining Soil
+config-daysToRetain-section = Days to retain water
+    .tooltip =
+        0: will never retain water
+        -1: will always retain water
+config-daysToRetain-basic = Basic Retaining Soil
+config-daysToRetain-quality = Quality Retaining Soil
+config-daysToRetain-deluxe = Deluxe Retaining Soil
 
 ## Tooltip
 

@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		_CommonWithHarmony\_CommonWithHarmony.projitems*{1f02be31-490b-474c-b5db-d16990f287cb}*SharedItemsImports = 5
+		_Common\_Common.projitems*{1f02be31-490b-474c-b5db-d16990f287cb}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{2270e272-3de2-4e0d-8907-29e32ecf68fe}*SharedItemsImports = 5
 		_Common\_Common.projitems*{2270e272-3de2-4e0d-8907-29e32ecf68fe}*SharedItemsImports = 5
 		_CommonWithHarmony\_CommonWithHarmony.projitems*{2c253073-438b-4475-8afb-87d74ee1ec10}*SharedItemsImports = 5
