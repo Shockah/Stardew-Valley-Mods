@@ -5,31 +5,33 @@ namespace Shockah.ProjectFluent
 {
 	public class RawContentPackContent
 	{
-		public string? ID { get; set; }
-		public ISemanticVersion? Format { get; set; }
-		public IList<AdditionalFluentPath>? AdditionalFluentPaths { get; set; }
-		public IList<AdditionalI18nPath>? AdditionalI18nPaths { get; set; }
+		public string? ID { get; init; }
+		public ISemanticVersion? Format { get; init; }
+		public IList<AdditionalFluentPath>? AdditionalFluentPaths { get; init; }
+		public IList<AdditionalI18nPath>? AdditionalI18nPaths { get; init; }
 
 		public class AdditionalFluentPath
 		{
-			public string? LocalizedMod { get; set; }
-			public string? LocalizingMod { get; set; }
-			public string? LocalizedFile { get; set; }
-			public string? LocalizingFile { get; set; }
-			public string? LocalizingSubdirectory { get; set; }
+			public string? LocalizedMod { get; init; }
+			public string? LocalizingMod { get; init; }
+			public string? LocalizedFile { get; init; }
+			public string? LocalizingFile { get; init; }
+			public string? LocalizingSubdirectory { get; init; }
+			public bool? IgnoreMissingLocalizedMod { get; init; }
 		}
 
 		public class AdditionalI18nPath
 		{
-			public string? LocalizedMod { get; set; }
-			public string? LocalizingMod { get; set; }
-			public string? LocalizingSubdirectory { get; set; }
+			public string? LocalizedMod { get; init; }
+			public string? LocalizingMod { get; init; }
+			public string? LocalizingSubdirectory { get; init; }
+			public bool? IgnoreMissingLocalizedMod { get; init; }
 		}
 	}
 
 	public record ContentPackContent
 	{
-		public string? ID { get; set; }
+		public string? ID { get; init; }
 		public ISemanticVersion Format { get; init; }
 		public IList<AdditionalFluentPath> AdditionalFluentPaths { get; init; }
 		public IList<AdditionalI18nPath> AdditionalI18nPaths { get; init; }
@@ -48,15 +50,24 @@ namespace Shockah.ProjectFluent
 			public string LocalizingMod { get; init; }
 			public string? LocalizedFile { get; init; }
 			public string? LocalizingFile { get; init; }
-			public string? LocalizingSubdirectory { get; set; }
+			public string? LocalizingSubdirectory { get; init; }
+			public bool IgnoreMissingLocalizedMod { get; init; }
 
-			public AdditionalFluentPath(string localizedMod, string localizingMod, string? localizedFile, string? localizingFile, string? localizingSubdirectory)
+			public AdditionalFluentPath(
+				string localizedMod,
+				string localizingMod,
+				string? localizedFile,
+				string? localizingFile,
+				string? localizingSubdirectory,
+				bool ignoreMissingLocalizedMod
+			)
 			{
 				this.LocalizedMod = localizedMod;
 				this.LocalizingMod = localizingMod;
 				this.LocalizedFile = localizedFile;
 				this.LocalizingFile = localizingFile;
 				this.LocalizingSubdirectory = localizingSubdirectory;
+				this.IgnoreMissingLocalizedMod = ignoreMissingLocalizedMod;
 			}
 		}
 
@@ -64,13 +75,20 @@ namespace Shockah.ProjectFluent
 		{
 			public string LocalizedMod { get; init; }
 			public string LocalizingMod { get; init; }
-			public string? LocalizingSubdirectory { get; set; }
+			public string? LocalizingSubdirectory { get; init; }
+			public bool IgnoreMissingLocalizedMod { get; init; }
 
-			public AdditionalI18nPath(string localizedMod, string localizingMod, string? localizingSubdirectory)
+			public AdditionalI18nPath(
+				string localizedMod,
+				string localizingMod,
+				string? localizingSubdirectory,
+				bool ignoreMissingLocalizedMod
+			)
 			{
 				this.LocalizedMod = localizedMod;
 				this.LocalizingMod = localizingMod;
 				this.LocalizingSubdirectory = localizingSubdirectory;
+				this.IgnoreMissingLocalizedMod = ignoreMissingLocalizedMod;
 			}
 		}
 	}

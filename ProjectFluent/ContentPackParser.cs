@@ -31,6 +31,7 @@ namespace Shockah.ProjectFluent
 		private IModRegistry ModRegistry { get; set; }
 
 		private ISemanticVersion OldestVersion { get; set; }
+		private ISemanticVersion IgnoreMissingLocalizedModVersion { get; set; }
 
 		public ContentPackParser(ISemanticVersion projectFluentVersion, IModRegistry modRegistry)
 		{
@@ -38,6 +39,7 @@ namespace Shockah.ProjectFluent
 			this.ModRegistry = modRegistry;
 
 			this.OldestVersion = new SemanticVersion(1, 0, 0);
+			this.IgnoreMissingLocalizedModVersion = new SemanticVersion(1, 1, 0);
 		}
 
 		public ParseResult<ContentPackContent> Parse(IManifest? context, RawContentPackContent raw)
@@ -115,6 +117,10 @@ namespace Shockah.ProjectFluent
 			else
 				errors.Add($"Missing `{nameof(raw.LocalizingMod)}` field.");
 
+			bool ignoreMissingLocalizedMod = false;
+			if (!format.IsOlderThan(IgnoreMissingLocalizedModVersion))
+				ignoreMissingLocalizedMod = raw.IgnoreMissingLocalizedMod ?? false;
+
 			if (localizingMod is not null)
 			{
 				if (localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
@@ -132,7 +138,7 @@ namespace Shockah.ProjectFluent
 				else
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
-					if (localizingModInstance is null)
+					if (localizingModInstance is null && !ignoreMissingLocalizedMod)
 						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}
@@ -142,7 +148,8 @@ namespace Shockah.ProjectFluent
 				localizingMod!,
 				raw.LocalizingFile,
 				raw.LocalizedFile,
-				raw.LocalizingSubdirectory
+				raw.LocalizingSubdirectory,
+				ignoreMissingLocalizedMod
 			) : null;
 			return new(parsed, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 		}
@@ -163,6 +170,10 @@ namespace Shockah.ProjectFluent
 			else
 				errors.Add($"Missing `{nameof(raw.LocalizingMod)}` field.");
 
+			bool ignoreMissingLocalizedMod = false;
+			if (!format.IsOlderThan(IgnoreMissingLocalizedModVersion))
+				ignoreMissingLocalizedMod = raw.IgnoreMissingLocalizedMod ?? false;
+
 			if (localizingMod is not null)
 			{
 				if (localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
@@ -180,7 +191,7 @@ namespace Shockah.ProjectFluent
 				else
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
-					if (localizingModInstance is null)
+					if (localizingModInstance is null && !ignoreMissingLocalizedMod)
 						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}
@@ -188,7 +199,8 @@ namespace Shockah.ProjectFluent
 			ContentPackContent.AdditionalI18nPath? parsed = errors.Count == 0 ? new(
 				raw.LocalizedMod!,
 				localizingMod!,
-				raw.LocalizingSubdirectory
+				raw.LocalizingSubdirectory,
+				ignoreMissingLocalizedMod
 			) : null;
 			return new(parsed, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 		}
