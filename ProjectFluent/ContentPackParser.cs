@@ -121,6 +121,18 @@ namespace Shockah.ProjectFluent
 			if (!format.IsOlderThan(IgnoreMissingLocalizedModVersion))
 				ignoreMissingLocalizedMod = raw.IgnoreMissingLocalizedMod ?? false;
 
+			if (raw.LocalizedMod is not null)
+			{
+				var localizedModInstance = ModRegistry.Get(raw.LocalizedMod);
+				if (localizedModInstance is null)
+				{
+					if (!ignoreMissingLocalizedMod)
+						warnings.Add($"`{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded.");
+					else if (ProjectFluent.Instance.Config.DeveloperMode)
+						warnings.Add($"[Developer Mode] `{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded. The developer opted out of this warning. This may or may not be an actual problem.");
+				}
+			}
+
 			if (localizingMod is not null)
 			{
 				if (localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
@@ -138,7 +150,7 @@ namespace Shockah.ProjectFluent
 				else
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
-					if (localizingModInstance is null && !ignoreMissingLocalizedMod)
+					if (localizingModInstance is null)
 						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}
@@ -174,6 +186,18 @@ namespace Shockah.ProjectFluent
 			if (!format.IsOlderThan(IgnoreMissingLocalizedModVersion))
 				ignoreMissingLocalizedMod = raw.IgnoreMissingLocalizedMod ?? false;
 
+			if (raw.LocalizedMod is not null)
+			{
+				var localizedModInstance = ModRegistry.Get(raw.LocalizedMod);
+				if (localizedModInstance is null)
+				{
+					if (!ignoreMissingLocalizedMod)
+						warnings.Add($"`{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded.");
+					else if (ProjectFluent.Instance.Config.DeveloperMode)
+						warnings.Add($"[Developer Mode] `{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded. The developer opted out of this warning. This may or may not be an actual problem.");
+				}
+			}
+
 			if (localizingMod is not null)
 			{
 				if (localizingMod.Equals("this", StringComparison.InvariantCultureIgnoreCase))
@@ -191,7 +215,7 @@ namespace Shockah.ProjectFluent
 				else
 				{
 					var localizingModInstance = ModRegistry.Get(localizingMod);
-					if (localizingModInstance is null && !ignoreMissingLocalizedMod)
+					if (localizingModInstance is null)
 						warnings.Add($"`{nameof(raw.LocalizingMod)}` specifies mod `{localizingMod}` that is not currently loaded.");
 				}
 			}

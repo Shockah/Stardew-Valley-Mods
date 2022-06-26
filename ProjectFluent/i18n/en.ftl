@@ -29,3 +29,12 @@ config-localeOverride = Locale override
 config-localeOverrideSubtitle =
     Built-in values:
     { $Values }
+
+config-developerMode = Developer mode
+    .tooltip =
+        If enabled:
+        {"*"} You will be warned if any mods are accessing i18n translations before { mod-name } is ready
+           (those mods may not be fully translatable).
+        {"*"} You will be warned if a localized mod is missing, even if the developer disabled this warning.
+
+        The game has to be restarted before those features take effect.

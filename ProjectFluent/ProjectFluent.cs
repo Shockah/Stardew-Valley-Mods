@@ -12,9 +12,11 @@ namespace Shockah.ProjectFluent
 	{
 		public static ProjectFluent Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;
-		private Harmony Harmony { get; set; } = null!;
 		private IGameLocale? LocaleOverride { get; set; }
 		private bool IsConfigRegistered { get; set; } = false;
+
+		private Harmony Harmony { get; init; } = new Harmony("Shockah.ProjectFluent");
+		private MemoryMonitor MemoryMonitor { get; init; } = new MemoryMonitor();
 
 		internal ModConfig Config { get; private set; } = null!;
 		internal IFluent<string> Fluent { get; private set; } = null!;
@@ -34,10 +36,19 @@ namespace Shockah.ProjectFluent
 		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; } = null!;
 		private IFluentProvider FluentProvider { get; set; } = null!;
 
+		public ProjectFluent()
+		{
+			Instance = this;
+
+			I18nIntegration.Monitor = MemoryMonitor;
+			I18nIntegration.EarlySetup(Harmony);
+		}
+
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
-			Harmony = new Harmony(ModManifest.UniqueID);
+			I18nIntegration.Monitor = Monitor;
+			MemoryMonitor.FlushToMonitor(Monitor);
 
 			ModDirectoryProvider = new ModDirectoryProvider(helper.ModRegistry);
 			FluentPathProvider = new FluentPathProvider();
@@ -75,7 +86,7 @@ namespace Shockah.ProjectFluent
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
-			I18nIntegration.Setup(Monitor, Harmony, I18nDirectoryProvider);
+			I18nIntegration.Setup(Harmony, I18nDirectoryProvider);
 		}
 
 		public override object GetApi() => Api;
@@ -140,6 +151,11 @@ namespace Shockah.ProjectFluent
 			helper.AddParagraph(
 				"config-localeOverrideSubtitle",
 				new { Values = Api.AllKnownLocales.Select(l => l.LocaleCode).Join() }
+			);
+
+			helper.AddBoolOption(
+				keyPrefix: "config-developerMode",
+				property: () => Config.DeveloperMode
 			);
 
 			IsConfigRegistered = true;

@@ -13,16 +13,54 @@ namespace Shockah.ProjectFluent
 	{
 		private delegate IDictionary<string, IDictionary<string, string>> ReadTranslationFilesDelegateType(string folderPath, out IList<string> errors);
 
-		private static IMonitor Monitor { get; set; } = null!;
+		internal static IMonitor Monitor { get; set; } = null!;
 		private static II18nDirectoryProvider I18nDirectoryProvider { get; set; } = null!;
 
 		private static object SCoreInstance { get; set; } = null!;
 		private static Action ReloadTranslationsDelegate { get; set; } = null!;
 		private static ReadTranslationFilesDelegateType ReadTranslationFilesDelegate { get; set; } = null!;
 
-		internal static void Setup(IMonitor monitor, Harmony harmony, II18nDirectoryProvider i18nDirectoryProvider)
+		private static bool IsTrackingAccessedTranslationKeys { get; set; } = true;
+		private static IDictionary<string, ISet<string?>> AccessedTranslationKeys { get; set; } = new Dictionary<string, ISet<string?>>();
+
+		internal static void EarlySetup(Harmony harmony)
 		{
-			Monitor = monitor;
+			try
+			{
+				Type translationHelperType = AccessTools.TypeByName("StardewModdingAPI.Framework.ModHelpers.TranslationHelper, StardewModdingAPI");
+
+				MethodInfo getWithKeyMethod = AccessTools.Method(translationHelperType, "Get", new Type[] { typeof(string) });
+				MethodInfo getWithKeyAndTokensMethod = AccessTools.Method(translationHelperType, "Get", new Type[] { typeof(string), typeof(object) });
+				MethodInfo getInAllLocalesMethod = AccessTools.Method(translationHelperType, "GetInAllLocales");
+				MethodInfo getTranslationsMethod = AccessTools.Method(translationHelperType, "GetTranslations");
+
+				harmony.Patch(
+					original: getWithKeyMethod,
+					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+				);
+				harmony.Patch(
+					original: getWithKeyAndTokensMethod,
+					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+				);
+				harmony.Patch(
+					original: getInAllLocalesMethod,
+					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+				);
+				harmony.Patch(
+					original: getTranslationsMethod,
+					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithoutKey_Postfix)))
+				);
+			}
+			catch (Exception ex)
+			{
+				if (ProjectFluent.Instance.Config.DeveloperMode)
+					Monitor.Log($"Could not hook into SMAPI - untranslatable mod detection won't work.\nReason: {ex}", LogLevel.Warn);
+				return;
+			}
+		}
+
+		internal static void Setup(Harmony harmony, II18nDirectoryProvider i18nDirectoryProvider)
+		{
 			I18nDirectoryProvider = i18nDirectoryProvider;
 
 			try
@@ -54,13 +92,70 @@ namespace Shockah.ProjectFluent
 			}
 			catch (Exception ex)
 			{
-				monitor.Log($"Could not hook into SMAPI - i18n integration won't work.\nReason: {ex}", LogLevel.Error);
+				Monitor.Log($"Could not hook into SMAPI - i18n integration won't work.\nReason: {ex}", LogLevel.Error);
 				return;
 			}
+
+			WarnAboutAccessedTranslations();
 		}
 
 		internal static void ReloadTranslations()
 			=> ReloadTranslationsDelegate();
+
+		private static void WarnAboutAccessedTranslations()
+		{
+			if (!ProjectFluent.Instance.Config.DeveloperMode)
+			{
+				AccessedTranslationKeys.Clear();
+				IsTrackingAccessedTranslationKeys = false;
+				return;
+			}
+
+			foreach (var (modID, keys) in AccessedTranslationKeys)
+			{
+				bool hasKnownKeys = keys.Any(k => k is not null);
+				bool hasUnknownKeys = keys.Any(k => k is null);
+
+				if (hasKnownKeys)
+				{
+					string knownKeys = string.Join("\n", keys.Where(k => k is not null).Select(k => $"\t* {k}"));
+					if (hasUnknownKeys)
+						Monitor.Log($"[Developer Mode] Mod `{modID}` accessed i18n translations before Project Fluent was ready (it may not be fully translatable):\n{knownKeys}\n\t* ...and possibly others.", LogLevel.Warn);
+					else
+						Monitor.Log($"[Developer Mode] Mod `{modID}` accessed i18n translations before Project Fluent was ready (it may not be fully translatable):\n{knownKeys}", LogLevel.Warn);
+				}
+				else if (hasUnknownKeys)
+				{
+					Monitor.Log($"[Developer Mode] Mod `{modID}` possibly accessed i18n translations before Project Fluent was ready (it may not be fully translatable).", LogLevel.Warn);
+				}
+			}
+			AccessedTranslationKeys.Clear();
+			IsTrackingAccessedTranslationKeys = false;
+		}
+
+		private static void TranslationHelper_MethodWithKey_Postfix(ITranslationHelper __instance, string key)
+		{
+			if (!IsTrackingAccessedTranslationKeys)
+				return;
+			if (!AccessedTranslationKeys.TryGetValue(__instance.ModID, out var keys))
+			{
+				keys = new HashSet<string?>();
+				AccessedTranslationKeys[__instance.ModID] = keys;
+			}
+			keys.Add(key);
+		}
+
+		private static void TranslationHelper_MethodWithoutKey_Postfix(ITranslationHelper __instance)
+		{
+			if (!IsTrackingAccessedTranslationKeys)
+				return;
+			if (!AccessedTranslationKeys.TryGetValue(__instance.ModID, out var keys))
+			{
+				keys = new HashSet<string?>();
+				AccessedTranslationKeys[__instance.ModID] = keys;
+			}
+			keys.Add(null);
+		}
 
 		private static IEnumerable<CodeInstruction> SCore_ReloadTranslations_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
 		{
