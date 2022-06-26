@@ -65,7 +65,7 @@ namespace Shockah.ProjectFluent
 				fluentFunctionManager
 			);
 			ContextfulFluentFunctionProvider = new ContextfulFluentFunctionProvider(ModManifest, FluentFunctionProvider);
-			FluentProvider = new FluentProvider(FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
+			FluentProvider = new FluentProvider(Monitor, FallbackFluentProvider, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 
 			builtInFluentFunctionProvider.FluentProvider = FluentProvider;
 			Api = new FluentApi(FluentProvider, FluentFunctionManager, FluentValueFactory, DefaultLocale);

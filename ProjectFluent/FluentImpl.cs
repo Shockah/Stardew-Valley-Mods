@@ -2,6 +2,7 @@
 using Linguini.Bundle.Builder;
 using Linguini.Shared.Types.Bundle;
 using Linguini.Syntax.Ast;
+using StardewModdingAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,25 +16,26 @@ namespace Shockah.ProjectFluent
 		private IFluent<string> Fallback { get; set; }
 		private FluentBundle Bundle { get; set; }
 
-		public FluentImpl(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IGameLocale locale, string content, IFluent<string>? fallback = null)
+		public FluentImpl(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IMonitor monitor, IGameLocale locale, string content, IFluent<string>? fallback = null)
 		{
 			this.Fallback = fallback ?? new NoOpFluent();
 
 			try
 			{
-				Bundle = LinguiniBuilder.Builder()
+				var (bundle, errors) = LinguiniBuilder.Builder()
 					.CultureInfo(locale.CultureInfo)
 					.AddResources(content)
 					.SetUseIsolating(false)
-					.UncheckedBuild();
+					.Build();
+				Bundle = bundle;
 
 				foreach (var (functionName, function) in functions)
 				{
 					var identifier = new Identifier(new ReadOnlyMemory<char>(functionName.ToCharArray()));
 
-					if (Bundle.TryGetFunction(identifier, out _))
+					if (bundle.TryGetFunction(identifier, out _))
 						continue;
-					Bundle.AddFunction(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
+					bundle.AddFunction(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
 					{
 						var positionalArguments = fluentPositionalArguments.Select(a => new FluentFunctionValue(a)).ToList();
 						var namedArguments = new Dictionary<string, IFluentFunctionValue>();
@@ -49,10 +51,22 @@ namespace Shockah.ProjectFluent
 							throw new ArgumentException($"Function `{functionName}` returned a value that is not a `{nameof(IFluentType)}`.");
 					}, out _);
 				}
+
+				if (errors is not null && errors.Count != 0)
+				{
+					var errorMessages = errors.Select(e =>
+					{
+						var span = e.GetSpan();
+						if (span is null)
+							return $"<unknown location>: {e}";
+						return $"Key #{span.Row}: {e}";
+					});
+					throw new Exception(string.Join("\n", errorMessages));
+				}
 			}
 			catch (Exception ex)
 			{
-				throw new ArgumentException($"Errors parsing Fluent:\n{ex}");
+				throw new Exception($"Errors parsing Fluent:\n{ex}");
 			}
 		}
 

@@ -9,7 +9,7 @@ namespace Shockah.ProjectFluent
 	{
 		private IFluent<string> Wrapped { get; set; }
 
-		public FileFluent(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IGameLocale locale, string path, IFluent<string> fallback)
+		public FileFluent(IEnumerable<(string name, ContextfulFluentFunction function)> functions, IMonitor monitor, IGameLocale locale, string path, IFluent<string> fallback)
 		{
 			if (!File.Exists(path))
 			{
@@ -36,7 +36,7 @@ namespace Shockah.ProjectFluent
 
 			try
 			{
-				Wrapped = new FluentImpl(functions, locale, content, fallback);
+				Wrapped = new FluentImpl(functions, monitor, locale, content, fallback);
 			}
 			catch (Exception e)
 			{

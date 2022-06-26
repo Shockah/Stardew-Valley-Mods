@@ -12,14 +12,21 @@ namespace Shockah.ProjectFluent
 
 	internal class FluentProvider: IFluentProvider, IDisposable
 	{
-		private IFallbackFluentProvider FallbackFluentProvider { get; set; }
-		private IModFluentPathProvider ModFluentPathProvider { get; set; }
-		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; }
+		private IMonitor Monitor { get; init; }
+		private IFallbackFluentProvider FallbackFluentProvider { get; init; }
+		private IModFluentPathProvider ModFluentPathProvider { get; init; }
+		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; init; }
 
 		private IList<WeakReference<Fluent>> Fluents { get; set; } = new List<WeakReference<Fluent>>();
 
-		public FluentProvider(IFallbackFluentProvider fallbackFluentProvider, IModFluentPathProvider modFluentPathProvider, IContextfulFluentFunctionProvider contextfulFluentFunctionProvider)
+		public FluentProvider(
+			IMonitor monitor,
+			IFallbackFluentProvider fallbackFluentProvider,
+			IModFluentPathProvider modFluentPathProvider,
+			IContextfulFluentFunctionProvider contextfulFluentFunctionProvider
+		)
 		{
+			this.Monitor = monitor;
 			this.FallbackFluentProvider = fallbackFluentProvider;
 			this.ModFluentPathProvider = modFluentPathProvider;
 			this.ContextfulFluentFunctionProvider = contextfulFluentFunctionProvider;
@@ -56,20 +63,21 @@ namespace Shockah.ProjectFluent
 					return cached;
 			}
 
-			var fluent = new Fluent(locale, mod, file, FallbackFluentProvider.GetFallbackFluent(mod), ModFluentPathProvider, ContextfulFluentFunctionProvider);
+			var fluent = new Fluent(locale, mod, file, FallbackFluentProvider.GetFallbackFluent(mod), Monitor, ModFluentPathProvider, ContextfulFluentFunctionProvider);
 			Fluents.Add(new WeakReference<Fluent>(fluent));
 			return fluent;
 		}
 
 		private class Fluent: IFluent<string>
 		{
-			internal IGameLocale Locale { get; private set; }
-			internal IManifest Mod { get; private set; }
-			internal string? File { get; private set; }
-			private IFluent<string> Fallback { get; set; }
+			internal IGameLocale Locale { get; private init; }
+			internal IManifest Mod { get; private init; }
+			internal string? File { get; private init; }
+			private IFluent<string> Fallback { get; init; }
 
-			private IModFluentPathProvider ModFluentPathProvider { get; set; }
-			private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; }
+			private IMonitor Monitor { get; init; }
+			private IModFluentPathProvider ModFluentPathProvider { get; init; }
+			private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; init; }
 
 			private IFluent<string>? CachedFluent { get; set; }
 
@@ -80,6 +88,7 @@ namespace Shockah.ProjectFluent
 					if (CachedFluent is null)
 						CachedFluent = new FileResolvingFluent(
 							ContextfulFluentFunctionProvider.GetFluentFunctionsForMod(Mod),
+							Monitor,
 							Locale, ModFluentPathProvider.GetFilePathCandidates(Locale, Mod, File), Fallback
 						);
 					return CachedFluent;
@@ -88,6 +97,7 @@ namespace Shockah.ProjectFluent
 
 			public Fluent(
 				IGameLocale locale, IManifest mod, string? file, IFluent<string> fallback,
+				IMonitor monitor,
 				IModFluentPathProvider modFluentPathProvider,
 				IContextfulFluentFunctionProvider contextfulFluentFunctionProvider
 			)
@@ -97,6 +107,7 @@ namespace Shockah.ProjectFluent
 				this.File = file;
 				this.Fallback = fallback;
 
+				this.Monitor = monitor;
 				this.ModFluentPathProvider = modFluentPathProvider;
 				this.ContextfulFluentFunctionProvider = contextfulFluentFunctionProvider;
 			}
