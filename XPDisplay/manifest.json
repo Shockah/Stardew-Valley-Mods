@@ -10,7 +10,8 @@
 	"Dependencies": [
 		{
 			"UniqueID": "DaLion.ImmersiveProfessions",
-			"IsRequired": false
+			"IsRequired": false,
+			"MinimumVersion": "5.0.1"
 		}
 	]
 }
