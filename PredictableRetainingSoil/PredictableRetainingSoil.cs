@@ -132,21 +132,14 @@ namespace Shockah.PredictableRetainingSoil
 			
 			IsMultiFertilizerLoaded = Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer");
 
-			var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore");
-			if (sc == null)
-			{
-				Monitor.Log($"Missing SpaceCore dependency. Precitable Retaining Soil probably won't work.", LogLevel.Error);
-			}
-			else
-			{
-				sc.RegisterCustomProperty(
-					typeof(HoeDirt),
-					"RetainingSoilDaysLeft",
-					typeof(int),
-					AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.GetRetainingSoilDaysLeft)),
-					AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.SetRetainingSoilDaysLeft))
-				);
-			}
+			var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore")!;
+			sc.RegisterCustomProperty(
+				typeof(HoeDirt),
+				"RetainingSoilDaysLeft",
+				typeof(int),
+				AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.GetRetainingSoilDaysLeft)),
+				AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.SetRetainingSoilDaysLeft))
+			);
 
 			SetupConfig();
 		}
@@ -240,10 +233,13 @@ namespace Shockah.PredictableRetainingSoil
 
 		private static void CraftingRecipe_Constructor_Postfix(CraftingRecipe __instance)
 		{
+			if (Instance.Fluent is null)
+				return;
+
 			if (__instance.bigCraftable)
 				return;
 			var retainingSoilDays = Instance.GetRetainingSoilDays(__instance.itemToProduce[0]);
-			if (retainingSoilDays == null)
+			if (retainingSoilDays is null)
 				return;
 
 			__instance.description = Instance.Fluent.Get("retainingSoil-tooltip", new { Days = retainingSoilDays.Value });
@@ -251,10 +247,13 @@ namespace Shockah.PredictableRetainingSoil
 
 		private static void Object_getDescription_Postfix(SObject __instance, ref string __result)
 		{
+			if (Instance.Fluent is null)
+				return;
+
 			if (__instance.Category != SObject.fertilizerCategory)
 				return;
 			var retainingSoilDays = Instance.GetRetainingSoilDays(__instance.ParentSheetIndex);
-			if (retainingSoilDays == null)
+			if (retainingSoilDays is null)
 				return;
 
 			__result = Instance.Fluent.Get("retainingSoil-tooltip", new { Days = retainingSoilDays.Value });
@@ -287,11 +286,11 @@ namespace Shockah.PredictableRetainingSoil
 		public void RefreshRetainingSoilDaysLeft(HoeDirt soil)
 		{
 			var retainingSoilType = GetRetainingSoilType(soil);
-			if (retainingSoilType == null)
+			if (retainingSoilType is null)
 				return;
 
 			var retainingSoilDays = GetRetainingSoilDays(retainingSoilType.Value);
-			if (retainingSoilDays != null)
+			if (retainingSoilDays is not null)
 				soil.SetRetainingSoilDaysLeft(retainingSoilDays.Value);
 		}
 		#endregion

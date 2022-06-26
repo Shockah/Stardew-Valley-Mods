@@ -12,7 +12,7 @@ namespace Shockah.CommonModCode
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Translation.cs
 
 			var results = new Dictionary<string, string>();
-			if (tokens == null)
+			if (tokens is null)
 				return results;
 
 			if (tokens is IDictionary dictionary)
@@ -20,7 +20,7 @@ namespace Shockah.CommonModCode
 				foreach (DictionaryEntry entry in dictionary)
 				{
 					string? key = entry.Key?.ToString()?.Trim();
-					if (key != null)
+					if (key is not null)
 						results[key] = $"{entry.Value}";
 				}
 			}
