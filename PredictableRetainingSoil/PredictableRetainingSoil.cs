@@ -26,7 +26,7 @@ namespace Shockah.PredictableRetainingSoil
 		private Func<string?> MultiFertilizerKeyRetain { get; set; } = null!;
 		private Func<HoeDirt, int?> GetMultiFertilizerRetainingSoilType { get; set; } = null!;
 
-		private bool isStayingWateredViaRetainingSoil = false;
+		private bool IsStayingWateredViaRetainingSoil = false;
 
 		public override void Entry(IModHelper helper)
 		{
@@ -190,7 +190,7 @@ namespace Shockah.PredictableRetainingSoil
 			__instance.NetFields.AddFields(__instance.GetRetainingSoilDaysLeftNetField());
 			__instance.state.fieldChangeVisibleEvent += (_, _, newValue) =>
 			{
-				if (newValue > 0 && !Instance.isStayingWateredViaRetainingSoil)
+				if (newValue > 0 && !Instance.IsStayingWateredViaRetainingSoil)
 					Instance.RefreshRetainingSoilDaysLeft(__instance);
 			};
 		}
@@ -208,9 +208,9 @@ namespace Shockah.PredictableRetainingSoil
 			{
 				if (__instance.state.Value == 0)
 				{
-					Instance.isStayingWateredViaRetainingSoil = true;
+					Instance.IsStayingWateredViaRetainingSoil = true;
 					__instance.state.Value = __state;
-					Instance.isStayingWateredViaRetainingSoil = false;
+					Instance.IsStayingWateredViaRetainingSoil = false;
 				}
 
 				var retainingSoilDaysLeft = __instance.GetRetainingSoilDaysLeft();
