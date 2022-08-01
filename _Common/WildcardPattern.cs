@@ -12,14 +12,14 @@ namespace Shockah.CommonModCode
 			return new IWildcardPattern.JustString(pattern);
 		}
 	}
-	
+
 	public interface IWildcardPattern
 	{
 		string Pattern { get; }
 
 		bool Matches(string input);
 
-		public readonly struct JustString: IWildcardPattern
+		public readonly struct JustString : IWildcardPattern
 		{
 			public readonly string Pattern { get; }
 
@@ -29,15 +29,13 @@ namespace Shockah.CommonModCode
 			}
 
 			public bool Matches(string input)
-			{
-				return input.Trim().Equals(Pattern.Trim(), StringComparison.InvariantCultureIgnoreCase);
-			}
+				=> input.Trim().Equals(Pattern.Trim(), StringComparison.InvariantCultureIgnoreCase);
 		}
 
-		public class Impl: IWildcardPattern
+		public class Impl : IWildcardPattern
 		{
 			public string Pattern { get; private set; }
-			private Lazy<SRegex> Regex;
+			private readonly Lazy<SRegex> Regex;
 
 			public Impl(string pattern)
 			{
@@ -62,9 +60,7 @@ namespace Shockah.CommonModCode
 			}
 
 			public bool Matches(string input)
-			{
-				return Regex.Value.IsMatch(input.Trim());
-			}
+				=> Regex.Value.IsMatch(input.Trim());
 		}
 	}
 }

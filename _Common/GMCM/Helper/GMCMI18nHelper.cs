@@ -183,7 +183,7 @@ namespace Shockah.CommonModCode.GMCM
 			);
 		}
 
-		public void AddEnumOption<EnumType>(string keyPrefix, Expression<Func<EnumType>> property, string? valuePrefix = null, string? fieldId = null, object? tokens = null) where EnumType: struct, Enum
+		public void AddEnumOption<EnumType>(string keyPrefix, Expression<Func<EnumType>> property, string? valuePrefix = null, string? fieldId = null, object? tokens = null) where EnumType : struct, Enum
 		{
 			var getValue = property.Compile()!;
 			var setValue = CreateSetter(property).Compile()!;
@@ -199,7 +199,7 @@ namespace Shockah.CommonModCode.GMCM
 			);
 		}
 
-		public void AddEnumOption<EnumType>(string keyPrefix, Func<EnumType> getValue, Action<EnumType> setValue, string? valuePrefix = null, string? fieldId = null, object? tokens = null) where EnumType: struct, Enum
+		public void AddEnumOption<EnumType>(string keyPrefix, Func<EnumType> getValue, Action<EnumType> setValue, string? valuePrefix = null, string? fieldId = null, object? tokens = null) where EnumType : struct, Enum
 		{
 			Api.AddTextOption(
 				mod: Mod,

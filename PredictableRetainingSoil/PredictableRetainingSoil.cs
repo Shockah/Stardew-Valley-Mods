@@ -8,7 +8,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.PredictableRetainingSoil
 {
-	public class PredictableRetainingSoil: Mod, IPredictableRetainingSoilApi
+	public class PredictableRetainingSoil : Mod, IPredictableRetainingSoilApi
 	{
 		private const int BasicRetainingSoilID = 370;
 		private const int QualityRetainingSoilID = 371;
@@ -84,7 +84,7 @@ namespace Shockah.PredictableRetainingSoil
 				{
 					if (!IsMultiFertilizerLoaded)
 						return null;
-					
+
 					try
 					{
 						return (string?)multiFertilizerKeyRetainPropertyGetter.Invoke(null, null);
@@ -129,7 +129,7 @@ namespace Shockah.PredictableRetainingSoil
 					}
 				};
 			}
-			
+
 			IsMultiFertilizerLoaded = Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer");
 
 			var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore")!;

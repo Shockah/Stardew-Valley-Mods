@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
-	internal class EnumFluent<EnumType>: IEnumFluent<EnumType> where EnumType: struct, Enum
+	internal class EnumFluent<EnumType> : IEnumFluent<EnumType> where EnumType : struct, Enum
 	{
 		private readonly IFluent<string> Wrapped;
 		private readonly string KeyPrefix;

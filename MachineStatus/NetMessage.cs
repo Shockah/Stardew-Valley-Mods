@@ -105,7 +105,7 @@ namespace Shockah.MachineStatus
 					=> $"{ParentSheetIndex}:{Name}{(BigCraftable ? " (BigCraftable)" : "")}";
 			}
 		}
-		
+
 		public struct MachineUpsert
 		{
 			public LocationDescriptor Location { get; set; }

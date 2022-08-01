@@ -2,7 +2,7 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class FluentTranslationSet<Key>: ITranslationSet<Key>
+	internal class FluentTranslationSet<Key> : ITranslationSet<Key>
 	{
 		private IFluent<Key> Fluent { get; set; }
 

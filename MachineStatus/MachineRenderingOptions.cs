@@ -2,9 +2,15 @@
 {
 	internal static class MachineRenderingOptions
 	{
-		public enum Grouping { None, ByMachine, ByMachineAndItem }
+		public enum Grouping
+		{
+			None,
+			ByMachine,
+			ByMachineAndItem
+		}
 
-		public enum Sorting {
+		public enum Sorting
+		{
 			None,
 			ByMachineAZ, ByMachineZA,
 			ReadyFirst, WaitingFirst, BusyFirst,
@@ -12,8 +18,18 @@
 			ByItemAZ, ByItemZA
 		}
 
-		public enum BubbleSway { Static, Together, Wave }
+		public enum BubbleSway
+		{
+			Static,
+			Together,
+			Wave
+		}
 
-		public enum Visibility { Hidden, Normal, Focused }
+		public enum Visibility
+		{
+			Hidden,
+			Normal,
+			Focused
+		}
 	}
 }

@@ -14,7 +14,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
-	public class FlexibleSprinklers: Mod, IFlexibleSprinklersApi
+	public class FlexibleSprinklers : Mod, IFlexibleSprinklersApi
 	{
 		private const int PressureNozzleParentSheetIndex = 915;
 		internal static readonly string LineSprinklersModID = "hootless.LineSprinklers";
@@ -272,19 +272,6 @@ namespace Shockah.FlexibleSprinklers
 			};
 		}
 
-		internal GameLocation? RetrieveGameLocationForObject(SObject @object, GameLocation? potentialLocation = null)
-		{
-			static bool IsObjectInLocation(SObject @object, GameLocation location)
-				=> location.getObjectAtTile((int)@object.TileLocation.X, (int)@object.TileLocation.Y) == @object;
-
-			if (potentialLocation is not null && IsObjectInLocation(@object, potentialLocation))
-				return potentialLocation;
-			foreach (GameLocation location in GameExt.GetAllLocations())
-				if (IsObjectInLocation(@object, location))
-					return location;
-			return null;
-		}
-
 		public void ActivateAllSprinklers()
 		{
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
@@ -360,9 +347,7 @@ namespace Shockah.FlexibleSprinklers
 		}
 
 		public int GetSprinklerPower(SObject sprinkler)
-		{
-			return GetSprinklerInfo(sprinkler).Power;
-		}
+			=> GetSprinklerInfo(sprinkler).Power;
 
 		[Obsolete("Sprinkler range now also depends on its unmodified coverage shape. Use `GetSprinklerSpreadRange` instead to achieve the same result as before. This method will be removed in a future update.")]
 		public int GetFloodFillSprinklerRange(int power)
@@ -372,9 +357,7 @@ namespace Shockah.FlexibleSprinklers
 		}
 
 		public int GetSprinklerSpreadRange(int power)
-		{
-			return (int)Math.Floor(Math.Pow(power, 0.62) + 1);
-		}
+			=> (int)Math.Floor(Math.Pow(power, 0.62) + 1);
 
 		public int GetSprinklerFocusedRange(IReadOnlyCollection<Vector2> coverage)
 		{
@@ -417,9 +400,7 @@ namespace Shockah.FlexibleSprinklers
 		}
 
 		public bool IsTileInRangeOfAnySprinkler(GameLocation location, Vector2 tileLocation)
-		{
-			return PrivateIsTileInRangeOfSprinklers(location.Objects.Values.Where(o => o.IsSprinkler()), location, tileLocation, true);
-		}
+			=> PrivateIsTileInRangeOfSprinklers(location.Objects.Values.Where(o => o.IsSprinkler()), location, tileLocation, true);
 
 		public bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, Vector2 tileLocation)
 		{
@@ -497,7 +478,7 @@ namespace Shockah.FlexibleSprinklers
 				if (coverage != null)
 					return coverage;
 			}
-			
+
 			if (LineSprinklersApi != null)
 			{
 				if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[]? tilePositions))
@@ -520,19 +501,13 @@ namespace Shockah.FlexibleSprinklers
 		}
 
 		public void RegisterSprinklerTierProvider(Func<SObject, int?> provider)
-		{
-			SprinklerTierProviders.Add(provider);
-		}
+			=> SprinklerTierProviders.Add(provider);
 
 		public void RegisterSprinklerCoverageProvider(Func<SObject, Vector2[]> provider)
-		{
-			SprinklerCoverageProviders.Add(provider);
-		}
+			=> SprinklerCoverageProviders.Add(provider);
 
 		public void RegisterCustomWaterableTileProvider(Func<GameLocation, Vector2, bool?> provider)
-		{
-			CustomWaterableTileProviders.Add(provider);
-		}
+			=> CustomWaterableTileProviders.Add(provider);
 
 		public void DisplaySprinklerCoverage(float? seconds = null)
 		{

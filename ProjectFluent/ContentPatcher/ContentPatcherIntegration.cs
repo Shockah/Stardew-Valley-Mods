@@ -28,7 +28,7 @@ namespace Shockah.ProjectFluent.ContentPatcher
 			Patch(harmony);
 			RegisterTokenInContentPacks(api);
 		}
-		
+
 		private static void Patch(Harmony harmony)
 		{
 			try
@@ -76,7 +76,7 @@ namespace Shockah.ProjectFluent.ContentPatcher
 				case ContentPatcherPatchingMode.PatchAllTokens:
 					break;
 			}
-			
+
 			if (__result != null)
 				return;
 			if (DidTryGetTokenWithNamespace)

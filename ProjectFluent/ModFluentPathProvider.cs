@@ -13,7 +13,7 @@ namespace Shockah.ProjectFluent
 		IEnumerable<string> GetFilePathCandidates(IGameLocale locale, IManifest mod, string? file);
 	}
 
-	internal class SerialModDirectoryFluentPathProvider: IModFluentPathProvider, IDisposable
+	internal class SerialModDirectoryFluentPathProvider : IModFluentPathProvider, IDisposable
 	{
 		public event Action<IModFluentPathProvider>? CandidatesChanged;
 
@@ -45,7 +45,7 @@ namespace Shockah.ProjectFluent
 			=> CandidatesChanged?.Invoke(this);
 	}
 
-	internal class ModFluentPathProvider: IModFluentPathProvider
+	internal class ModFluentPathProvider : IModFluentPathProvider
 	{
 		// never invoked, this provider does not change the candidates
 		public event Action<IModFluentPathProvider>? CandidatesChanged;
@@ -71,7 +71,7 @@ namespace Shockah.ProjectFluent
 		}
 	}
 
-	internal class ContentPackAdditionalModFluentPathProvider: IModFluentPathProvider, IDisposable
+	internal class ContentPackAdditionalModFluentPathProvider : IModFluentPathProvider, IDisposable
 	{
 		public event Action<IModFluentPathProvider>? CandidatesChanged;
 

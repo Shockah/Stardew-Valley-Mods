@@ -16,7 +16,7 @@ using System.Reflection.Emit;
 
 namespace Shockah.DontStopMeNow
 {
-	public class DontStopMeNow: Mod
+	public class DontStopMeNow : Mod
 	{
 		private static DontStopMeNow Instance { get; set; } = null!;
 
@@ -25,7 +25,7 @@ namespace Shockah.DontStopMeNow
 		private readonly IList<Farmer> NotRunningPlayers = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
-		private readonly PerScreen<SButton?> LastToolButton = new(null);
+		private readonly PerScreen<SButton?> LastToolButton = new(() => null);
 
 		public override void Entry(IModHelper helper)
 		{

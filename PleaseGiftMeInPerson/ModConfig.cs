@@ -6,7 +6,7 @@ namespace Shockah.PleaseGiftMeInPerson
 {
 	internal class ModConfig
 	{
-		public class Entry: IEquatable<Entry>
+		public class Entry : IEquatable<Entry>
 		{
 			public int GiftsToRemember { get; set; }
 			public int DaysToRemember { get; set; }
@@ -36,7 +36,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				this.EnableModOverrides = enableModOverrides;
 			}
 
-			public Entry(Entry other): this(
+			public Entry(Entry other) : this(
 				giftsToRemember: other.GiftsToRemember,
 				daysToRemember: other.DaysToRemember,
 				inPersonPreference: other.InPersonPreference,
@@ -113,7 +113,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 		}
 
-		public ModConfig(ModConfig other): this()
+		public ModConfig(ModConfig other) : this()
 		{
 			Default.CopyFrom(other.Default);
 			foreach (var (name, entry) in other.PerNPC)

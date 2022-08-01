@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
-	public class ProjectFluent: Mod
+	public class ProjectFluent : Mod
 	{
 		public static ProjectFluent Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;

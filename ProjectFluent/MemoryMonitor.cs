@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Shockah.ProjectFluent
 {
-	internal class MemoryMonitor: IMonitor
+	internal class MemoryMonitor : IMonitor
 	{
 		public bool IsVerbose
 			=> true;

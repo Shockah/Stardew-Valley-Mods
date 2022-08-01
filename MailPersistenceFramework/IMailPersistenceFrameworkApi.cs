@@ -25,7 +25,7 @@ namespace Shockah.MailPersistenceFramework
 		Cyan = 7,
 		DarkestGray = 8
 	}
-	
+
 	public enum MailApiAttribute
 	{
 		/// <summary>

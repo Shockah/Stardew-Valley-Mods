@@ -2,6 +2,9 @@
 {
 	internal enum BigLightningBehavior
 	{
-		Never, WhenSupposedToStrike, WhenActuallyStrikes, Always
+		Never,
+		WhenSupposedToStrike,
+		WhenActuallyStrikes,
+		Always
 	}
 }

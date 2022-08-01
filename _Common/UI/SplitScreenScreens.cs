@@ -4,7 +4,12 @@ using System;
 
 namespace Shockah.CommonModCode.UI
 {
-	public enum SplitScreenScreens { First, Last, All }
+	public enum SplitScreenScreens
+	{
+		First,
+		Last,
+		All
+	}
 
 	public static class SplitScreenScreensExtensions
 	{

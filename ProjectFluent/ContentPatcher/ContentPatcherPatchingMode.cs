@@ -2,6 +2,8 @@
 {
 	internal enum ContentPatcherPatchingMode
 	{
-		Disabled, PatchFluentToken, PatchAllTokens
+		Disabled,
+		PatchFluentToken,
+		PatchAllTokens
 	}
 }

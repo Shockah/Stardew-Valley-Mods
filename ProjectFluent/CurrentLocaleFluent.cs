@@ -2,7 +2,7 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class CurrentLocaleFluent: IFluent<string>
+	internal class CurrentLocaleFluent : IFluent<string>
 	{
 		private IManifest Mod { get; set; }
 		private string? File { get; set; }

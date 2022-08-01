@@ -9,7 +9,7 @@ namespace Shockah.FlexibleSprinklers
 	internal enum ClusterSprinklerBehaviorBetweenClusterBalanceMode { Relaxed, Restrictive }
 	internal enum ClusterSprinklerBehaviorInClusterBalanceMode { Relaxed, Exact, Restrictive }
 
-	internal class ClusterSprinklerBehavior: ISprinklerBehavior
+	internal class ClusterSprinklerBehavior : ISprinklerBehavior
 	{
 		private class Cluster
 		{

@@ -1,4 +1,9 @@
 ﻿namespace Shockah.MachineStatus
 {
-	internal enum MachineState { Ready, Waiting, Busy }
+	internal enum MachineState
+	{
+		Ready,
+		Waiting,
+		Busy
+	}
 }

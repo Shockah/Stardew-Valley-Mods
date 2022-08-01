@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {
-	internal class CachingMap: IMap
+	internal class CachingMap : IMap
 	{
 		private readonly IMap Wrapped;
 		private SoilType?[,] Cache;
@@ -101,7 +101,7 @@ namespace Shockah.FlexibleSprinklers
 			=> Wrapped.GetAllSprinklers();
 	}
 
-	internal class KnownSizeCachingMap: IMap.WithKnownSize
+	internal class KnownSizeCachingMap : IMap.WithKnownSize
 	{
 		private readonly IMap Wrapped;
 		private SoilType?[,] Cache;

@@ -8,7 +8,7 @@ namespace Shockah.FlexibleSprinklers
 {
 	internal enum FlexibleSprinklerBehaviorTileWaterBalanceMode { Relaxed, Exact, Restrictive }
 
-	internal class FloodFillSprinklerBehavior: ISprinklerBehavior.Independent
+	internal class FloodFillSprinklerBehavior : ISprinklerBehavior.Independent
 	{
 		private readonly FlexibleSprinklerBehaviorTileWaterBalanceMode TileWaterBalanceMode;
 		private readonly ISprinklerBehavior.Independent? PriorityBehavior;
@@ -178,7 +178,7 @@ namespace Shockah.FlexibleSprinklers
 			IEnumerable<IntPoint> DetectSprinklers(IntPoint singleDirection)
 			{
 				int[] directions = { -1, 1 };
-				
+
 				for (int i = 1; i <= otherSprinklerDetectionRange; i++)
 				{
 					foreach (var direction in directions)

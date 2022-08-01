@@ -11,7 +11,7 @@ using System.Reflection;
 
 namespace Shockah.ProjectFluent
 {
-	internal class FluentImpl: IFluent<string>
+	internal class FluentImpl : IFluent<string>
 	{
 		private IFluent<string> Fallback { get; set; }
 		private FluentBundle Bundle { get; set; }
@@ -119,7 +119,7 @@ namespace Shockah.ProjectFluent
 		}
 	}
 
-	internal record FluentFunctionValue: IFluentFunctionValue
+	internal record FluentFunctionValue : IFluentFunctionValue
 	{
 		internal IFluentType Value { get; set; }
 
@@ -147,7 +147,7 @@ namespace Shockah.ProjectFluent
 			=> double.TryParse(AsString(), out var @int) ? @int : null;
 	}
 
-	internal class FluentValueFactory: IFluentValueFactory
+	internal class FluentValueFactory : IFluentValueFactory
 	{
 		public IFluentFunctionValue CreateStringValue(string value)
 			=> new FluentFunctionValue(new FluentString(value));

@@ -4,13 +4,13 @@ using System.Collections.Generic;
 
 namespace Shockah.FlexibleSprinklers
 {
-	public struct SprinklerInfo: IEquatable<SprinklerInfo>
+	public struct SprinklerInfo : IEquatable<SprinklerInfo>
 	{
 		public ISet<Vector2> Layout { get; set; }
 
 		public int Power { get; set; }
 
-		public SprinklerInfo(ISet<Vector2> layout): this(layout, layout.Count) { }
+		public SprinklerInfo(ISet<Vector2> layout) : this(layout, layout.Count) { }
 
 		public SprinklerInfo(ISet<Vector2> layout, int power)
 		{

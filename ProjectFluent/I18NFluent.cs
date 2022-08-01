@@ -2,7 +2,7 @@
 
 namespace Shockah.ProjectFluent
 {
-	internal class I18nFluent: IFluent<string>
+	internal class I18nFluent : IFluent<string>
 	{
 		private readonly ITranslationHelper Translations;
 

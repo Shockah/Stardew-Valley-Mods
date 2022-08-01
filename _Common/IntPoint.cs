@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Shockah.CommonModCode
 {
-	public struct IntPoint: IEquatable<IntPoint>
+	public struct IntPoint : IEquatable<IntPoint>
 	{
 		public static readonly IntPoint Zero = new(0, 0);
 		public static readonly IntPoint One = new(1, 1);
@@ -37,7 +37,7 @@ namespace Shockah.CommonModCode
 			this.Y = y;
 		}
 
-		public IntPoint(int v): this(v, v)
+		public IntPoint(int v) : this(v, v)
 		{
 		}
 
