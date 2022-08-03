@@ -29,7 +29,7 @@ namespace Shockah.FlexibleSprinklers
 		public bool IsSprinklerBehaviorIndependent
 			=> SprinklerBehavior is ISprinklerBehavior.Independent;
 
-		internal ModConfig Config { get; private set; } = null!;
+		public ModConfig Config { get; private set; } = null!;
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
 		private readonly IList<Func<SObject, int?>> SprinklerTierProviders = new List<Func<SObject, int?>>();
 		private readonly IList<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new List<Func<SObject, Vector2[]>>();
@@ -259,16 +259,16 @@ namespace Shockah.FlexibleSprinklers
 
 		private void SetupSprinklerBehavior()
 		{
-			if (Config.SprinklerBehavior == ModConfig.SprinklerBehaviorEnum.Flexible || Config.SprinklerBehavior == ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla)
+			if (Config.SprinklerBehavior is SprinklerBehaviorEnum.Flexible or SprinklerBehaviorEnum.FlexibleWithoutVanilla)
 				Monitor.LogOnce("The \"Flood fill\"-family behaviors are obsolete and will be removed in a future update. Please switch to using the \"Cluster\"-family behaviors.", LogLevel.Warn);
 			SprinklerBehavior = Config.SprinklerBehavior switch
 			{
-				ModConfig.SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, new VanillaSprinklerBehavior()),
-				ModConfig.SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, null),
-				ModConfig.SprinklerBehaviorEnum.Flexible => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
-				ModConfig.SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, null),
-				ModConfig.SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
-				_ => throw new ArgumentException($"{nameof(ModConfig.SprinklerBehaviorEnum)} has an invalid value."),
+				SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, new VanillaSprinklerBehavior()),
+				SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, null),
+				SprinklerBehaviorEnum.Flexible => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
+				SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, null),
+				SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
+				_ => throw new ArgumentException($"{nameof(SprinklerBehaviorEnum)} has an invalid value."),
 			};
 		}
 
@@ -287,12 +287,32 @@ namespace Shockah.FlexibleSprinklers
 			if (Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 				return;
 
-			IMap map = new GameLocationMap(location, CustomWaterableTileProviders);
+			GameLocationMap map = new(location, CustomWaterableTileProviders);
+			var sprinklers = map.GetAllSprinklers().ToList();
+			if (sprinklers.Count != 0)
+				Monitor.Log($"Activating all ({sprinklers.Count}) sprinkler(s) in location {GetNameForLocation(location)} with behavior {Config.SprinklerBehavior}.", LogLevel.Trace);
+			
 			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(map);
 			foreach (var sprinklerTile in sprinklerTiles)
 				map.WaterTile(sprinklerTile);
 			foreach (var sprinkler in location.Objects.Values.Where(o => o.IsSprinkler()))
 				sprinkler.ApplySprinklerAnimation(location);
+		}
+
+		private static string GetNameForLocation(GameLocation location)
+		{
+			var selfName = location.NameOrUniqueName ?? "";
+			var rootName = location.Root?.Value?.NameOrUniqueName ?? "";
+			if (selfName == rootName)
+				return selfName;
+			else if (selfName == "" && rootName == "")
+				return "";
+			else if (selfName == "" && rootName != "")
+				return $"<unknown> @ {rootName}";
+			else if (selfName != "" && rootName == "")
+				return selfName;
+			else
+				return $"{selfName} @ {rootName}";
 		}
 
 		public void ActivateSprinkler(SObject sprinkler, GameLocation location)

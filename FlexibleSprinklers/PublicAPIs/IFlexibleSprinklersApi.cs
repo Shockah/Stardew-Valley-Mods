@@ -9,6 +9,9 @@ namespace Shockah.FlexibleSprinklers
 	/// <summary>The API which provides access to Flexible Sprinklers for other mods.</summary>
 	public interface IFlexibleSprinklersApi
 	{
+		/// <summary>Returns the mod's configuration that can used in a read-only way.</summary>
+		ModConfig Config { get; }
+
 		/// <summary>Returns whether the current configuration allows independent sprinkler activation.</summary>
 		bool IsSprinklerBehaviorIndependent { get; }
 
