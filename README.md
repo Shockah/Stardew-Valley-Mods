@@ -4,4 +4,5 @@ This is a list of all Stardew Valley mods I made. Issues or ideas can be reporte
 
 **Note:** The below list only includes mods I already made README files for. You can find the rest of the mods on this repository, or via [my Nexus Mods profile](https://www.nexusmods.com/users/133612513?tab=user+files).
 
-* **Flexible Sprinklers** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/10931), [GitHub](Flexible%20Sprinklers))
+* **Flexible Sprinklers** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/10931), [GitHub](FlexibleSprinklers))  
+  Ever hated having to put a sprinkler in the middle of your crops? Ever wanted to make a layout that isn't 5x5? Now you can!
