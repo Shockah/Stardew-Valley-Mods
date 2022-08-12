@@ -65,8 +65,11 @@ namespace Shockah.PleaseGiftMeInPerson
 					? Game1.content.Load<Dictionary<string, string>>("Data/AntiSocialNPCs")
 					: new();
 
+				foreach (KeyValuePair<string, string> kv in npcDispositions)
+					if (kv.Value.Split('/').Length != 12)
+						this.Monitor.Log($"{kv.Key.ToString()}: {kv.Value.ToString()} is missing elements!", LogLevel.Warn);
 				var characters = npcDispositions
-					.Select(c => (name: c.Key, displayName: c.Value.Split('/')[11]))
+					.Select(c => (name: c.Key, displayName: c.Value.Split('/').Last()))
 					.Where(c => !antiSocialNpcs.ContainsKey(c.name))
 					.OrderBy(c => c.displayName)
 					.ToArray();
