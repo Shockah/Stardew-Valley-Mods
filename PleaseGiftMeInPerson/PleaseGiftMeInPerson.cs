@@ -69,7 +69,8 @@ namespace Shockah.PleaseGiftMeInPerson
 					if (kv.Value.Split('/').Length != 12)
 						this.Monitor.Log($"{kv.Key.ToString()}: {kv.Value.ToString()} is missing elements!", LogLevel.Warn);
 				var characters = npcDispositions
-					.Select(c => (name: c.Key, displayName: c.Value.Split('/').Last()))
+					.Where(c => c.Value.Split('/').Length >= 12)
+					.Select(c => (name: c.Key, displayName: c.Value.Split('/')[11]))
 					.Where(c => !antiSocialNpcs.ContainsKey(c.name))
 					.OrderBy(c => c.displayName)
 					.ToArray();
