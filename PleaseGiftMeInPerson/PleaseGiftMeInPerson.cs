@@ -56,7 +56,6 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
 			LastDefaultConfigEntry = new(Config.Default);
-			Helper.Content.AssetLoaders.Add(new OverrideAssetLoader());
 
 			Characters = new(() =>
 			{
@@ -87,6 +86,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
+			helper.Events.Content.AssetRequested += OnAssetRequested;
 			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
 			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
 		}
@@ -159,6 +159,30 @@ namespace Shockah.PleaseGiftMeInPerson
 
 			CleanUpGiftEntries();
 			Helper.Data.WriteSaveData(GiftEntriesSaveDataKey, GiftEntries);
+		}
+
+		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+		{
+			if (!e.Name.IsEquivalentTo(OverrideAssetPath))
+				return;
+			
+			e.LoadFrom(() =>
+			{
+				var asset = new Dictionary<string, object>();
+				if (Config.EnableNPCOverrides)
+				{
+					asset["Dwarf"] = $"{GiftPreference.Neutral}/{GiftPreference.Hates}";
+					asset["Elliott"] = $"{GiftPreference.Neutral}/{GiftPreference.Neutral}";
+					asset["Krobus"] = $"{GiftPreference.Neutral}/{GiftPreference.Hates}";
+					asset["Leo"] = $"{GiftPreference.Neutral}/{GiftPreference.LovesInfrequent}";
+					asset["Linus"] = $"{GiftPreference.Neutral}/{GiftPreference.DislikesAndHatesFrequent}";
+					asset["Penny"] = $"{GiftPreference.Neutral}/{GiftPreference.Neutral}";
+					asset["Sandy"] = $"{GiftPreference.LikesInfrequent}/{GiftPreference.LikesInfrequentButDislikesFrequent}";
+					asset["Sebastian"] = $"{GiftPreference.Dislikes}/{GiftPreference.Neutral}";
+					asset["Wizard"] = $"{GiftPreference.DislikesFrequent}/{GiftPreference.Neutral}";
+				}
+				return asset;
+			}, AssetLoadPriority.Exclusive);
 		}
 
 		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
