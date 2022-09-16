@@ -36,6 +36,7 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
+		private IFreeLoveApi? FreeLoveApi;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
 		private Farmer? CurrentGiftingPlayer;
@@ -93,6 +94,8 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			FreeLoveApi = Helper.ModRegistry.GetApi<IFreeLoveApi>("aedenthorn.FreeLove");
+
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
 				original: () => AccessTools.Method(AccessTools.TypeByName(MailServicesMod_GiftShipmentController_QualifiedName), "GiftToNpc"),
@@ -403,7 +406,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
-			var configEntry = player.spouse == npcName ? Config.Spouse : Config.GetForNPC(npcName);
+			var configEntry = IsSpouse(player, npcName) ? Config.Spouse : Config.GetForNPC(npcName);
 			if (player.spouse != npcName && configEntry.EnableModOverrides && configEntry.HasSameValues(LastDefaultConfigEntry))
 			{
 				var asset = Game1.content.Load<Dictionary<string, string>>(OverrideAssetPath);
@@ -489,6 +492,14 @@ namespace Shockah.PleaseGiftMeInPerson
 				default:
 					throw new ArgumentException($"{nameof(GiftPreference)} has an invalid value.");
 			}
+		}
+
+		private bool IsSpouse(Farmer farmer, string npcName)
+		{
+			if (FreeLoveApi is null)
+				return farmer.spouse == npcName;
+			else
+				return FreeLoveApi.GetSpouses(farmer).ContainsKey(npcName);
 		}
 
 		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
