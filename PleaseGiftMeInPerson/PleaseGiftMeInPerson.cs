@@ -46,7 +46,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		private Texture2D EmojisTexture = null!;
 		internal bool AcceptedInPersonGiftDialogue = false;
 
-		private Lazy<IReadOnlyList<(string name, string displayName)>> Characters = null!;
+		private Lazy<IReadOnlyList<(string Name, string DisplayName)>> Characters = null!;
 
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
 		private readonly IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
@@ -65,16 +65,20 @@ namespace Shockah.PleaseGiftMeInPerson
 					? Game1.content.Load<Dictionary<string, string>>("Data/AntiSocialNPCs")
 					: new();
 
-				foreach (KeyValuePair<string, string> kv in npcDispositions)
-					if (kv.Value.Split('/').Length != 12)
-						this.Monitor.Log($"{kv.Key.ToString()}: {kv.Value.ToString()} is missing elements!", LogLevel.Warn);
 				var characters = npcDispositions
-					.Where(c => c.Value.Split('/').Length >= 12)
-					.Select(c => (name: c.Key, displayName: c.Value.Split('/')[11]))
-					.Where(c => !antiSocialNpcs.ContainsKey(c.name))
-					.OrderBy(c => c.displayName)
+					.Select(c => (Name: c.Key, DisplayName: c.Value.Split('/').Length >= 12 ? c.Value.Split('/')[11] : null))
+					.Where(c => !antiSocialNpcs.ContainsKey(c.Name))
 					.ToArray();
-				return characters;
+
+				foreach (var (name, displayName) in characters)
+					if (displayName is null)
+						this.Monitor.Log($"Could not create configuration for character {name}, as its NPCDispositions are malformed.", LogLevel.Warn);
+
+				return characters
+					.Where(c => c.DisplayName is not null)
+					.Select(c => (Name: c.Name, DisplayName: c.DisplayName!))
+					.OrderBy(c => c.DisplayName)
+					.ToArray();
 			});
 
 			UpdateEmojisTexture();
@@ -275,8 +279,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			helper.AddMultiPageLinkOption(
 				keyPrefix: "config.npcOverrides",
 				columns: _ => 3,
-				pageID: character => $"character_{character.name}",
-				pageName: character => character.displayName,
+				pageID: character => $"character_{character.Name}",
+				pageName: character => character.DisplayName,
 				pageValues: Characters.Value.ToArray()
 			);
 
@@ -717,7 +721,7 @@ namespace Shockah.PleaseGiftMeInPerson
 				return;
 			if (Game1.currentLocation.lastQuestionKey != "MailServiceMod_GiftShipment")
 				return;
-			if (!Instance.Characters.Value.Any(c => c.name == response.responseKey))
+			if (!Instance.Characters.Value.Any(c => c.Name == response.responseKey))
 				return;
 
 			int height = SpriteText.getHeightOfString(response.responseText, width) + 16;
