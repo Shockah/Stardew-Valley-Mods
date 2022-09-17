@@ -5,6 +5,7 @@
 ## 1.0.2
 Released 18 September 2022.
 
+* Added [Free Love](https://www.nexusmods.com/stardewvalley/mods/10021) compatibility.
 * Fixed a crash that could occur if an NPC's `NPCDispositions` entry was malformed and added additional logs for such cases (thanks [mycroftjr](https://github.com/mycroftjr)!).
 * Fixed bugs related to saving the [Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mods/5098) config.
 * Added `config.json` logging for debugging purposes.
