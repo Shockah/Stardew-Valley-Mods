@@ -51,9 +51,8 @@ namespace Shockah.PleaseGiftMeInPerson
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
 		private readonly IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
 
-		public override void Entry(IModHelper helper)
+		public override void OnEntry(IModHelper helper)
 		{
-			base.Entry(helper);
 			Instance = this;
 			LastDefaultConfigEntry = new(Config.Default);
 			if (Config.Spouse is null)
@@ -271,7 +270,7 @@ namespace Shockah.PleaseGiftMeInPerson
 					if (copy.Spouse is not null && (copy.Spouse == copy.Default || copy.Spouse == LastDefaultConfigEntry))
 						copy.Spouse = null;
 
-					Helper.WriteConfig(copy);
+					WriteConfig(copy);
 					LastDefaultConfigEntry = new(Config.Default);
 
 					LogConfig(copy);

@@ -40,9 +40,8 @@ namespace Shockah.FlexibleSprinklers
 		internal ILineSprinklersApi? LineSprinklersApi { get; private set; }
 		internal IBetterSprinklersApi? BetterSprinklersApi { get; private set; }
 
-		public override void Entry(IModHelper helper)
+		public override void OnEntry(IModHelper helper)
 		{
-			base.Entry(helper);
 			Instance = this;
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
@@ -77,6 +76,12 @@ namespace Shockah.FlexibleSprinklers
 			RegisterCustomWaterableTileProvider((location, v) => Config.WaterPetBowl && location.getTileIndexAt((int)v.X, (int)v.Y, "Buildings") == 1938 ? true : null);
 
 			SetupSprinklerBehavior();
+		}
+
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
+			// later on, migrate users from Flood Fill to Cluster
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -229,7 +234,7 @@ namespace Shockah.FlexibleSprinklers
 				reset: () => Config = new ModConfig(),
 				save: () =>
 				{
-					Helper.WriteConfig(Config);
+					WriteConfig();
 					LogConfig();
 					SetupSprinklerBehavior();
 				}
