@@ -1,11 +1,8 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
-using Shockah.CommonModCode.SMAPI;
 using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -17,7 +14,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
-	public class FlexibleSprinklers : Mod, IFlexibleSprinklersApi
+	public class FlexibleSprinklers : BaseMod<ModConfig>, IFlexibleSprinklersApi
 	{
 		private const int PressureNozzleParentSheetIndex = 915;
 		internal static readonly string LineSprinklersModID = "hootless.LineSprinklers";
@@ -28,13 +25,11 @@ namespace Shockah.FlexibleSprinklers
 		private const float SprinklerCoverageAlphaDecrement = 1f / FPS; // 1f per second
 
 		public static FlexibleSprinklers Instance { get; private set; } = null!;
-		private JsonSerializerSettings JsonSerializerSettings = null!;
 		private bool IsSlimeHutchWaterSpotsInstalled = false;
 
 		public bool IsSprinklerBehaviorIndependent
 			=> SprinklerBehavior is ISprinklerBehavior.Independent;
 
-		public ModConfig Config { get; private set; } = null!;
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
 		private readonly IList<Func<SObject, int?>> SprinklerTierProviders = new List<Func<SObject, int?>>();
 		private readonly IList<Func<SObject, Vector2[]>> SprinklerCoverageProviders = new List<Func<SObject, Vector2[]>>();
@@ -47,10 +42,8 @@ namespace Shockah.FlexibleSprinklers
 
 		public override void Entry(IModHelper helper)
 		{
+			base.Entry(helper);
 			Instance = this;
-			JsonSerializerSettings = JsonSerializerExt.GetSMAPISerializerSettings(helper.Data);
-
-			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
@@ -86,8 +79,6 @@ namespace Shockah.FlexibleSprinklers
 			SetupSprinklerBehavior();
 		}
 
-		public override object GetApi() => this;
-
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
@@ -104,7 +95,6 @@ namespace Shockah.FlexibleSprinklers
 			IsSlimeHutchWaterSpotsInstalled = Helper.ModRegistry.IsLoaded("aedenthorn.SlimeHutchWaterSpots");
 
 			SetupConfig();
-			LogConfig();
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -282,12 +272,6 @@ namespace Shockah.FlexibleSprinklers
 			helper.AddNumberOption("config.sprinklerPower.tier6", () => Config.Tier6Power, min: 0);
 			helper.AddNumberOption("config.sprinklerPower.tier7", () => Config.Tier7Power, min: 0);
 			helper.AddNumberOption("config.sprinklerPower.tier8", () => Config.Tier8Power, min: 0);
-		}
-
-		private void LogConfig()
-		{
-			var json = JsonConvert.SerializeObject(Config, JsonSerializerSettings);
-			Monitor.Log($"Current config:\n{json}", LogLevel.Trace);
 		}
 
 		private void SetupSprinklerBehavior()

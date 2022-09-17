@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.GMCM.Helper;
@@ -21,7 +20,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
-	public class PleaseGiftMeInPerson : Mod
+	public class PleaseGiftMeInPerson : BaseMod<ModConfig>
 	{
 		private static readonly string MailServicesMod_GiftShipmentController_QualifiedName = "MailServicesMod.GiftShipmentController, MailServicesMod";
 
@@ -36,8 +35,6 @@ namespace Shockah.PleaseGiftMeInPerson
 		private static readonly Rectangle EmojisHateSourceRect = new(0, 9, 9, 9);
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
-		internal ModConfig Config { get; private set; } = null!;
-		private JsonSerializerSettings JsonSerializerSettings = null!;
 		private IFreeLoveApi? FreeLoveApi;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
@@ -56,11 +53,9 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		public override void Entry(IModHelper helper)
 		{
+			base.Entry(helper);
 			Instance = this;
-			JsonSerializerSettings = JsonSerializerExt.GetSMAPISerializerSettings(helper.Data);
-			Config = helper.ReadConfig<ModConfig>();
 			LastDefaultConfigEntry = new(Config.Default);
-			LogConfig();
 
 			Characters = new(() =>
 			{
@@ -229,12 +224,6 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
-		private void LogConfig()
-		{
-			var json = JsonConvert.SerializeObject(Config, JsonSerializerSettings);
-			Monitor.Log($"Current config:\n{json}", LogLevel.Trace);
-		}
-
 		private void PopulateConfig(ModConfig config)
 		{
 			foreach (var (name, _) in Characters.Value)
@@ -256,7 +245,6 @@ namespace Shockah.PleaseGiftMeInPerson
 					Config = new();
 					PopulateConfig(Config);
 					LastDefaultConfigEntry = new(Config.Default);
-					LogConfig();
 				},
 				save: () =>
 				{
@@ -265,18 +253,26 @@ namespace Shockah.PleaseGiftMeInPerson
 						foreach (var (_, entry) in Config.PerNPC)
 							if (entry == LastDefaultConfigEntry)
 								entry.CopyFrom(Config.Default);
+						if (Config.Spouse is not null && Config.Spouse == LastDefaultConfigEntry)
+							Config.Spouse.CopyFrom(Config.Default);
 					}
 
 					ModConfig copy = new(Config);
+
 					var toRemove = new List<string>();
 					foreach (var (npcName, entry) in copy.PerNPC)
 						if (entry == copy.Default || entry == LastDefaultConfigEntry)
 							toRemove.Add(npcName);
-
 					foreach (var npcName in toRemove)
 						copy.PerNPC.Remove(npcName);
+
+					if (copy.Spouse is not null && (copy.Spouse == copy.Default || copy.Spouse == LastDefaultConfigEntry))
+						copy.Spouse = null;
+
 					Helper.WriteConfig(copy);
 					LastDefaultConfigEntry = new(Config.Default);
+
+					LogConfig();
 				}
 			);
 
