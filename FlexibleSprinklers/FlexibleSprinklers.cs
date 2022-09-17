@@ -29,6 +29,7 @@ namespace Shockah.FlexibleSprinklers
 
 		public static FlexibleSprinklers Instance { get; private set; } = null!;
 		private JsonSerializerSettings JsonSerializerSettings = null!;
+		private bool IsSlimeHutchWaterSpotsInstalled = false;
 
 		public bool IsSprinklerBehaviorIndependent
 			=> SprinklerBehavior is ISprinklerBehavior.Independent;
@@ -62,7 +63,24 @@ namespace Shockah.FlexibleSprinklers
 			helper.Events.World.LargeTerrainFeatureListChanged += OnLargeTerrainFeatureListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
 
-			RegisterCustomWaterableTileProvider((location, v) => (location is SlimeHutch && v.X == 16f && v.Y >= 6f && v.Y <= 9f) ? true : null);
+			RegisterCustomWaterableTileProvider((location, v) =>
+			{
+				if (location is not SlimeHutch)
+					return null;
+
+				if (IsSlimeHutchWaterSpotsInstalled)
+				{
+					var tileIndex = location.getTileIndexAt(new((int)v.X, (int)v.Y), "Buildings");
+					if (tileIndex is 2134 or 2135)
+						return true;
+				}
+				else if (v.X == 16f && v.Y >= 6f && v.Y <= 9f)
+				{
+					return true;
+				}
+
+				return null;
+			});
 			RegisterCustomWaterableTileProvider((location, v) => Config.WaterPetBowl && location.getTileIndexAt((int)v.X, (int)v.Y, "Buildings") == 1938 ? true : null);
 
 			SetupSprinklerBehavior();
@@ -82,6 +100,8 @@ namespace Shockah.FlexibleSprinklers
 			BetterSprinklersApi = Helper.ModRegistry.GetApi<IBetterSprinklersApi>(BetterSprinklersModID);
 			if (BetterSprinklersApi != null)
 				BetterSplinklersPatches.Apply(harmony);
+
+			IsSlimeHutchWaterSpotsInstalled = Helper.ModRegistry.IsLoaded("aedenthorn.SlimeHutchWaterSpots");
 
 			SetupConfig();
 			LogConfig();
