@@ -56,6 +56,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			base.Entry(helper);
 			Instance = this;
 			LastDefaultConfigEntry = new(Config.Default);
+			if (Config.Spouse is null)
+				Config.Spouse = new(Config.Default);
 
 			Characters = new(() =>
 			{
@@ -272,7 +274,7 @@ namespace Shockah.PleaseGiftMeInPerson
 					Helper.WriteConfig(copy);
 					LastDefaultConfigEntry = new(Config.Default);
 
-					LogConfig();
+					LogConfig(copy);
 				}
 			);
 
@@ -319,7 +321,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			);
 
 			helper.AddPage("config.spouse", "spouse");
-			SetupConfigEntryMenu(() => Config.Spouse);
+			SetupConfigEntryMenu(() => Config.Spouse!);
 
 			foreach (var (name, displayName) in Characters.Value)
 			{
@@ -413,7 +415,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
 			var viaMail = giftEntries.Count(e => e.GiftMethod == GiftMethod.ByMail);
-			var configEntry = IsSpouse(player, npcName) ? Config.Spouse : Config.GetForNPC(npcName);
+			var configEntry = IsSpouse(player, npcName) ? Config.Spouse! : Config.GetForNPC(npcName);
 			if (player.spouse != npcName && configEntry.EnableModOverrides && configEntry.HasSameValues(LastDefaultConfigEntry))
 			{
 				var asset = Game1.content.Load<Dictionary<string, string>>(OverrideAssetPath);
