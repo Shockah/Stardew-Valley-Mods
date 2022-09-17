@@ -299,7 +299,7 @@ namespace Shockah.FlexibleSprinklers
 				sprinkler.ApplySprinklerAnimation(location);
 		}
 
-		private static string GetNameForLocation(GameLocation location)
+		internal static string GetNameForLocation(GameLocation location)
 		{
 			var selfName = location.NameOrUniqueName ?? "";
 			var rootName = location.Root?.Value?.NameOrUniqueName ?? "";
@@ -483,10 +483,12 @@ namespace Shockah.FlexibleSprinklers
 				throw new InvalidOperationException("Current sprinkler behavior does not allow independent sprinkler activation.");
 
 			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
+			VanillaPatches.FindGameLocationContextOverride = FindGameLocationContext.FlexibleSprinklersGetModifiedSprinklerCoverage;
 			VanillaPatches.IsVanillaQueryInProgress = false;
 			VanillaPatches.CurrentLocation = location;
 			var layout = sprinkler.GetSprinklerTiles().ToArray();
 			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			VanillaPatches.FindGameLocationContextOverride = null;
 			return layout;
 		}
 
@@ -512,11 +514,13 @@ namespace Shockah.FlexibleSprinklers
 			}
 
 			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
+			VanillaPatches.FindGameLocationContextOverride = FindGameLocationContext.FlexibleSprinklersGetUnmodifiedSprinklerCoverage;
 			VanillaPatches.IsVanillaQueryInProgress = true;
 			var layout = sprinkler.GetSprinklerTiles()
 				.Select(t => t - sprinkler.TileLocation)
 				.Where(t => t != Vector2.Zero).ToArray();
 			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
+			VanillaPatches.FindGameLocationContextOverride = null;
 			return layout;
 		}
 
