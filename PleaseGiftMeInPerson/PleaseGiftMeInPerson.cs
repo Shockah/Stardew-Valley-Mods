@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.GMCM.Helper;
@@ -36,6 +37,7 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		internal static PleaseGiftMeInPerson Instance { get; set; } = null!;
 		internal ModConfig Config { get; private set; } = null!;
+		private JsonSerializerSettings JsonSerializerSettings = null!;
 		private IFreeLoveApi? FreeLoveApi;
 		private ModConfig.Entry LastDefaultConfigEntry = null!;
 
@@ -55,8 +57,10 @@ namespace Shockah.PleaseGiftMeInPerson
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			JsonSerializerSettings = JsonSerializerExt.GetSMAPISerializerSettings(helper.Data);
 			Config = helper.ReadConfig<ModConfig>();
 			LastDefaultConfigEntry = new(Config.Default);
+			LogConfig();
 
 			Characters = new(() =>
 			{
@@ -225,6 +229,12 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
+		private void LogConfig()
+		{
+			var json = JsonConvert.SerializeObject(Config, JsonSerializerSettings);
+			Monitor.Log($"Current config:\n{json}", LogLevel.Trace);
+		}
+
 		private void PopulateConfig(ModConfig config)
 		{
 			foreach (var (name, _) in Characters.Value)
@@ -246,6 +256,7 @@ namespace Shockah.PleaseGiftMeInPerson
 					Config = new();
 					PopulateConfig(Config);
 					LastDefaultConfigEntry = new(Config.Default);
+					LogConfig();
 				},
 				save: () =>
 				{
