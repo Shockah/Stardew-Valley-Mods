@@ -6,3 +6,5 @@ This is a list of all Stardew Valley mods I made. Issues or ideas can be reporte
 
 * **Flexible Sprinklers** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/10931), [GitHub](FlexibleSprinklers))  
   Ever hated having to put a sprinkler in the middle of your crops? Ever wanted to make a layout that isn't 5x5? Now you can!
+* **Please Gift Me In Person** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11217), [GitHub](PleaseGiftMeInPerson))  
+  Adds some more realism and life to the Gift Delivery Service. An extension to the [Mail Services Mod](https://www.nexusmods.com/stardewvalley/mods/7842).
