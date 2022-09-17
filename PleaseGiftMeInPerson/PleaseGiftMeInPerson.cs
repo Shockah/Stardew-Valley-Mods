@@ -51,6 +51,15 @@ namespace Shockah.PleaseGiftMeInPerson
 		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
 		private readonly IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
 
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			if (configVersion is null)
+			{
+				if (Config.Spouse is not null && Config.Spouse == Config.Default)
+					Config.Spouse = null;
+			}
+		}
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;

@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json;
+using Shockah.CommonModCode;
+using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
-	public class ModConfig
+	public class ModConfig : IVersioned.Modifiable
 	{
 		public class Entry : IEquatable<Entry>
 		{
@@ -67,6 +69,8 @@ namespace Shockah.PleaseGiftMeInPerson
 			public static bool operator !=(Entry lhs, Entry rhs)
 				=> !lhs.Equals(rhs);
 		}
+
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
 		[JsonProperty]
 		public Entry Default { get; internal set; } = new()
