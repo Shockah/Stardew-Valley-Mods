@@ -1,8 +1,11 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
+using Shockah.CommonModCode.SMAPI;
 using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -25,6 +28,7 @@ namespace Shockah.FlexibleSprinklers
 		private const float SprinklerCoverageAlphaDecrement = 1f / FPS; // 1f per second
 
 		public static FlexibleSprinklers Instance { get; private set; } = null!;
+		private JsonSerializerSettings JsonSerializerSettings = null!;
 
 		public bool IsSprinklerBehaviorIndependent
 			=> SprinklerBehavior is ISprinklerBehavior.Independent;
@@ -43,6 +47,7 @@ namespace Shockah.FlexibleSprinklers
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+			JsonSerializerSettings = JsonSerializerExt.GetSMAPISerializerSettings(helper.Data);
 
 			Config = helper.ReadConfig<ModConfig>();
 
@@ -79,6 +84,7 @@ namespace Shockah.FlexibleSprinklers
 				BetterSplinklersPatches.Apply(harmony);
 
 			SetupConfig();
+			LogConfig();
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -214,6 +220,7 @@ namespace Shockah.FlexibleSprinklers
 				save: () =>
 				{
 					Helper.WriteConfig(Config);
+					LogConfig();
 					SetupSprinklerBehavior();
 				}
 			);
@@ -255,6 +262,12 @@ namespace Shockah.FlexibleSprinklers
 			helper.AddNumberOption("config.sprinklerPower.tier6", () => Config.Tier6Power, min: 0);
 			helper.AddNumberOption("config.sprinklerPower.tier7", () => Config.Tier7Power, min: 0);
 			helper.AddNumberOption("config.sprinklerPower.tier8", () => Config.Tier8Power, min: 0);
+		}
+
+		private void LogConfig()
+		{
+			var json = JsonConvert.SerializeObject(Config, JsonSerializerSettings);
+			Monitor.Log($"Current config:\n{json}", LogLevel.Trace);
 		}
 
 		private void SetupSprinklerBehavior()
