@@ -423,6 +423,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0018:Inline variable declaration", Justification = "Better semi-repeated code")]
 		private GiftTaste GetGiftTasteModifier(Farmer player, string npcName, GiftMethod method)
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
