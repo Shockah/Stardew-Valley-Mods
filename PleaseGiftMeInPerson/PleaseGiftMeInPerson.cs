@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.CommonModCode;
@@ -101,6 +101,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
 		}
 
+		/// <inheritdoc cref="IGameLoopEvents.GameLaunched" />
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			FreeLoveApi = Helper.ModRegistry.GetApi<IFreeLoveApi>("aedenthorn.FreeLove");
@@ -145,6 +146,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			);
 		}
 
+		/// <inheritdoc cref="IGameLoopEvents.UpdateTicked" />
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
 			if (--TicksUntilConfigSetup > 0)
@@ -155,6 +157,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 		}
 
+		/// <inheritdoc cref="IGameLoopEvents.SaveLoaded" />
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
 		{
 			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
@@ -164,6 +167,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
+		/// <inheritdoc cref="IGameLoopEvents.Saving" />
 		private void OnSaving(object? sender, SavingEventArgs e)
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
@@ -173,6 +177,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			Helper.Data.WriteSaveData(GiftEntriesSaveDataKey, GiftEntries);
 		}
 
+		/// <inheritdoc cref="IContentEvents.AssetRequested" />
 		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
 		{
 			if (!e.Name.IsEquivalentTo(OverrideAssetPath))
@@ -180,7 +185,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			
 			e.LoadFrom(() =>
 			{
-				var asset = new Dictionary<string, object>();
+				var asset = new Dictionary<string, string>();
 				if (Config.EnableNPCOverrides)
 				{
 					asset["Dwarf"] = $"{GiftPreference.Neutral}/{GiftPreference.Hates}";
@@ -418,7 +423,6 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 		}
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0018:Inline variable declaration", Justification = "Better semi-repeated code")]
 		private GiftTaste GetGiftTasteModifier(Farmer player, string npcName, GiftMethod method)
 		{
 			var giftEntries = GetGiftEntriesForNPC(player, npcName);
