@@ -42,7 +42,6 @@ namespace Shockah.Hibernation
 		{
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
-			CreateModMenu();
 
 			if (Config.ModIsEnabled)
 			{
@@ -56,6 +55,7 @@ namespace Shockah.Hibernation
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
+			CreateModMenu();
 
 			harmony.TryPatch(
 				monitor: Monitor,
