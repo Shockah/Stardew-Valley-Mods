@@ -1,0 +1,26 @@
+﻿{
+	"sleepDialogue.response.hibernateFor": "Спать...",
+	"sleepDialogue.response.hibernateUntil": "Спать до...",
+	"sleepDialogue.response.hibernateUntil.nextBirthday": "Следующего Дня Рождения ({{NpcName}})",
+	"sleepDialogue.response.hibernateUntil.nextFestival": "Следующего Фестиваля ({{FestivalName}})",
+	"sleepDialogue.response.hibernateUntil.nextSeason": "Следующего Сезона ({{SeasonName}})",
+	"sleepDialogue.response.hibernateUntil.nextEvent": "Следующего События (или смены года)",
+	"sleepDialogue.response.cancel": "Отмена",
+
+	"hibernateLength.unit.nights": "{{Value}} ночей",
+	"hibernateLength.unit.weeks": "{{Value}} недель",
+	"hibernateLength.unit.seasons": "{{Value}} сезонов",
+	"hibernateLength.unit.years": "{{Value}} лет",
+	"hibernateLength.unit.forever": "Вечно",
+
+	"hibernation.nightsLeft": "Вы будете спать ещё {{Value}} ночей...",
+	"hibernation.nightsLeft.upTo": "Осталось проспать ещё {{Value}} ночей...",
+	"hibernation.forever": "Вечный сон...",
+	"hibernation.wakingUp": "Побудка...",
+	"hibernation.escapeToWakeUp": "(Удерживайте 'Escape', чтобы проснуться сейчас).",
+
+	"options.title.basic": "Базовые Опции",
+	"options.title.basic.desc": "Базовые Опции Мода",
+	"options.basic.mod-is-enabled": "Мод Включен?",
+	"options.basic.mod-is-enabled.desc": "Включает или Выключает мод.\nПомните: Этот мод патчит базовую логику кроватей, что может привести к переопределению логики других модов, изменяющих этот же аспект (например, 'Planned Parenthood')."
+}

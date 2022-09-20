@@ -17,5 +17,10 @@
 	"hibernation.nightsLeft.upTo": "Sleeping through up to {{Value}} more nights...",
 	"hibernation.forever": "Sleeping forever...",
 	"hibernation.wakingUp": "Waking up...",
-	"hibernation.escapeToWakeUp": "(Hold Escape to wake up right away)"
+	"hibernation.escapeToWakeUp": "(Hold Escape to wake up right away)",
+
+	"options.title.basic": "Basic Options",
+	"options.title.basic.desc": "Basic Options of The Mod",
+	"options.basic.mod-is-enabled": "Mod Is Enabled?",
+	"options.basic.mod-is-enabled.desc": "Enables or Disables mod.\nRemember: This mod patches base bed logic, so it may override other mods, that affects same logic (like 'Planned Parenthood')."
 }

@@ -95,7 +95,7 @@ namespace Shockah.CommonModCode.UI
 				_ => throw new ArgumentException($"{nameof(UIAnchorSide)} has an invalid value."),
 			};
 		}
-		
+
 		public static Vector2 GetAnchorPoint(this UIAnchorSide self, Vector2 location, Vector2 size)
 		{
 			return self switch

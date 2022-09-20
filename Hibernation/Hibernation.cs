@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using GenericModConfigMenu;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -41,10 +42,15 @@ namespace Shockah.Hibernation
 		{
 			Instance = this;
 			Config = helper.ReadConfig<ModConfig>();
-			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
-			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-			helper.Events.GameLoop.DayStarted += OnDayStarted;
-			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+			CreateModMenu();
+
+			if (Config.ModIsEnabled)
+			{
+				helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+				helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+				helper.Events.GameLoop.DayStarted += OnDayStarted;
+				helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+			}
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -518,6 +524,51 @@ namespace Shockah.Hibernation
 			if (Instance.NightsToSleep <= 0 || __result)
 				return;
 			Instance.AnyEventTriggered = true;
+		}
+
+		private void CreateModMenu()
+		{
+			try
+			{
+				var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+				configMenu?.Register
+				(
+					mod: ModManifest,
+					reset: () => Config = new(),
+					save: () => Helper.WriteConfig(Config)
+				);
+
+				if (configMenu == null)
+				{
+					return;
+				}
+
+				else
+				{
+					configMenu.AddSectionTitle
+					(
+						mod: ModManifest,
+						text: () => Helper.Translation.Get("options.title.basic"),
+						tooltip: () => Helper.Translation.Get("options.title.basic.desc")
+					);
+
+					configMenu.AddBoolOption
+					(
+						mod: ModManifest,
+						name: () => Helper.Translation.Get("options.basic.mod-is-enabled"),
+						tooltip: () => Helper.Translation.Get("options.basic.mod-is-enabled.desc"),
+						getValue: () => Config.ModIsEnabled,
+						setValue: value => Config.ModIsEnabled = value
+					);
+				}
+			}
+
+			catch (Exception ex)
+			{
+				Monitor.Log($"An error happened while loading this mod's GMCM options menu. Its menu might be missing or fail to work. The auto-generated error message has been added to the log.", LogLevel.Warn);
+				Monitor.Log($"----------", LogLevel.Trace);
+				Monitor.Log($"{ex}", LogLevel.Trace);
+			}
 		}
 	}
 }

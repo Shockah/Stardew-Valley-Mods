@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Shockah.CommonModCode.SMAPI;
 using StardewModdingAPI;
@@ -8,7 +7,6 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Shockah.ProjectFluent
 {

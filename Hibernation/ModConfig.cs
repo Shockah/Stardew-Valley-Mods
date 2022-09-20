@@ -6,6 +6,8 @@ namespace Shockah.Hibernation
 {
 	internal class ModConfig
 	{
+		public bool ModIsEnabled { get; set; } = true;
+
 		public IList<string> LengthOptions { get; set; } = new[] { "3d", "1w", "1s", "1y", "5y", "forever" }.ToList();
 
 		[JsonIgnore]

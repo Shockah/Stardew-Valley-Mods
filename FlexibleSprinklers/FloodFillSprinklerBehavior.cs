@@ -201,7 +201,8 @@ namespace Shockah.FlexibleSprinklers
 			var verticalSprinklerDistance = ClosestSprinkler(IntPoint.Bottom);
 
 			var sortedWaterableTiles = waterableTiles
-				.Select(e => {
+				.Select(e =>
+				{
 					var dx = Math.Abs(e.X - sprinklerPosition.X) * ((horizontalSprinklerDistance ?? 0) * sprinkler1dRange + 1);
 					var dy = Math.Abs(e.Y - sprinklerPosition.Y) * ((verticalSprinklerDistance ?? 0) * sprinkler1dRange + 1);
 					return (

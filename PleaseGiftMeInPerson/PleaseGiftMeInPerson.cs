@@ -177,7 +177,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			if (!e.Name.IsEquivalentTo(OverrideAssetPath))
 				return;
-			
+
 			e.LoadFrom(() =>
 			{
 				var asset = new Dictionary<string, object>();

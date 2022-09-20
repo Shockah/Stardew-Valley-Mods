@@ -6,7 +6,7 @@ using System.Reflection;
 namespace Shockah.CommonModCode.SMAPI
 {
 	public static class JsonSerializerExt
-    {
+	{
 		public static JsonSerializerSettings GetSMAPISerializerSettings(IDataHelper dataHelper)
 		{
 			Type dataHelperType = Type.GetType("StardewModdingAPI.Framework.ModHelpers.DataHelper, StardewModdingAPI")!;
@@ -18,5 +18,5 @@ namespace Shockah.CommonModCode.SMAPI
 			var jsonHelper = jsonHelperField.GetValue(dataHelper)!;
 			return (JsonSerializerSettings)jsonSettingsGetter.Invoke(jsonHelper, null)!;
 		}
-    }
+	}
 }

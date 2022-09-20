@@ -4,8 +4,8 @@ using System.Linq;
 
 namespace Shockah.CommonModCode.Stardew
 {
-    public enum MultiplayerMode { SinglePlayer, Client, Server }
-	
+	public enum MultiplayerMode { SinglePlayer, Client, Server }
+
 	public static class GameExt
 	{
 		public static MultiplayerMode GetMultiplayerMode()

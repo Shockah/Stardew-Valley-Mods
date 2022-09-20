@@ -313,7 +313,7 @@ namespace Shockah.FlexibleSprinklers
 			var sprinklers = map.GetAllSprinklers().ToList();
 			if (sprinklers.Count != 0)
 				Monitor.Log($"Activating all ({sprinklers.Count}) sprinkler(s) in location {GetNameForLocation(location)} with behavior {Config.SprinklerBehavior}.", LogLevel.Trace);
-			
+
 			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(map);
 			foreach (var sprinklerTile in sprinklerTiles)
 				map.WaterTile(sprinklerTile);
