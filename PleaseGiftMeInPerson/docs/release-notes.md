@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 1.0.3
+Released 20 September 2022.
+
+* Fixed an error when gifting items (thanks [mycroftjr](https://github.com/mycroftjr)!).
+
 ## 1.0.2
 Released 18 September 2022.
 
