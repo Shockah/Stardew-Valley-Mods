@@ -12,6 +12,7 @@ namespace Shockah.EarlyGingerIsland
 		[JsonProperty] public int BoatFixIridiumBarsRequired { get; set; } = 5;
 		[JsonProperty] public int BoatFixBatteryPacksRequired { get; set; } = 5;
 		[JsonProperty] public int BoatTicketPrice { get; set; } = 1000;
+		[JsonProperty] public bool AllowIslandFarmBeforeCC { get; set; } = false;
 		[JsonProperty] public IList<UnlockCondition> UnlockConditions { get; set; } = new List<UnlockCondition>() { new(new(1, "spring", 1), 8), new(new(1, "winter", 1), 4), new(new(2, "winter", 1), 0) };
 	}
 }
