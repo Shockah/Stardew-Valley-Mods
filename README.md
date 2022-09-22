@@ -4,6 +4,8 @@ This is a list of all Stardew Valley mods I made. Issues or ideas can be reporte
 
 **Note:** The below list only includes mods I already made README files for. You can find the rest of the mods on this repository, or via [my Nexus Mods profile](https://www.nexusmods.com/users/133612513?tab=user+files).
 
+* **Early Ginger Island** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/13885), [GitHub](EarlyGingerIsland))  
+  Access the Ginger Island early, depending on your friendship with Willy. Optionally access the Ginger Island west/farm, too. Configure the boat fix materials and ticket price.
 * **Flexible Sprinklers** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/10931), [GitHub](FlexibleSprinklers))  
   Ever hated having to put a sprinkler in the middle of your crops? Ever wanted to make a layout that isn't 5x5? Now you can!
 * **Please Gift Me In Person** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11217), [GitHub](PleaseGiftMeInPerson))  
