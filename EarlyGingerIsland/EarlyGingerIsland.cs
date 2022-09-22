@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.IL;
+using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -17,11 +19,14 @@ namespace Shockah.EarlyGingerIsland
 	public class EarlyGingerIsland : BaseMod<ModConfig>
 	{
 		public static EarlyGingerIsland Instance { get; private set; } = null!;
+		private bool IsConfigRegistered { get; set; } = false;
+		private UnlockCondition NewUnlockCondition = new();
 
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
 
+			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
 			helper.Events.Content.AssetRequested += OnAssetRequested;
 
@@ -49,6 +54,11 @@ namespace Shockah.EarlyGingerIsland
 			);
 		}
 
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		{
+			SetupConfig();
+		}
+
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			if (ShouldGingerIslandBeUnlocked() && !Game1.player.hasOrWillReceiveMail("willyBackRoomInvitation"))
@@ -70,6 +80,108 @@ namespace Shockah.EarlyGingerIsland
 					asset.Data["BoatTunnel_DonateIridiumHint"] = asset.Data["BoatTunnel_DonateIridiumHint"].Replace("5", $"{Config.BoatFixIridiumBarsRequired}");
 				});
 			}
+		}
+
+		private void SetupConfig()
+		{
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			GMCMI18nHelper helper = new(api, ModManifest, Helper.Translation);
+
+			if (IsConfigRegistered)
+				api.Unregister(ModManifest);
+
+			api.Register(
+				ModManifest,
+				reset: () => Config = new ModConfig(),
+				save: () =>
+				{
+					while (Config.UnlockConditions.Count != 0 && Config.UnlockConditions[Config.UnlockConditions.Count - 1].Date.Year < 1)
+						Config.UnlockConditions.RemoveAt(Config.UnlockConditions.Count - 1);
+					if (NewUnlockCondition.Date.Year >= 1)
+					{
+						Config.UnlockConditions.Add(NewUnlockCondition);
+						NewUnlockCondition = new(WorldDateExt.New(-1, Season.Spring, 1), 0);
+					}
+
+					Helper.WriteConfig(Config);
+					Helper.GameContent.InvalidateCache("Strings/Locations");
+					SetupConfig();
+				}
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.boatTicketPrice",
+				property: () => Config.BoatTicketPrice
+			);
+
+			helper.AddBoolOption(
+				keyPrefix: "config.allowIslandFarmBeforeCC",
+				property: () => Config.AllowIslandFarmBeforeCC
+			);
+
+			helper.AddSectionTitle("config.boatFix.section");
+
+			helper.AddNumberOption(
+				keyPrefix: "config.boatFix.hardwoodRequired",
+				property: () => Config.BoatFixHardwoodRequired,
+				min: 1
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.boatFix.iridiumBarsRequired",
+				property: () => Config.BoatFixIridiumBarsRequired,
+				min: 1
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.boatFix.batteryPacksRequired",
+				property: () => Config.BoatFixBatteryPacksRequired,
+				min: 1
+			);
+
+			void RegisterUnlockConditionSection(int? index)
+			{
+				helper.AddSectionTitle("config.unlockConditions.section", new { Number = index is null ? Config.UnlockConditions.Count + 1 : index.Value + 1 });
+				helper.AddTextOption(
+					keyPrefix: "config.unlockConditions.date",
+					getValue: () =>
+					{
+						var date = (index is null ? NewUnlockCondition : Config.UnlockConditions[index.Value]).Date;
+						if (date.Year >= 1)
+							return date.ToParsable();
+						else
+							return "";
+					},
+					setValue: value =>
+					{
+						var parsed = WorldDateExt.ParseDate(value) ?? WorldDateExt.New(-1, Season.Spring, 1);
+						if (index is null)
+							NewUnlockCondition = new(parsed, NewUnlockCondition.HeartsWithWilly);
+						else
+							Config.UnlockConditions[index.Value] = new(parsed, Config.UnlockConditions[index.Value].HeartsWithWilly);
+					}
+				);
+				helper.AddNumberOption(
+					keyPrefix: "config.unlockConditions.heartsWithWilly",
+					getValue: () => (index is null ? NewUnlockCondition : Config.UnlockConditions[index.Value]).HeartsWithWilly,
+					setValue: value =>
+					{
+						if (index is null)
+							NewUnlockCondition = new(NewUnlockCondition.Date, value);
+						else
+							Config.UnlockConditions[index.Value] = new(Config.UnlockConditions[index.Value].Date, value);
+					},
+					min: 0
+				);
+			}
+
+			for (int i = 0; i < Config.UnlockConditions.Count; i++)
+				RegisterUnlockConditionSection(i);
+			RegisterUnlockConditionSection(null);
+
+			IsConfigRegistered = true;
 		}
 
 		private bool ShouldGingerIslandBeUnlocked()

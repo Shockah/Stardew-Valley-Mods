@@ -13,12 +13,8 @@ namespace Shockah.EarlyGingerIsland
 		public int HeartsWithWilly { get; init; }
 
 		[JsonIgnore]
-		public Season Season
-			=> (Season)SeasonIndex;
-
-		[JsonIgnore]
 		public WorldDate Date
-			=> new(Year, Enum.GetName(Season)?.ToLower(), DayOfMonth);
+			=> WorldDateExt.New(Year, SeasonIndex, DayOfMonth);
 
 		public UnlockCondition(int year, int seasonIndex, int dayOfMonth, int heartsWithWilly)
 		{
