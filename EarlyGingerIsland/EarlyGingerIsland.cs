@@ -192,8 +192,9 @@ namespace Shockah.EarlyGingerIsland
 					continue;
 				foreach (var player in Game1.getAllFarmers())
 					if (player.getFriendshipHeartLevelForNPC("Willy") < condition.HeartsWithWilly)
-						continue;
+						goto outerContinue;
 				return true;
+				outerContinue:;
 			}
 			return ShouldGingerIslandBeUnlockedInVanilla();
 		}
