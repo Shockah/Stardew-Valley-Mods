@@ -22,6 +22,11 @@ namespace Shockah.EarlyGingerIsland
 		private bool IsConfigRegistered { get; set; } = false;
 		private UnlockCondition NewUnlockCondition = new();
 
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// no migration required, for now
+		}
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
