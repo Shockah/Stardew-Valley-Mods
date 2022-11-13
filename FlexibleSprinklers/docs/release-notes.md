@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 1.4.1
+Released 13 November 2022.
+
+* Fixed a bug where tiles were being watered twice if the "Vanilla > Cluster" behavior was chosen.
+
 ## 1.4.0
 Released 13 November 2022.
 
