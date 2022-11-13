@@ -458,6 +458,7 @@ namespace Shockah.FlexibleSprinklers
 				var averageSprinklerY = cluster.Sprinklers.Average(s => s.position.Y);
 				var averageSprinklerPosition = new IntPoint((int)Math.Round(averageSprinklerX), (int)Math.Round(averageSprinklerY));
 				var sortedReachableTiles = cluster.Tiles
+					.Where(p => !priorityBehaviorSprinklerTilesWithSteps.Values.Any(steps => steps.Any(step => step.Item1.Contains(p))))
 					.Select(p => (
 						tilePosition: p,
 						sprinklerCount: grid[p.X - minX, p.Y - minY]?.Count ?? 0,

@@ -215,6 +215,10 @@ namespace Shockah.FlexibleSprinklers
 			if (heldItem?.ParentSheetIndex == PressureNozzleParentSheetIndex && @object.heldObject?.Value?.ParentSheetIndex != PressureNozzleParentSheetIndex)
 				return;
 
+			#if DEBUG
+			SprinklerBehavior.ClearCache();
+			#endif
+
 			if (Config.ActivateOnAction && SprinklerBehavior is ISprinklerBehavior.Independent)
 				ActivateSprinkler(@object, location);
 			if (Config.ShowCoverageOnAction)
