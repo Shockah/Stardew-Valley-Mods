@@ -244,6 +244,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.AddBoolOption("config.ignoreRange", () => Config.IgnoreRange);
 			helper.AddBoolOption("config.waterGardenPots", () => Config.WaterGardenPots);
 			helper.AddBoolOption("config.waterPetBowl", () => Config.WaterPetBowl);
+			helper.AddBoolOption("config.waterAtSprinkler", () => Config.WaterAtSprinkler);
 			helper.AddBoolOption("config.compatibilityMode", () => Config.CompatibilityMode);
 
 			helper.AddSectionTitle("config.cluster.section");
@@ -283,7 +284,8 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (Config.SprinklerBehavior is SprinklerBehaviorEnum.Flexible or SprinklerBehaviorEnum.FlexibleWithoutVanilla)
 				Monitor.LogOnce("The \"Flood fill\"-family behaviors are obsolete and will be removed in a future update. Please switch to using the \"Cluster\"-family behaviors.", LogLevel.Warn);
-			SprinklerBehavior = Config.SprinklerBehavior switch
+
+			ISprinklerBehavior sprinklerBehavior = Config.SprinklerBehavior switch
 			{
 				SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, Config.IgnoreRange, Config.SplitDisconnectedClusters, new VanillaSprinklerBehavior()),
 				SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, Config.IgnoreRange, Config.SplitDisconnectedClusters, null),
@@ -292,6 +294,16 @@ namespace Shockah.FlexibleSprinklers
 				SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
 				_ => throw new ArgumentException($"{nameof(SprinklerBehaviorEnum)} has an invalid value."),
 			};
+
+			if (Config.WaterAtSprinkler)
+			{
+				if (sprinklerBehavior is ISprinklerBehavior.Independent independent)
+					sprinklerBehavior = new SelfWaterSprinklerBehavior.Independent(independent);
+				else
+					sprinklerBehavior = new SelfWaterSprinklerBehavior(sprinklerBehavior);
+			}
+
+			this.SprinklerBehavior = sprinklerBehavior;
 		}
 
 		public void ActivateAllSprinklers()
