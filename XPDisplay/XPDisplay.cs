@@ -177,7 +177,6 @@ namespace Shockah.XPDisplay
 
 			worker.Insert(1, new[]
 			{
-				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
 			});
 
@@ -280,7 +279,6 @@ namespace Shockah.XPDisplay
 
 			worker.Insert(1, new[]
 			{
-				new CodeInstruction(OpCodes.Ldarg_1), // `SpriteBatch`
 				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates)))
 			});
 
@@ -352,7 +350,7 @@ namespace Shockah.XPDisplay
 			SkillsPageDrawQueuedDelegates.Add(() => b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f));
 		}
 
-		public static void SkillsPage_draw_CallQueuedDelegates(SpriteBatch b)
+		public static void SkillsPage_draw_CallQueuedDelegates()
 		{
 			foreach (var @delegate in SkillsPageDrawQueuedDelegates)
 				@delegate();

@@ -220,7 +220,7 @@ namespace Shockah.DontStopMeNow
 			}
 		}
 
-		private void FixControllerFacingDirection()
+		private static void FixControllerFacingDirection()
 		{
 			var thumbStickDirection = Game1.oldPadState.ThumbSticks.Left;
 			if (Math.Abs(thumbStickDirection.X) < 0.2)
@@ -241,7 +241,7 @@ namespace Shockah.DontStopMeNow
 				FixFacingDirection(thumbStickDirection);
 		}
 
-		private void FixMouseFacingDirection()
+		private static void FixMouseFacingDirection()
 		{
 			var player = Game1.player;
 			var cursor = new Vector2(Game1.viewport.X + Game1.getOldMouseX(), Game1.viewport.Y + Game1.getOldMouseY());
@@ -249,7 +249,7 @@ namespace Shockah.DontStopMeNow
 			FixFacingDirection(direction);
 		}
 
-		private void FixFacingDirection(Vector2 direction)
+		private static void FixFacingDirection(Vector2 direction)
 		{
 			var player = Game1.player;
 			if (Math.Abs(direction.X) > Math.Abs(direction.Y))
@@ -258,7 +258,7 @@ namespace Shockah.DontStopMeNow
 				player.FacingDirection = direction.Y >= 0 ? Game1.down : Game1.up;
 		}
 
-		private bool? IsUsingPoweredUpOnHoldTool(Farmer player)
+		private static bool? IsUsingPoweredUpOnHoldTool(Farmer player)
 		{
 			if (!player.UsingTool)
 				return false;
@@ -267,7 +267,7 @@ namespace Shockah.DontStopMeNow
 			return player.toolHold > 0 || player.toolPower > 0;
 		}
 
-		private bool ShouldAllowMovement(Farmer player, bool isSecondTick = false)
+		private static bool ShouldAllowMovement(Farmer player, bool isSecondTick = false)
 		{
 			if (player.CurrentTool is MeleeWeapon weapon)
 			{
@@ -321,7 +321,7 @@ namespace Shockah.DontStopMeNow
 		private static bool Game1_UpdateControlInput_Transpiler_UsingToolReplacement()
 		{
 			var player = Game1.player;
-			return player.UsingTool && !Instance.ShouldAllowMovement(player);
+			return player.UsingTool && !ShouldAllowMovement(player);
 		}
 
 		private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -361,7 +361,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void Farmer_BeginUsingTool_Postfix(Farmer __instance)
 		{
-			if (!__instance.CanMove && Instance.ShouldAllowMovement(__instance))
+			if (!__instance.CanMove && ShouldAllowMovement(__instance))
 			{
 				__instance.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(__instance);
@@ -375,7 +375,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void MeleeWeapon_leftClick_Postfix(Farmer who)
 		{
-			if (!who.CanMove && Instance.ShouldAllowMovement(who))
+			if (!who.CanMove && ShouldAllowMovement(who))
 			{
 				who.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(who);
@@ -384,7 +384,7 @@ namespace Shockah.DontStopMeNow
 
 		private static void MeleeWeapon_beginSpecialMove_Postfix(Farmer who)
 		{
-			if (!who.CanMove && Instance.ShouldAllowMovement(who))
+			if (!who.CanMove && ShouldAllowMovement(who))
 			{
 				who.CanMove = true;
 				Instance.PlayersToStopMovingInTwoTicks.Add(who);

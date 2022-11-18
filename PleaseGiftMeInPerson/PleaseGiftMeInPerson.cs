@@ -524,24 +524,6 @@ namespace Shockah.PleaseGiftMeInPerson
 				return FreeLoveApi.GetSpouses(farmer).ContainsKey(npcName);
 		}
 
-		private void ReturnItemIfNeeded(SObject item, string originalAddresseeNpcName, GiftTaste originalGiftTaste, GiftTaste modifiedGiftTaste)
-		{
-			if ((int)Instance.ModifiedGiftTaste > (int)GiftTaste.Dislike)
-				return;
-
-			//var returnItem = Instance.Config.ReturnUnlikedItems switch
-			//{
-			//	ModConfig.ReturningBehavior.Never => false,
-			//	ModConfig.ReturningBehavior.NormallyLiked => (int)originalGiftTaste >= (int)GiftTaste.Neutral,
-			//	ModConfig.ReturningBehavior.Always => true,
-			//	_ => throw new ArgumentException($"{nameof(ModConfig.ReturningBehavior)} has an invalid value."),
-			//};
-			//if (!returnItem)
-			//	return;
-
-			// TODO: actually send a mail
-		}
-
 		private static void GiftShipmentController_GiftToNpc_Prefix()
 		{
 			Instance.CurrentGiftingPlayer = Game1.player;
@@ -559,13 +541,13 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance.UpdateEmojisTexture();
 		}
 
-		private static void NPC_tryToReceiveActiveObject_Prefix(NPC __instance, Farmer __0 /* who */)
+		private static void NPC_tryToReceiveActiveObject_Prefix(Farmer __0 /* who */)
 		{
 			Instance.CurrentGiftingPlayer = __0;
 			Instance.CurrentGiftMethod = GiftMethod.InPerson;
 		}
 
-		private static void NPC_tryToReceiveActiveObject_Postfix(NPC __instance)
+		private static void NPC_tryToReceiveActiveObject_Postfix()
 		{
 			Instance.CurrentGiftingPlayer = null;
 			Instance.CurrentGiftMethod = null;
@@ -664,7 +646,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			Instance.ModifiedGiftTaste = GiftTasteExt.From(__result);
 		}
 
-		private static void NPC_receiveGift_Postfix(NPC __instance, SObject o, Farmer giver)
+		private static void NPC_receiveGift_Postfix(NPC __instance, Farmer giver)
 		{
 			if (Instance.CurrentGiftMethod is null)
 				return;
@@ -678,9 +660,6 @@ namespace Shockah.PleaseGiftMeInPerson
 					Instance.CurrentGiftMethod.Value
 				)
 			);
-
-			if (Instance.CurrentGiftingPlayer == giver)
-				Instance.ReturnItemIfNeeded(o, __instance.Name, Instance.OriginalGiftTaste, Instance.ModifiedGiftTaste);
 		}
 
 		private static IEnumerable<CodeInstruction> DialogueBox_draw_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)

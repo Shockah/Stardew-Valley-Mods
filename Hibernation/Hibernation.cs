@@ -513,7 +513,7 @@ namespace Shockah.Hibernation
 			}
 		}
 
-		private static void FarmEvent_setUp_Postfix(FarmEvent __instance, bool __result)
+		private static void FarmEvent_setUp_Postfix(bool __result)
 		{
 			if (Instance.NightsToSleep <= 0 || __result)
 				return;

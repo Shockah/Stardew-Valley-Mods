@@ -217,7 +217,7 @@ namespace Shockah.EarlyGingerIsland
 			return ShouldGingerIslandBeUnlockedInVanilla();
 		}
 
-		private bool ShouldGingerIslandBeUnlockedInVanilla()
+		private static bool ShouldGingerIslandBeUnlockedInVanilla()
 			=> Game1.MasterPlayer.eventsSeen.Contains(191393) || Game1.MasterPlayer.eventsSeen.Contains(502261) || Game1.MasterPlayer.hasCompletedCommunityCenter();
 
 		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
@@ -344,7 +344,7 @@ namespace Shockah.EarlyGingerIsland
 
 		private static void ParrotUpgradePerch_IsAvailable_Postfix(ParrotUpgradePerch __instance, ref bool __result)
 		{
-			if (__instance.upgradeName.Value == "Turtle" && !Instance.Config.AllowIslandFarmBeforeCC && !Instance.ShouldGingerIslandBeUnlockedInVanilla())
+			if (__instance.upgradeName.Value == "Turtle" && !Instance.Config.AllowIslandFarmBeforeCC && !ShouldGingerIslandBeUnlockedInVanilla())
 				__result = false;
 		}
 

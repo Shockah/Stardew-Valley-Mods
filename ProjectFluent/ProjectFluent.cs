@@ -170,7 +170,7 @@ namespace Shockah.ProjectFluent
 
 		#region APIs
 
-		public IGameLocale DefaultLocale
+		public static IGameLocale DefaultLocale
 			=> new BuiltInGameLocale(LocalizedContentManager.LanguageCode.en);
 
 		public IGameLocale CurrentLocale
