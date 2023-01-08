@@ -26,6 +26,7 @@ namespace Shockah.XPDisplay
 		internal static XPDisplay Instance = null!;
 		internal ModConfig Config { get; private set; } = null!;
 		private bool IsWalkOfLifeInstalled = false;
+		private bool IsMargoInstalled = false;
 		private int[] XPValues = null!;
 
 		private static readonly IDictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)> SkillBarCorners = new Dictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)>();
@@ -44,6 +45,7 @@ namespace Shockah.XPDisplay
 			SetupConfig();
 
 			IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.ImmersiveProfessions");
+			IsMargoInstalled = Helper.ModRegistry.IsLoaded("DaLion.Overhaul");
 			var harmony = new Harmony(ModManifest.UniqueID);
 
 			harmony.TryPatch(
@@ -318,8 +320,13 @@ namespace Shockah.XPDisplay
 
 			Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
 
-			if (currentLevel >= 10 && Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
-				(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
+			if (currentLevel >= 10)
+			{
+				if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+					(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
+				else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
+					(barTexture, barTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
+			}
 
 			Vector2 barPosition;
 			switch (orientation)
@@ -365,10 +372,10 @@ namespace Shockah.XPDisplay
 			if (!isHoverExcluded)
 			{
 				(int uiSkillIndex, string? spaceCoreSkillName)? hoveredUiSkill = SkillBarCorners
-				.Where(kv => kv.Value.Item1 is not null && kv.Value.Item2 is not null)
-				.Where(kv => mouseX >= kv.Value.Item1!.Value.X && mouseY >= kv.Value.Item1!.Value.Y && mouseX < kv.Value.Item2!.Value.X && mouseY < kv.Value.Item2!.Value.Y)
-				.FirstOrNull()
-				?.Key;
+					.Where(kv => kv.Value.Item1 is not null && kv.Value.Item2 is not null)
+					.Where(kv => mouseX >= kv.Value.Item1!.Value.X && mouseY >= kv.Value.Item1!.Value.Y && mouseX < kv.Value.Item2!.Value.X && mouseY < kv.Value.Item2!.Value.Y)
+					.FirstOrNull()
+					?.Key;
 				if (hoveredUiSkill is not null)
 				{
 					var (uiSkillIndex, spaceCoreSkillName) = hoveredUiSkill.Value;
