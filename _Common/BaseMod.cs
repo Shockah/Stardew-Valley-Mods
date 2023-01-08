@@ -120,8 +120,7 @@ namespace Shockah.CommonModCode
 
 		protected internal void LogConfig(TConfig? @override = null)
 		{
-			if (JsonSerializerSettings is null)
-				JsonSerializerSettings = JsonSerializerExt.GetSMAPISerializerSettings(Helper.Data);
+			JsonSerializerSettings ??= JsonSerializerExt.GetSMAPISerializerSettings(Helper.Data);
 
 			var json = JsonConvert.SerializeObject(@override ?? Config, JsonSerializerSettings);
 			Monitor.Log($"Current config:\n{json}", LogLevel.Trace);

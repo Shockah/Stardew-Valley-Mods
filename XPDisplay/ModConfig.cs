@@ -2,7 +2,7 @@
 
 namespace Shockah.XPDisplay
 {
-	internal class ModConfig
+	public sealed class ModConfig
 	{
 		public Orientation SmallBarOrientation { get; set; } = Orientation.Vertical;
 		public Orientation BigBarOrientation { get; set; } = Orientation.Horizontal;

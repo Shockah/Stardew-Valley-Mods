@@ -16,7 +16,7 @@ using System.Reflection.Emit;
 
 namespace Shockah.XPDisplay
 {
-	public class XPDisplay : Mod
+	public class XPDisplay : BaseMod<ModConfig>
 	{
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
@@ -24,7 +24,6 @@ namespace Shockah.XPDisplay
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
 		internal static XPDisplay Instance = null!;
-		internal ModConfig Config { get; private set; } = null!;
 		private bool IsWalkOfLifeInstalled = false;
 		private bool IsMargoInstalled = false;
 		private int[] XPValues = null!;
@@ -33,11 +32,15 @@ namespace Shockah.XPDisplay
 		private static readonly IList<(Vector2, Vector2)> SkillBarHoverExclusions = new List<(Vector2, Vector2)>();
 		private static readonly IList<Action> SkillsPageDrawQueuedDelegates = new List<Action>();
 
-		public override void Entry(IModHelper helper)
+		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
-			Config = helper.ReadConfig<ModConfig>();
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+		}
+
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -82,7 +85,11 @@ namespace Shockah.XPDisplay
 			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
-				save: () => Helper.WriteConfig(Config)
+				save: () =>
+				{
+					WriteConfig();
+					LogConfig();
+				}
 			);
 
 			helper.AddSectionTitle("config.orientation.section");
