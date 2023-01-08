@@ -26,7 +26,7 @@ namespace Shockah.XPDisplay
 		internal static XPDisplay Instance = null!;
 		private bool IsWalkOfLifeInstalled = false;
 		private bool IsMargoInstalled = false;
-		private int[] XPValues = null!;
+		private int[]? XPValues;
 
 		private static readonly IDictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)> SkillBarCorners = new Dictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)>();
 		private static readonly IList<(Vector2, Vector2)> SkillBarHoverExclusions = new List<(Vector2, Vector2)>();
@@ -36,6 +36,7 @@ namespace Shockah.XPDisplay
 		{
 			Instance = this;
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.Display.MenuChanged += OnMenuChanged;
 		}
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
@@ -53,12 +54,6 @@ namespace Shockah.XPDisplay
 
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.checkForLevelGain)),
-				transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_checkForLevelGain_Transpiler))
-			);
-
-			harmony.TryPatch(
-				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), new Type[] { typeof(SpriteBatch) }),
 				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
 				transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
@@ -73,6 +68,12 @@ namespace Shockah.XPDisplay
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
 				);
 			}
+		}
+
+		private void OnMenuChanged(object? sender, MenuChangedEventArgs e)
+		{
+			if (e.NewMenu is GameMenu)
+				UpdateXPValues();
 		}
 
 		private void SetupConfig()
@@ -100,31 +101,35 @@ namespace Shockah.XPDisplay
 			helper.AddNumberOption("config.appearance.alpha", () => Config.Alpha, min: 0f, max: 1f, interval: 0.05f);
 		}
 
-		private static IEnumerable<CodeInstruction> Farmer_checkForLevelGain_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		private void UpdateXPValues()
 		{
-			var instructions = enumerableInstructions.ToList();
-			var xpValues = new List<int>();
-			int currentInstructionIndex = 0;
-
-			while (true)
+			int maxLevel = Farmer.checkForLevelGain(0, int.MaxValue);
+			if (maxLevel <= 0)
 			{
-				// IL to find:
-				// ldarg.0
-				// <any ldc.i4> <any value>
-				var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
-				{
-					i => i.IsLdarg(0),
-					i => i.IsLdcI4()
-				}, startIndex: currentInstructionIndex);
-				if (worker is null)
-					break;
-
-				xpValues.Add(worker[1].GetLdcI4Value()!.Value);
-				currentInstructionIndex = worker.EndIndex;
+				XPValues = Array.Empty<int>();
+				return;
 			}
 
-			Instance.XPValues = xpValues.OrderBy(v => v).ToArray();
-			return instructions;
+			int maxValue = int.MaxValue;
+			int minValue = 0;
+			int[] values = new int[maxLevel];
+			for (int level = maxLevel; level > 0; level--)
+			{
+				while (maxValue - minValue > 1)
+				{
+					int midValue = minValue + (maxValue - minValue) / 2;
+					int stepLevel = Farmer.checkForLevelGain(0, midValue);
+					if (stepLevel >= level)
+						maxValue = midValue;
+					else
+						minValue = midValue;
+				}
+
+				values[level - 1] = maxValue;
+				minValue = 0;
+			}
+
+			XPValues = values;
 		}
 
 		private static void SkillsPage_draw_Postfix(SpriteBatch b)
@@ -296,6 +301,9 @@ namespace Shockah.XPDisplay
 
 		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
+			if (Instance.XPValues is null)
+				return;
+
 			bool isBigLevel = (levelIndex + 1) % 5 == 0;
 			Texture2D barTexture = Game1.mouseCursors;
 			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
@@ -373,6 +381,9 @@ namespace Shockah.XPDisplay
 
 		private static void DrawSkillsPageExperienceTooltip(SpriteBatch b)
 		{
+			if (Instance.XPValues is null)
+				return;
+
 			int mouseX = Game1.getMouseX();
 			int mouseY = Game1.getMouseY();
 			bool isHoverExcluded = SkillBarHoverExclusions.Any(e => mouseX >= e.Item1.X && mouseY >= e.Item1.Y && mouseX < e.Item2.X && mouseY < e.Item2.Y);
@@ -426,6 +437,9 @@ namespace Shockah.XPDisplay
 
 		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
 		{
+			if (Instance.XPValues is null)
+				throw new InvalidOperationException("`XPValues` should be set by now, but it's not.");
+
 			if (spaceCoreSkillName is null)
 			{
 				if (levelIndex >= 10)
