@@ -7,7 +7,6 @@
 		public interface IModConfig
 		{
 			bool EnablePrestige { get; }
-			uint RequiredExpPerExtendedLevel { get; }
 		}
 	}
 }

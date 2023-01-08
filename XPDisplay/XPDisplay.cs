@@ -441,28 +441,9 @@ namespace Shockah.XPDisplay
 				throw new InvalidOperationException("`XPValues` should be set by now, but it's not.");
 
 			if (spaceCoreSkillName is null)
-			{
-				if (levelIndex >= 10)
-				{
-					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
-					{
-						int levelXP = Instance.XPValues.Last();
-						int requiredXPPerExtendedLevel = WalkOfLifeBridge.GetRequiredXPPerExtendedLevel();
-						for (int i = 10; i <= levelIndex; i++)
-							levelXP += requiredXPPerExtendedLevel;
-						return levelXP;
-					}
-					else
-					{
-						levelIndex %= 10;
-					}
-				}
 				return Instance.XPValues[levelIndex];
-			}
 			else
-			{
 				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
-			}
 		}
 
 		private static int GetCurrentXP(int uiSkillIndex, string? spaceCoreSkillName)

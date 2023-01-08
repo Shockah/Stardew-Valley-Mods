@@ -13,7 +13,6 @@
 			public interface IProfessionsConfig
 			{
 				bool EnablePrestige { get; }
-				uint RequiredExpPerExtendedLevel { get; }
 			}
 		}
 	}
