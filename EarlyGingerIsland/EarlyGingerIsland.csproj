@@ -16,7 +16,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Shrike" Version="1.0.1" />
-		<PackageReference Include="Shrike.Harmony" Version="1.0.1" />
+		<PackageReference Include="Shrike.Harmony" Version="1.1.0" />
 	</ItemGroup>
 	<Import Project="..\_Common\_Common.projitems" Label="Shared" />
 	<Import Project="..\_CommonWithHarmony\_CommonWithHarmony.projitems" Label="Shared" />
