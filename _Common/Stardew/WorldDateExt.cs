@@ -6,12 +6,23 @@ namespace Shockah.CommonModCode.Stardew
 {
 	public static class WorldDateExt
 	{
-		public static int DaysPerSeason { get; set; } = 28;
-
 		private static readonly string AllSeasonsRegexPattern = "(?:spring)|(?:summer)|(?:fall)|(?:winter)";
 		private static readonly Regex SeasonDayYearRegex = new($"({AllSeasonsRegexPattern})\\s*(\\d+)\\s*y(?:ear)?\\s*(\\d+)", RegexOptions.IgnoreCase);
 		private static readonly Regex SeasonYearRegex = new($"({AllSeasonsRegexPattern})\\s*y(?:ear)?\\s(\\d+)", RegexOptions.IgnoreCase);
 		private static readonly Regex YearRegex = new($"y(?:ear)?\\s(\\d+)", RegexOptions.IgnoreCase);
+
+		public static int GetDaysInSeason(int season, int year)
+		{
+			string seasonName = Utility.getSeasonNameFromNumber(season);
+			int days = 1;
+			while (true)
+			{
+				var dateString = Game1.content.LoadString("Strings\\StringsFromCSFiles:Utility.cs.5678", days, (LocalizedContentManager.CurrentLanguageCode == LocalizedContentManager.LanguageCode.es) ? seasonName.ToLower() : seasonName, year);
+				if (dateString != Utility.getDateStringFor(days, season, year))
+					return days - 1;
+				days++;
+			}
+		}
 
 		public static WorldDate GetByAddingDays(this WorldDate self, int days)
 		{
@@ -22,26 +33,40 @@ namespace Shockah.CommonModCode.Stardew
 			var season = self.SeasonIndex;
 			var year = self.Year;
 
+			var daysInSeason = GetDaysInSeason(season, year);
+
 			day += days;
-			while (day > DaysPerSeason)
+			while (true)
 			{
-				day -= DaysPerSeason;
-				season++;
-			}
-			while (day < 0)
-			{
-				day += DaysPerSeason;
-				season--;
-			}
-			while (season >= 4)
-			{
-				season -= 4;
-				year++;
-			}
-			while (season < 0)
-			{
-				season += 4;
-				year--;
+				var oldDay = day;
+				var oldSeason = season;
+				var oldYear = year;
+
+				if (day > daysInSeason)
+				{
+					day -= daysInSeason;
+					season++;
+				}
+				else if (day < 0)
+				{
+					day += daysInSeason;
+					season--;
+				}
+				else if (season >= 4)
+				{
+					season -= 4;
+					year++;
+				}
+				else if (season < 0)
+				{
+					season += 4;
+					year--;
+				}
+
+				if (season != oldSeason || year != oldYear)
+					daysInSeason = GetDaysInSeason(season, year);
+				if (oldDay == day && oldSeason == season && oldYear == year)
+					break;
 			}
 
 			return New(year, season, day);

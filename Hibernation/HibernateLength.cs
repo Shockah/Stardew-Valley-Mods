@@ -1,5 +1,7 @@
 ﻿using Shockah.CommonModCode.Stardew;
+using StardewValley;
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Shockah.Hibernation
@@ -64,8 +66,8 @@ namespace Shockah.Hibernation
 			{
 				HibernateLengthUnit.Nights => Value,
 				HibernateLengthUnit.Weeks => Value * 7,
-				HibernateLengthUnit.Seasons => Value * WorldDateExt.DaysPerSeason,
-				HibernateLengthUnit.Years => Value * WorldDateExt.DaysPerSeason * 4,
+				HibernateLengthUnit.Seasons => Enumerable.Range(Game1.year * 4 + Utility.getSeasonNumber(Game1.currentSeason), Value).Select(index => WorldDateExt.GetDaysInSeason(index % 4, index / 4)).Sum(),
+				HibernateLengthUnit.Years => Enumerable.Range(Game1.year * 4 + Utility.getSeasonNumber(Game1.currentSeason), Value * 4).Select(index => WorldDateExt.GetDaysInSeason(index % 4, index / 4)).Sum(),
 				HibernateLengthUnit.Forever => int.MaxValue,
 				_ => throw new ArgumentException($"{nameof(HibernateLengthUnit)} has an invalid value.")
 			};
