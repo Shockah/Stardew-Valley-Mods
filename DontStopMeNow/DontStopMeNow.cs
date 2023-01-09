@@ -14,25 +14,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Shockah.CommonModCode;
 
 namespace Shockah.DontStopMeNow
 {
-	public class DontStopMeNow : Mod
+	public class DontStopMeNow : BaseMod<ModConfig>
 	{
 		private static DontStopMeNow Instance { get; set; } = null!;
-
-		internal ModConfig Config { get; private set; } = null!;
 
 		private readonly IList<Farmer> NotRunningPlayers = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingInTwoTicks = new List<Farmer>();
 		private readonly IList<Farmer> PlayersToStopMovingNextTick = new List<Farmer>();
 		private readonly PerScreen<SButton?> LastToolButton = new(() => null);
 
-		public override void Entry(IModHelper helper)
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
+		}
+
+		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
-
-			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -106,7 +108,11 @@ namespace Shockah.DontStopMeNow
 			api.Register(
 				ModManifest,
 				reset: () => Config = new ModConfig(),
-				save: () => Helper.WriteConfig(Config)
+				save: () =>
+				{
+					WriteConfig();
+					LogConfig();
+				}
 			);
 
 			helper.AddSectionTitle("config.movement.section");
