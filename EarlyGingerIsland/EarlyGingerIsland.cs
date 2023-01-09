@@ -121,7 +121,8 @@ namespace Shockah.EarlyGingerIsland
 						NewUnlockCondition = new(WorldDateExt.New(-1, Season.Spring, 1), 0);
 					}
 
-					Helper.WriteConfig(Config);
+					WriteConfig();
+					LogConfig();
 					Helper.GameContent.InvalidateCache("Strings/Locations");
 					SetupConfig();
 				}
