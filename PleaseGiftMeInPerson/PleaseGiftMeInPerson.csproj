@@ -15,7 +15,7 @@
 		<None Include="..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Shrike" Version="1.0.1" />
+		<PackageReference Include="Shrike" Version="1.1.0" />
 		<PackageReference Include="Shrike.Harmony" Version="1.1.0" />
 	</ItemGroup>
 	<Import Project="..\_Common\_Common.projitems" Label="Shared" />
