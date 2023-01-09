@@ -1,8 +1,9 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Nanoray.Shrike.Harmony;
+using Nanoray.Shrike;
 using Shockah.CommonModCode.GMCM;
-using Shockah.CommonModCode.IL;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -324,30 +325,28 @@ namespace Shockah.DontStopMeNow
 			return player.UsingTool && !ShouldAllowMovement(player);
 		}
 
-		private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Transpiler(IEnumerable<CodeInstruction> enumerableInstructions)
+		private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
-			var instructions = enumerableInstructions.ToList();
-
-			// IL to find:
-			// IL_15d5: call class StardewValley.Farmer StardewValley.Game1::get_player()
-			// IL_15da: callvirt instance bool StardewValley.Farmer::get_UsingTool()
-			// IL_15df: brtrue IL_17a0
-			var worker = TranspileWorker.FindInstructions(instructions, new Func<CodeInstruction, bool>[]
+			try
 			{
-				i => i.opcode == OpCodes.Call && (MethodInfo)i.operand == AccessTools.Method(typeof(Game1), "get_player"),
-				i => i.opcode == OpCodes.Callvirt && (MethodInfo)i.operand == AccessTools.Method(typeof(Farmer), "get_UsingTool"),
-				i => i.opcode == OpCodes.Brtrue
-			});
-			if (worker is null)
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.Find(
+						ILMatches.Call("get_player"),
+						ILMatches.Call("get_UsingTool"),
+						ILMatches.Brtrue
+					)
+					.PointerMatcher(SequenceMatcherRelativeElement.First)
+					.Encompass(SequenceMatcherPastBoundsDirection.After, 1)
+					.Replace(
+						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DontStopMeNow), nameof(Game1_UpdateControlInput_Transpiler_UsingToolReplacement)))
+					)
+					.AllElements();
+			}
+			catch (Exception ex)
 			{
-				Instance.Monitor.Log($"Could not patch methods - Don't Stop Me Now probably won't work.\nReason: Could not find IL to transpile.", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
-
-			worker[0] = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DontStopMeNow), nameof(Game1_UpdateControlInput_Transpiler_UsingToolReplacement)));
-			worker[1] = new CodeInstruction(OpCodes.Nop);
-
-			return instructions;
 		}
 
 		private static void Farmer_setRunning_Postfix(Farmer __instance)
