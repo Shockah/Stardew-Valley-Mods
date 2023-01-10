@@ -1,0 +1,10 @@
+﻿{
+  "Name": "Config Redirector",
+  "Author": "Shockah",
+  "Version": "1.0.0",
+  "Description": "No more stopping for any actions.",
+  "UniqueID": "Shockah.ConfigRedirector",
+  "EntryDll": "ConfigRedirector.dll",
+  "MinimumApiVersion": "3.0.0",
+  "UpdateKeys": [ ]
+}
