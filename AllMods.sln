@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kokoro", "Kokoro\Kokoro.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SeasonAffixes", "SeasonAffixes\SeasonAffixes.csproj", "{8F00BD63-311B-4B49-909C-51D56C6DDAE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigRedirector", "ConfigRedirector\ConfigRedirector.csproj", "{13F35B10-BA6A-41D6-BC5B-ED1E18287A2A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigRedirector", "ConfigRedirector\ConfigRedirector.csproj", "{13F35B10-BA6A-41D6-BC5B-ED1E18287A2A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JunimoWarp", "JunimoWarp\JunimoWarp.csproj", "{883867F6-8723-4DD8-A00C-B5FA6F923500}"
 EndProject
