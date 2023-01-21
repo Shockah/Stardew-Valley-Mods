@@ -18,41 +18,53 @@ namespace Shockah.ConfigRedirector
 		[ThreadStatic]
 		private static string? CurrentlyUsedFile;
 
+		private string ModsPath = null!;
+		private List<string>? ModsToLoadEarly;
+
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
 
+			ReflectIntoSMAPI();
 			LogModsLoadedEarlier();
 			PatchFileMethods();
 		}
 
-		private void LogModsLoadedEarlier()
+		private void ReflectIntoSMAPI()
 		{
-			HashSet<string> modsToLoadEarly;
 			try
 			{
 				Type scoreType = AccessTools.TypeByName("StardewModdingAPI.Framework.SCore, StardewModdingAPI");
 				Type sconfigType = AccessTools.TypeByName("StardewModdingAPI.Framework.Models.SConfig, StardewModdingAPI");
 
 				MethodInfo scoreGetter = AccessTools.PropertyGetter(scoreType, "Instance");
-				FieldInfo sconfigField = AccessTools.Field(scoreType, "Settings");
-				MethodInfo modsToLoadEarlyGetter = AccessTools.PropertyGetter(sconfigType, "ModsToLoadEarly");
-
 				object score = scoreGetter.Invoke(null, null)!;
-				object sconfig = sconfigField.GetValue(score)!;
-				modsToLoadEarly = (HashSet<string>)modsToLoadEarlyGetter.Invoke(sconfig, null)!;
 
-				if (!modsToLoadEarly.Contains(ModManifest.UniqueID))
-					Monitor.Log($"{ModManifest.Name} is not marked to be loaded early. There is no guarantee any other mods that loaded earlier will be affected.", LogLevel.Warn);
+				MethodInfo modsPathGetter = AccessTools.PropertyGetter(scoreType, "ModsPath");
+				ModsPath = (string)modsPathGetter.Invoke(score, null)!;
+
+				FieldInfo sconfigField = AccessTools.Field(scoreType, "Settings");
+				object sconfig = sconfigField.GetValue(score)!;
+
+				MethodInfo modsToLoadEarlyGetter = AccessTools.PropertyGetter(sconfigType, "ModsToLoadEarly");
+				ModsToLoadEarly = ((HashSet<string>)modsToLoadEarlyGetter.Invoke(sconfig, null)!).ToList();
 			}
 			catch (Exception ex)
 			{
 				Monitor.Log($"Could not reflect into SMAPI - cannot detect mods marked to be loaded early.\nReason: {ex}", LogLevel.Error);
-				modsToLoadEarly = new();
 			}
+		}
+
+		private void LogModsLoadedEarlier()
+		{
+			if (ModsToLoadEarly is null)
+				return;
+
+			if (!ModsToLoadEarly.Contains(ModManifest.UniqueID))
+				Monitor.Log($"{ModManifest.Name} is not marked to be loaded early. There is no guarantee any other mods that loaded earlier will be affected.", LogLevel.Warn);
 
 			var allModsLoadedEarlier = Helper.ModRegistry.GetAll().TakeWhile(m => m.Manifest.UniqueID != ModManifest.UniqueID).ToList();
-			var modsLoadedEarlierOnPurpose = allModsLoadedEarlier.Where(m => modsToLoadEarly.Contains(m.Manifest.UniqueID)).ToHashSet();
+			var modsLoadedEarlierOnPurpose = allModsLoadedEarlier.Where(m => ModsToLoadEarly.Contains(m.Manifest.UniqueID)).ToHashSet();
 			LinkedList<IModInfo> modsToCheckForDependencies = new(modsLoadedEarlierOnPurpose);
 
 			while (modsToCheckForDependencies.Count != 0)
@@ -82,135 +94,121 @@ namespace Shockah.ConfigRedirector
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
 
-			// File.OpenX
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode), typeof(FileAccess) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode), typeof(FileAccess), typeof(FileShare) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.OpenRead), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.OpenText), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.OpenWrite), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			#region Generic file opens
 
-			// File.ReadAllText
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllText), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllText), new Type[] { typeof(string), typeof(Encoding) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			{
+				// `path` parameter
+				var methodsToPatch = new Func<MethodInfo>[]
+				{
+					() => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode) }),
+					() => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode), typeof(FileAccess) }),
+					() => AccessTools.Method(typeof(File), nameof(File.Open), new Type[] { typeof(string), typeof(FileMode), typeof(FileAccess), typeof(FileShare) })
+				};
 
-			// File.ReadAllTextAsync
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllTextAsync), new Type[] { typeof(string), typeof(CancellationToken) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllTextAsync), new Type[] { typeof(string), typeof(Encoding), typeof(CancellationToken) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+				foreach (var methodToPatch in methodsToPatch)
+					harmony.TryPatch(
+						monitor: Monitor,
+						original: methodToPatch,
+						prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileOpen_PathArgument_ModeArgument_Prefix))),
+						finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
+					);
+			}
 
-			// File.ReadAllLines
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllLines), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllLines), new Type[] { typeof(string), typeof(Encoding) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			#endregion
 
-			// File.ReadAllLinesAsync
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllLinesAsync), new Type[] { typeof(string), typeof(CancellationToken) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllLinesAsync), new Type[] { typeof(string), typeof(Encoding), typeof(CancellationToken) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			#region File reads
 
-			// File.ReadLines
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadLines), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadLines), new Type[] { typeof(string), typeof(Encoding) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			{
+				// `path` parameter
+				var methodsToPatch = new Func<MethodInfo>[]
+				{
+					() => AccessTools.Method(typeof(File), nameof(File.OpenRead), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.OpenText), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllText), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllText), new Type[] { typeof(string), typeof(Encoding) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllTextAsync), new Type[] { typeof(string), typeof(CancellationToken) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllTextAsync), new Type[] { typeof(string), typeof(Encoding), typeof(CancellationToken) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllLines), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllLines), new Type[] { typeof(string), typeof(Encoding) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllLinesAsync), new Type[] { typeof(string), typeof(CancellationToken) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllLinesAsync), new Type[] { typeof(string), typeof(Encoding), typeof(CancellationToken) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadLines), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadLines), new Type[] { typeof(string), typeof(Encoding) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllBytes), new Type[] { typeof(string) }),
+					() => AccessTools.Method(typeof(File), nameof(File.ReadAllBytesAsync), new Type[] { typeof(string), typeof(CancellationToken) })
+				};
 
-			// File.ReadAllBytes
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllBytes), new Type[] { typeof(string) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+				foreach (var methodToPatch in methodsToPatch)
+					harmony.TryPatch(
+						monitor: Monitor,
+						original: methodToPatch,
+						prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
+						finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
+					);
+			}
 
-			// File.ReadAllBytesAsync
-			harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(File), nameof(File.ReadAllBytesAsync), new Type[] { typeof(string), typeof(CancellationToken) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileRead_PathArgument_Prefix))),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
-			);
+			#endregion
+
+			#region File writes
+
+			{
+				// `path` parameter
+				var methodsToPatch = new Func<MethodInfo>[]
+				{
+					() => AccessTools.Method(typeof(File), nameof(File.OpenWrite), new Type[] { typeof(string) })
+				};
+
+				foreach (var methodToPatch in methodsToPatch)
+					harmony.TryPatch(
+						monitor: Monitor,
+						original: methodToPatch,
+						prefix: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.FileWrite_PathArgument_Prefix))),
+						finalizer: new HarmonyMethod(AccessTools.Method(typeof(ConfigRedirector), nameof(ConfigRedirector.AnyFile_Cleanup_Finalizer)))
+					);
+			}
+
+			#endregion
+		}
+
+		private void HandleFileRead(ref string path)
+		{
+			CurrentlyUsedFile = path;
+			path = GetRedirectedPath(path);
+		}
+
+		private void HandleFileWrite(ref string path)
+		{
+			CurrentlyUsedFile = path;
+			path = GetRedirectedPath(path);
+		}
+
+		private string GetRedirectedPath(string path)
+		{
+		}
+
+		private static void FileOpen_PathArgument_ModeArgument_Prefix(ref string path, FileMode mode)
+		{
+			switch (mode)
+			{
+				case FileMode.Open:
+					Instance.HandleFileRead(ref path);
+					break;
+				case FileMode.CreateNew:
+				case FileMode.Create:
+				case FileMode.OpenOrCreate:
+				case FileMode.Truncate:
+				case FileMode.Append:
+				default:
+					Instance.HandleFileWrite(ref path);
+					break;
+			}
 		}
 
 		private static void FileRead_PathArgument_Prefix(ref string path)
-		{
-			CurrentlyUsedFile = path;
-		}
+			=> Instance.HandleFileRead(ref path);
+
+		private static void FileWrite_PathArgument_Prefix(ref string path)
+			=> Instance.HandleFileWrite(ref path);
 
 		private static void AnyFile_Cleanup_Finalizer()
 		{
