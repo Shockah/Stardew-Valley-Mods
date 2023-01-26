@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
-using StardewValley.Objects;
 using System;
 using SObject = StardewValley.Object;
 
@@ -9,69 +8,68 @@ namespace Shockah.CommonModCode.UI
 {
 	public class ItemRenderer
 	{
-		private Texture2D GetItemTexture(SObject @object)
-		{
-			if (@object.ParentSheetIndex < 0)
-				return Game1.mouseCursors;
+		private static RenderTarget2D? DrawInMenuRenderTarget { get; set; }
 
-			if (@object.bigCraftable.Value)
-				return Game1.bigCraftableSpriteSheet;
-			else
-				return Game1.objectSpriteSheet;
+		private static void DrawItemViaGameImplementation(SpriteBatch b, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, StackDrawType drawStackNumber, UIAnchorSide rectAnchorSide, float layerDepth)
+		{
+			Vector2 realRectSize = rectSize;
+			Vector2 realRectLocation = rectLocation;
+
+			if (realRectSize.X != realRectSize.Y)
+			{
+				var minLength = Math.Min(rectSize.X, rectSize.Y);
+				realRectSize = new(minLength);
+				realRectLocation -= (rectSize - realRectSize) / 2;
+			}
+
+			float scale = Math.Min(realRectSize.X, realRectSize.Y) / 64f;
+			realRectLocation = rectAnchorSide.GetAnchorPoint(realRectLocation, realRectSize);
+			@object.drawInMenu(b, realRectLocation, scale, 1f, layerDepth, drawStackNumber, color, drawShadow: true);
 		}
 
-		private Rectangle GetItemSourceRectangle(SObject @object)
+		private static void DrawItemViaRenderTargetGameImplementation(SpriteBatch b, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, StackDrawType drawStackNumber, UIAnchorSide rectAnchorSide, float layerDepth)
 		{
-			var index = @object.ParentSheetIndex;
-			if (index < 0)
-				return new(322, 498, 12, 12);
+			if (DrawInMenuRenderTarget is null || DrawInMenuRenderTarget.IsDisposed)
+			{
+				DrawInMenuRenderTarget?.Dispose();
+				DrawInMenuRenderTarget = new RenderTarget2D(b.GraphicsDevice, 80, 80); // a bit bigger to fit the text
+			}
 
-			if (@object.showNextIndex.Value)
-				index++;
-			if (@object.bigCraftable.Value)
-				return SObject.getSourceRectForBigCraftable(index);
-			else
-				return Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, index, 16, 16);
+			static bool TryEnd(SpriteBatch b)
+			{
+				try
+				{
+					b.End();
+					return true;
+				}
+				catch
+				{
+					return false;
+				}
+			}
+
+			bool wasInProgress = TryEnd(b);
+			var oldRenderTarget = b.GraphicsDevice.GetRenderTargets().FirstOrNull()?.RenderTarget as RenderTarget2D;
+
+			b.GraphicsDevice.SetRenderTarget(DrawInMenuRenderTarget);
+			b.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
+			b.GraphicsDevice.Clear(Color.Transparent);
+
+			DrawItemViaGameImplementation(b, @object, Vector2.Zero, new Vector2(64), Color.White, drawStackNumber, UIAnchorSide.TopLeft, 0f);
+
+			b.End();
+			b.GraphicsDevice.SetRenderTarget(oldRenderTarget);
+
+			if (wasInProgress)
+				b.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
+
+			var actualScale = Math.Min(rectSize.X, rectSize.Y) / 64f;
+			b.Draw(DrawInMenuRenderTarget, rectLocation - rectAnchorSide.GetAnchorPoint(Vector2.Zero, new Vector2(Math.Min(rectSize.X, rectSize.Y))), null, color, 0f, Vector2.Zero, actualScale, SpriteEffects.None, layerDepth);
 		}
 
-		private Rectangle GetColoredItemSourceRectangle(ColoredObject @object)
+		public void DrawItem(SpriteBatch b, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, StackDrawType drawStackNumber, UIAnchorSide rectAnchorSide = UIAnchorSide.TopLeft, float layerDepth = 0f)
 		{
-			var index = @object.ParentSheetIndex;
-			if (index < 0)
-				return new(322, 498, 12, 12);
-
-			if (!@object.ColorSameIndexAsParentSheetIndex)
-				index++;
-			if (@object.bigCraftable.Value)
-				return SObject.getSourceRectForBigCraftable(index);
-			else
-				return Game1.getSourceRectForStandardTileSheet(Game1.objectSpriteSheet, index, 16, 16);
-		}
-
-		public void DrawItem(SpriteBatch batch, SObject @object, Vector2 rectLocation, Vector2 rectSize, Color color, UIAnchorSide rectAnchorSide = UIAnchorSide.TopLeft, Vector2? scale = null, float layerDepth = 0f)
-		{
-			var texture = GetItemTexture(@object);
-			var sourceRectangle = GetItemSourceRectangle(@object);
-
-			var itemSize = new Vector2(sourceRectangle.Size.X, sourceRectangle.Size.Y);
-			if (itemSize.X < rectSize.X && itemSize.Y < rectSize.Y)
-				itemSize *= Math.Max(rectSize.X, rectSize.Y);
-			if (itemSize.X > rectSize.X)
-				itemSize = itemSize / itemSize.X * rectSize.X;
-			if (itemSize.Y > rectSize.Y)
-				itemSize = itemSize / itemSize.Y * rectSize.Y;
-			var itemPosition = rectAnchorSide.GetAnchorPoint(
-				new Vector2(
-					rectLocation.X + (rectSize.X - itemSize.X) * 0.5f,
-					rectLocation.Y + (rectSize.Y - itemSize.Y) * 0.5f
-				),
-				-rectSize
-			);
-			var finalScale = itemSize.X / sourceRectangle.Width;
-			var origin = new Vector2(sourceRectangle.Width * 0.5f, sourceRectangle.Height);
-			batch.Draw(texture, itemPosition + origin * finalScale, sourceRectangle, color, 0f, origin, finalScale * (scale ?? Vector2.One), SpriteEffects.None, layerDepth);
-			if (@object is ColoredObject coloredObject)
-				batch.Draw(texture, itemPosition + origin * finalScale, GetColoredItemSourceRectangle(coloredObject), Color.Lerp(color, coloredObject.color.Value, 0.5f), 0f, origin, finalScale * (scale ?? Vector2.One), SpriteEffects.None, layerDepth);
+			DrawItemViaRenderTargetGameImplementation(b, @object, rectLocation, rectSize, color, drawStackNumber, rectAnchorSide, layerDepth);
 		}
 	}
 }

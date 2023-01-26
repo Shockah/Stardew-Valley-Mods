@@ -13,8 +13,6 @@ namespace Shockah.MachineStatus
 	{
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
-		public bool IgnoreUnknownItems { get; set; } = true;
-
 		public UIAnchorSide ScreenAnchorSide { get; set; } = UIAnchorSide.BottomLeft;
 		public float AnchorInset { get; set; } = 16f;
 		public float AnchorOffsetX { get; set; } = 0f;
@@ -37,7 +35,6 @@ namespace Shockah.MachineStatus
 		public KeybindList VisibilityKeybind { get; set; } = new KeybindList();
 		public float FocusedAlpha { get; set; } = 1f;
 		public float NormalAlpha { get; set; } = 0.3f;
-		public bool BusyDancing { get; set; } = true;
 
 		public MachineRenderingOptions.Grouping Grouping { get; set; } = MachineRenderingOptions.Grouping.ByMachine;
 		public IList<MachineRenderingOptions.Sorting> Sorting { get; set; } = new List<MachineRenderingOptions.Sorting>
