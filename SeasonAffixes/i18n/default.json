@@ -1,0 +1,17 @@
+﻿{
+  // positive affixes
+  "affix.positive.Descent.name": "Descent",
+  "affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
+  "affix.positive.Fortune.name": "Fortune",
+  "affix.positive.Fortune.description": "Greatly increased daily luck.",
+
+  // negative affixes
+  "affix.positive.Crows.name": "Crows",
+  "affix.positive.Crows.description": "Scarecrows do not work.",
+  "affix.positive.Drought.name": "Drought",
+  "affix.positive.Drought.description": "It never rains.",
+
+  // neutral affixes
+  "affix.positive.Thunder.name": "Thunder",
+  "affix.positive.Thunder.description": "Storms are twice as likely as usual."
+}

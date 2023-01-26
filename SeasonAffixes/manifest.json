@@ -1,0 +1,10 @@
+﻿{
+    "Name": "Season Affixes",
+    "Author": "Shockah",
+    "Version": "1.0.0",
+    "Description": "Season Affixes",
+    "UniqueID": "Shockah.SeasonAffixes",
+    "EntryDll": "SeasonAffixes.dll",
+    "MinimumApiVersion": "3.0.0",
+    "UpdateKeys": []
+}
