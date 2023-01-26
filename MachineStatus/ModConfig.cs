@@ -2,14 +2,17 @@
 using Newtonsoft.Json;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.UI;
+using StardewModdingAPI;
 using StardewModdingAPI.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.MachineStatus
 {
-	internal class ModConfig
+	public sealed class ModConfig : IVersioned.Modifiable
 	{
+		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
+
 		public bool IgnoreUnknownItems { get; set; } = true;
 
 		public UIAnchorSide ScreenAnchorSide { get; set; } = UIAnchorSide.BottomLeft;
@@ -49,7 +52,7 @@ namespace Shockah.MachineStatus
 		public IList<string> ShowReadyExceptions { get; set; } = new List<string>();
 
 		public bool ShowWaiting { get; set; } = false;
-		public IList<string> ShowWaitingExceptions { get; set; } = new List<string> { "*|Cask", "*|Keg", "*|Preserves Jar", "*|Crab Pot" };
+		public IList<string> ShowWaitingExceptions { get; set; } = new List<string> { "*|Cask", "*|Keg", "*|Preserves Jar", "*|Crab Pot", "*|Crystalarium" };
 
 		public bool ShowBusy { get; set; } = false;
 		public IList<string> ShowBusyExceptions { get; set; } = new List<string>();

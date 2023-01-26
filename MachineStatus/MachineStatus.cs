@@ -21,7 +21,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.MachineStatus
 {
-	public class MachineStatus : Mod
+	public class MachineStatus : BaseMod<ModConfig>
 	{
 		private enum MachineType
 		{
@@ -81,7 +81,6 @@ namespace Shockah.MachineStatus
 		};
 
 		internal static MachineStatus Instance { get; set; } = null!;
-		internal ModConfig Config { get; private set; } = null!;
 		private bool IsConfigRegistered { get; set; } = false;
 
 		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
@@ -118,10 +117,14 @@ namespace Shockah.MachineStatus
 		private float VisibilityAlpha { get => PerScreenVisibilityAlpha.Value; set => PerScreenVisibilityAlpha.Value = value; }
 		private bool IsHoveredOver { get => PerScreenIsHoveredOver.Value; set => PerScreenIsHoveredOver.Value = value; }
 
-		public override void Entry(IModHelper helper)
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
+		}
+
+		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
-			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -154,6 +157,7 @@ namespace Shockah.MachineStatus
 					Helper.WriteConfig(Config);
 					ForceRefreshDisplayedMachines();
 					SetupConfig();
+					LogConfig();
 				}
 			);
 
