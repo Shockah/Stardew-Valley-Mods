@@ -1,4 +1,7 @@
-﻿using StardewValley;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using StardewValley;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,6 +11,16 @@ namespace Shockah.CommonModCode.Stardew
 	
 	public static class GameExt
 	{
+		private static readonly Lazy<Texture2D> LazyPixel = new(() =>
+		{
+			var texture = new Texture2D(Game1.graphics.GraphicsDevice, 1, 1);
+			texture.SetData(new[] { Color.White });
+			return texture;
+		});
+
+		public static Texture2D Pixel
+			=> LazyPixel.Value;
+
 		public static MultiplayerMode GetMultiplayerMode()
 			=> (MultiplayerMode)Game1.multiplayerMode;
 
