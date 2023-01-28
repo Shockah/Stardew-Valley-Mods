@@ -19,7 +19,7 @@ namespace Shockah.AdventuresInTheMines
 			Instance = this;
 			Populators = new()
 			{
-				new IcePopulator(Monitor)
+				new IcePuzzlePopulator(Monitor)
 			};
 
 			var harmony = new Harmony(ModManifest.UniqueID);

@@ -1,6 +1,7 @@
 ﻿using Shockah.AdventuresInTheMines.Map;
 using Shockah.CommonModCode;
 using StardewModdingAPI;
+using StardewValley;
 using StardewValley.Locations;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Linq;
 
 namespace Shockah.AdventuresInTheMines.Populators
 {
-	internal sealed class IcePopulator : IMineShaftPopulator
+	internal sealed class IcePuzzlePopulator : IMineShaftPopulator
 	{
 		private enum Tile
 		{
@@ -33,28 +34,31 @@ namespace Shockah.AdventuresInTheMines.Populators
 #endif
 
 		private const int LadderTileIndex = 115;
-		private const float FillRatio = 0.5f;
+		private const float MinimumFillRatio = 0.25f;
+		private const float MaximumFillRatio = 0.4f;
 		private const int MinimumRectangleGirth = 4;
+		private const int MinimumArea = 60;
 
 		private IMonitor Monitor { get; init; }
 
-		public IcePopulator(IMonitor monitor)
+		public IcePuzzlePopulator(IMonitor monitor)
 		{
 			this.Monitor = monitor;
 		}
 
 		public void BeforePopulate(MineShaft location)
 		{
-			// TODO: ladder position is actually already stored in MineShaft
+			// finding ladder (starting) position
+			// TODO: ladder position is actually already stored in MineShaft... but it's private
 			var ladderPoint = FindLadder(location);
 			if (ladderPoint is null)
 			{
-				Monitor.Log($"Could not find a ladder at location {location.Name}. Aborting {typeof(IcePopulator)}.");
+				Monitor.Log($"Could not find a ladder at location {location.Name}. Aborting {typeof(IcePuzzlePopulator)}.");
 				return;
 			}
-
 			IntPoint belowLadderPoint = new(ladderPoint.Value.X, ladderPoint.Value.Y + 1);
 
+			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
 			ArrayMap<Tile> occupancyMap = new(point =>
 			{
 				if (point == belowLadderPoint)
@@ -67,37 +71,37 @@ namespace Shockah.AdventuresInTheMines.Populators
 					return Tile.Blocked;
 			}, (int)(location.Map.DisplayWidth / 64f), (int)(location.Map.DisplayHeight / 64f));
 			Monitor.Log($"\n{occupancyMap.ToString(GetCharacterForTile)}", LogLevel.Debug);
+
+			// creating a reachable tile map - tiles reachable by the player from the ladder
 			var reachableMap = FloodFill.Run(occupancyMap, belowLadderPoint, (map, point) => map[point] != Tile.Blocked);
 			Monitor.Log($"\n{reachableMap.ToString(b => b ? '#' : '.')}", LogLevel.Debug);
 			int reachableTileCount = reachableMap.Count(reachable => reachable);
 
+			// finding all possible tile rectangles in the reachable tiles
+			var possibleIceTiles = new ArrayMap<bool>(point => reachableMap[point] && point != belowLadderPoint, reachableMap.Width, reachableMap.Height, reachableMap.MinX, reachableMap.MinY);
 			var rectangles = new LinkedList<(IntPoint Min, IntPoint Max)>(
-				FindRectangles(reachableMap)
+				FindRectangles(possibleIceTiles)
 					.Where(r => r.Max.X - r.Min.X + 1 >= MinimumRectangleGirth && r.Max.Y - r.Min.Y + 1 >= MinimumRectangleGirth)
 					.OrderByDescending(r => (r.Max.X - r.Min.X - 1) * (r.Max.Y - r.Min.Y - 1) / Math.Sqrt(Math.Max(r.Max.X - r.Min.X - 1, r.Max.Y - r.Min.Y - 1)))
 			);
 
+			// creating a map of ice tiles out of the largest (and "squarest") rectangles
+			float fillRatio = MinimumFillRatio + (float)(Game1.random.NextDouble() * (MaximumFillRatio - MinimumFillRatio));
+			Monitor.Log($"Fill ratio: {fillRatio}", LogLevel.Debug);
 			ArrayMap<bool> currentIceMap = new(false, reachableMap.Width, reachableMap.Height, reachableMap.MinX, reachableMap.MinY);
 			while (rectangles.Count != 0)
 			{
 				int currentIceCount = currentIceMap.Count(ice => ice);
-				if ((float)currentIceCount / reachableTileCount >= FillRatio)
+				if ((float)currentIceCount / reachableTileCount >= fillRatio)
 					break;
 
-				if (currentIceCount == 0)
-				{
-					var (min, max) = rectangles.First!.Value;
-					rectangles.RemoveFirst();
-
-					for (int y = min.Y; y <= max.Y; y++)
-						for (int x = min.X; x <= max.X; x++)
-							currentIceMap[new(x, y)] = true;
-					continue;
-				}
-
+				// TODO: validate if the created region is wide enough
 				var best = rectangles
 					.Where(r =>
 					{
+						if (currentIceCount == 0)
+							return true;
+
 						for (int y = r.Min.Y; y <= r.Max.Y; y++)
 						{
 							for (int x = r.Min.X; x <= r.Max.X; x++)
@@ -116,18 +120,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 						}
 						return false;
 					})
-					//.Select(r =>
-					//{
-					//	ArrayMap<bool> newIceMap = currentIceMap.Clone();
-					//	for (int y = r.Min.Y; y <= r.Max.Y; y++)
-					//		for (int x = r.Min.X; x <= r.Max.X; x++)
-					//			newIceMap[new(x, y)] = true;
-					//	return (IceMap: newIceMap, Rectangle: r);
-					//})
-					//.OrderByDescending(e => e.IceMap.Count(ice => ice))
 					.FirstOrNull();
 				if (best is null)
 					break;
+
+				// TODO: split large rectangles, which should make more organic looking areas
 
 				for (int y = best.Value.Min.Y; y <= best.Value.Max.Y; y++)
 					for (int x = best.Value.Min.X; x <= best.Value.Max.X; x++)
@@ -136,6 +133,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 
 			Monitor.Log($"\n{currentIceMap.ToString(b => b ? '#' : '.')}", LogLevel.Debug);
+
+			var iceTileCount = currentIceMap.Count(b => b);
+			Monitor.Log($"Area: {iceTileCount} | Satisfied: {iceTileCount >= MinimumArea}", LogLevel.Debug);
 			Console.WriteLine();
 		}
 
@@ -150,7 +150,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		private static HashSet<(IntPoint Min, IntPoint Max)> FindRectangles(IMap<bool>.WithKnownSize map, bool stateToLookFor = true)
 		{
-			List<(IntPoint Min, IntPoint Max)> rectangles = new();
+			List<(IntPoint Min, IntPoint Max)> results = new();
 
 			for (int y = map.MinY; y <= map.MaxY; y++)
 			{
@@ -159,6 +159,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 					if (map[new(x, y)] != stateToLookFor)
 						continue;
 
+					// skipping tiles with all 4 empty spaces
 					bool top = y == map.MinY || map[new(x, y - 1)] == stateToLookFor;
 					bool bottom = y == map.MaxY || map[new(x, y + 1)] == stateToLookFor;
 					bool left = x == map.MinX || map[new(x - 1, y)] == stateToLookFor;
@@ -174,16 +175,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 					while (y + maxHeight - 1 < map.MaxY && map[new(x, y + maxHeight)] == stateToLookFor)
 						maxHeight++;
 
-					List<(IntPoint Min, IntPoint Max)> bestRectangles = new();
-					int? bestRectangleArea = null;
+					// finding all possible rectangles starting at this corner
+					List<(IntPoint Min, IntPoint Max)> possibleRectangles = new();
 					for (int height = 1; height <= maxHeight; height++)
 					{
 						for (int width = 1; width <= maxWidth; width++)
 						{
-							var area = width * height;
-							if (bestRectangleArea is not null && bestRectangleArea.Value > area)
-								continue;
-
 							for (int cellY = y; cellY < y + height; cellY++)
 							{
 								for (int cellX = x; cellX < x + width; cellX++)
@@ -193,39 +190,36 @@ namespace Shockah.AdventuresInTheMines.Populators
 								}
 							}
 
-							if (bestRectangleArea is null || bestRectangleArea.Value < area)
-								bestRectangles.Clear();
-							bestRectangleArea = area;
-							bestRectangles.Add((Min: new(x, y), Max: new(x + width - 1, y + height - 1)));
+							possibleRectangles.Add((Min: new(x, y), Max: new(x + width - 1, y + height - 1)));
 
 							cellLoopContinue:;
 						}
 					}
 
 					// merge rectangles together
-					foreach (var rectangle in bestRectangles)
+					foreach (var rectangle in ((IEnumerable<(IntPoint Min, IntPoint Max)>)possibleRectangles).Reverse())
 					{
-						for (int i = rectangles.Count - 1; i >= 0; i--)
+						for (int i = results.Count - 1; i >= 0; i--)
 						{
-							var (existingMin, existingMax) = rectangles[i];
+							var (existingMin, existingMax) = results[i];
 							if (existingMin.X <= rectangle.Min.X && existingMin.Y <= rectangle.Min.Y && existingMax.X >= rectangle.Max.X && existingMax.Y >= rectangle.Max.Y)
 								goto bestRectanglesContinue;
 							if (existingMin.X > rectangle.Min.X && existingMin.Y > rectangle.Min.Y && existingMax.X < rectangle.Max.X && existingMax.Y < rectangle.Max.Y)
 							{
-								rectangles.RemoveAt(i);
+								results.RemoveAt(i);
 								goto existingRectanglesBreak;
 							}
 						}
 						existingRectanglesBreak:;
 
-						rectangles.Add(rectangle);
+						results.Add(rectangle);
 
 						bestRectanglesContinue:;
 					}
 				}
 			}
 
-			return rectangles.ToHashSet();
+			return results.ToHashSet();
 		}
 	}
 }
