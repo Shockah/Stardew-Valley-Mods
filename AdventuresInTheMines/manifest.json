@@ -1,0 +1,10 @@
+﻿{
+    "Name": "Adventures In The Mines",
+    "Author": "Shockah",
+    "Version": "1.0.0",
+    "Description": "Adds extra content to the mines.",
+    "UniqueID": "Shockah.AdventuresInTheMines",
+    "EntryDll": "AdventuresInTheMines.dll",
+    "MinimumApiVersion": "3.0.0",
+    "UpdateKeys": []
+}
