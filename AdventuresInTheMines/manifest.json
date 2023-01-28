@@ -6,5 +6,11 @@
     "UniqueID": "Shockah.AdventuresInTheMines",
     "EntryDll": "AdventuresInTheMines.dll",
     "MinimumApiVersion": "3.0.0",
-    "UpdateKeys": []
+    "UpdateKeys": [],
+    "Dependencies": [
+        {
+            "UniqueID": "aedenthorn.ExtraMapLayers",
+            "MinimumVersion": "0.3.3"
+        }
+    ]
 }

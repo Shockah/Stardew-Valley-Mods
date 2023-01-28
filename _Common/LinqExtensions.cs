@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Shockah.CommonModCode
@@ -28,6 +29,36 @@ namespace Shockah.CommonModCode
 				index++;
 			}
 			return null;
+		}
+
+		public static bool TryFirst<T>(this IEnumerable<T> self, Func<T, bool> predicate, [NotNullWhen(true)] out T? result) where T : class
+		{
+			foreach (var item in self)
+			{
+				if (predicate(item))
+				{
+					result = item;
+					return true;
+				}
+			}
+
+			result = null;
+			return false;
+		}
+
+		public static bool TryFirst<T>(this IEnumerable<T> self, Func<T, bool> predicate, [NotNullWhen(true)] out T? result) where T : struct
+		{
+			foreach (var item in self)
+			{
+				if (predicate(item))
+				{
+					result = item;
+					return true;
+				}
+			}
+
+			result = null;
+			return false;
 		}
 	}
 }

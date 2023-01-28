@@ -1,7 +1,10 @@
 ﻿using HarmonyLib;
 using Shockah.AdventuresInTheMines.Populators;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
+using StardewValley;
 using StardewValley.Locations;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +20,8 @@ namespace Shockah.AdventuresInTheMines
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
-			Populators = new()
-			{
-				new IcePuzzlePopulator(Monitor)
-			};
+
+			helper.Events.GameLoop.DayStarted += OnDayStarted;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -29,6 +30,24 @@ namespace Shockah.AdventuresInTheMines
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(AdventuresInTheMines), nameof(MineShaft_populateLevel_Prefix))),
 				postfix: new HarmonyMethod(AccessTools.Method(typeof(AdventuresInTheMines), nameof(MineShaft_populateLevel_Postfix)))
 			);
+		}
+
+		private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		{
+			ResetPopulators();
+		}
+
+		private void ResetPopulators()
+		{
+			var lootProvider = new LimitedWithAlternativeLootProvider(
+				main: new BirthdayPresentLootProvider(Game1.Date.GetByAddingDays(1)),
+				alternative: new DefaultMineShaftLootProvider()
+			);
+
+			Populators = new()
+			{
+				new IcePuzzlePopulator(Monitor, lootProvider)
+			};
 		}
 
 		private static void MineShaft_populateLevel_Prefix(MineShaft __instance)
