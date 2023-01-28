@@ -4,7 +4,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 {
 	internal interface IMineShaftPopulator
 	{
-		void BeforePopulate(MineShaft location) { }
+		bool BeforePopulate(MineShaft location) => false;
 		void AfterPopulate(MineShaft location) { }
 	}
 }
