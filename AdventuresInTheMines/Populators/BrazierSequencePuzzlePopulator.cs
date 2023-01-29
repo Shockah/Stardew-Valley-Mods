@@ -51,7 +51,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int SkullBrazierIndex = 149;
 		private const int MarbleBrazierIndex = 151;
 
-		private const int MaximumDistanceFromChestToBrazier = 12;
+		private const int MaximumDistanceFromChestToBrazier = 8;
 		private const int MinimumDistanceBetweenElements = 3;
 
 		private IMonitor Monitor { get; init; }
@@ -201,18 +201,37 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
-		private static int ChooseBrazierCount(MineShaft location, Random random)
+		private static int GetDifficultyModifier(MineShaft location)
 		{
+			int difficulty;
+
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				return 4;
+				difficulty = 0;
 			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				return 4 + (random.NextBool() ? 1 : 0);
+				difficulty = 1;
 			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				return 5;
+				difficulty = 2;
 			else if (location.mineLevel >= MineShaft.desertArea)
-				return 5 + (random.NextBool() ? 1 : 0);
+				difficulty = 3;
 			else
 				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
+
+			if (location.GetAdditionalDifficulty() > 0)
+				difficulty++;
+
+			return difficulty;
+		}
+
+		private static int ChooseBrazierCount(MineShaft location, Random random)
+		{
+			return GetDifficultyModifier(location) switch
+			{
+				0 => 4,
+				1 => 4 + (random.NextBool() ? 1 : 0),
+				2 => 5,
+				3 => 5 + (random.NextBool() ? 1 : 0),
+				_ => 6,
+			};
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
