@@ -30,6 +30,7 @@ namespace Shockah.AdventuresInTheMines
 			Instance = this;
 
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
+			helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
@@ -51,6 +52,20 @@ namespace Shockah.AdventuresInTheMines
 			ResetPopulators();
 		}
 
+		private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+		{
+			// run populator updates
+
+			var locations = Game1.getAllFarmers()
+				.Select(p => p.currentLocation)
+				.OfType<MineShaft>()
+				.ToList();
+
+			foreach (var populator in Populators)
+				foreach (var location in locations)
+					populator.OnUpdateTicking(location);
+		}
+
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
 			// dequeue object dialogue
@@ -70,7 +85,7 @@ namespace Shockah.AdventuresInTheMines
 
 			foreach (var populator in Populators)
 				foreach (var location in locations)
-					populator.OnUpdate(location);
+					populator.OnUpdateTicked(location);
 		}
 
 		private void ResetPopulators()
@@ -158,12 +173,12 @@ namespace Shockah.AdventuresInTheMines
 		private static bool Chest_performOpenChest_Prefix(Chest __instance)
 		{
 			bool patchResult = true;
+			if (__instance.FindGameLocation() is not MineShaft location)
+				return false;
 
 			foreach (var populator in Instance.Populators)
 			{
-				if (populator is not DisarmablePuzzlePopulator disarmable)
-					continue;
-				bool result = disarmable.OnChestOpen(__instance);
+				bool result = populator.HandleChestOpen(location, __instance);
 				if (result)
 				{
 					patchResult = false;

@@ -34,6 +34,17 @@ namespace Shockah.AdventuresInTheMines.Populators
 			public IMap<bool>.WithKnownSize IceMap { get; init; }
 		}
 
+		private sealed class RuntimeData
+		{
+			public IMap<bool>.WithKnownSize IceMap { get; init; }
+			public Dictionary<long, Vector2> IceLockedVelocities { get; init; } = new();
+
+			public RuntimeData(IMap<bool>.WithKnownSize iceMap)
+			{
+				this.IceMap	= iceMap;
+			}
+		}
+
 #if DEBUG
 		private static char GetCharacterForTile(PopulatorTile tile)
 		{
@@ -60,10 +71,13 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int MinimumDiagonalDistanceFromChestToIceBounds = 1;
 		private const int MinimumArea = 60;
 
+		private const float IceAligningStrength = 0.15f;
+
 		private IMonitor Monitor { get; init; }
 		private ILootProvider LootProvider { get; init; }
 
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
+		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
 		public IcePuzzlePopulator(IMonitor monitor, ILootProvider lootProvider)
 		{
@@ -271,6 +285,76 @@ namespace Shockah.AdventuresInTheMines.Populators
 			location.RemoveAllPlaceables(data.Value.ChestPosition);
 			Vector2 chestPositionVector = new(data.Value.ChestPosition.X, data.Value.ChestPosition.Y);
 			location.objects[chestPositionVector] = new Chest(0, LootProvider.GenerateLoot().ToList(), chestPositionVector);
+
+			RuntimeDataTable.AddOrUpdate(location, new RuntimeData(data.Value.IceMap));
+		}
+
+		public void OnUpdateTicked(MineShaft location)
+		{
+			if (!RuntimeDataTable.TryGetValue(location, out var data))
+				return;
+
+			foreach (var player in Game1.getAllFarmers())
+			{
+				if (player.currentLocation != location)
+					continue;
+
+				IntPoint tile = new(player.getTileX(), player.getTileY());
+				bool isOnIce = data.IceMap[tile];
+
+				if (isOnIce)
+				{
+					if (!data.IceLockedVelocities.TryGetValue(player.UniqueMultiplayerID, out var iceLockedVelocity))
+					{
+						float absXVelocity = Math.Abs(player.Position.X - player.lastPosition.X);
+						float absYVelocity = Math.Abs(player.Position.Y - player.lastPosition.Y);
+						if (absXVelocity < 1 && absYVelocity < 1)
+							continue;
+
+						if (absXVelocity >= absYVelocity)
+							iceLockedVelocity = new(Math.Sign(player.Position.X - player.lastPosition.X) * player.getMovementSpeed(), 0);
+						else
+							iceLockedVelocity = new(0, Math.Sign(player.Position.Y - player.lastPosition.Y) * player.getMovementSpeed());
+						data.IceLockedVelocities[player.UniqueMultiplayerID] = iceLockedVelocity;
+					}
+
+					Vector2 alignedPosition;
+					if (Math.Abs(iceLockedVelocity.X) >= Math.Abs(iceLockedVelocity.Y))
+						alignedPosition = new(player.Position.X, (float)Math.Round((player.Position.Y - 16f) / 64f) * 64f + 16f);
+					else
+						alignedPosition = new((float)Math.Round(player.Position.X / 64f) * 64f, player.Position.Y);
+					var alignmentOffset = (alignedPosition - player.Position) * IceAligningStrength;
+
+					var nextPosition = player.GetBoundingBox();
+					nextPosition.X += (int)(iceLockedVelocity.X + alignmentOffset.X);
+					nextPosition.Y += (int)(iceLockedVelocity.Y + alignmentOffset.Y);
+
+					var nextPosition2 = new Rectangle(nextPosition.X, nextPosition.Y, nextPosition.Width, nextPosition.Height);
+					nextPosition2.X += (int)(iceLockedVelocity.X);
+					nextPosition2.Y += (int)(iceLockedVelocity.Y);
+
+					if (location.isCollidingPosition(nextPosition, Game1.viewport, isFarmer: true, damagesFarmer: 0, glider: false, player) || location.isCollidingPosition(nextPosition2, Game1.viewport, isFarmer: true, damagesFarmer: 0, glider: false, player))
+						data.IceLockedVelocities.Remove(player.UniqueMultiplayerID);
+					else
+						player.Position = player.lastPosition + iceLockedVelocity + alignmentOffset;
+				}
+				else
+				{
+					data.IceLockedVelocities.Remove(player.UniqueMultiplayerID);
+				}
+			}
+		}
+
+		public bool HandleChestOpen(MineShaft location, Chest chest)
+		{
+			if (!RuntimeDataTable.TryGetValue(location, out var data))
+				return false;
+
+			var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
+			if (data.IceLockedVelocities.ContainsKey(player.UniqueMultiplayerID))
+				return true;
+
+			return false;
 		}
 
 		private static double GetWeight(MineShaft location)

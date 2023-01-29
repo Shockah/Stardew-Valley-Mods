@@ -161,7 +161,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			RuntimeDataTable.AddOrUpdate(location, new RuntimeData(data.Value.ChestPosition, data.Value.ButtonPositions));
 		}
 
-		public void OnUpdate(MineShaft location)
+		public void OnUpdateTicked(MineShaft location)
 		{
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 				return;
@@ -191,14 +191,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
-		internal bool OnChestOpen(Chest chest)
+		public bool HandleChestOpen(MineShaft location, Chest chest)
 		{
-			if (chest.FindGameLocation() is not MineShaft location)
-				return false;
 			if (location.Objects[chest.TileLocation] != chest)
 				return false;
 			if (!RuntimeDataTable.TryGetValue(location, out var data))
-				throw new InvalidOperationException("Doing update, but runtime data is not set; aborting.");
+				return false;
 			if (data.ButtonPositionsLeft.Count == 0)
 				return false;
 
