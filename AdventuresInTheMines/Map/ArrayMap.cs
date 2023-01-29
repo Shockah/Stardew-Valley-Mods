@@ -7,60 +7,44 @@ namespace Shockah.AdventuresInTheMines.Map
 	{
 		public TTile this[IntPoint point]
 		{
-			get => Array[point.X + MinX, point.Y + MinY];
-			set => Array[point.X + MinX, point.Y + MinY] = value;
+			get => Array[point.X + Bounds.Min.X, point.Y + Bounds.Min.Y];
+			set => Array[point.X + Bounds.Min.X, point.Y + Bounds.Min.Y] = value;
 		}
 
-		public int Width { get; init; }
-		public int Height { get; init; }
-
-		public int MinX { get; init; }
-		public int MinY { get; init; }
-
-		public int MaxX
-			=> MinX + Width - 1;
-
-		public int MaxY
-			=> MinY + Height - 1;
+		public IntRectangle Bounds { get; init; }
 
 		private readonly TTile[,] Array;
 
 		public ArrayMap(IMap<TTile>.WithKnownSize map)
 		{
-			this.Width = map.Width;
-			this.Height = map.Height;
-			this.MinX = map.MinX;
-			this.MinY = map.MinY;
-			this.Array = new TTile[Width, Height];
+			this.Bounds = map.Bounds;
+			this.Array = new TTile[Bounds.Width, Bounds.Height];
 
-			for (int y = MinY; y <= MaxY; y++)
-				for (int x = MinX; x <= MaxX; x++)
-					Array[x - MinX, y - MinY] = map[new(x, y)];
+			for (int y = Bounds.Min.Y; y <= Bounds.Max.Y; y++)
+				for (int x = Bounds.Min.X; x <= Bounds.Max.X; x++)
+					Array[x - Bounds.Min.X, y - Bounds.Min.Y] = map[new(x, y)];
 		}
 
 		public ArrayMap(TTile defaultTile, int width, int height, int minX = 0, int minY = 0) : this(_ => defaultTile, width, height, minX, minY) { }
 
 		public ArrayMap(Func<IntPoint, TTile> defaultTile, int width, int height, int minX = 0, int minY = 0)
 		{
-			this.Width = width;
-			this.Height = height;
-			this.MinX = minX;
-			this.MinY = minY;
+			this.Bounds = new(new(minX, minY), width, height);
 			this.Array = new TTile[width, height];
 
-			for (int y = MinY; y <= MaxY; y++)
-				for (int x = MinX; x <= MaxX; x++)
-					Array[x - MinX, y - MinY] = defaultTile(new(x, y));
+			for (int y = Bounds.Min.Y; y <= Bounds.Max.Y; y++)
+				for (int x = Bounds.Min.X; x <= Bounds.Max.X; x++)
+					Array[x - Bounds.Min.X, y - Bounds.Min.Y] = defaultTile(new(x, y));
 		}
 
 		public override bool Equals(object? obj)
 		{
 			if (obj is not ArrayMap<TTile> other)
 				return false;
-			if (other.MinX != MinX || other.MinY != MinY || other.MaxX != MaxX || other.MaxY != MaxY)
+			if (other.Bounds != Bounds)
 				return false;
-			for (int y = MinY; y <= MaxY; y++)
-				for (int x = MinX; x <= MaxX; x++)
+			for (int y = Bounds.Min.Y; y <= Bounds.Max.Y; y++)
+				for (int x = Bounds.Min.X; x <= Bounds.Max.X; x++)
 					if (!Equals(other[new(x, y)], this[new(x, y)]))
 						return false;
 			return true;

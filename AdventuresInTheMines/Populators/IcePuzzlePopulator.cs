@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.AdventuresInTheMines.Map;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
@@ -26,6 +27,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 			Blocked
 		}
 
+		private readonly struct PreparedData
+		{
+			public IntPoint ChestPosition { get; init; }
+			public IMap<bool>.WithKnownSize IceMap { get; init; }
+		}
+
 #if DEBUG
 		private static char GetCharacterForTile(PopulatorTile tile)
 		{
@@ -42,6 +49,8 @@ namespace Shockah.AdventuresInTheMines.Populators
 #endif
 
 		private const int LadderTileIndex = 115;
+		private static readonly int[,] IceTileIndexes = new[,] { { 23 * 16 + 0, 24 * 16 + 0 }, { 23 * 16 + 1, 24 * 16 + 1 } };
+
 		private const float MinimumFillRatio = 0.2f;
 		private const float MaximumFillRatio = 0.35f;
 		private const int MinimumRectangleGirth = 3;
@@ -49,12 +58,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int MinimumCardinalDistanceFromChestToIceBounds = 2;
 		private const int MinimumDiagonalDistanceFromChestToIceBounds = 1;
 		private const int MinimumArea = 60;
-		private static readonly int[,] IceTileIndexes = new[,] { { 23 * 16 + 0, 24 * 16 + 0 }, { 23 * 16 + 1, 24 * 16 + 1 } };
 
 		private IMonitor Monitor { get; init; }
 		private ILootProvider LootProvider { get; init; }
 
-		private readonly ConditionalWeakTable<MineShaft, Action> AfterPopulateActions = new();
+		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 
 		public IcePuzzlePopulator(IMonitor monitor, ILootProvider lootProvider)
 		{
@@ -62,54 +70,48 @@ namespace Shockah.AdventuresInTheMines.Populators
 			this.LootProvider = lootProvider;
 		}
 
-		private void QueueForAfterPopulate(MineShaft location, Action code)
+		public double Prepare(MineShaft location, Random random)
 		{
-			if (AfterPopulateActions.TryGetValue(location, out var currentCode))
-				code = () =>
-				{
-					currentCode();
-					code();
-				};
-			AfterPopulateActions.AddOrUpdate(location, code);
-		}
+			double weight = GetWeight(location);
+			if (weight <= 0)
+				return weight;
 
-		public bool BeforePopulate(MineShaft location)
-		{
 			// finding ladder (starting) position
 			// TODO: ladder position is actually already stored in MineShaft... but it's private
 			var ladderPoint = FindLadder(location);
 			if (ladderPoint is null)
 			{
 				Monitor.Log($"Could not find a ladder at location {location.Name}. Aborting {typeof(IcePuzzlePopulator)}.");
-				return false;
+				return 0;
 			}
 			IntPoint belowLadderPoint = new(ladderPoint.Value.X, ladderPoint.Value.Y + 1);
 
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
-			ArrayMap<PopulatorTile> occupancyMap = new(point =>
-			{
-				if (point == belowLadderPoint)
-					return PopulatorTile.BelowLadder;
-				else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTileClearForMineObjects(point.X, point.Y))
-					return PopulatorTile.Empty;
-				else if (location.doesEitherTileOrTileIndexPropertyEqual(point.X, point.Y, "Type", "Back", "Dirt"))
-					return PopulatorTile.Dirt;
-				else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTilePlaceable(new(point.X, point.Y)))
-					return PopulatorTile.Passable;
-				else
-					return PopulatorTile.Blocked;
-			}, (int)(location.Map.DisplayWidth / 64f), (int)(location.Map.DisplayHeight / 64f));
-			Monitor.Log($"\n{occupancyMap.ToString(GetCharacterForTile)}", LogLevel.Debug);
+			var occupancyMap = new OutOfBoundsValuesMap<PopulatorTile>(
+				new ArrayMap<PopulatorTile>(point =>
+				{
+					if (point == belowLadderPoint)
+						return PopulatorTile.BelowLadder;
+					else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTileClearForMineObjects(point.X, point.Y))
+						return PopulatorTile.Empty;
+					else if (location.doesEitherTileOrTileIndexPropertyEqual(point.X, point.Y, "Type", "Back", "Dirt"))
+						return PopulatorTile.Dirt;
+					else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTilePlaceable(new(point.X, point.Y)))
+						return PopulatorTile.Passable;
+					else
+						return PopulatorTile.Blocked;
+				}, (int)(location.Map.DisplayWidth / 64f), (int)(location.Map.DisplayHeight / 64f)),
+				PopulatorTile.Blocked
+			);
 
 			// creating a reachable tile map - tiles reachable by the player from the ladder
 			var reachableMap = FloodFill.Run(occupancyMap, belowLadderPoint, (map, point) => map[point] != PopulatorTile.Blocked);
-			Monitor.Log($"\n{reachableMap.ToString(b => b ? '#' : '.')}", LogLevel.Debug);
 			int reachableTileCount = reachableMap.Count(reachable => reachable);
 
 			// finding all possible tile rectangles in the reachable tiles
 			var possibleIceTiles = new ArrayMap<bool>(
 				point => reachableMap[point] && occupancyMap[point] is PopulatorTile.Empty,
-				reachableMap.Width, reachableMap.Height, reachableMap.MinX, reachableMap.MinY
+				reachableMap.Bounds.Width, reachableMap.Bounds.Height, reachableMap.Bounds.Min.X, reachableMap.Bounds.Min.Y
 			);
 			var rectangles = new LinkedList<(IntPoint Min, IntPoint Max)>(
 				FindRectangles(possibleIceTiles)
@@ -118,9 +120,8 @@ namespace Shockah.AdventuresInTheMines.Populators
 			);
 
 			// creating a map of ice tiles out of the largest (and "squarest") rectangles
-			float fillRatio = MinimumFillRatio + (float)(Game1.random.NextDouble() * (MaximumFillRatio - MinimumFillRatio));
-			Monitor.Log($"Fill ratio: {fillRatio}", LogLevel.Debug);
-			ArrayMap<bool> currentIceMap = new(false, reachableMap.Width, reachableMap.Height, reachableMap.MinX, reachableMap.MinY);
+			float fillRatio = MinimumFillRatio + (float)(random.NextDouble() * (MaximumFillRatio - MinimumFillRatio));
+			ArrayMap<bool> currentIceMap = new(false, reachableMap.Bounds.Width, reachableMap.Bounds.Height, reachableMap.Bounds.Min.X, reachableMap.Bounds.Min.Y);
 			while (rectangles.Count != 0)
 			{
 				int currentIceCount = currentIceMap.Count(ice => ice);
@@ -147,13 +148,13 @@ namespace Shockah.AdventuresInTheMines.Populators
 							{
 								if (currentIceMap[new(x, y)])
 									return true;
-								if (x > currentIceMap.MinX && currentIceMap[new(x - 1, y)])
+								if (x > currentIceMap.Bounds.Min.X && currentIceMap[new(x - 1, y)])
 									return true;
-								if (x < currentIceMap.MaxX && currentIceMap[new(x + 1, y)])
+								if (x < currentIceMap.Bounds.Max.X && currentIceMap[new(x + 1, y)])
 									return true;
-								if (y > currentIceMap.MinY && currentIceMap[new(x, y - 1)])
+								if (y > currentIceMap.Bounds.Min.Y && currentIceMap[new(x, y - 1)])
 									return true;
-								if (y < currentIceMap.MaxY && currentIceMap[new(x, y + 1)])
+								if (y < currentIceMap.Bounds.Max.Y && currentIceMap[new(x, y + 1)])
 									return true;
 							}
 						}
@@ -163,7 +164,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 				if (validRectangles.Count == 0)
 					break;
 				var best = currentIceCount == 0
-					? validRectangles[Game1.random.Next(validRectangles.Count)]
+					? validRectangles[random.Next(validRectangles.Count)]
 					: validRectangles.First();
 
 				// TODO: split large rectangles, which should make more organic looking areas
@@ -174,23 +175,21 @@ namespace Shockah.AdventuresInTheMines.Populators
 				rectangles.Remove(best);
 			}
 
-			Monitor.Log($"\n{currentIceMap.ToString(b => b ? '#' : '.')}", LogLevel.Debug);
-
 			var iceTileCount = currentIceMap.Count(b => b);
-			Monitor.Log($"Area: {iceTileCount} | Satisfied: {iceTileCount >= MinimumArea}", LogLevel.Debug);
 			if (iceTileCount < MinimumArea)
-				return false;
+				return 0;
 
 			// finding ice bounds
 			var iceBounds = currentIceMap.FindBounds(b => b);
 			if (iceBounds is null)
-				return false;
+				return 0;
 
 			// placing chest
 			IntPoint coordinateCenter = new((iceBounds.Value.Max.X + iceBounds.Value.Min.X) / 2, (iceBounds.Value.Max.Y + iceBounds.Value.Min.Y) / 2);
+			IntPoint chestPosition = default;
 			foreach (var potentialChestPosition in coordinateCenter.GetSpiralingTiles(minDistanceFromCenter: 0, maxDistanceFromCenter: Math.Max(iceBounds.Value.Max.X - iceBounds.Value.Min.X + 1, iceBounds.Value.Max.Y - iceBounds.Value.Min.Y + 1)))
 			{
-				if (potentialChestPosition.X < currentIceMap.MinX || potentialChestPosition.Y < currentIceMap.MinX || potentialChestPosition.X > currentIceMap.MaxX || potentialChestPosition.Y > currentIceMap.MaxY)
+				if (potentialChestPosition.X < currentIceMap.Bounds.Min.X || potentialChestPosition.Y < currentIceMap.Bounds.Min.X || potentialChestPosition.X > currentIceMap.Bounds.Max.X || potentialChestPosition.Y > currentIceMap.Bounds.Max.Y)
 					continue;
 				if (!currentIceMap[potentialChestPosition])
 					continue;
@@ -218,26 +217,28 @@ namespace Shockah.AdventuresInTheMines.Populators
 						goto potentialCheckPositionContinue;
 				}
 
-				QueueForAfterPopulate(location, () =>
-				{
-					Vector2 centerTileVector = new(potentialChestPosition.X, potentialChestPosition.Y);
-
-					var featuresToRemove = location.largeTerrainFeatures
-						.Where(f => centerTileVector.X >= f.currentTileLocation.X && centerTileVector.Y >= f.currentTileLocation.Y && centerTileVector.X <= f.currentTileLocation.X + 1 && centerTileVector.Y <= f.currentTileLocation.Y + 1)
-						.ToList();
-					foreach (var feature in featuresToRemove)
-						location.largeTerrainFeatures.Remove(feature);
-
-					location.objects[centerTileVector] = new Chest(0, LootProvider.GenerateLoot().ToList(), centerTileVector);
-				});
+				chestPosition = potentialChestPosition;
 				goto chestPositionFound;
 
 				potentialCheckPositionContinue:;
 			}
 
 			// did not find a spot for the chest, giving up
-			return false;
+			return 0;
 			chestPositionFound:;
+
+			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition, IceMap = currentIceMap });
+			return weight;
+		}
+
+		public void BeforePopulate(MineShaft location, Random random)
+		{
+		}
+
+		public void AfterPopulate(MineShaft location, Random random)
+		{
+			if (!PreparedDataTable.TryGetValue(location, out var data))
+				return;
 
 			// creating the ice layer: upserting tile sheet
 			var wallsAndFloorsTexturePath = "Maps\\walls_and_floors";
@@ -260,20 +261,29 @@ namespace Shockah.AdventuresInTheMines.Populators
 			location.Map.AddLayer(iceLayer);
 
 			// creating the ice layer: populating
-			for (int y = currentIceMap.MinY; y <= currentIceMap.MaxY; y++)
-				for (int x = currentIceMap.MinX; x <= currentIceMap.MaxX; x++)
-					if (currentIceMap[new(x, y)])
+			for (int y = data.Value.IceMap.Bounds.Min.Y; y <= data.Value.IceMap.Bounds.Max.Y; y++)
+				for (int x = data.Value.IceMap.Bounds.Min.X; x <= data.Value.IceMap.Bounds.Max.X; x++)
+					if (data.Value.IceMap[new(x, y)])
 						iceLayer.Tiles[x, y] = new StaticTile(iceLayer, wallsAndFloorsTileSheet, BlendMode.Alpha, IceTileIndexes[x % IceTileIndexes.GetLength(0), y % IceTileIndexes.GetLength(1)]);
 
-			return true;
+			// create chest
+			location.RemoveAllPlaceables(data.Value.ChestPosition);
+			Vector2 chestPositionVector = new(data.Value.ChestPosition.X, data.Value.ChestPosition.Y);
+			location.objects[chestPositionVector] = new Chest(0, LootProvider.GenerateLoot().ToList(), chestPositionVector);
 		}
 
-		public void AfterPopulate(MineShaft location)
+		private static double GetWeight(MineShaft location)
 		{
-			if (!AfterPopulateActions.TryGetValue(location, out var code))
-				return;
-			AfterPopulateActions.Remove(location);
-			code();
+			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
+				return 1.0 / 3.0;
+			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
+				return 1;
+			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
+				return 0;
+			else if (location.mineLevel >= MineShaft.desertArea)
+				return 1.0 / 3.0;
+			else
+				return 0;
 		}
 
 		private static IntPoint? FindLadder(MineShaft location)
@@ -289,27 +299,27 @@ namespace Shockah.AdventuresInTheMines.Populators
 		{
 			List<(IntPoint Min, IntPoint Max)> results = new();
 
-			for (int y = map.MinY; y <= map.MaxY; y++)
+			for (int y = map.Bounds.Min.Y; y <= map.Bounds.Max.Y; y++)
 			{
-				for (int x = map.MinX; x <= map.MaxX; x++)
+				for (int x = map.Bounds.Min.X; x <= map.Bounds.Max.X; x++)
 				{
 					if (map[new(x, y)] != stateToLookFor)
 						continue;
 
 					// skipping tiles with all 4 empty spaces
-					bool top = y == map.MinY || map[new(x, y - 1)] == stateToLookFor;
-					bool bottom = y == map.MaxY || map[new(x, y + 1)] == stateToLookFor;
-					bool left = x == map.MinX || map[new(x - 1, y)] == stateToLookFor;
-					bool right = x == map.MaxX || map[new(x + 1, y)] == stateToLookFor;
+					bool top = y == map.Bounds.Min.Y || map[new(x, y - 1)] == stateToLookFor;
+					bool bottom = y == map.Bounds.Max.Y || map[new(x, y + 1)] == stateToLookFor;
+					bool left = x == map.Bounds.Min.X || map[new(x - 1, y)] == stateToLookFor;
+					bool right = x == map.Bounds.Max.X || map[new(x + 1, y)] == stateToLookFor;
 					if ((top ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0) > 3)
 						continue;
 
 					int maxWidth = 1;
 					int maxHeight = 1;
 
-					while (x + maxWidth - 1 < map.MaxX && map[new(x + maxWidth, y)] == stateToLookFor)
+					while (x + maxWidth - 1 < map.Bounds.Max.X && map[new(x + maxWidth, y)] == stateToLookFor)
 						maxWidth++;
-					while (y + maxHeight - 1 < map.MaxY && map[new(x, y + maxHeight)] == stateToLookFor)
+					while (y + maxHeight - 1 < map.Bounds.Max.Y && map[new(x, y + maxHeight)] == stateToLookFor)
 						maxHeight++;
 
 					// finding all possible rectangles starting at this corner

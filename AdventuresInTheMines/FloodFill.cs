@@ -21,7 +21,7 @@ namespace Shockah.AdventuresInTheMines
 		public static IMap<bool>.WithKnownSize Run<TTile>(IMap<TTile>.WithKnownSize map, IntPoint startPoint, Func<IMap<TTile>, IntPoint, bool> canVisit)
 		{
 			bool checkingForValue = canVisit(map, startPoint);
-			ArrayMap<bool> outputMap = new(!checkingForValue, map.Width, map.Height, map.MinX, map.MinY);
+			ArrayMap<bool> outputMap = new(!checkingForValue, map.Bounds.Width, map.Bounds.Height, map.Bounds.Min.X, map.Bounds.Min.Y);
 			Run(map, startPoint, canVisit, outputMap, checkingForValue);
 			return outputMap;
 		}
@@ -51,13 +51,13 @@ namespace Shockah.AdventuresInTheMines
 				{
 					if (knownSizeMap is not null)
 					{
-						if (neighbor.X < knownSizeMap.MinX)
+						if (neighbor.X < knownSizeMap.Bounds.Min.X)
 							continue;
-						if (neighbor.Y < knownSizeMap.MinY)
+						if (neighbor.Y < knownSizeMap.Bounds.Min.Y)
 							continue;
-						if (neighbor.X > knownSizeMap.MaxX)
+						if (neighbor.X > knownSizeMap.Bounds.Max.X)
 							continue;
-						if (neighbor.Y > knownSizeMap.MaxY)
+						if (neighbor.Y > knownSizeMap.Bounds.Max.Y)
 							continue;
 					}
 
