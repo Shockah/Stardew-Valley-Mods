@@ -41,6 +41,9 @@ public static class GameExt
 			if (l is not null)
 				locations.Add(l);
 		});
+			foreach (var player in Game1.getAllFarmers())
+				if (!locations.Contains(player.currentLocation))
+					locations.Add(player.currentLocation);
 		return locations;
 	}
 }
