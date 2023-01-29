@@ -372,7 +372,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
 				return 1.0 / 3.0;
 			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				return 1;
+				return location.GetAdditionalDifficulty() > 0 ? 1.0 / 3.0 : 1.0;
 			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
 				return 0;
 			else if (location.mineLevel >= MineShaft.desertArea)
