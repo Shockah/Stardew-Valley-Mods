@@ -6,16 +6,20 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Locations;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Shockah.AdventuresInTheMines
 {
 	public class AdventuresInTheMines : Mod
 	{
+		private const double TreasurePopulateChance = 0.2;
+
 		private static AdventuresInTheMines Instance = null!;
 
 		private List<IMineShaftPopulator> Populators { get; set; } = null!;
+		private Random? CurrentRandom { get; set; }
+		private IMineShaftPopulator? CurrentPopulator { get; set; }
 
 		public override void Entry(IModHelper helper)
 		{
@@ -46,20 +50,68 @@ namespace Shockah.AdventuresInTheMines
 
 			Populators = new()
 			{
-				new IcePuzzlePopulator(Monitor, lootProvider)
+				new IcePuzzlePopulator(Monitor, lootProvider),
+				new BrazierCombinationPuzzlePopulator(Monitor, lootProvider),
+				new BrazierSequencePuzzlePopulator(Monitor, lootProvider)
 			};
 		}
 
 		private static void MineShaft_populateLevel_Prefix(MineShaft __instance)
 		{
+			Instance.CurrentPopulator = null;
+			Instance.CurrentRandom = null;
+
+			if (__instance.mineLevel == MineShaft.quarryMineShaft)
+				return;
+			if (__instance.mineLevel < MineShaft.desertArea && __instance.mineLevel % 10 == 0)
+				return;
+
+			int seed = 0;
+			seed = seed * 31 + (int)Game1.uniqueIDForThisGame;
+			seed = seed * 31 + Game1.Date.TotalDays;
+			seed = seed * 31 + __instance.mineLevel;
+			Random random = new(seed);
+			//if (random.NextDouble() > TreasurePopulateChance)
+			//	return;
+			Instance.CurrentRandom = random;
+
+			List<(IMineShaftPopulator Populator, double Weight)> items = new();
+			double weightSum = 0;
+
 			foreach (var populator in Instance.Populators)
-				populator.BeforePopulate(__instance);
+			{
+				var weight = populator.Prepare(__instance, random);
+				if (weight > 0)
+				{
+					items.Add((populator, weight));
+					weightSum += weight;
+				}
+			}
+
+			if (items.Count == 0)
+				return;
+
+			double weightedRandom = random.NextDouble() * weightSum;
+			weightSum = 0;
+			
+			foreach (var (populator, weight) in items)
+			{
+				weightSum += weight;
+				if (weightSum >= weightedRandom)
+				{
+					Instance.CurrentPopulator = populator;
+					populator.BeforePopulate(__instance, random);
+					return;
+				}
+			}
+			throw new InvalidOperationException("Reached invalid state.");
 		}
 
 		private static void MineShaft_populateLevel_Postfix(MineShaft __instance)
 		{
-			foreach (var populator in ((IEnumerable<IMineShaftPopulator>)Instance.Populators).Reverse())
-				populator.AfterPopulate(__instance);
+			if (Instance.CurrentPopulator is null || Instance.CurrentRandom is null)
+				return;
+			Instance.CurrentPopulator.AfterPopulate(__instance, Instance.CurrentRandom);
 		}
 	}
 }

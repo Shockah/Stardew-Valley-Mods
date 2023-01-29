@@ -9,8 +9,8 @@ namespace Shockah.AdventuresInTheMines.Map
 		public static int Count<TTile>(this IMap<TTile>.WithKnownSize map, Func<IMap<TTile>.WithKnownSize, IntPoint, bool> predicate)
 		{
 			int count = 0;
-			for (int y = map.MinY; y <= map.MaxY; y++)
-				for (int x = map.MinX; x <= map.MaxX; x++)
+			for (int y = map.Bounds.Min.Y; y <= map.Bounds.Max.Y; y++)
+				for (int x = map.Bounds.Min.X; x <= map.Bounds.Max.X; x++)
 					if (predicate(map, new(x, y)))
 						count++;
 			return count;
@@ -26,9 +26,9 @@ namespace Shockah.AdventuresInTheMines.Map
 			int? maxX = null;
 			int? maxY = null;
 
-			for (int y = map.MinY; y <= map.MaxY; y++)
+			for (int y = map.Bounds.Min.Y; y <= map.Bounds.Max.Y; y++)
 			{
-				for (int x = map.MinX; x <= map.MaxX; x++)
+				for (int x = map.Bounds.Min.X; x <= map.Bounds.Max.X; x++)
 				{
 					if (!predicate(map, new(x, y)))
 						continue;
@@ -56,11 +56,11 @@ namespace Shockah.AdventuresInTheMines.Map
 		public static string ToString<TTile>(this IMap<TTile>.WithKnownSize map, Func<TTile, char> charMapper)
 		{
 			StringBuilder sb = new();
-			for (int y = map.MinY; y <= map.MaxY; y++)
+			for (int y = map.Bounds.Min.Y; y <= map.Bounds.Max.Y; y++)
 			{
-				if (y != map.MinY)
+				if (y != map.Bounds.Min.Y)
 					sb.AppendLine();
-				for (int x = map.MinX; x <= map.MaxX; x++)
+				for (int x = map.Bounds.Min.X; x <= map.Bounds.Max.X; x++)
 					sb.Append(charMapper(map[new(x, y)]));
 			}
 			return $"{sb}";

@@ -1,5 +1,4 @@
 ﻿using Shockah.CommonModCode;
-using System;
 
 namespace Shockah.AdventuresInTheMines.Map
 {
@@ -10,13 +9,7 @@ namespace Shockah.AdventuresInTheMines.Map
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface WithKnownSize : IMap<TTile>
 		{
-			int MinX { get; }
-			int MaxX { get; }
-			int MinY { get; }
-			int MaxY { get; }
-
-			int Width { get; }
-			int Height { get; }
+			IntRectangle Bounds { get; }
 		}
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
