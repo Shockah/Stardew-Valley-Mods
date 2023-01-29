@@ -31,6 +31,9 @@ namespace Shockah.CommonModCode.Stardew
 		{
 			List<GameLocation> locations = new();
 			Utility.ForAllLocations(l => locations.Add(l));
+			foreach (var player in Game1.getAllFarmers())
+				if (!locations.Contains(player.currentLocation))
+					locations.Add(player.currentLocation);
 			return locations;
 		}
 	}

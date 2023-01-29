@@ -38,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\FarmHouseExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\GameLocationExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\GiftTaste.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stardew\MutexExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\Season.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\SObjectExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\WorldDateExt.cs" />

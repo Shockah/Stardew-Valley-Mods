@@ -6,8 +6,10 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.AdventuresInTheMines
 {
@@ -17,7 +19,7 @@ namespace Shockah.AdventuresInTheMines
 
 		private static AdventuresInTheMines Instance = null!;
 
-		private List<IMineShaftPopulator> Populators { get; set; } = null!;
+		private List<IMineShaftPopulator> Populators { get; set; } = new();
 		private Random? CurrentRandom { get; set; }
 		private IMineShaftPopulator? CurrentPopulator { get; set; }
 
@@ -26,6 +28,7 @@ namespace Shockah.AdventuresInTheMines
 			Instance = this;
 
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -34,11 +37,28 @@ namespace Shockah.AdventuresInTheMines
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(AdventuresInTheMines), nameof(MineShaft_populateLevel_Prefix))),
 				postfix: new HarmonyMethod(AccessTools.Method(typeof(AdventuresInTheMines), nameof(MineShaft_populateLevel_Postfix)))
 			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(Chest), nameof(Chest.performOpenChest)),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(AdventuresInTheMines), nameof(Chest_performOpenChest_Prefix)))
+			);
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			ResetPopulators();
+		}
+
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		{
+			var locations = Game1.getAllFarmers()
+				.Select(p => p.currentLocation)
+				.OfType<MineShaft>()
+				.ToList();
+
+			foreach (var populator in Populators)
+				foreach (var location in locations)
+					populator.OnUpdate(location);
 		}
 
 		private void ResetPopulators()
@@ -52,7 +72,8 @@ namespace Shockah.AdventuresInTheMines
 			{
 				new IcePuzzlePopulator(Monitor, lootProvider),
 				new BrazierCombinationPuzzlePopulator(Monitor, lootProvider),
-				new BrazierSequencePuzzlePopulator(Monitor, lootProvider)
+				new BrazierSequencePuzzlePopulator(Monitor, lootProvider),
+				new DisarmablePuzzlePopulator(Monitor, lootProvider)
 			};
 		}
 
@@ -112,6 +133,26 @@ namespace Shockah.AdventuresInTheMines
 			if (Instance.CurrentPopulator is null || Instance.CurrentRandom is null)
 				return;
 			Instance.CurrentPopulator.AfterPopulate(__instance, Instance.CurrentRandom);
+		}
+
+		private static bool Chest_performOpenChest_Prefix(Chest __instance)
+		{
+			bool patchResult = true;
+
+			foreach (var populator in Instance.Populators)
+			{
+				if (populator is not DisarmablePuzzlePopulator disarmable)
+					continue;
+				bool result = disarmable.OnChestOpen(__instance);
+				if (result)
+				{
+					patchResult = false;
+					// TODO: check if it even works in multiplayer properly
+					__instance.GetMutex().ReleaseLock();
+				}
+			}
+
+			return patchResult;
 		}
 	}
 }

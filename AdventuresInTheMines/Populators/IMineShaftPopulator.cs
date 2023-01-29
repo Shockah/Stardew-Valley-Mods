@@ -8,5 +8,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 		double Prepare(MineShaft location, Random random);
 		void BeforePopulate(MineShaft location, Random random);
 		void AfterPopulate(MineShaft location, Random random);
+		void OnUpdate(MineShaft location) { }
 	}
 }

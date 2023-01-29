@@ -225,9 +225,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 			// Y mirror
 			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(p.X, -p.Y)).ToHashSet());
 
-			// XY mirror
-			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(-p.X, -p.Y)).ToHashSet());
-
 			// 90* clockwise rotation
 			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(-p.Y, p.X)).ToHashSet());
 

@@ -8,6 +8,8 @@ namespace Shockah.CommonModCode.Stardew
 		public static void RemoveAllPlaceables(this GameLocation location, IntPoint point)
 		{
 			location.Objects.Remove(new(point.X, point.Y));
+			location.overlayObjects.Remove(new(point.X, point.Y));
+			location.terrainFeatures.Remove(new(point.X, point.Y));
 
 			var resourceClumpsToRemove = location.resourceClumps.Where(e => e.occupiesTile(point.X, point.Y)).ToList();
 			foreach (var resourceClump in resourceClumpsToRemove)
