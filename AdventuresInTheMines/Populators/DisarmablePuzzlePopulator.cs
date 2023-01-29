@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using xTile.Tiles;
+using SObject = StardewValley.Object;
 
 namespace Shockah.AdventuresInTheMines.Populators
 {
@@ -222,6 +223,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			void Explode(int radius, int damage)
 			{
 				location.explode(chest.TileLocation, radius, player, damage_amount: damage);
+
 				if (!didExplode)
 					location.localSound("explosion");
 				didExplode = true;
@@ -229,7 +231,42 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			void RotFood()
 			{
-				// TODO: rot food
+				int foodCount = player.Items
+					.OfType<SObject>()
+					.Where(i => i.Edibility != SObject.inedible && (i.staminaRecoveredOnConsumption() > 0 || i.healthRecoveredOnConsumption() > 0))
+					.Sum(i => i.Stack);
+
+				int toRot = (int)Math.Pow(foodCount, 0.75);
+				if (toRot == 0)
+					return;
+
+				while (toRot > 0)
+				{
+					int itemN = Game1.random.Next(foodCount);
+					foreach (Item item in player.Items)
+					{
+						if (item is not SObject @object)
+							continue;
+						if (!(@object.Edibility != SObject.inedible && (@object.staminaRecoveredOnConsumption() > 0 || @object.healthRecoveredOnConsumption() > 0)))
+							continue;
+						if (itemN < @object.Stack)
+						{
+							if (@object.Stack == 1)
+								player.removeItemFromInventory(item);
+							else
+								@object.Stack--;
+							toRot--;
+							goto toRotContinue;
+						}
+						else
+						{
+							itemN -= @object.Stack;
+						}
+					}
+
+					toRotContinue:;
+				}
+
 				if (!didRot)
 					location.localSound("croak");
 				didRot = true;
