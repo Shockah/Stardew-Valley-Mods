@@ -55,7 +55,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private static readonly List<HashSet<IntPoint>> ThreeBrazierLayouts = new()
 		{
 			new() { new(-2, -2), new(0, -2), new(2, -2) },
-			new() { new(0, -2), new(-2, 1), new(2, 1) }
+			new() { new(0, -2), new(-2, 1), new(2, 1) },
+			new() { new(-2, -2), new(-2, 2), new(2, -2) },
+			new() { new(-2, 0), new(2, 0), new(0, -2) },
+			new() { new(-2, -1), new(-2, 1), new(2, 0) },
+			new() { new(2, 0), new(0, 2), new(2, 2) }
 		};
 
 		private static readonly List<HashSet<IntPoint>> FourBrazierLayouts = new()
@@ -64,14 +68,18 @@ namespace Shockah.AdventuresInTheMines.Populators
 			new() { new(-2, -2), new(-2, 2), new(2, -2), new(2, 2) },
 			new() { new(-2, 0), new(2, 0), new(1, -2), new(-1, 2) },
 			new() { new(-3, -2), new(-1, -2), new(1, -2), new(3, -2) },
-			new() { new(-1, -4), new(1, -4), new(-1, -2), new(1, -2) }
+			new() { new(-1, -4), new(1, -4), new(-1, -2), new(1, -2) },
+			new() { new(-2, -1), new(-2, 1), new(2, -1), new(2, 1) }
 		};
 
 		private static readonly List<HashSet<IntPoint>> FiveBrazierLayouts = new()
 		{
 			new() { new(0, -2), new(-2, 0), new(2, 0), new(-1, 2), new(1, 2) },
 			new() { new(-4, -2), new(-2, -2), new(0, -2), new(2, -2), new(4, -2) },
-			new() { new(-1, -4), new(1, -4), new(0, -3), new(-1, -2), new(1, -2) }
+			new() { new(-1, -4), new(1, -4), new(0, -3), new(-1, -2), new(1, -2) },
+			new() { new(-4, -1), new(-2, -2), new(0, -3), new(2, -2), new(4, -1) },
+			new() { new(-3, 0), new(3, 0), new(-2, 2), new(2, 2), new(0, 3) },
+			new() { new(-2, -1), new(2, -1), new(-2, 1), new(2, 1), new(0, 2) }
 		};
 
 		private IMonitor Monitor { get; init; }
@@ -234,6 +242,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			// 180* rotation
 			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(-p.X, -p.Y)).ToHashSet());
 
+			// something, idk
+			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(-p.Y, -p.X)).ToHashSet());
+
 			return transformedLayouts[random.Next(transformedLayouts.Count)];
 		}
 
@@ -247,30 +258,29 @@ namespace Shockah.AdventuresInTheMines.Populators
 		{
 			List<(List<HashSet<IntPoint>> LayoutList, double Weight)> items = new();
 
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
+			switch (GetDifficultyModifier(location))
 			{
-				items.Add((ThreeBrazierLayouts, 1));
-				items.Add((FourBrazierLayouts, 0.25));
-			}
-			else if(location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-			{
-				items.Add((ThreeBrazierLayouts, 0.5));
-				items.Add((FourBrazierLayouts, 1));
-			}
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-			{
-				items.Add((ThreeBrazierLayouts, 0.25));
-				items.Add((FourBrazierLayouts, 1));
-				items.Add((FiveBrazierLayouts, 0.25));
-			}
-			else if (location.mineLevel >= MineShaft.desertArea)
-			{
-				items.Add((FourBrazierLayouts, 1));
-				items.Add((FiveBrazierLayouts, 1));
-			}
-			else
-			{
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
+				case 0:
+					items.Add((ThreeBrazierLayouts, 1));
+					items.Add((FourBrazierLayouts, 0.25));
+					break;
+				case 1:
+					items.Add((ThreeBrazierLayouts, 0.5));
+					items.Add((FourBrazierLayouts, 1));
+					break;
+				case 2:
+					items.Add((ThreeBrazierLayouts, 0.25));
+					items.Add((FourBrazierLayouts, 1));
+					items.Add((FiveBrazierLayouts, 0.25));
+					break;
+				case 3:
+					items.Add((FourBrazierLayouts, 1));
+					items.Add((FiveBrazierLayouts, 1));
+					break;
+				default:
+					items.Add((FourBrazierLayouts, 0.5));
+					items.Add((FiveBrazierLayouts, 1));
+					break;
 			}
 
 			double weightSum = items.Select(i => i.Weight).Sum();
@@ -284,6 +294,27 @@ namespace Shockah.AdventuresInTheMines.Populators
 					return layoutList;
 			}
 			throw new InvalidOperationException("Reached invalid state.");
+		}
+
+		private static int GetDifficultyModifier(MineShaft location)
+		{
+			int difficulty;
+
+			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
+				difficulty = 0;
+			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
+				difficulty = 1;
+			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
+				difficulty = 2;
+			else if (location.mineLevel >= MineShaft.desertArea)
+				difficulty = 3;
+			else
+				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
+
+			if (location.GetAdditionalDifficulty() > 0)
+				difficulty++;
+
+			return difficulty;
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]

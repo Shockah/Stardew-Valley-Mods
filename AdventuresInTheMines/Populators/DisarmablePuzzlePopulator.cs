@@ -36,6 +36,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		{
 			public IntPoint ChestPosition { get; init; }
 			public HashSet<IntPoint> ButtonPositionsLeft { get; init; }
+			public HashSet<long> PlayersWhoAlreadyTriedToOpen { get; init; } = new();
 
 			public RuntimeData(IntPoint chestPosition, HashSet<IntPoint> buttonPositions)
 			{
@@ -186,6 +187,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 				data.ButtonPositionsLeft.Remove(tile);
 				location.localSound("button1");
+				data.PlayersWhoAlreadyTriedToOpen.Clear();
 			}
 		}
 
@@ -200,81 +202,144 @@ namespace Shockah.AdventuresInTheMines.Populators
 			if (data.ButtonPositionsLeft.Count == 0)
 				return false;
 
-			TriggerTrap(location, chest);
+			TriggerTrap(location, chest, data);
 			return true;
 		}
 
-		private void TriggerTrap(MineShaft location, Chest chest)
+		private void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
 		{
-			//var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
+			var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
+
+			if (data.PlayersWhoAlreadyTriedToOpen.Contains(player.UniqueMultiplayerID))
+			{
+				// i18n
+				AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security is still not disarmed. There has to be something nearby that could do it.");
+				return;
+			}
+			data.PlayersWhoAlreadyTriedToOpen.Add(player.UniqueMultiplayerID);
+
+			bool didExplode = false;
+			bool didRot = false;
+
+			void Explode(int radius, int damage)
+			{
+				location.explode(chest.TileLocation, radius, player, damage_amount: damage);
+				if (!didExplode)
+					location.localSound("explosion");
+				didExplode = true;
+			}
+
+			void RotFood()
+			{
+				// TODO: rot food
+				if (!didRot)
+					location.localSound("croak");
+				didRot = true;
+			}
 
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
 			{
 				if (Game1.random.NextBool())
-				{
-					RotFood(location, chest);
-				}
+					RotFood();
 				else
-				{
-					location.explode(chest.TileLocation, 3, null, damage_amount: 50);
-				}
+					Explode(3, 50);
 			}
 			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
 			{
-				location.explode(chest.TileLocation, 4, null, damage_amount: 100);
+				Explode(4, 100);
 				if (Game1.random.Next(3) == 0)
-					RotFood(location, chest);
+					RotFood();
 			}
 			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
 			{
-				location.explode(chest.TileLocation, 5, null, damage_amount: 150);
+				Explode(5, 150);
 				if (Game1.random.NextBool())
-					RotFood(location, chest);
+					RotFood();
 			}
 			else if (location.mineLevel >= MineShaft.desertArea)
 			{
-				location.explode(chest.TileLocation, 6, null, damage_amount: 200);
-				RotFood(location, chest);
+				Explode(6, 200);
+				RotFood();
 			}
 			else
 			{
 				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
 			}
+
+			// TODO: i18n
+			bool firstMessage = true;
+			if (didExplode)
+			{
+				if (firstMessage)
+					AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed. Opening it brought up a fierce explosion, damaging you and the surroundings.");
+				else
+					AdventuresInTheMines.Instance.QueueObjectDialogue("Opening the chest also brought up a fierce explosion, damaging you and the surroundings.");
+				firstMessage = false;
+			}
+			if (didRot)
+			{
+				if (firstMessage)
+					AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed. Opening it sprung a poison trap, rotting some of your food.");
+				else
+					AdventuresInTheMines.Instance.QueueObjectDialogue("Opening the chest also sprung a poison trap, rotting some of your food.");
+				firstMessage = false;
+			}
+			if (firstMessage)
+				AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed, but opening it... did not set any trap off!");
 		}
 
-		private void RotFood(MineShaft location, Chest chest)
+		private static int GetDifficultyModifier(MineShaft location)
 		{
-			// TODO: rot food
-			// TODO: i18n
-			Game1.drawObjectDialogue("The chest's security was not disarmed. Opening it sprung a poison trap, rotting some of your food.");
+			int difficulty;
+
+			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
+				difficulty = 0;
+			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
+				difficulty = 1;
+			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
+				difficulty = 2;
+			else if (location.mineLevel >= MineShaft.desertArea)
+				difficulty = 3;
+			else
+				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
+
+			if (location.GetAdditionalDifficulty() > 0)
+				difficulty++;
+
+			return difficulty;
 		}
 
 		private static int ChooseButtonCount(MineShaft location, Random random)
 		{
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				return 1;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				return 2 + (random.NextBool() ? 1 : 0);
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				return 3 + random.Next(3);
-			else if (location.mineLevel >= MineShaft.desertArea)
-				return 2 + random.Next(5);
-			else
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
+			return GetDifficultyModifier(location) switch
+			{
+				0 => 1,
+				1 => 2 + (random.NextBool() ? 1 : 0),
+				2 => 3 + random.Next(3),
+				3 => 2 + random.Next(5),
+				_ => 0 + random.Next(8),
+			};
 		}
 
 		private static double GetWeight(MineShaft location)
 		{
+			// excluding monster areas - too easy to see the buttons
+
+			var isSlimeAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isSlimeArea");
+			var isSlime = (bool)isSlimeAreaGetter.Invoke(location, null)!;
+			if (isSlime)
+				return 0;
+
+			var isMonsterAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isMonsterArea");
+			var isMonster = (bool)isMonsterAreaGetter.Invoke(location, null)!;
+			if (isMonster)
+				return 0;
+
 			// excluding any floors which use tilesets without the button texture
 
 			var isDinoAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isDinoArea");
 			var isDino = (bool)isDinoAreaGetter.Invoke(location, null)!;
 			if (isDino)
-				return 1;
-
-			var isSlimeAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isSlimeArea");
-			var isSlime = (bool)isSlimeAreaGetter.Invoke(location, null)!;
-			if (isSlime)
 				return 1;
 
 			var loadedDarkAreaField = AccessTools.Field(typeof(MineShaft), "loadedDarkArea");

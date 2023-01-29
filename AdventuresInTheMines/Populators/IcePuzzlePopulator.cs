@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.AdventuresInTheMines.Map;
 using Shockah.CommonModCode;
@@ -274,6 +275,16 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		private static double GetWeight(MineShaft location)
 		{
+			var isSlimeAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isSlimeArea");
+			var isSlime = (bool)isSlimeAreaGetter.Invoke(location, null)!;
+			if (isSlime)
+				return 0;
+
+			var isMonsterAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isMonsterArea");
+			var isMonster = (bool)isMonsterAreaGetter.Invoke(location, null)!;
+			if (isMonster)
+				return 0;
+
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
 				return 1.0 / 3.0;
 			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)

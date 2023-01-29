@@ -6,6 +6,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Locations;
+using StardewValley.Menus;
 using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
@@ -17,11 +18,12 @@ namespace Shockah.AdventuresInTheMines
 	{
 		private const double TreasurePopulateChance = 0.2;
 
-		private static AdventuresInTheMines Instance = null!;
+		internal static AdventuresInTheMines Instance = null!;
 
 		private List<IMineShaftPopulator> Populators { get; set; } = new();
 		private Random? CurrentRandom { get; set; }
 		private IMineShaftPopulator? CurrentPopulator { get; set; }
+		private LinkedList<string> QueuedObjectDialogue { get; init; } = new();
 
 		public override void Entry(IModHelper helper)
 		{
@@ -51,6 +53,16 @@ namespace Shockah.AdventuresInTheMines
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
+			// dequeue object dialogue
+			var message = QueuedObjectDialogue.First;
+			if (message is not null && Game1.activeClickableMenu is not DialogueBox)
+			{
+				QueuedObjectDialogue.RemoveFirst();
+				Game1.drawObjectDialogue(message.Value);
+			}
+
+			// run populator updates
+
 			var locations = Game1.getAllFarmers()
 				.Select(p => p.currentLocation)
 				.OfType<MineShaft>()
@@ -75,6 +87,14 @@ namespace Shockah.AdventuresInTheMines
 				new BrazierSequencePuzzlePopulator(Monitor, lootProvider),
 				new DisarmablePuzzlePopulator(Monitor, lootProvider)
 			};
+		}
+
+		internal void QueueObjectDialogue(string message)
+		{
+			if (Game1.activeClickableMenu is DialogueBox)
+				QueuedObjectDialogue.AddLast(message);
+			else
+				Game1.drawObjectDialogue(message);
 		}
 
 		private static void MineShaft_populateLevel_Prefix(MineShaft __instance)
