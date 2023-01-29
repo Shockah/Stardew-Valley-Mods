@@ -211,7 +211,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			if (data.PlayersWhoAlreadyTriedToOpen.Contains(player.UniqueMultiplayerID))
 			{
-				// i18n
+				// TODO: i18n
 				AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security is still not disarmed. There has to be something nearby that could do it.");
 				return;
 			}
