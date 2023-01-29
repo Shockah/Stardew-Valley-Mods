@@ -127,8 +127,8 @@ namespace Shockah.AdventuresInTheMines
 			seed = seed * 31 + Game1.Date.TotalDays;
 			seed = seed * 31 + __instance.mineLevel;
 			Random random = new(seed);
-			//if (random.NextDouble() > TreasurePopulateChance)
-			//	return;
+			if (random.NextDouble() > TreasurePopulateChance)
+				return;
 			Instance.CurrentRandom = random;
 
 			List<(IMineShaftPopulator Populator, double Weight)> items = new();
