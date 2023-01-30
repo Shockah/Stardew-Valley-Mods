@@ -1,11 +1,9 @@
-﻿using Shockah.AdventuresInTheMines.Map;
-using Shockah.CommonModCode;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Shockah.AdventuresInTheMines
+namespace Shockah.Kokoro.Map
 {
-	internal static class FloodFill
+	public static class FloodFill
 	{
 		public static IMap<bool> Run<TTile>(IMap<TTile> map, IntPoint startPoint, Func<IMap<TTile>, IntPoint, bool> canVisit)
 		{

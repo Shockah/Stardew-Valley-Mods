@@ -95,12 +95,21 @@ namespace Shockah.AdventuresInTheMines
 				alternative: new DefaultMineShaftLootProvider()
 			);
 
+			var ladderFinder = new LadderFinder()
+				.Caching();
+
+			var mapOccupancyMapper = new MapOccupancyMapper(ladderFinder)
+				.Caching();
+
+			var reachableTileMapper = new ReachableTileMapper(ladderFinder, mapOccupancyMapper)
+				.Caching();
+
 			Populators = new()
 			{
-				new IcePuzzlePopulator(Monitor, lootProvider),
-				new BrazierCombinationPuzzlePopulator(Monitor, lootProvider),
-				new BrazierSequencePuzzlePopulator(Monitor, lootProvider),
-				new DisarmablePuzzlePopulator(Monitor, lootProvider)
+				new IcePuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider),
+				new BrazierCombinationPuzzlePopulator(mapOccupancyMapper, lootProvider),
+				new BrazierSequencePuzzlePopulator(reachableTileMapper, lootProvider),
+				new DisarmablePuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider)
 			};
 		}
 

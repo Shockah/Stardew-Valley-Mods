@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
-using Shockah.AdventuresInTheMines.Map;
 using Shockah.CommonModCode;
+using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
-using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
@@ -17,15 +16,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 {
 	internal sealed class BrazierSequencePuzzlePopulator : IMineShaftPopulator
 	{
-		private enum PopulatorTile
-		{
-			Empty,
-			Dirt,
-			Passable,
-			BelowLadder,
-			Blocked
-		}
-
 		private readonly struct PreparedData
 		{
 			public IntPoint ChestPosition { get; init; }
@@ -46,7 +36,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
-		private const int LadderTileIndex = 115;
 		private const int StoneBrazierIndex = 144;
 		private const int SkullBrazierIndex = 149;
 		private const int MarbleBrazierIndex = 151;
@@ -54,57 +43,32 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int MaximumDistanceFromChestToBrazier = 8;
 		private const int MinimumDistanceBetweenElements = 3;
 
-		private IMonitor Monitor { get; init; }
+		private IReachableTileMapper ReachableTileMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
 
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 		private bool TorchStateUpdateInProgress { get; set; } = false;
 
-		public BrazierSequencePuzzlePopulator(IMonitor monitor, ILootProvider lootProvider)
+		public BrazierSequencePuzzlePopulator(IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
-			this.Monitor = monitor;
+			this.ReachableTileMapper = reachableTileMapper;
 			this.LootProvider = lootProvider;
 		}
 
 		public double Prepare(MineShaft location, Random random)
 		{
-			// finding ladder (starting) position
-			// TODO: ladder position is actually already stored in MineShaft... but it's private
-			var ladderPoint = FindLadder(location);
-			if (ladderPoint is null)
-			{
-				Monitor.Log($"Could not find a ladder at location {location.Name}. Aborting {typeof(IcePuzzlePopulator)}.");
-				return 0;
-			}
-			IntPoint belowLadderPoint = new(ladderPoint.Value.X, ladderPoint.Value.Y + 1);
-
-			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
-			var occupancyMap = new OutOfBoundsValuesMap<PopulatorTile>(
-				new ArrayMap<PopulatorTile>(point =>
-				{
-					if (point == belowLadderPoint)
-						return PopulatorTile.BelowLadder;
-					else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTileClearForMineObjects(point.X, point.Y))
-						return PopulatorTile.Empty;
-					else if (location.doesEitherTileOrTileIndexPropertyEqual(point.X, point.Y, "Type", "Back", "Dirt"))
-						return PopulatorTile.Dirt;
-					else if (location.isTileLocationOpenIgnoreFrontLayers(new(point.X, point.Y)) && location.isTilePlaceable(new(point.X, point.Y)))
-						return PopulatorTile.Passable;
-					else
-						return PopulatorTile.Blocked;
-				}, (int)(location.Map.DisplayWidth / 64f), (int)(location.Map.DisplayHeight / 64f)),
-				PopulatorTile.Blocked
-			);
-
 			// creating a reachable tile map - tiles reachable by the player from the ladder
-			var reachableMap = FloodFill.Run(occupancyMap, belowLadderPoint, (map, point) => map[point] != PopulatorTile.Blocked);
+			var reachableTileMap = new OutOfBoundsValuesMap<bool>(
+				ReachableTileMapper.MapReachableTiles(location),
+				false
+			);
 
 			// looking for free spots
 			List<IntPoint> freeSpots = new();
-			for (int y = reachableMap.Bounds.Min.Y; y <= reachableMap.Bounds.Max.Y; y++)
-				for (int x = reachableMap.Bounds.Min.X; x <= reachableMap.Bounds.Max.X; x++)
-					if (reachableMap[new(x, y)])
+			for (int y = reachableTileMap.Bounds.Min.Y; y <= reachableTileMap.Bounds.Max.Y; y++)
+				for (int x = reachableTileMap.Bounds.Min.X; x <= reachableTileMap.Bounds.Max.X; x++)
+					if (reachableTileMap[new(x, y)])
 						freeSpots.Add(new(x, y));
 
 			if (freeSpots.Count == 0)
@@ -267,15 +231,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 				TorchStateUpdateInProgress = false;
 			};
 			return torch;
-		}
-
-		private static IntPoint? FindLadder(MineShaft location)
-		{
-			for (int y = 0; y < location.Map.DisplayHeight / 64f; y++)
-				for (int x = 0; x < location.Map.DisplayWidth / 64f; x++)
-					if (location.Map.GetLayer("Buildings").Tiles[new(x, y)]?.TileIndex == LadderTileIndex)
-						return new(x, y);
-			return null;
 		}
 	}
 }
