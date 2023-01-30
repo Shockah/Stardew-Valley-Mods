@@ -35,7 +35,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
-		private static readonly int[,] IceTileIndexes = new[,] { { 23 * 16 + 0, 24 * 16 + 0 }, { 23 * 16 + 1, 24 * 16 + 1 } };
+		private static readonly int[,] IceTileIndexes = new[,] { { 28 * 32 + 8 } };
 
 		private const float MinimumFillRatio = 0.2f;
 		private const float MaximumFillRatio = 0.35f;
@@ -213,11 +213,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return;
 
 			// creating the ice layer: upserting tile sheet
-			var wallsAndFloorsTexturePath = "Maps\\walls_and_floors";
+			var wallsAndFloorsTexturePath = "Maps\\Festivals";
 			if (!location.Map.TileSheets.TryFirst(t => t.ImageSource == wallsAndFloorsTexturePath, out var wallsAndFloorsTileSheet))
 			{
 				var wallsAndFloorsTexture = Game1.content.Load<Texture2D>(wallsAndFloorsTexturePath);
-				wallsAndFloorsTileSheet = new TileSheet("x_WallsAndFloors", location.Map, wallsAndFloorsTexturePath, new(wallsAndFloorsTexture.Width / 16, wallsAndFloorsTexture.Height / 16), new(16, 16));
+				wallsAndFloorsTileSheet = new TileSheet("x_Festivals", location.Map, wallsAndFloorsTexturePath, new(wallsAndFloorsTexture.Width / 16, wallsAndFloorsTexture.Height / 16), new(16, 16));
 				location.Map.AddTileSheet(wallsAndFloorsTileSheet);
 			}
 
