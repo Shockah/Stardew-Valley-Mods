@@ -109,6 +109,7 @@ namespace Shockah.AdventuresInTheMines
 				new IcePuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider),
 				new BrazierCombinationPuzzlePopulator(mapOccupancyMapper, lootProvider),
 				new BrazierSequencePuzzlePopulator(reachableTileMapper, lootProvider),
+				new BrazierLightUpPuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider),
 				new DisarmablePuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider)
 			};
 		}
