@@ -87,10 +87,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 				if (torchPositions.Count == 0)
 					return random.NextElement(freeSpots);
 
-				foreach (var existingTorchPosition in torchPositions.Shuffled(random))
-					foreach (var possibleNewTorchPosition in IntPoint.NeighborOffsets.Shuffled(random).Select(o => existingTorchPosition + o * 2))
-						if (!torchPositions.Contains(possibleNewTorchPosition) && reachableTileMap[possibleNewTorchPosition] && occupancyMap[possibleNewTorchPosition] == IMapOccupancyMapper.Tile.Empty)
-							return possibleNewTorchPosition;
+				for (int existingNeighborCount = 3; existingNeighborCount >= 0; existingNeighborCount--)
+					foreach (var existingTorchPosition in torchPositions.Where(p => IntPoint.NeighborOffsets.Count(o => torchPositions.Contains(p + o * 2)) == existingNeighborCount))
+						foreach (var possibleNewTorchPosition in IntPoint.NeighborOffsets.Shuffled(random).Select(o => existingTorchPosition + o * 2))
+							if (!torchPositions.Contains(possibleNewTorchPosition) && reachableTileMap[possibleNewTorchPosition] && occupancyMap[possibleNewTorchPosition] == IMapOccupancyMapper.Tile.Empty)
+								return possibleNewTorchPosition;
 
 				return null;
 			}
@@ -116,7 +117,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			// toggling switches initially
 			// TODO: move this logic to `BeforePopulate`, there is no need to do this if this puzzle isn't chosen
 
-			HashSet<IntPoint> enabledTorchPositions = new();
+			var enabledTorchPositions = torchPositions.ToHashSet();
 
 			void Toggle(IntPoint position)
 			{
@@ -138,6 +139,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			{
 				var torchPosition = random.NextElement(torchPositions);
 				Toggle(torchPosition);
+
+				if (i == 1 && enabledTorchPositions.Count > torchPositions.Count / 2)
+					i++;
 			}
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition.Value, TorchPositions = torchPositions, EnabledTorchPositions = enabledTorchPositions });
@@ -200,11 +204,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 		{
 			return GetDifficultyModifier(location) switch
 			{
-				0 => 8 + random.Next(3),
-				1 => 9 + random.Next(6),
-				2 => 10 + random.Next(9),
-				3 => 11 + random.Next(12),
-				_ => 12 + random.Next(15)
+				0 => 6 + random.Next(2),
+				1 => 7 + random.Next(3),
+				2 => 8 + random.Next(4),
+				3 => 9 + random.Next(5),
+				_ => 10 + random.Next(6)
 			};
 		}
 
