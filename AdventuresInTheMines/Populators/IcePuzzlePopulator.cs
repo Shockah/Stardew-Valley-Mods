@@ -35,6 +35,8 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
+		private static readonly string IceLayerTexturePath = "Maps\\Festivals";
+		private static readonly string IceLayerTileSheetName = "x_Festivals";
 		private static readonly int[,] IceTileIndexes = new[,] { { 28 * 32 + 8 } };
 
 		private const float MinimumFillRatio = 0.2f;
@@ -213,12 +215,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return;
 
 			// creating the ice layer: upserting tile sheet
-			var wallsAndFloorsTexturePath = "Maps\\Festivals";
-			if (!location.Map.TileSheets.TryFirst(t => t.ImageSource == wallsAndFloorsTexturePath, out var wallsAndFloorsTileSheet))
+			if (!location.Map.TileSheets.TryFirst(t => t.ImageSource == IceLayerTexturePath, out var layerTileSheet))
 			{
-				var wallsAndFloorsTexture = Game1.content.Load<Texture2D>(wallsAndFloorsTexturePath);
-				wallsAndFloorsTileSheet = new TileSheet("x_Festivals", location.Map, wallsAndFloorsTexturePath, new(wallsAndFloorsTexture.Width / 16, wallsAndFloorsTexture.Height / 16), new(16, 16));
-				location.Map.AddTileSheet(wallsAndFloorsTileSheet);
+				var layerTexture = Game1.content.Load<Texture2D>(IceLayerTexturePath);
+				layerTileSheet = new TileSheet(IceLayerTileSheetName, location.Map, IceLayerTexturePath, new(layerTexture.Width / 16, layerTexture.Height / 16), new(16, 16));
+				location.Map.AddTileSheet(layerTileSheet);
 			}
 
 			// creating the ice layer: new layer
@@ -229,14 +230,14 @@ namespace Shockah.AdventuresInTheMines.Populators
 					break;
 				layerIndex++;
 			}
-			var iceLayer = new Layer($"Back{layerIndex}", location.Map, location.Map.DisplaySize, new(64, 64));
+			var iceLayer = new Layer($"Back{layerIndex}", location.Map, location.Map.GetSize(), new(Game1.tileSize));
 			location.Map.AddLayer(iceLayer);
 
 			// creating the ice layer: populating
 			for (int y = data.Value.IceMap.Bounds.Min.Y; y <= data.Value.IceMap.Bounds.Max.Y; y++)
 				for (int x = data.Value.IceMap.Bounds.Min.X; x <= data.Value.IceMap.Bounds.Max.X; x++)
 					if (data.Value.IceMap[new(x, y)])
-						iceLayer.Tiles[x, y] = new StaticTile(iceLayer, wallsAndFloorsTileSheet, BlendMode.Alpha, IceTileIndexes[x % IceTileIndexes.GetLength(0), y % IceTileIndexes.GetLength(1)]);
+						iceLayer.Tiles[x, y] = new StaticTile(iceLayer, layerTileSheet, BlendMode.Alpha, IceTileIndexes[x % IceTileIndexes.GetLength(0), y % IceTileIndexes.GetLength(1)]);
 
 			// create chest
 			location.RemoveAllPlaceables(data.Value.ChestPosition);
