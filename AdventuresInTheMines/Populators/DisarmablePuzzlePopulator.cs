@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
-using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
@@ -74,10 +73,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			// looking for free spots
 			List<IntPoint> freeSpots = new();
-			for (int y = reachableTileMap.Bounds.Min.Y; y <= reachableTileMap.Bounds.Max.Y; y++)
-				for (int x = reachableTileMap.Bounds.Min.X; x <= reachableTileMap.Bounds.Max.X; x++)
-					if (reachableTileMap[new(x, y)] && occupancyMap[new(x, y)] == IMapOccupancyMapper.Tile.Empty)
-						freeSpots.Add(new(x, y));
+			foreach (var point in reachableTileMap.Bounds.AllPointEnumerator())
+				if (reachableTileMap[point] && occupancyMap[point] == IMapOccupancyMapper.Tile.Empty)
+					freeSpots.Add(point);
 
 			if (freeSpots.Count == 0)
 				return 0;
@@ -178,7 +176,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			return true;
 		}
 
-		private void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
+		private static void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
 		{
 			var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
 

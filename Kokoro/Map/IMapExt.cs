@@ -1,4 +1,6 @@
-﻿using System;
+﻿using StardewValley.Minigames;
+using System;
+using System.Collections.Generic;
 
 #if DEBUG
 using System.Text;

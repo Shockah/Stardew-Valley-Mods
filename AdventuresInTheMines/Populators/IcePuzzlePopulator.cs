@@ -87,10 +87,10 @@ namespace Shockah.AdventuresInTheMines.Populators
 				point => reachableTileMap[point] && occupancyMap[point] is IMapOccupancyMapper.Tile.Empty,
 				reachableTileMap.Bounds.Width, reachableTileMap.Bounds.Height, reachableTileMap.Bounds.Min.X, reachableTileMap.Bounds.Min.Y
 			);
-			var rectangles = new LinkedList<(IntPoint Min, IntPoint Max)>(
+			var rectangles = new LinkedList<IntRectangle>(
 				FindRectangles(possibleIceTiles)
-					.Where(r => r.Max.X - r.Min.X + 1 >= MinimumRectangleGirth && r.Max.Y - r.Min.Y + 1 >= MinimumRectangleGirth)
-					.OrderByDescending(r => (r.Max.X - r.Min.X - 1) * (r.Max.Y - r.Min.Y - 1) / Math.Sqrt(Math.Max(r.Max.X - r.Min.X - 1, r.Max.Y - r.Min.Y - 1)))
+					.Where(r => r.Width >= MinimumRectangleGirth && r.Height >= MinimumRectangleGirth)
+					.OrderByDescending(r => r.Width * r.Height / Math.Sqrt(Math.Max(r.Width, r.Height)))
 			);
 
 			// creating a map of ice tiles out of the largest (and "squarest") rectangles
@@ -108,29 +108,26 @@ namespace Shockah.AdventuresInTheMines.Populators
 					{
 						if (currentIceCount == 0)
 						{
-							if (Math.Min(r.Max.X - r.Min.X + 1, r.Max.Y - r.Min.Y + 1) < MinimumInitialRectangleGirth)
+							if (Math.Min(r.Width, r.Height) < MinimumInitialRectangleGirth)
 								return false;
-							var (firstMin, firstMax) = rectangles.First!.Value;
-							var firstArea = (firstMax.X - firstMin.X + 1) * (firstMax.Y - firstMin.Y + 1);
-							var rArea = (r.Max.X - r.Min.X + 1) * (r.Max.Y - r.Min.Y + 1);
+							var first = rectangles.First!.Value;
+							var firstArea = first.Width * first.Height;
+							var rArea = r.Width * r.Height;
 							return rArea >= firstArea * 0.75f;
 						}
 
-						for (int y = r.Min.Y; y <= r.Max.Y; y++)
+						foreach (var point in r.AllPointEnumerator())
 						{
-							for (int x = r.Min.X; x <= r.Max.X; x++)
-							{
-								if (currentIceMap[new(x, y)])
-									return true;
-								if (x > currentIceMap.Bounds.Min.X && currentIceMap[new(x - 1, y)])
-									return true;
-								if (x < currentIceMap.Bounds.Max.X && currentIceMap[new(x + 1, y)])
-									return true;
-								if (y > currentIceMap.Bounds.Min.Y && currentIceMap[new(x, y - 1)])
-									return true;
-								if (y < currentIceMap.Bounds.Max.Y && currentIceMap[new(x, y + 1)])
-									return true;
-							}
+							if (currentIceMap[point])
+								return true;
+							if (point.X > currentIceMap.Bounds.Min.X && currentIceMap[new(point.X - 1, point.Y)])
+								return true;
+							if (point.X < currentIceMap.Bounds.Max.X && currentIceMap[new(point.X + 1, point.Y)])
+								return true;
+							if (point.Y > currentIceMap.Bounds.Min.Y && currentIceMap[new(point.X, point.Y - 1)])
+								return true;
+							if (point.Y < currentIceMap.Bounds.Max.Y && currentIceMap[new(point.X, point.Y + 1)])
+								return true;
 						}
 						return false;
 					}).ToList();
@@ -143,9 +140,8 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 				// TODO: split large rectangles, which should make more organic looking areas
 
-				for (int y = best.Min.Y; y <= best.Max.Y; y++)
-					for (int x = best.Min.X; x <= best.Max.X; x++)
-						currentIceMap[new(x, y)] = true;
+				foreach (var point in best.AllPointEnumerator())
+					currentIceMap[point] = true;
 				rectangles.Remove(best);
 			}
 
@@ -161,9 +157,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			// placing chest
 			IntPoint coordinateCenter = new((iceBounds.Value.Max.X + iceBounds.Value.Min.X) / 2, (iceBounds.Value.Max.Y + iceBounds.Value.Min.Y) / 2);
 			IntPoint chestPosition = default;
-			foreach (var potentialChestPosition in coordinateCenter.GetSpiralingTiles(minDistanceFromCenter: 0, maxDistanceFromCenter: Math.Max(iceBounds.Value.Max.X - iceBounds.Value.Min.X + 1, iceBounds.Value.Max.Y - iceBounds.Value.Min.Y + 1)))
+			foreach (var potentialChestPosition in coordinateCenter.GetSpiralingTiles(minDistanceFromCenter: 0, maxDistanceFromCenter: Math.Max(iceBounds.Value.Width, iceBounds.Value.Height)))
 			{
-				if (potentialChestPosition.X < currentIceMap.Bounds.Min.X || potentialChestPosition.Y < currentIceMap.Bounds.Min.X || potentialChestPosition.X > currentIceMap.Bounds.Max.X || potentialChestPosition.Y > currentIceMap.Bounds.Max.Y)
+				if (!currentIceMap.Bounds.Contains(potentialChestPosition))
 					continue;
 				if (!currentIceMap[potentialChestPosition])
 					continue;
@@ -234,10 +230,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			location.Map.AddLayer(iceLayer);
 
 			// creating the ice layer: populating
-			for (int y = data.Value.IceMap.Bounds.Min.Y; y <= data.Value.IceMap.Bounds.Max.Y; y++)
-				for (int x = data.Value.IceMap.Bounds.Min.X; x <= data.Value.IceMap.Bounds.Max.X; x++)
-					if (data.Value.IceMap[new(x, y)])
-						iceLayer.Tiles[x, y] = new StaticTile(iceLayer, layerTileSheet, BlendMode.Alpha, IceTileIndexes[x % IceTileIndexes.GetLength(0), y % IceTileIndexes.GetLength(1)]);
+			foreach (var point in data.Value.IceMap.Bounds.AllPointEnumerator())
+				if (data.Value.IceMap[point])
+					iceLayer.Tiles[point.X, point.Y] = new StaticTile(iceLayer, layerTileSheet, BlendMode.Alpha, IceTileIndexes[point.X % IceTileIndexes.GetLength(0), point.Y % IceTileIndexes.GetLength(1)]);
 
 			// create chest
 			location.RemoveAllPlaceables(data.Value.ChestPosition);
@@ -339,74 +334,71 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return 0;
 		}
 
-		private static HashSet<(IntPoint Min, IntPoint Max)> FindRectangles(IMap<bool>.WithKnownSize map, bool stateToLookFor = true)
+		private static HashSet<IntRectangle> FindRectangles(IMap<bool>.WithKnownSize map, bool stateToLookFor = true)
 		{
-			List<(IntPoint Min, IntPoint Max)> results = new();
+			List<IntRectangle> results = new();
 
-			for (int y = map.Bounds.Min.Y; y <= map.Bounds.Max.Y; y++)
+			foreach (var point in map.Bounds.AllPointEnumerator())
 			{
-				for (int x = map.Bounds.Min.X; x <= map.Bounds.Max.X; x++)
+				if (map[point] != stateToLookFor)
+					continue;
+
+				// skipping tiles with all 4 empty spaces
+				bool top = point.Y == map.Bounds.Min.Y || map[new(point.X, point.Y - 1)] == stateToLookFor;
+				bool bottom = point.Y == map.Bounds.Max.Y || map[new(point.X, point.Y + 1)] == stateToLookFor;
+				bool left = point.X == map.Bounds.Min.X || map[new(point.X - 1, point.Y)] == stateToLookFor;
+				bool right = point.X == map.Bounds.Max.X || map[new(point.X + 1, point.Y)] == stateToLookFor;
+				if ((top ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0) > 3)
+					continue;
+
+				int maxWidth = 1;
+				int maxHeight = 1;
+
+				while (point.X + maxWidth - 1 < map.Bounds.Max.X && map[new(point.X + maxWidth, point.Y)] == stateToLookFor)
+					maxWidth++;
+				while (point.Y + maxHeight - 1 < map.Bounds.Max.Y && map[new(point.X, point.Y + maxHeight)] == stateToLookFor)
+					maxHeight++;
+
+				// finding all possible rectangles starting at this corner
+				List<IntRectangle> possibleRectangles = new();
+				for (int height = 1; height <= maxHeight; height++)
 				{
-					if (map[new(x, y)] != stateToLookFor)
-						continue;
-
-					// skipping tiles with all 4 empty spaces
-					bool top = y == map.Bounds.Min.Y || map[new(x, y - 1)] == stateToLookFor;
-					bool bottom = y == map.Bounds.Max.Y || map[new(x, y + 1)] == stateToLookFor;
-					bool left = x == map.Bounds.Min.X || map[new(x - 1, y)] == stateToLookFor;
-					bool right = x == map.Bounds.Max.X || map[new(x + 1, y)] == stateToLookFor;
-					if ((top ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0) > 3)
-						continue;
-
-					int maxWidth = 1;
-					int maxHeight = 1;
-
-					while (x + maxWidth - 1 < map.Bounds.Max.X && map[new(x + maxWidth, y)] == stateToLookFor)
-						maxWidth++;
-					while (y + maxHeight - 1 < map.Bounds.Max.Y && map[new(x, y + maxHeight)] == stateToLookFor)
-						maxHeight++;
-
-					// finding all possible rectangles starting at this corner
-					List<(IntPoint Min, IntPoint Max)> possibleRectangles = new();
-					for (int height = 1; height <= maxHeight; height++)
+					for (int width = 1; width <= maxWidth; width++)
 					{
-						for (int width = 1; width <= maxWidth; width++)
+						for (int cellY = point.Y; cellY < point.Y + height; cellY++)
 						{
-							for (int cellY = y; cellY < y + height; cellY++)
+							for (int cellX = point.X; cellX < point.X + width; cellX++)
 							{
-								for (int cellX = x; cellX < x + width; cellX++)
-								{
-									if (map[new(cellX, cellY)] != stateToLookFor)
-										goto cellLoopContinue;
-								}
-							}
-
-							possibleRectangles.Add((Min: new(x, y), Max: new(x + width - 1, y + height - 1)));
-
-							cellLoopContinue:;
-						}
-					}
-
-					// merge rectangles together
-					foreach (var rectangle in ((IEnumerable<(IntPoint Min, IntPoint Max)>)possibleRectangles).Reverse())
-					{
-						for (int i = results.Count - 1; i >= 0; i--)
-						{
-							var (existingMin, existingMax) = results[i];
-							if (existingMin.X <= rectangle.Min.X && existingMin.Y <= rectangle.Min.Y && existingMax.X >= rectangle.Max.X && existingMax.Y >= rectangle.Max.Y)
-								goto bestRectanglesContinue;
-							if (existingMin.X > rectangle.Min.X && existingMin.Y > rectangle.Min.Y && existingMax.X < rectangle.Max.X && existingMax.Y < rectangle.Max.Y)
-							{
-								results.RemoveAt(i);
-								goto existingRectanglesBreak;
+								if (map[new(cellX, cellY)] != stateToLookFor)
+									goto cellLoopContinue;
 							}
 						}
-						existingRectanglesBreak:;
 
-						results.Add(rectangle);
+						possibleRectangles.Add(new(point, width, height));
 
-						bestRectanglesContinue:;
+						cellLoopContinue:;
 					}
+				}
+
+				// merge rectangles together
+				foreach (var rectangle in ((IEnumerable<IntRectangle>)possibleRectangles).Reverse())
+				{
+					for (int i = results.Count - 1; i >= 0; i--)
+					{
+						var (existingMin, existingMax) = results[i];
+						if (existingMin.X <= rectangle.Min.X && existingMin.Y <= rectangle.Min.Y && existingMax.X >= rectangle.Max.X && existingMax.Y >= rectangle.Max.Y)
+							goto bestRectanglesContinue;
+						if (existingMin.X > rectangle.Min.X && existingMin.Y > rectangle.Min.Y && existingMax.X < rectangle.Max.X && existingMax.Y < rectangle.Max.Y)
+						{
+							results.RemoveAt(i);
+							goto existingRectanglesBreak;
+						}
+					}
+					existingRectanglesBreak:;
+
+					results.Add(rectangle);
+
+					bestRectanglesContinue:;
 				}
 			}
 

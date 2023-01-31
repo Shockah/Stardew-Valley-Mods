@@ -2,7 +2,6 @@
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
-using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
@@ -97,20 +96,17 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			// looking for applicable positions for the layout
 			List<IntPoint> possibleChestPositions = new();
-			for (int y = occupancyMap.Bounds.Min.Y; y <= occupancyMap.Bounds.Max.Y; y++)
+			foreach (var point in occupancyMap.Bounds.AllPointEnumerator())
 			{
-				for (int x = occupancyMap.Bounds.Min.X; x <= occupancyMap.Bounds.Max.X; x++)
-				{
-					if (occupancyMap[new(x, y)] != IMapOccupancyMapper.Tile.Empty)
-						continue;
+				if (occupancyMap[point] != IMapOccupancyMapper.Tile.Empty)
+					continue;
 
-					foreach (var brazierRelativePosition in layout)
-						if (occupancyMap[new(x + brazierRelativePosition.X, y + brazierRelativePosition.Y)] != IMapOccupancyMapper.Tile.Empty)
-							goto cellContinue;
+				foreach (var brazierRelativePosition in layout)
+					if (occupancyMap[point + brazierRelativePosition] != IMapOccupancyMapper.Tile.Empty)
+						goto cellContinue;
 
-					possibleChestPositions.Add(new(x, y));
-					cellContinue:;
-				}
+				possibleChestPositions.Add(point);
+				cellContinue:;
 			}
 
 			if (possibleChestPositions.Count == 0)
