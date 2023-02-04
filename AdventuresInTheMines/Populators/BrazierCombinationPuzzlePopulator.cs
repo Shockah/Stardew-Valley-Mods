@@ -88,16 +88,21 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		public double Prepare(MineShaft location, Random random)
 		{
+			// get config for location
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null)
+				return 0;
+
+			// selecting one possible layout out of many
+			var layout = GetTransformedLayout(config, random);
+			if (layout is null)
+				return 0;
+
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
 			var occupancyMap = new OutOfBoundsValuesMap<IMapOccupancyMapper.Tile>(
 				MapOccupancyMapper.MapOccupancy(location),
 				IMapOccupancyMapper.Tile.Blocked
 			);
-
-			// selecting one possible layout out of many
-			var layout = GetTransformedLayout(location, random);
-			if (layout is null)
-				return 0;
 
 			// looking for applicable positions for the layout
 			List<IntPoint> possibleChestPositions = new();
@@ -119,7 +124,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			var chestPosition = possibleChestPositions[random.Next(possibleChestPositions.Count)];
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition, Layout = layout });
-			return 1;
+			return config.Weight;
 		}
 
 		public void BeforePopulate(MineShaft location, Random random)
@@ -182,9 +187,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 			location.localSound("newArtifact");
 		}
 
-		private HashSet<IntPoint>? GetTransformedLayout(MineShaft location, Random random)
+		private static HashSet<IntPoint>? GetTransformedLayout(BrazierCombinationConfigEntry config, Random random)
 		{
-			var baseLayout = GetBaseLayout(location, random);
+			var baseLayout = GetBaseLayout(config, random);
 			if (baseLayout is null)
 				return null;
 
@@ -220,35 +225,29 @@ namespace Shockah.AdventuresInTheMines.Populators
 			return random.NextElement(transformedLayouts);
 		}
 
-		private HashSet<IntPoint>? GetBaseLayout(MineShaft location, Random random)
+		private static HashSet<IntPoint>? GetBaseLayout(BrazierCombinationConfigEntry config, Random random)
 		{
-			var layoutList = GetLayoutList(location, random);
+			var layoutList = GetLayoutList(config, random);
 			if (layoutList is null)
 				return null;
 			return random.NextElement(layoutList);
 		}
 
-		private List<HashSet<IntPoint>>? GetLayoutList(MineShaft location, Random random)
+		private static List<HashSet<IntPoint>>? GetLayoutList(BrazierCombinationConfigEntry config, Random random)
 		{
 			WeightedRandom<List<HashSet<IntPoint>>> weightedRandom = new();
-			foreach (var entry in Config.Entries)
+			foreach (var weightedItem in config.BrazierCountWeightItems)
 			{
-				if (!entry.Conditions.Any(c => c.Matches(location)))
-					continue;
-				foreach (var weightedItem in entry.BrazierCountWeightItems)
+				List<HashSet<IntPoint>> layoutList = weightedItem.BrazierCount switch
 				{
-					List<HashSet<IntPoint>> layoutList = weightedItem.BrazierCount switch
-					{
-						3 => ThreeBrazierLayouts,
-						4 => FourBrazierLayouts,
-						5 => FiveBrazierLayouts,
-						_ => throw new InvalidOperationException($"No layouts specified for {weightedItem.BrazierCount} braziers.")
-					};
-					weightedRandom.Add(new(weightedItem.Weight, layoutList));
-				}
-				return weightedRandom.Next(random);
+					3 => ThreeBrazierLayouts,
+					4 => FourBrazierLayouts,
+					5 => FiveBrazierLayouts,
+					_ => throw new InvalidOperationException($"No layouts specified for {weightedItem.BrazierCount} braziers.")
+				};
+				weightedRandom.Add(new(weightedItem.Weight, layoutList));
 			}
-			return null;
+			return weightedRandom.NextOrNull(random);
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]

@@ -1,7 +1,9 @@
-﻿using Shockah.CommonModCode.Stardew;
+﻿using Newtonsoft.Json;
+using Shockah.CommonModCode.Stardew;
 using StardewValley.Locations;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.AdventuresInTheMines.Config
 {
@@ -11,10 +13,10 @@ namespace Shockah.AdventuresInTheMines.Config
 	}
 
 	public record MineLevelConditions(
-		ISet<MineType>? MineTypes = null,
-		bool? Dangerous = null,
-		bool? DarkArea = null,
-		bool? MonsterArea = null
+		[property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] ISet<MineType>? MineTypes = null,
+		[property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] bool? Dangerous = null,
+		[property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] bool? DarkArea = null,
+		[property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] bool? MonsterArea = null
 	)
 	{
 		public MineLevelConditions(
@@ -55,6 +57,45 @@ namespace Shockah.AdventuresInTheMines.Config
 					return false;
 
 			return true;
+		}
+	}
+
+	public record MineLevelConditionedConfig<T>(
+		T Value,
+		IList<MineLevelConditions> Conditions
+	)
+	{
+		public MineLevelConditionedConfig(
+			T Value,
+			params MineLevelConditions[] Conditions
+		) : this(Value, Conditions.ToList()) { }
+	}
+
+	public static class MineLevelConditionedConfigListClassExt
+	{
+		public static T? GetMatchingConfig<T>(this IList<MineLevelConditionedConfig<T>> list, MineShaft location)
+			where T : class
+		{
+			foreach (var entry in list)
+			{
+				if (entry.Conditions.Any(c => c.Matches(location)))
+					return entry.Value;
+			}
+			return null;
+		}
+	}
+
+	public static class MineLevelConditionedConfigListStructExt
+	{
+		public static T? GetMatchingConfig<T>(this IList<MineLevelConditionedConfig<T>> list, MineShaft location)
+			where T : struct
+		{
+			foreach (var entry in list)
+			{
+				if (entry.Conditions.Any(c => c.Matches(location)))
+					return entry.Value;
+			}
+			return null;
 		}
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.AdventuresInTheMines.Config;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -43,6 +44,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int MaximumDistanceFromChestToBrazier = 8;
 		private const int MinimumDistanceBetweenElements = 3;
 
+		private BrazierSequenceConfig Config { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
 
@@ -50,14 +52,23 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 		private bool TorchStateUpdateInProgress { get; set; } = false;
 
-		public BrazierSequencePuzzlePopulator(IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public BrazierSequencePuzzlePopulator(BrazierSequenceConfig config, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
+			this.Config = config;
 			this.ReachableTileMapper = reachableTileMapper;
 			this.LootProvider = lootProvider;
 		}
 
 		public double Prepare(MineShaft location, Random random)
 		{
+			// get config for location
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null)
+				return 0;
+			int? brazierCount = ChooseBrazierCount(config, random);
+			if (brazierCount is null)
+				return 0;
+
 			// creating a reachable tile map - tiles reachable by the player from the ladder
 			var reachableTileMap = new OutOfBoundsValuesMap<bool>(
 				ReachableTileMapper.MapReachableTiles(location),
@@ -84,7 +95,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return 0;
 
 			// choosing brazier positions and filtering out spots further
-			int brazierCount = ChooseBrazierCount(location, random);
 			HashSet<IntPoint> brazierPositions = new();
 			while (brazierPositions.Count < brazierCount)
 			{
@@ -99,7 +109,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition, BrazierPositions = brazierPositions });
-			return 1;
+			return config.Weight;
 		}
 
 		public void BeforePopulate(MineShaft location, Random random)
@@ -164,37 +174,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 		}
 
-		private static int GetDifficultyModifier(MineShaft location)
+		private static int? ChooseBrazierCount(BrazierSequenceConfigEntry config, Random random)
 		{
-			int difficulty;
-
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				difficulty = 0;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				difficulty = 1;
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				difficulty = 2;
-			else if (location.mineLevel >= MineShaft.desertArea)
-				difficulty = 3;
-			else
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
-
-			if (location.GetAdditionalDifficulty() > 0)
-				difficulty++;
-
-			return difficulty;
-		}
-
-		private static int ChooseBrazierCount(MineShaft location, Random random)
-		{
-			return GetDifficultyModifier(location) switch
-			{
-				0 => 4,
-				1 => 4 + (random.NextBool() ? 1 : 0),
-				2 => 5,
-				3 => 5 + (random.NextBool() ? 1 : 0),
-				_ => 6,
-			};
+			WeightedRandom<int> weightedRandom = new();
+			foreach (var weightedItem in config.BrazierCountWeightItems)
+				weightedRandom.Add(new(weightedItem.Weight, weightedItem.BrazierCount));
+			return weightedRandom.NextOrNull(random);
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]

@@ -4,11 +4,10 @@ namespace Shockah.AdventuresInTheMines.Config
 {
 	public sealed record BrazierCombinationConfig(
 		bool Enabled,
-		IList<BrazierCombinationConfigEntry> Entries
+		IList<MineLevelConditionedConfig<BrazierCombinationConfigEntry>> Entries
 	);
 
 	public sealed record BrazierCombinationConfigEntry(
-		IList<MineLevelConditions> Conditions,
 		double Weight,
 		IList<BrazierCombinationConfigEntryWeightItem> BrazierCountWeightItems
 	);
