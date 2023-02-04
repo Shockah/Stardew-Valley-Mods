@@ -9,6 +9,34 @@ namespace Shockah.AdventuresInTheMines.Config
 	{
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
+		public IList<MineLevelConditionedConfig<PopulateConfigEntry>> PopulateEntries { get; internal set; } = new List<MineLevelConditionedConfig<PopulateConfigEntry>>()
+		{
+			new(
+				new(Chance: 0.25),
+				new MineLevelConditions(new HashSet<MineType>() { MineType.Earth, MineType.Frost, MineType.Lava }, Dangerous: false, DarkArea: true)
+			),
+			new(
+				new(Chance: 0.2),
+				new MineLevelConditions(new HashSet<MineType>() { MineType.Earth, MineType.Frost, MineType.Lava }, Dangerous: false, DarkArea: false)
+			),
+			new(
+				new(Chance: 0.3),
+				new MineLevelConditions(new HashSet<MineType>() { MineType.Earth, MineType.Frost, MineType.Lava }, Dangerous: true, DarkArea: true)
+			),
+			new(
+				new(Chance: 0.25),
+				new MineLevelConditions(new HashSet<MineType>() { MineType.Earth, MineType.Frost, MineType.Lava }, Dangerous: true, DarkArea: false)
+			),
+			new(
+				new(Chance: 0.2),
+				new MineLevelConditions(MineType.SkullCavern, DarkArea: true)
+			),
+			new(
+				new(Chance: 0.15),
+				new MineLevelConditions(MineType.SkullCavern, DarkArea: false)
+			)
+		};
+
 		[JsonProperty]
 		public BrazierCombinationConfig BrazierCombination { get; internal set; } = new(
 			Enabled: true,
@@ -16,14 +44,14 @@ namespace Shockah.AdventuresInTheMines.Config
 			{
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierCombinationConfigEntryWeightItem>() { new(4, 3), new(1, 4) }
 					),
 					new MineLevelConditions(MineType.Earth, Dangerous: false)
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierCombinationConfigEntryWeightItem>() { new(1, 3), new(2, 4) }
 					),
 					new MineLevelConditions(MineType.Frost, Dangerous: false),
@@ -31,7 +59,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierCombinationConfigEntryWeightItem>() { new(1, 3), new(4, 4), new(1, 5) }
 					),
 					new MineLevelConditions(MineType.Lava, Dangerous: false),
@@ -39,7 +67,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierCombinationConfigEntryWeightItem>() { new(1, 4), new(1, 5) }
 					),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: false),
@@ -47,7 +75,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierCombinationConfigEntryWeightItem>() { new(1, 4), new(2, 5) }
 					),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: true)
@@ -62,14 +90,14 @@ namespace Shockah.AdventuresInTheMines.Config
 			{
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierSequenceConfigEntryWeightItem>() { new(1, 4) }
 					),
 					new MineLevelConditions(MineType.Earth, Dangerous: false)
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierSequenceConfigEntryWeightItem>() { new(1, 4), new(1, 5) }
 					),
 					new MineLevelConditions(MineType.Frost, Dangerous: false),
@@ -77,7 +105,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierSequenceConfigEntryWeightItem>() { new(1, 5) }
 					),
 					new MineLevelConditions(MineType.Lava, Dangerous: false),
@@ -85,7 +113,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierSequenceConfigEntryWeightItem>() { new(1, 5), new(1, 6) }
 					),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: false),
@@ -93,7 +121,7 @@ namespace Shockah.AdventuresInTheMines.Config
 				),
 				new(
 					new(
-						Weight: 1,
+						Weight: 0.35,
 						BrazierCountWeightItems: new List<BrazierSequenceConfigEntryWeightItem>() { new(1, 6) }
 					),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: true)
@@ -107,26 +135,26 @@ namespace Shockah.AdventuresInTheMines.Config
 			Entries: new List<MineLevelConditionedConfig<BrazierLightUpConfigEntry>>()
 			{
 				new(
-					new(Weight: 1, MinTorchCount: 6, MaxTorchCount: 7, MinInitialToggleCount: 2, MaxInitialToggleCount: 3),
+					new(Weight: 0.35, MinTorchCount: 6, MaxTorchCount: 7, MinInitialToggleCount: 2, MaxInitialToggleCount: 3),
 					new MineLevelConditions(MineType.Earth, Dangerous: false)
 				),
 				new(
-					new(Weight: 1, MinTorchCount: 7, MaxTorchCount: 9, MinInitialToggleCount: 3, MaxInitialToggleCount: 5),
+					new(Weight: 0.35, MinTorchCount: 7, MaxTorchCount: 9, MinInitialToggleCount: 3, MaxInitialToggleCount: 5),
 					new MineLevelConditions(MineType.Frost, Dangerous: false),
 					new MineLevelConditions(MineType.Earth, Dangerous: true)
 				),
 				new(
-					new(Weight: 1, MinTorchCount: 8, MaxTorchCount: 11, MinInitialToggleCount: 4, MaxInitialToggleCount: 7),
+					new(Weight: 0.35, MinTorchCount: 8, MaxTorchCount: 11, MinInitialToggleCount: 4, MaxInitialToggleCount: 7),
 					new MineLevelConditions(MineType.Lava, Dangerous: false),
 					new MineLevelConditions(MineType.Frost, Dangerous: true)
 				),
 				new(
-					new(Weight: 1, MinTorchCount: 9, MaxTorchCount: 13, MinInitialToggleCount: 5, MaxInitialToggleCount: 9),
+					new(Weight: 0.35, MinTorchCount: 9, MaxTorchCount: 13, MinInitialToggleCount: 5, MaxInitialToggleCount: 9),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: false),
 					new MineLevelConditions(MineType.Lava, Dangerous: true)
 				),
 				new(
-					new(Weight: 1, MinTorchCount: 10, MaxTorchCount: 15, MinInitialToggleCount: 6, MaxInitialToggleCount: 11),
+					new(Weight: 0.35, MinTorchCount: 10, MaxTorchCount: 15, MinInitialToggleCount: 6, MaxInitialToggleCount: 11),
 					new MineLevelConditions(MineType.SkullCavern, Dangerous: true)
 				)
 			}

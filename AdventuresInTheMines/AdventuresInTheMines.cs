@@ -17,8 +17,6 @@ namespace Shockah.AdventuresInTheMines
 {
 	public class AdventuresInTheMines : BaseMod<ModConfig>
 	{
-		private const double TreasurePopulateChance = 0.2;
-
 		internal static AdventuresInTheMines Instance = null!;
 
 		private List<IMineShaftPopulator> Populators { get; set; } = new();
@@ -137,13 +135,16 @@ namespace Shockah.AdventuresInTheMines
 				return;
 			if (__instance.mineLevel < MineShaft.desertArea && __instance.mineLevel % 10 == 0)
 				return;
+			var config = Instance.Config.PopulateEntries.GetMatchingConfig(__instance);
+			if (config is null)
+				return;
 
 			int seed = 0;
 			seed = seed * 31 + (int)Game1.uniqueIDForThisGame;
 			seed = seed * 31 + Game1.Date.TotalDays;
 			seed = seed * 31 + __instance.mineLevel;
 			Random random = new(seed);
-			if (random.NextDouble() > TreasurePopulateChance)
+			if (random.NextDouble() > config.Chance)
 				return;
 			Instance.CurrentRandom = random;
 
