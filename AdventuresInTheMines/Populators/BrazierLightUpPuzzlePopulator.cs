@@ -121,18 +121,10 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			void Toggle(IntPoint position)
 			{
-				void ToggleWithoutNeighbors(IntPoint position)
-				{
-					if (enabledTorchPositions.Contains(position))
-						enabledTorchPositions.Remove(position);
-					else
-						enabledTorchPositions.Add(position);
-				}
-
-				ToggleWithoutNeighbors(position);
+				enabledTorchPositions.Toggle(position);
 				foreach (var neighbor in IntPoint.NeighborOffsets.Select(o => position + o * 2))
 					if (torchPositions.Contains(neighbor))
-						ToggleWithoutNeighbors(neighbor);
+						enabledTorchPositions.Toggle(neighbor);
 			}
 
 			for (int i = GetInitialToggleCount(location, random); i > 0; i--)

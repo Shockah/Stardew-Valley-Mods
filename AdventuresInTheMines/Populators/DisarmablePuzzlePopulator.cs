@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -330,27 +329,17 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private static double GetWeight(MineShaft location)
 		{
 			// excluding monster areas - too easy to see the buttons
-
-			var isSlimeAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isSlimeArea");
-			var isSlime = (bool)isSlimeAreaGetter.Invoke(location, null)!;
-			if (isSlime)
+			if (location.isLevelSlimeArea() || location.IsMonsterArea())
 				return 0;
 
-			var isMonsterAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isMonsterArea");
-			var isMonster = (bool)isMonsterAreaGetter.Invoke(location, null)!;
-			if (isMonster)
-				return 0;
+			// dino areas include the button texture
+			if (location.IsDinoArea())
+				return 1;
 
 			// excluding any floors which use tilesets without the button texture
 
-			var isDinoAreaGetter = AccessTools.PropertyGetter(typeof(MineShaft), "isDinoArea");
-			var isDino = (bool)isDinoAreaGetter.Invoke(location, null)!;
-			if (isDino)
-				return 1;
-
-			var loadedDarkAreaField = AccessTools.Field(typeof(MineShaft), "loadedDarkArea");
-			var isDark = (bool)loadedDarkAreaField.GetValue(location)!;
-			var isDangerous = location.GetAdditionalDifficulty() > 0;
+			bool isDark = location.isDarkArea();
+			bool isDangerous = location.GetAdditionalDifficulty() > 0;
 
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
 				return isDark && !isDangerous ? 0 : 1;
