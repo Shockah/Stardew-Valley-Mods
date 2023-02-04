@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.AdventuresInTheMines.Config;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -40,6 +41,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int SkullBrazierIndex = 149;
 		private const int MarbleBrazierIndex = 151;
 
+		private BrazierLightUpConfig Config { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
@@ -48,8 +50,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 		private bool TorchStateUpdateInProgress { get; set; } = false;
 
-		public BrazierLightUpPuzzlePopulator(IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public BrazierLightUpPuzzlePopulator(BrazierLightUpConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
+			this.Config = config;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
 			this.LootProvider = lootProvider;
@@ -57,6 +60,11 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		public double Prepare(MineShaft location, Random random)
 		{
+			// get config for location
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null)
+				return 0;
+
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
 			IMap<IMapOccupancyMapper.Tile>.WithKnownSize occupancyMap = new OutOfBoundsValuesMap<IMapOccupancyMapper.Tile>(
 				MapOccupancyMapper.MapOccupancy(location),
@@ -79,7 +87,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return 0;
 
 			// choosing torch positions
-			int torchCount = GetTorchCount(location, random);
+			int torchCount = random.Next(config.MinTorchCount, config.MaxTorchCount + 1);
 			HashSet<IntPoint> torchPositions = new();
 
 			IntPoint? ChooseNeighboringPosition()
@@ -127,7 +135,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 						enabledTorchPositions.Toggle(neighbor);
 			}
 
-			for (int i = GetInitialToggleCount(location, random); i > 0; i--)
+			for (int i = random.Next(config.MinInitialToggleCount, config.MaxInitialToggleCount + 1); i > 0; i--)
 			{
 				var torchPosition = random.NextElement(torchPositions);
 				Toggle(torchPosition);
@@ -137,7 +145,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition.Value, TorchPositions = torchPositions, EnabledTorchPositions = enabledTorchPositions });
-			return 1;
+			return config.Weight;
 		}
 
 		public void BeforePopulate(MineShaft location, Random random)
@@ -190,51 +198,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			// making sound
 			location.localSound("newArtifact");
-		}
-
-		private static int GetTorchCount(MineShaft location, Random random)
-		{
-			return GetDifficultyModifier(location) switch
-			{
-				0 => 6 + random.Next(2),
-				1 => 7 + random.Next(3),
-				2 => 8 + random.Next(4),
-				3 => 9 + random.Next(5),
-				_ => 10 + random.Next(6)
-			};
-		}
-
-		private static int GetInitialToggleCount(MineShaft location, Random random)
-		{
-			return GetDifficultyModifier(location) switch
-			{
-				0 => 2 + random.Next(2),
-				1 => 3 + random.Next(3),
-				2 => 4 + random.Next(4),
-				3 => 5 + random.Next(5),
-				_ => 6 + random.Next(6)
-			};
-		}
-
-		private static int GetDifficultyModifier(MineShaft location)
-		{
-			int difficulty;
-
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				difficulty = 0;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				difficulty = 1;
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				difficulty = 2;
-			else if (location.mineLevel >= MineShaft.desertArea)
-				difficulty = 3;
-			else
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
-
-			if (location.GetAdditionalDifficulty() > 0)
-				difficulty++;
-
-			return difficulty;
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]

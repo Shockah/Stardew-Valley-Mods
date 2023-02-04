@@ -113,7 +113,6 @@ namespace Shockah.AdventuresInTheMines
 			Populators = new()
 			{
 				new IcePuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider),
-				new BrazierLightUpPuzzlePopulator(mapOccupancyMapper, reachableTileMapper, lootProvider),
 				new DisarmablePuzzlePopulator(Helper.Translation, mapOccupancyMapper, reachableTileMapper, lootProvider)
 			};
 
@@ -121,6 +120,8 @@ namespace Shockah.AdventuresInTheMines
 				Populators.Add(new BrazierCombinationPuzzlePopulator(Config.BrazierCombination, mapOccupancyMapper, lootProvider));
 			if (Config.BrazierSequence.Enabled)
 				Populators.Add(new BrazierSequencePuzzlePopulator(Config.BrazierSequence, reachableTileMapper, lootProvider));
+			if (Config.BrazierLightUp.Enabled)
+				Populators.Add(new BrazierLightUpPuzzlePopulator(Config.BrazierLightUp, mapOccupancyMapper, reachableTileMapper, lootProvider));
 		}
 
 		internal void QueueObjectDialogue(string message)
