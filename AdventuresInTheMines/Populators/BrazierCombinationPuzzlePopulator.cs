@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.AdventuresInTheMines.Config;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -71,14 +72,16 @@ namespace Shockah.AdventuresInTheMines.Populators
 			new() { new(-2, -1), new(2, -1), new(-2, 1), new(2, 1), new(0, 2) }
 		};
 
+		private BrazierCombinationConfig Config { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
 
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
-		public BrazierCombinationPuzzlePopulator(IMapOccupancyMapper mapOccupancyMapper, ILootProvider lootProvider)
+		public BrazierCombinationPuzzlePopulator(BrazierCombinationConfig config, IMapOccupancyMapper mapOccupancyMapper, ILootProvider lootProvider)
 		{
+			this.Config = config;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.LootProvider = lootProvider;
 		}
@@ -93,6 +96,8 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 			// selecting one possible layout out of many
 			var layout = GetTransformedLayout(location, random);
+			if (layout is null)
+				return 0;
 
 			// looking for applicable positions for the layout
 			List<IntPoint> possibleChestPositions = new();
@@ -177,9 +182,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 			location.localSound("newArtifact");
 		}
 
-		private static HashSet<IntPoint> GetTransformedLayout(MineShaft location, Random random)
+		private HashSet<IntPoint>? GetTransformedLayout(MineShaft location, Random random)
 		{
 			var baseLayout = GetBaseLayout(location, random);
+			if (baseLayout is null)
+				return null;
+
 			List<HashSet<IntPoint>> transformedLayouts = new() { baseLayout };
 
 			bool ContainsTransformedLayout(HashSet<IntPoint> layout)
@@ -209,76 +217,38 @@ namespace Shockah.AdventuresInTheMines.Populators
 			// something, idk
 			AddTransformedLayoutIfUnique(baseLayout.Select(p => new IntPoint(-p.Y, -p.X)).ToHashSet());
 
-			return transformedLayouts[random.Next(transformedLayouts.Count)];
+			return random.NextElement(transformedLayouts);
 		}
 
-		private static HashSet<IntPoint> GetBaseLayout(MineShaft location, Random random)
+		private HashSet<IntPoint>? GetBaseLayout(MineShaft location, Random random)
 		{
 			var layoutList = GetLayoutList(location, random);
-			return layoutList[random.Next(layoutList.Count)];
+			if (layoutList is null)
+				return null;
+			return random.NextElement(layoutList);
 		}
 
-		private static List<HashSet<IntPoint>> GetLayoutList(MineShaft location, Random random)
+		private List<HashSet<IntPoint>>? GetLayoutList(MineShaft location, Random random)
 		{
-			List<(List<HashSet<IntPoint>> LayoutList, double Weight)> items = new();
-
-			switch (GetDifficultyModifier(location))
+			WeightedRandom<List<HashSet<IntPoint>>> weightedRandom = new();
+			foreach (var entry in Config.Entries)
 			{
-				case 0:
-					items.Add((ThreeBrazierLayouts, 1));
-					items.Add((FourBrazierLayouts, 0.25));
-					break;
-				case 1:
-					items.Add((ThreeBrazierLayouts, 0.5));
-					items.Add((FourBrazierLayouts, 1));
-					break;
-				case 2:
-					items.Add((ThreeBrazierLayouts, 0.25));
-					items.Add((FourBrazierLayouts, 1));
-					items.Add((FiveBrazierLayouts, 0.25));
-					break;
-				case 3:
-					items.Add((FourBrazierLayouts, 1));
-					items.Add((FiveBrazierLayouts, 1));
-					break;
-				default:
-					items.Add((FourBrazierLayouts, 0.5));
-					items.Add((FiveBrazierLayouts, 1));
-					break;
+				if (!entry.Conditions.Any(c => c.Matches(location)))
+					continue;
+				foreach (var weightedItem in entry.BrazierCountWeightItems)
+				{
+					List<HashSet<IntPoint>> layoutList = weightedItem.BrazierCount switch
+					{
+						3 => ThreeBrazierLayouts,
+						4 => FourBrazierLayouts,
+						5 => FiveBrazierLayouts,
+						_ => throw new InvalidOperationException($"No layouts specified for {weightedItem.BrazierCount} braziers.")
+					};
+					weightedRandom.Add(new(weightedItem.Weight, layoutList));
+				}
+				return weightedRandom.Next(random);
 			}
-
-			double weightSum = items.Select(i => i.Weight).Sum();
-			double weightedRandom = random.NextDouble() * weightSum;
-			weightSum = 0;
-
-			foreach (var (layoutList, weight) in items)
-			{
-				weightSum += weight;
-				if (weightSum >= weightedRandom)
-					return layoutList;
-			}
-			throw new InvalidOperationException("Reached invalid state.");
-		}
-
-		private static int GetDifficultyModifier(MineShaft location)
-		{
-			int difficulty;
-
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				difficulty = 0;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				difficulty = 1;
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				difficulty = 2;
-			else if (location.mineLevel >= MineShaft.desertArea)
-				difficulty = 3;
-			else
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
-
-			if (location.GetAdditionalDifficulty() > 0)
-				difficulty++;
-
-			return difficulty;
+			return null;
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
