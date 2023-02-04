@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Shockah.AdventuresInTheMines.Config;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -48,6 +49,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		private const float IceAligningStrength = 0.15f;
 
+		private IceConfig Config { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
@@ -55,8 +57,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
-		public IcePuzzlePopulator(IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public IcePuzzlePopulator(IceConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
+			this.Config = config;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
 			this.LootProvider = lootProvider;
@@ -64,9 +67,12 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		public double Prepare(MineShaft location, Random random)
 		{
-			double weight = GetWeight(location);
-			if (weight <= 0)
-				return weight;
+			// get config for location
+			if (!Config.Enabled)
+				return 0;
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null || config.Weight <= 0)
+				return 0;
 
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
 			var occupancyMap = new OutOfBoundsValuesMap<IMapOccupancyMapper.Tile>(
@@ -197,7 +203,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			chestPositionFound:;
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition, IceMap = currentIceMap });
-			return weight;
+			return config.Weight;
 		}
 
 		public void BeforePopulate(MineShaft location, Random random)
@@ -307,23 +313,6 @@ namespace Shockah.AdventuresInTheMines.Populators
 				return true;
 
 			return false;
-		}
-
-		private static double GetWeight(MineShaft location)
-		{
-			if (location.isLevelSlimeArea() || location.IsMonsterArea())
-				return 0;
-
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				return 1.0 / 3.0;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				return location.GetAdditionalDifficulty() > 0 ? 1.0 / 3.0 : 1.0;
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				return 0;
-			else if (location.mineLevel >= MineShaft.desertArea)
-				return 1.0 / 3.0;
-			else
-				return 0;
 		}
 
 		private static HashSet<IntRectangle> FindRectangles(IMap<bool>.WithKnownSize map, bool stateToLookFor = true)

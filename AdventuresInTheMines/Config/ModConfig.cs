@@ -130,5 +130,25 @@ namespace Shockah.AdventuresInTheMines.Config
 				)
 			}
 		);
+
+		[JsonProperty]
+		public IceConfig Ice { get; internal set; } = new(
+			Enabled: true,
+			Entries: new List<MineLevelConditionedConfig<IceConfigEntry>>()
+			{
+				new(
+					new(Weight: 0),
+					new MineLevelConditions(MonsterArea: true)
+				),
+				new(
+					new(Weight: 1),
+					new MineLevelConditions(MineType.Frost, Dangerous: false)
+				),
+				new(
+					new(Weight: 0.3),
+					new MineLevelConditions()
+				)
+			}
+		);
 	}
 }

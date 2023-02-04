@@ -61,8 +61,10 @@ namespace Shockah.AdventuresInTheMines.Populators
 		public double Prepare(MineShaft location, Random random)
 		{
 			// get config for location
+			if (!Config.Enabled)
+				return 0;
 			var config = Config.Entries.GetMatchingConfig(location);
-			if (config is null)
+			if (config is null || config.Weight <= 0)
 				return 0;
 
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
