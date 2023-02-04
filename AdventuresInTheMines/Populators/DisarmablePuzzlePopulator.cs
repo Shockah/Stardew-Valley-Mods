@@ -2,6 +2,7 @@
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
@@ -38,6 +39,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int ButtonTileIndex = 204;
 		private const int NoButtonTileIndex = 169;
 
+		private ITranslationHelper Translation { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
 		private ILootProvider LootProvider { get; init; }
@@ -45,8 +47,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
-		public DisarmablePuzzlePopulator(IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public DisarmablePuzzlePopulator(ITranslationHelper translation, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
+			this.Translation = translation;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
 			this.LootProvider = lootProvider;
@@ -175,14 +178,13 @@ namespace Shockah.AdventuresInTheMines.Populators
 			return true;
 		}
 
-		private static void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
+		private void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
 		{
 			var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
 
 			if (data.PlayersWhoAlreadyTriedToOpen.Contains(player.UniqueMultiplayerID))
 			{
-				// TODO: i18n
-				AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security is still not disarmed. There has to be something nearby that could do it.");
+				AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.noChangeRetry"));
 				return;
 			}
 			data.PlayersWhoAlreadyTriedToOpen.Add(player.UniqueMultiplayerID);
@@ -271,26 +273,25 @@ namespace Shockah.AdventuresInTheMines.Populators
 				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
 			}
 
-			// TODO: i18n
 			bool firstMessage = true;
 			if (didExplode)
 			{
 				if (firstMessage)
-					AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed. Opening it brought up a fierce explosion, damaging you and the surroundings.");
+					AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.explosion"));
 				else
-					AdventuresInTheMines.Instance.QueueObjectDialogue("Opening the chest also brought up a fierce explosion, damaging you and the surroundings.");
+					AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.explosionAlso"));
 				firstMessage = false;
 			}
 			if (didRot)
 			{
 				if (firstMessage)
-					AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed. Opening it sprung a poison trap, rotting some of your food.");
+					AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.rot"));
 				else
-					AdventuresInTheMines.Instance.QueueObjectDialogue("Opening the chest also sprung a poison trap, rotting some of your food.");
+					AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.rotAlso"));
 				firstMessage = false;
 			}
 			if (firstMessage)
-				AdventuresInTheMines.Instance.QueueObjectDialogue("The chest's security was not disarmed, but opening it... did not set any trap off!");
+				AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.noTrap"));
 		}
 
 		private static int GetDifficultyModifier(MineShaft location)

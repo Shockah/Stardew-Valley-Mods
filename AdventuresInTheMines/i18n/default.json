@@ -1,0 +1,8 @@
+﻿{
+	"chest.disarmable.explosion": "The chest's security was not disarmed. Opening it brought up a fierce explosion, damaging you and the surroundings.",
+	"chest.disarmable.explosionAlso": "Opening the chest also brought up a fierce explosion, damaging you and the surroundings.",
+	"chest.disarmable.rot": "The chest's security was not disarmed. Opening it sprung a poison trap, rotting some of your food.",
+	"chest.disarmable.rotAlso": "Opening the chest also sprung a poison trap, rotting some of your food.",
+	"chest.disarmable.noTrap": "The chest's security was not disarmed, but opening it... did not set any trap off!",
+	"chest.disarmable.noChangeRetry": "The chest's security is still not disarmed. There has to be something nearby that could do it."
+}
