@@ -9,7 +9,8 @@ namespace Shockah.AdventuresInTheMines.Config
 	{
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
-		[JsonProperty] public BrazierCombinationConfig BrazierCombination { get; internal set; } = new(
+		[JsonProperty]
+		public BrazierCombinationConfig BrazierCombination { get; internal set; } = new(
 			Enabled: true,
 			Entries: new List<MineLevelConditionedConfig<BrazierCombinationConfigEntry>>()
 			{
@@ -147,6 +148,67 @@ namespace Shockah.AdventuresInTheMines.Config
 				new(
 					new(Weight: 0.3),
 					new MineLevelConditions()
+				)
+			}
+		);
+
+		[JsonProperty]
+		public DisarmableConfig Disarmable { get; internal set; } = new(
+			Enabled: true,
+			Entries: new List<MineLevelConditionedConfig<DisarmableConfigEntry>>()
+			{
+				new(
+					new(
+						Weight: 0, MinButtonCount: 0, MaxButtonCount: 0,
+						WeightItems: new List<DisarmableConfigEntryWeightItem>()
+					),
+					new MineLevelConditions(MonsterArea: true)
+				),
+				new(
+					new(
+						Weight: 1, MinButtonCount: 1, MaxButtonCount: 1,
+						WeightItems: new List<DisarmableConfigEntryWeightItem>()
+						{
+							new(1, Rot: true),
+							new(1, Explosion: new(Radius: 3, Damage: 50))
+						}
+					),
+					new MineLevelConditions(MineType.Earth, Dangerous: false)
+				),
+				new(
+					new(
+						Weight: 1, MinButtonCount: 2, MaxButtonCount: 3,
+						WeightItems: new List<DisarmableConfigEntryWeightItem>()
+						{
+							new(2, Explosion: new(Radius: 4, Damage: 100)),
+							new(1, Explosion: new(Radius: 4, Damage: 100), Rot: true)
+						}
+					),
+					new MineLevelConditions(MineType.Frost, Dangerous: false),
+					new MineLevelConditions(MineType.Earth, Dangerous: true)
+				),
+				new(
+					new(
+						Weight: 1, MinButtonCount: 3, MaxButtonCount: 5,
+						WeightItems: new List<DisarmableConfigEntryWeightItem>()
+						{
+							new(1, Explosion: new(Radius: 5, Damage: 150)),
+							new(1, Explosion: new(Radius: 5, Damage: 150), Rot: true)
+						}
+					),
+					new MineLevelConditions(MineType.Lava, Dangerous: false),
+					new MineLevelConditions(MineType.Frost, Dangerous: true)
+				),
+				new(
+					new(
+						Weight: 1, MinButtonCount: 2, MaxButtonCount: 6,
+						WeightItems: new List<DisarmableConfigEntryWeightItem>()
+						{
+							new(1, Explosion: new(Radius: 6, Damage: 200), Rot: true)
+						}
+					),
+					new MineLevelConditions(MineType.SkullCavern),
+					new MineLevelConditions(MineType.Lava, Dangerous: true)
 				)
 			}
 		);

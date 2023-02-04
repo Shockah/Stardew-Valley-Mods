@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Shockah.AdventuresInTheMines.Config;
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
@@ -39,6 +40,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private const int ButtonTileIndex = 204;
 		private const int NoButtonTileIndex = 169;
 
+		private DisarmableConfig Config { get; init; }
 		private ITranslationHelper Translation { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
@@ -47,8 +49,9 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
-		public DisarmablePuzzlePopulator(ITranslationHelper translation, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public DisarmablePuzzlePopulator(DisarmableConfig config, ITranslationHelper translation, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
 		{
+			this.Config = config;
 			this.Translation = translation;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
@@ -57,9 +60,14 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		public double Prepare(MineShaft location, Random random)
 		{
-			double weight = GetWeight(location);
-			if (weight <= 0)
-				return weight;
+			// get config for location
+			if (!Config.Enabled)
+				return 0;
+			if (!AreButtonsAvailable(location))
+				return 0;
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null || config.Weight <= 0)
+				return 0;
 
 			// creating an occupancy map (whether each tile can be traversed or an object can be placed in their spot)
 			var occupancyMap = new OutOfBoundsValuesMap<IMapOccupancyMapper.Tile>(
@@ -87,7 +95,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			freeSpots.Remove(chestPosition);
 
 			// choosing button positions
-			int buttonCount = ChooseButtonCount(location, random);
+			int buttonCount = random.Next(config.MinButtonCount, config.MaxButtonCount + 1);
 			HashSet<IntPoint> buttonPositions = new();
 			while (buttonPositions.Count < buttonCount)
 			{
@@ -100,7 +108,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			}
 
 			PreparedDataTable.AddOrUpdate(location, new PreparedData() { ChestPosition = chestPosition, ButtonPositions = buttonPositions });
-			return weight;
+			return config.Weight;
 		}
 
 		public void BeforePopulate(MineShaft location, Random random)
@@ -180,6 +188,10 @@ namespace Shockah.AdventuresInTheMines.Populators
 
 		private void TriggerTrap(MineShaft location, Chest chest, RuntimeData data)
 		{
+			var config = Config.Entries.GetMatchingConfig(location);
+			if (config is null || config.Weight <= 0)
+				return;
+
 			var player = chest.GetMutex().GetCurrentOwner() ?? Game1.player;
 
 			if (data.PlayersWhoAlreadyTriedToOpen.Contains(player.UniqueMultiplayerID))
@@ -244,34 +256,17 @@ namespace Shockah.AdventuresInTheMines.Populators
 				didRot = true;
 			}
 
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-			{
-				if (Game1.random.NextBool())
-					RotFood();
-				else
-					Explode(3, 50);
-			}
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-			{
-				Explode(4, 100);
-				if (Game1.random.Next(3) == 0)
-					RotFood();
-			}
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-			{
-				Explode(5, 150);
-				if (Game1.random.NextBool())
-					RotFood();
-			}
-			else if (location.mineLevel >= MineShaft.desertArea)
-			{
-				Explode(6, 200);
+			WeightedRandom<DisarmableConfigEntryWeightItem> weightedRandom = new();
+			foreach (var weightedItem in config.WeightItems)
+				weightedRandom.Add(new(weightedItem.Weight, weightedItem));
+			var chosenItem = weightedRandom.NextOrNull(Game1.random);
+			if (chosenItem is null)
+				return;
+
+			if (chosenItem.Explosion is not null)
+				Explode(chosenItem.Explosion.Radius, chosenItem.Explosion.Damage);
+			if (chosenItem.Rot)
 				RotFood();
-			}
-			else
-			{
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
-			}
 
 			bool firstMessage = true;
 			if (didExplode)
@@ -294,62 +289,22 @@ namespace Shockah.AdventuresInTheMines.Populators
 				AdventuresInTheMines.Instance.QueueObjectDialogue(Translation.Get("chest.disarmable.noTrap"));
 		}
 
-		private static int GetDifficultyModifier(MineShaft location)
+		private static bool AreButtonsAvailable(MineShaft location)
 		{
-			int difficulty;
-
-			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				difficulty = 0;
-			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				difficulty = 1;
-			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				difficulty = 2;
-			else if (location.mineLevel >= MineShaft.desertArea)
-				difficulty = 3;
-			else
-				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
-
-			if (location.GetAdditionalDifficulty() > 0)
-				difficulty++;
-
-			return difficulty;
-		}
-
-		private static int ChooseButtonCount(MineShaft location, Random random)
-		{
-			return GetDifficultyModifier(location) switch
-			{
-				0 => 1,
-				1 => 2 + (random.NextBool() ? 1 : 0),
-				2 => 3 + random.Next(3),
-				3 => 2 + random.Next(5),
-				_ => 0 + random.Next(8),
-			};
-		}
-
-		private static double GetWeight(MineShaft location)
-		{
-			// excluding monster areas - too easy to see the buttons
-			if (location.isLevelSlimeArea() || location.IsMonsterArea())
-				return 0;
-
-			// dino areas include the button texture
 			if (location.IsDinoArea())
-				return 1;
-
-			// excluding any floors which use tilesets without the button texture
+				return true;
 
 			bool isDark = location.isDarkArea();
 			bool isDangerous = location.GetAdditionalDifficulty() > 0;
 
 			if (location.mineLevel > 0 && location.mineLevel < MineShaft.mineFrostLevel)
-				return isDark && !isDangerous ? 0 : 1;
+				return !(isDark && !isDangerous);
 			else if (location.mineLevel > MineShaft.mineFrostLevel && location.mineLevel < MineShaft.mineLavaLevel)
-				return isDark ? 0 : 1;
+				return !isDark;
 			else if (location.mineLevel > MineShaft.mineLavaLevel && location.mineLevel < MineShaft.bottomOfMineLevel)
-				return isDark? 0 : 1;
+				return !isDark;
 			else if (location.mineLevel >= MineShaft.desertArea)
-				return isDark && isDangerous ? 0 : 1;
+				return !(isDark && isDangerous);
 			else
 				throw new InvalidOperationException($"Invalid mine floor {location.mineLevel}");
 		}

@@ -116,7 +116,7 @@ namespace Shockah.AdventuresInTheMines
 				new BrazierCombinationPuzzlePopulator(Config.BrazierCombination, mapOccupancyMapper, lootProvider),
 				new BrazierSequencePuzzlePopulator(Config.BrazierSequence, reachableTileMapper, lootProvider),
 				new BrazierLightUpPuzzlePopulator(Config.BrazierLightUp, mapOccupancyMapper, reachableTileMapper, lootProvider),
-				new DisarmablePuzzlePopulator(Helper.Translation, mapOccupancyMapper, reachableTileMapper, lootProvider)
+				new DisarmablePuzzlePopulator(Config.Disarmable, Helper.Translation, mapOccupancyMapper, reachableTileMapper, lootProvider)
 			};
 		}
 
