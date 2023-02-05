@@ -19,13 +19,6 @@ namespace Shockah.AdventuresInTheMines.Config
 		[property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] bool? MonsterArea = null
 	)
 	{
-		public MineLevelConditions(
-			MineType MineType,
-			bool? Dangerous = null,
-			bool? DarkArea = null,
-			bool? MonsterArea = null
-		) : this(new HashSet<MineType>() { MineType }, Dangerous, DarkArea, MonsterArea ) { }
-
 		public bool Matches(MineShaft location)
 		{
 			if (location.mineLevel == MineShaft.quarryMineShaft)
@@ -63,13 +56,7 @@ namespace Shockah.AdventuresInTheMines.Config
 	public record MineLevelConditionedConfig<T>(
 		T Value,
 		IList<MineLevelConditions> Conditions
-	)
-	{
-		public MineLevelConditionedConfig(
-			T Value,
-			params MineLevelConditions[] Conditions
-		) : this(Value, Conditions.ToList()) { }
-	}
+	);
 
 	public static class MineLevelConditionedConfigListClassExt
 	{
