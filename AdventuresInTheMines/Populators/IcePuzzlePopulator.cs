@@ -52,17 +52,17 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private IceConfig Config { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
-		private ILootProvider LootProvider { get; init; }
+		private ITreasureGenerator TreasureGenerator { get; init; }
 
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 
-		public IcePuzzlePopulator(IceConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public IcePuzzlePopulator(IceConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ITreasureGenerator treasureGenerator)
 		{
 			this.Config = config;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
-			this.LootProvider = lootProvider;
+			this.TreasureGenerator = treasureGenerator;
 		}
 
 		public double Prepare(MineShaft location, Random random)
@@ -239,11 +239,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 				if (data.Value.IceMap[point])
 					iceLayer.Tiles[point.X, point.Y] = new StaticTile(iceLayer, layerTileSheet, BlendMode.Alpha, IceTileIndexes[point.X % IceTileIndexes.GetLength(0), point.Y % IceTileIndexes.GetLength(1)]);
 
-			// create chest
-			location.RemoveAllPlaceables(data.Value.ChestPosition);
-			Vector2 chestPositionVector = new(data.Value.ChestPosition.X, data.Value.ChestPosition.Y);
-			location.objects[chestPositionVector] = new Chest(0, LootProvider.GenerateLoot().ToList(), chestPositionVector);
-
+			TreasureGenerator.GenerateTreasure(location, data.Value.ChestPosition, pregenerated: true);
 			RuntimeDataTable.AddOrUpdate(location, new RuntimeData(data.Value.IceMap));
 		}
 

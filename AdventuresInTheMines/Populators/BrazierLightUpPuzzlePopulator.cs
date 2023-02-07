@@ -5,7 +5,6 @@ using Shockah.CommonModCode.Map;
 using Shockah.CommonModCode.Stardew;
 using StardewValley;
 using StardewValley.Locations;
-using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -44,18 +43,18 @@ namespace Shockah.AdventuresInTheMines.Populators
 		private BrazierLightUpConfig Config { get; init; }
 		private IMapOccupancyMapper MapOccupancyMapper { get; init; }
 		private IReachableTileMapper ReachableTileMapper { get; init; }
-		private ILootProvider LootProvider { get; init; }
+		private ITreasureGenerator TreasureGenerator { get; init; }
 
 		private readonly ConditionalWeakTable<MineShaft, StructRef<PreparedData>> PreparedDataTable = new();
 		private readonly ConditionalWeakTable<MineShaft, RuntimeData> RuntimeDataTable = new();
 		private bool TorchStateUpdateInProgress { get; set; } = false;
 
-		public BrazierLightUpPuzzlePopulator(BrazierLightUpConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ILootProvider lootProvider)
+		public BrazierLightUpPuzzlePopulator(BrazierLightUpConfig config, IMapOccupancyMapper mapOccupancyMapper, IReachableTileMapper reachableTileMapper, ITreasureGenerator treasureGenerator)
 		{
 			this.Config = config;
 			this.MapOccupancyMapper = mapOccupancyMapper;
 			this.ReachableTileMapper = reachableTileMapper;
-			this.LootProvider = lootProvider;
+			this.TreasureGenerator = treasureGenerator;
 		}
 
 		public double Prepare(MineShaft location, Random random)
@@ -193,13 +192,7 @@ namespace Shockah.AdventuresInTheMines.Populators
 			if (data.Torches.Any(t => !t.IsOn))
 				return;
 
-			// create chest
-			location.RemoveAllPlaceables(data.ChestPosition);
-			Vector2 chestPositionVector = new(data.ChestPosition.X, data.ChestPosition.Y);
-			location.objects[chestPositionVector] = new Chest(0, LootProvider.GenerateLoot().ToList(), chestPositionVector);
-
-			// making sound
-			location.localSound("newArtifact");
+			TreasureGenerator.GenerateTreasure(location, data.ChestPosition, pregenerated: false);
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]

@@ -98,22 +98,17 @@ namespace Shockah.AdventuresInTheMines
 				main: new BirthdayPresentLootProvider(Game1.Date.GetByAddingDays(1)),
 				alternative: new DefaultMineShaftLootProvider()
 			);
-
-			var ladderFinder = new LadderFinder()
-				.Caching();
-
-			var mapOccupancyMapper = new MapOccupancyMapper(ladderFinder)
-				.Caching();
-
-			var reachableTileMapper = new ReachableTileMapper(ladderFinder, mapOccupancyMapper)
-				.Caching();
+			var treasureGenerator = new LootChestTreasureGenerator(lootProvider);
+			var ladderFinder = new LadderFinder().Caching();
+			var mapOccupancyMapper = new MapOccupancyMapper(ladderFinder).Caching();
+			var reachableTileMapper = new ReachableTileMapper(ladderFinder, mapOccupancyMapper).Caching();
 
 			Populators = new()
 			{
-				new IcePuzzlePopulator(Config.Ice, mapOccupancyMapper, reachableTileMapper, lootProvider),
-				new BrazierCombinationPuzzlePopulator(Config.BrazierCombination, mapOccupancyMapper, lootProvider),
-				new BrazierSequencePuzzlePopulator(Config.BrazierSequence, reachableTileMapper, lootProvider),
-				new BrazierLightUpPuzzlePopulator(Config.BrazierLightUp, mapOccupancyMapper, reachableTileMapper, lootProvider),
+				new IcePuzzlePopulator(Config.Ice, mapOccupancyMapper, reachableTileMapper, treasureGenerator),
+				new BrazierCombinationPuzzlePopulator(Config.BrazierCombination, mapOccupancyMapper, treasureGenerator),
+				new BrazierSequencePuzzlePopulator(Config.BrazierSequence, reachableTileMapper, treasureGenerator),
+				new BrazierLightUpPuzzlePopulator(Config.BrazierLightUp, mapOccupancyMapper, reachableTileMapper, treasureGenerator),
 				new DisarmablePuzzlePopulator(Config.Disarmable, Helper.Translation, mapOccupancyMapper, reachableTileMapper, lootProvider)
 			};
 		}
