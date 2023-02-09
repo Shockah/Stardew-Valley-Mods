@@ -2,6 +2,7 @@
 using Shockah.CommonModCode;
 using Shockah.CommonModCode.Stardew;
 using StardewValley;
+using StardewValley.Locations;
 using StardewValley.Objects;
 using System.Linq;
 
@@ -9,7 +10,7 @@ namespace Shockah.AdventuresInTheMines
 {
 	public interface ITreasureGenerator
 	{
-		void GenerateTreasure(GameLocation location, IntPoint position, bool pregenerated);
+		void GenerateTreasure(MineShaft location, IntPoint position, bool pregenerated);
 	}
 
 	public sealed class LootChestTreasureGenerator : ITreasureGenerator
@@ -21,7 +22,7 @@ namespace Shockah.AdventuresInTheMines
 			this.LootProvider = lootProvider;
 		}
 
-		public void GenerateTreasure(GameLocation location, IntPoint position, bool pregenerated)
+		public void GenerateTreasure(MineShaft location, IntPoint position, bool pregenerated)
 		{
 			// create chest
 			location.RemoveAllPlaceables(position);
