@@ -17,6 +17,8 @@
 	"config.boatFix.batteryPacksRequired.name": "Battery Packs",
 
 	"config.unlockCosts.section.name": "Parrot unlock costs",
+	"config.unlockCosts.ignoreFreeUnlockRequirements.name": "Ignore free unlock requirements",
+	"config.unlockCosts.ignoreFreeUnlockRequirements.tooltip": "When enabled, any unlocks with a cost of 0 Golden Walnuts will be available right away, without first unlocking their requirements.",
 	"config.unlockCosts.firstUnlock.name": "First unlock",
 	"config.unlockCosts.westUnlock.name": "West / farm",
 	"config.unlockCosts.farmhouseUnlock.name": "Farmhouse",

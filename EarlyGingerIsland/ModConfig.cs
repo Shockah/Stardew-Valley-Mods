@@ -17,6 +17,7 @@ namespace Shockah.EarlyGingerIsland
 		[JsonProperty] public int BoatFixBatteryPacksRequired { get; internal set; } = 5;
 		[JsonProperty] public int GoldenWalnutsRequiredForQiRoom { get; internal set; } = 100;
 
+		[JsonProperty] public bool IgnoreFreeUnlockRequirements { get; internal set; } = false;
 		[JsonProperty] public int FirstUnlockCost { get; internal set; } = 1;
 		[JsonProperty] public int WestUnlockCost { get; internal set; } = 10;
 		[JsonProperty] public int FarmhouseUnlockCost { get; internal set; } = 20;

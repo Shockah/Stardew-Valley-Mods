@@ -204,6 +204,11 @@ namespace Shockah.EarlyGingerIsland
 
 			helper.AddSectionTitle("config.unlockCosts.section");
 
+			helper.AddBoolOption(
+				keyPrefix: "config.unlockCosts.ignoreFreeUnlockRequirements",
+				property: () => Config.IgnoreFreeUnlockRequirements
+			);
+
 			helper.AddNumberOption(
 				keyPrefix: "config.unlockCosts.firstUnlock",
 				property: () => Config.FirstUnlockCost,
@@ -369,7 +374,7 @@ namespace Shockah.EarlyGingerIsland
 						changedAny = true;
 					}
 
-					if (perch.currentState.Value == ParrotUpgradePerch.UpgradeState.Idle && perch.requiredNuts.Value == 0 && perch.IsAvailable())
+					if (perch.currentState.Value == ParrotUpgradePerch.UpgradeState.Idle && perch.requiredNuts.Value == 0 && (Config.IgnoreFreeUnlockRequirements || perch.IsAvailable()))
 					{
 						bool leoCutsceneHack = perch.upgradeName.Value == "Hut" && Game1.player.currentLocation == location;
 						if (leoCutsceneHack)
@@ -381,6 +386,7 @@ namespace Shockah.EarlyGingerIsland
 
 						perch.ApplyUpgrade();
 						perch.UpdateCompletionStatus();
+
 						if (leoCutsceneHack)
 							Game1.fadeToBlackAlpha = 1f;
 
