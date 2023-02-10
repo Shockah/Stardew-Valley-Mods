@@ -21,6 +21,10 @@ namespace Shockah.EarlyGingerIsland
 		private bool IsConfigRegistered { get; set; } = false;
 		private UnlockCondition NewUnlockCondition = new();
 
+		private const int BatteryPackID = 787;
+		private const int HardwoodID = 709;
+		private const int IridiumBarID = 337;
+
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 		{
 			// no migration required, for now
@@ -226,11 +230,34 @@ namespace Shockah.EarlyGingerIsland
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
 					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+
+					// replacing boat ticket price call - the original method gets inlined
+					.Do(matcher =>
+					{
+						return matcher
+							.ForEach(
+								SequenceMatcherRelativeBounds.WholeSequence,
+								new IElementMatch<CodeInstruction>[]
+								{
+									ILMatches.Ldarg(0),
+									ILMatches.Call(AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)))
+								},
+								matcher =>
+								{
+									return matcher
+										.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatTicketPrice));
+								},
+								minExpectedOccurences: 2,
+								maxExpectedOccurences: 2
+							);
+					})
+
+					// replacing material costs
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(787),
+								ILMatches.LdcI4(BatteryPackID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out var countAnchor),
 								ILMatches.LdcI4(0),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
@@ -242,7 +269,7 @@ namespace Shockah.EarlyGingerIsland
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(709),
+								ILMatches.LdcI4(HardwoodID),
 								ILMatches.LdcI4(200).WithAutoAnchor(out var countAnchor),
 								ILMatches.LdcI4(0),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
@@ -254,7 +281,7 @@ namespace Shockah.EarlyGingerIsland
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(337),
+								ILMatches.LdcI4(IridiumBarID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out var countAnchor),
 								ILMatches.LdcI4(0),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
@@ -262,6 +289,7 @@ namespace Shockah.EarlyGingerIsland
 							.MoveToPointerAnchor(countAnchor)
 							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixIridiumBarsRequired));
 					})
+
 					.AllElements();
 			}
 			catch (Exception ex)
@@ -277,12 +305,25 @@ namespace Shockah.EarlyGingerIsland
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
 					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+
+					// replacing boat ticket price call - the original method gets inlined
+					.Do(matcher =>
+					{
+						return matcher
+							.Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Call(AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)))
+							)
+							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatTicketPrice));
+					})
+
+					// replacing material costs
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(787),
+								ILMatches.LdcI4(BatteryPackID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out var countAnchor),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
 							)
@@ -294,7 +335,7 @@ namespace Shockah.EarlyGingerIsland
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(709),
+								ILMatches.LdcI4(HardwoodID),
 								ILMatches.LdcI4(200).WithAutoAnchor(out var countAnchor),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
 							)
@@ -306,13 +347,14 @@ namespace Shockah.EarlyGingerIsland
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(337),
+								ILMatches.LdcI4(IridiumBarID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out var countAnchor),
 								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
 							)
 							.MoveToPointerAnchor(countAnchor)
 							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixIridiumBarsRequired));
 					})
+
 					.AllElements();
 			}
 			catch (Exception ex)
