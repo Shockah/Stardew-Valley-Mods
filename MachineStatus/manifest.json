@@ -15,6 +15,10 @@
         {
             "UniqueID": "Digus.ProducerFrameworkMod",
             "IsRequired": false
+        },
+        {
+            "UniqueID": "spacechase0.DynamicGameAssets",
+            "IsRequired": false
         }
     ]
 }
