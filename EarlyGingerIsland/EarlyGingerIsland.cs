@@ -39,6 +39,7 @@ namespace Shockah.EarlyGingerIsland
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
 			helper.Events.Content.AssetRequested += OnAssetRequested;
+			helper.Events.Player.Warped += OnWarped;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -114,6 +115,12 @@ namespace Shockah.EarlyGingerIsland
 			}
 		}
 
+		private void OnWarped(object? sender, WarpedEventArgs e)
+		{
+			if (e.NewLocation is IslandLocation islandLocation)
+				UpdateParrotUpgradeCosts(islandLocation.parrotUpgradePerches);
+		}
+
 		private void SetupConfig()
 		{
 			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -182,6 +189,74 @@ namespace Shockah.EarlyGingerIsland
 			helper.AddNumberOption(
 				keyPrefix: "config.boatFix.batteryPacksRequired",
 				property: () => Config.BoatFixBatteryPacksRequired,
+				min: 0
+			);
+
+			helper.AddSectionTitle("config.unlockCosts.section");
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.firstUnlock",
+				property: () => Config.FirstUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.westUnlock",
+				property: () => Config.WestUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.farmhouseUnlock",
+				property: () => Config.FarmhouseUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.mailboxUnlock",
+				property: () => Config.MailboxUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.obeliskUnlock",
+				property: () => Config.ObeliskUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.digsiteUnlock",
+				property: () => Config.DigsiteUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.traderUnlock",
+				property: () => Config.TraderUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.volcanoBridgeUnlock",
+				property: () => Config.VolcanoBridgeUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.volcanoExitShortcut",
+				property: () => Config.VolcanoExitShortcutUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.resortUnlock",
+				property: () => Config.ResortUnlockCost,
+				min: 0
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.unlockCosts.parrotExpressUnlock",
+				property: () => Config.ParrotExpressUnlockCost,
 				min: 0
 			);
 
@@ -267,6 +342,60 @@ namespace Shockah.EarlyGingerIsland
 					return true;
 				default:
 					throw new ArgumentException($"{nameof(PlantingOnIslandFarmBeforeCC)} has an invalid value.");
+			}
+		}
+
+		private void UpdateParrotUpgradeCosts(IEnumerable<ParrotUpgradePerch> perches)
+		{
+			foreach (var perch in perches)
+				UpdateParrotUpgradeCost(perch);
+		}
+
+		private void UpdateParrotUpgradeCost(ParrotUpgradePerch perch)
+		{
+			switch (perch.upgradeName.Value)
+			{
+				case "Hut":
+					perch.requiredNuts.Value = Config.FirstUnlockCost;
+					break;
+				case "Turtle":
+					perch.requiredNuts.Value = Config.WestUnlockCost;
+					break;
+				case "Resort":
+					perch.requiredNuts.Value = Config.ResortUnlockCost;
+					break;
+				case "Bridge":
+					perch.requiredNuts.Value = Config.DigsiteUnlockCost;
+					break;
+				case "Trader":
+					perch.requiredNuts.Value = Config.TraderUnlockCost;
+					break;
+				case "House":
+					perch.requiredNuts.Value = Config.FarmhouseUnlockCost;
+					break;
+				case "House_Mailbox":
+					perch.requiredNuts.Value = Config.MailboxUnlockCost;
+					break;
+				case "Obelisk":
+					perch.requiredNuts.Value = Config.ObeliskUnlockCost;
+					break;
+				case "ParrotPlatforms":
+					perch.requiredNuts.Value = Config.ParrotExpressUnlockCost;
+					break;
+				case "VolcanoBridge":
+					perch.requiredNuts.Value = Config.VolcanoBridgeUnlockCost;
+					break;
+				case "VolcanoShortcutOut":
+					perch.requiredNuts.Value = Config.VolcanoExitShortcutUnlockCost;
+					break;
+				default:
+					break;
+			}
+
+			if (perch.requiredNuts.Value == 0 && perch.IsAvailable())
+			{
+				perch.ApplyUpgrade();
+				perch.UpdateCompletionStatus();
 			}
 		}
 
