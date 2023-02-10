@@ -10,3 +10,5 @@ This is a list of all Stardew Valley mods I made. Issues or ideas can be reporte
   Ever hated having to put a sprinkler in the middle of your crops? Ever wanted to make a layout that isn't 5x5? Now you can!
 * **Please Gift Me In Person** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11217), [GitHub](PleaseGiftMeInPerson))  
   Adds some more realism and life to the Gift Delivery Service. An extension to the [Mail Services Mod](https://www.nexusmods.com/stardewvalley/mods/7842).
+* **XP Display** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11089), [GitHub](XPDisplay))  
+  Displays the progress to reach the next level of each skill. 
