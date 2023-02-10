@@ -845,7 +845,18 @@ namespace Shockah.MachineStatus
 			if (machine is WoodChipper woodChipper)
 				if (woodChipper.depositedItem.Value is not null && woodChipper.heldObject.Value is null)
 					return MachineState.Busy;
-			return GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, machine.GetAnyHeldObject());
+
+			var readyForHarvest = machine.readyForHarvest.Value;
+			var minutesUntilReady = machine.MinutesUntilReady;
+			var heldObject = machine.GetAnyHeldObject();
+
+			var result = GetMachineState(readyForHarvest, minutesUntilReady, heldObject);
+			if (result == MachineState.Ready && readyForHarvest && minutesUntilReady <= 0 && heldObject is null && machine.GetType().Assembly.GetName().Name == "DynamicGameAssets")
+			{
+				Instance.Monitor.LogOnce($"Detected invalid machine state `{result}` for a DynamicGameAssets machine `{machine.DisplayName}`, but there are no items inside. However, this is a known issue with DynamicGameAssets.", LogLevel.Warn);
+				return MachineState.Waiting;
+			}
+			return result;
 		}
 
 		private bool ShouldShowMachine(SObject machine, MachineState state)
