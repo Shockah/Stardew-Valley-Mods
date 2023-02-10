@@ -30,7 +30,11 @@ namespace Shockah.CommonModCode.Stardew
 		public static IReadOnlyList<GameLocation> GetAllLocations()
 		{
 			List<GameLocation> locations = new();
-			Utility.ForAllLocations(l => locations.Add(l));
+			Utility.ForAllLocations(l =>
+			{
+				if (l is not null)
+					locations.Add(l);
+			});
 			return locations;
 		}
 	}
