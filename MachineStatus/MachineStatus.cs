@@ -81,6 +81,7 @@ namespace Shockah.MachineStatus
 
 		internal static MachineStatus Instance { get; set; } = null!;
 		private bool IsConfigRegistered { get; set; } = false;
+		internal IDynamicGameAssetsApi? DynamicGameAssetsApi { get; set; }
 
 		private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
 		private readonly IList<SObject> IgnoredMachinesForUpdates = new List<SObject>();
@@ -281,6 +282,8 @@ namespace Shockah.MachineStatus
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
+			DynamicGameAssetsApi = Helper.ModRegistry.GetApi<IDynamicGameAssetsApi>("spacechase0.DynamicGameAssets");
+
 			SetupConfig();
 			Visibility = MachineRenderingOptions.Visibility.Normal;
 			VisibilityAlpha = Config.NormalAlpha;
