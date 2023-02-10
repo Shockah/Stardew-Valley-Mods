@@ -59,6 +59,11 @@ namespace Shockah.EarlyGingerIsland
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.StartDeparture)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_StartDeparture_Postfix)))
+			);
+			harmony.TryPatch(
+				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(ParrotUpgradePerch), nameof(ParrotUpgradePerch.IsAvailable)),
 				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Postfix))),
 				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Transpiler)))
@@ -149,6 +154,11 @@ namespace Shockah.EarlyGingerIsland
 					Helper.GameContent.InvalidateCache("Strings/Locations");
 					SetupConfig();
 				}
+			);
+
+			helper.AddBoolOption(
+				keyPrefix: "config.skipBoatCutscene",
+				property: () => Config.SkipBoatCutscene
 			);
 
 			helper.AddNumberOption(
@@ -569,6 +579,15 @@ namespace Shockah.EarlyGingerIsland
 		private static void BoatTunnel_GetTicketPrice_Postfix(ref int __result)
 		{
 			__result = Instance.Config.BoatTicketPrice;
+		}
+
+		private static void BoatTunnel_StartDeparture_Postfix()
+		{
+			if (!Instance.Config.SkipBoatCutscene)
+				return;
+
+			if (!Game1.player.hasOrWillReceiveMail("seenBoatJourney"))
+				Game1.addMailForTomorrow("seenBoatJourney", noLetter: true);
 		}
 
 		private static void ParrotUpgradePerch_IsAvailable_Postfix(ParrotUpgradePerch __instance, ref bool __result)

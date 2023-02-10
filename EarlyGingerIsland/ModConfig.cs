@@ -8,6 +8,7 @@ namespace Shockah.EarlyGingerIsland
 	public class ModConfig : IVersioned.Modifiable
 	{
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
+		[JsonProperty] public bool SkipBoatCutscene { get; internal set; } = false;
 		[JsonProperty] public int BoatTicketPrice { get; internal set; } = 1000;
 		[JsonProperty] public bool AllowIslandFarmBeforeCC { get; internal set; } = false;
 		[JsonProperty] public PlantingOnIslandFarmBeforeCC PlantingOnIslandFarmBeforeCC { get; internal set; } = PlantingOnIslandFarmBeforeCC.OnlyOneCrop;
