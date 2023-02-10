@@ -118,7 +118,7 @@ namespace Shockah.EarlyGingerIsland
 		private void OnWarped(object? sender, WarpedEventArgs e)
 		{
 			if (e.NewLocation is IslandLocation islandLocation)
-				UpdateParrotUpgradeCosts(islandLocation.parrotUpgradePerches);
+				UpdateParrotUpgradeCosts(islandLocation, islandLocation.parrotUpgradePerches);
 		}
 
 		private void SetupConfig()
@@ -345,58 +345,85 @@ namespace Shockah.EarlyGingerIsland
 			}
 		}
 
-		private void UpdateParrotUpgradeCosts(IEnumerable<ParrotUpgradePerch> perches)
+		private void UpdateParrotUpgradeCosts(GameLocation location, IEnumerable<ParrotUpgradePerch> perches)
 		{
-			foreach (var perch in perches)
-				UpdateParrotUpgradeCost(perch);
-		}
+			bool changedAny;
 
-		private void UpdateParrotUpgradeCost(ParrotUpgradePerch perch)
-		{
-			switch (perch.upgradeName.Value)
+			void UpdateParrotUpgradeCost(ParrotUpgradePerch perch)
 			{
-				case "Hut":
-					perch.requiredNuts.Value = Config.FirstUnlockCost;
-					break;
-				case "Turtle":
-					perch.requiredNuts.Value = Config.WestUnlockCost;
-					break;
-				case "Resort":
-					perch.requiredNuts.Value = Config.ResortUnlockCost;
-					break;
-				case "Bridge":
-					perch.requiredNuts.Value = Config.DigsiteUnlockCost;
-					break;
-				case "Trader":
-					perch.requiredNuts.Value = Config.TraderUnlockCost;
-					break;
-				case "House":
-					perch.requiredNuts.Value = Config.FarmhouseUnlockCost;
-					break;
-				case "House_Mailbox":
-					perch.requiredNuts.Value = Config.MailboxUnlockCost;
-					break;
-				case "Obelisk":
-					perch.requiredNuts.Value = Config.ObeliskUnlockCost;
-					break;
-				case "ParrotPlatforms":
-					perch.requiredNuts.Value = Config.ParrotExpressUnlockCost;
-					break;
-				case "VolcanoBridge":
-					perch.requiredNuts.Value = Config.VolcanoBridgeUnlockCost;
-					break;
-				case "VolcanoShortcutOut":
-					perch.requiredNuts.Value = Config.VolcanoExitShortcutUnlockCost;
-					break;
-				default:
-					break;
+				void UpdateParrotUpgradeCost(int cost)
+				{
+					if (perch.requiredNuts.Value != cost)
+					{
+						perch.requiredNuts.Value = cost;
+						changedAny = true;
+					}
+
+					if (perch.currentState.Value == ParrotUpgradePerch.UpgradeState.Idle && perch.requiredNuts.Value == 0 && perch.IsAvailable())
+					{
+						bool leoCutsceneHack = perch.upgradeName.Value == "Hut" && Game1.player.currentLocation == location;
+						if (leoCutsceneHack)
+						{
+							Game1.globalFade = false;
+							Game1.fadeIn = false;
+							Game1.fadeToBlack = false;
+						}
+
+						perch.ApplyUpgrade();
+						perch.UpdateCompletionStatus();
+						if (leoCutsceneHack)
+							Game1.fadeToBlackAlpha = 1f;
+
+						changedAny = true;
+					}
+				}
+
+				switch (perch.upgradeName.Value)
+				{
+					case "Hut":
+						UpdateParrotUpgradeCost(Config.FirstUnlockCost);
+						break;
+					case "Turtle":
+						UpdateParrotUpgradeCost(Config.WestUnlockCost);
+						break;
+					case "Resort":
+						UpdateParrotUpgradeCost(Config.ResortUnlockCost);
+						break;
+					case "Bridge":
+						UpdateParrotUpgradeCost(Config.DigsiteUnlockCost);
+						break;
+					case "Trader":
+						UpdateParrotUpgradeCost(Config.TraderUnlockCost);
+						break;
+					case "House":
+						UpdateParrotUpgradeCost(Config.FarmhouseUnlockCost);
+						break;
+					case "House_Mailbox":
+						UpdateParrotUpgradeCost(Config.MailboxUnlockCost);
+						break;
+					case "Obelisk":
+						UpdateParrotUpgradeCost(Config.ObeliskUnlockCost);
+						break;
+					case "ParrotPlatforms":
+						UpdateParrotUpgradeCost(Config.ParrotExpressUnlockCost);
+						break;
+					case "VolcanoBridge":
+						UpdateParrotUpgradeCost(Config.VolcanoBridgeUnlockCost);
+						break;
+					case "VolcanoShortcutOut":
+						UpdateParrotUpgradeCost(Config.VolcanoExitShortcutUnlockCost);
+						break;
+					default:
+						break;
+				}
 			}
 
-			if (perch.requiredNuts.Value == 0 && perch.IsAvailable())
+			do
 			{
-				perch.ApplyUpgrade();
-				perch.UpdateCompletionStatus();
-			}
+				changedAny = false;
+				foreach (var perch in perches)
+					UpdateParrotUpgradeCost(perch);
+			} while (changedAny);
 		}
 
 		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions)
