@@ -9,6 +9,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Locations;
+using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -59,6 +60,11 @@ namespace Shockah.EarlyGingerIsland
 				original: () => AccessTools.Method(typeof(ParrotUpgradePerch), nameof(ParrotUpgradePerch.IsAvailable)),
 				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Postfix))),
 				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Transpiler)))
+			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.canPlantThisSeedHere)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(HoeDirt_canPlantThisSeedHere_Postfix)))
 			);
 		}
 
@@ -139,6 +145,11 @@ namespace Shockah.EarlyGingerIsland
 			helper.AddBoolOption(
 				keyPrefix: "config.allowIslandFarmBeforeCC",
 				property: () => Config.AllowIslandFarmBeforeCC
+			);
+
+			helper.AddEnumOption(
+				keyPrefix: "config.plantingOnIslandFarmBeforeCC",
+				property: () => Config.PlantingOnIslandFarmBeforeCC
 			);
 
 			helper.AddSectionTitle("config.boatFix.section");
@@ -223,6 +234,28 @@ namespace Shockah.EarlyGingerIsland
 
 		private static bool ShouldGingerIslandBeUnlockedInVanilla()
 			=> Game1.MasterPlayer.eventsSeen.Contains(191393) || Game1.MasterPlayer.eventsSeen.Contains(502261) || Game1.MasterPlayer.hasCompletedCommunityCenter();
+
+		private bool ShouldAllowPlanting(GameLocation location, IntPoint point)
+		{
+			if (location is not IslandWest)
+				return true;
+
+			switch (Config.PlantingOnIslandFarmBeforeCC)
+			{
+				case PlantingOnIslandFarmBeforeCC.Disabled:
+					return false;
+				case PlantingOnIslandFarmBeforeCC.Enabled:
+					return true;
+				case PlantingOnIslandFarmBeforeCC.OnlyOneCrop:
+					for (int y = 0; y < location.Map.DisplayHeight / Game1.tileSize; y++)
+						for (int x = 0; x < location.Map.DisplayWidth / Game1.tileSize; x++)
+							if (location.terrainFeatures.TryGetValue(new(x, y), out var terrainFeature) && terrainFeature is HoeDirt dirt && dirt.crop is not null)
+								return false;
+					return true;
+				default:
+					throw new ArgumentException($"{nameof(PlantingOnIslandFarmBeforeCC)} has an invalid value.");
+			}
+		}
 
 		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
@@ -418,6 +451,17 @@ namespace Shockah.EarlyGingerIsland
 						requiredMails[i] = "Island_FirstParrot";
 			}
 			return requiredMails;
+		}
+
+		private static void HoeDirt_canPlantThisSeedHere_Postfix(HoeDirt __instance, int tileX, int tileY, bool isFertilizer, ref bool __result)
+		{
+			if (isFertilizer)
+				return;
+			if (__instance.crop is not null)
+				return;
+
+			if (!Instance.ShouldAllowPlanting(Game1.currentLocation, new(tileX, tileY)))
+				__result = false;
 		}
 	}
 }

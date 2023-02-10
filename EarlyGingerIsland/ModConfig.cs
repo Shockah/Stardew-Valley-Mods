@@ -10,6 +10,7 @@ namespace Shockah.EarlyGingerIsland
 		[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 		[JsonProperty] public int BoatTicketPrice { get; set; } = 1000;
 		[JsonProperty] public bool AllowIslandFarmBeforeCC { get; set; } = false;
+		[JsonProperty] public PlantingOnIslandFarmBeforeCC PlantingOnIslandFarmBeforeCC { get; set; } = PlantingOnIslandFarmBeforeCC.OnlyOneCrop;
 		[JsonProperty] public int BoatFixHardwoodRequired { get; set; } = 200;
 		[JsonProperty] public int BoatFixIridiumBarsRequired { get; set; } = 5;
 		[JsonProperty] public int BoatFixBatteryPacksRequired { get; set; } = 5;
