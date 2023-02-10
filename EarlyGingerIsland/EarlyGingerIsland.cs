@@ -12,6 +12,7 @@ using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.EarlyGingerIsland
@@ -66,6 +67,11 @@ namespace Shockah.EarlyGingerIsland
 				original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.canPlantThisSeedHere)),
 				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(HoeDirt_canPlantThisSeedHere_Postfix)))
 			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(IslandWest), nameof(IslandWest.checkAction)),
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(IslandWest_checkAction_Transpiler)))
+			);
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -103,6 +109,7 @@ namespace Shockah.EarlyGingerIsland
 					asset.Data["BoatTunnel_DonateBatteriesHint"] = asset.Data["BoatTunnel_DonateBatteriesHint"].Replace("5", $"{Config.BoatFixBatteryPacksRequired}");
 					asset.Data["BoatTunnel_DonateHardwoodHint"] = asset.Data["BoatTunnel_DonateHardwoodHint"].Replace("200", $"{Config.BoatFixHardwoodRequired}");
 					asset.Data["BoatTunnel_DonateIridiumHint"] = asset.Data["BoatTunnel_DonateIridiumHint"].Replace("5", $"{Config.BoatFixIridiumBarsRequired}");
+					asset.Data["qiNutDoor"] = asset.Data["qiNutDoor"].Replace("100", $"{Config.GoldenWalnutsRequiredForQiRoom}");
 				});
 			}
 		}
@@ -150,6 +157,12 @@ namespace Shockah.EarlyGingerIsland
 			helper.AddEnumOption(
 				keyPrefix: "config.plantingOnIslandFarmBeforeCC",
 				property: () => Config.PlantingOnIslandFarmBeforeCC
+			);
+
+			helper.AddNumberOption(
+				keyPrefix: "config.goldenWalnutsRequiredForQiRoom",
+				property: () => Config.GoldenWalnutsRequiredForQiRoom,
+				min: 0
 			);
 
 			helper.AddSectionTitle("config.boatFix.section");
@@ -462,6 +475,28 @@ namespace Shockah.EarlyGingerIsland
 
 			if (!Instance.ShouldAllowPlanting(Game1.currentLocation, new(tileX, tileY)))
 				__result = false;
+		}
+
+		private static IEnumerable<CodeInstruction> IslandWest_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.Find(
+						ILMatches.Ldloc<int>(originalMethod.GetMethodBody()!.LocalVariables),
+						ILMatches.LdcI4(100).WithAutoAnchor(out var countAnchor),
+						ILMatches.Bge
+					)
+					.MoveToPointerAnchor(countAnchor)
+					.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.GoldenWalnutsRequiredForQiRoom))
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
 		}
 	}
 }
