@@ -89,6 +89,7 @@ namespace Shockah.XPDisplay
 			harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
+				prefix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Prefix)),
 				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Postfix))
 			);
 
@@ -103,6 +104,7 @@ namespace Shockah.XPDisplay
 				harmony.TryPatch(
 					monitor: Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreSkillsQualifiedName), "AddExperience"),
+					prefix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_Skills_AddExperience_Prefix)),
 					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_Skills_AddExperience_Postfix))
 				);
 			}
@@ -404,24 +406,66 @@ namespace Shockah.XPDisplay
 				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
 
-		private static void Farmer_gainExperience_Postfix(Farmer __instance, int which)
+		private static void Farmer_gainExperience_Prefix(Farmer __instance, int which, ref int __state)
 		{
 			if (__instance != Game1.player)
 				return;
-			if (!Instance.Config.ToolbarSkillBar.IsEnabled || Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds <= 0f)
-				return;
-			Instance.ToolbarCurrentSkill.Value = (which, null);
-			Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
+			__state = GetUnmodifiedSkillLevel(which, null);
 		}
 
-		private static void SpaceCore_Skills_AddExperience_Postfix(Farmer farmer, string skillName)
+		private static void Farmer_gainExperience_Postfix(Farmer __instance, int which, ref int __state)
+		{
+			if (__instance != Game1.player)
+				return;
+
+			float xpChangedDuration = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
+			float levelChangedDuration = Instance.Config.ToolbarSkillBar.LevelChangedDurationInSeconds;
+			if (__state == GetUnmodifiedSkillLevel(which, null))
+				levelChangedDuration = 0f;
+			else if (!string.IsNullOrEmpty(Instance.Config.LevelUpSoundName))
+				Game1.playSound(Instance.Config.LevelUpSoundName);
+
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled)
+				return;
+
+			var maxDuration = Math.Max(xpChangedDuration, levelChangedDuration);
+			if (maxDuration > 0f)
+			{
+				Instance.ToolbarCurrentSkill.Value = (which, null);
+				Instance.ToolbarActiveDuration.Value = maxDuration;
+			}
+		}
+
+		private static void SpaceCore_Skills_AddExperience_Prefix(Farmer farmer, string skillName, ref int __state)
 		{
 			if (farmer != Game1.player)
 				return;
-			if (!Instance.Config.ToolbarSkillBar.IsEnabled || Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds <= 0f)
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled)
 				return;
-			Instance.ToolbarCurrentSkill.Value = (null, skillName);
-			Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
+			__state = GetUnmodifiedSkillLevel(null, skillName);
+		}
+
+		private static void SpaceCore_Skills_AddExperience_Postfix(Farmer farmer, string skillName, ref int __state)
+		{
+			if (farmer != Game1.player)
+				return;
+
+			float xpChangedDuration = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
+			float levelChangedDuration = Instance.Config.ToolbarSkillBar.LevelChangedDurationInSeconds;
+			if (__state == GetUnmodifiedSkillLevel(null, skillName))
+				levelChangedDuration = 0f;
+			else if (!string.IsNullOrEmpty(Instance.Config.LevelUpSoundName))
+				Game1.playSound(Instance.Config.LevelUpSoundName);
+
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled)
+				return;
+
+			var maxDuration = Math.Max(xpChangedDuration, levelChangedDuration);
+			if (maxDuration > 0f)
+			{
+				Instance.ToolbarCurrentSkill.Value = (null, skillName);
+				Instance.ToolbarActiveDuration.Value = maxDuration;
+			}
 		}
 
 		private static void SkillsPage_draw_Postfix(SpriteBatch b)
