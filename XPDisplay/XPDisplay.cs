@@ -30,6 +30,7 @@ namespace Shockah.XPDisplay
 		private const int FPS = 60;
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
+		private static readonly string SpaceCoreSkillsQualifiedName = "SpaceCore.Skills, SpaceCore";
 
 		internal static XPDisplay Instance = null!;
 		private bool IsWalkOfLifeInstalled = false;
@@ -84,6 +85,11 @@ namespace Shockah.XPDisplay
 				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
 				transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
 			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
+				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Postfix))
+			);
 
 			if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 			{
@@ -92,6 +98,11 @@ namespace Shockah.XPDisplay
 					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", new Type[] { typeof(SpriteBatch) }),
 					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Postfix)),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
+				);
+				harmony.TryPatch(
+					monitor: Monitor,
+					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreSkillsQualifiedName), "AddExperience"),
+					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_Skills_AddExperience_Postfix))
 				);
 			}
 		}
@@ -320,6 +331,57 @@ namespace Shockah.XPDisplay
 				b.Draw(barTexture, barPosition, barTextureRectangle, color * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 				xOffset += barTextureRectangle.Width + BarSegmentSpacing;
 			}
+		}
+
+		private static int GetUnmodifiedSkillLevel(int? skillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is not null)
+				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
+			else if (skillIndex is not null)
+				return Game1.player.GetUnmodifiedSkillLevel(skillIndex.Value);
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
+		}
+
+		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
+		{
+			if (Instance.XPValues is null)
+				throw new InvalidOperationException("`XPValues` should be set by now, but it's not.");
+
+			if (spaceCoreSkillName is null)
+				return Instance.XPValues.Length > levelIndex ? Instance.XPValues[levelIndex] : int.MaxValue;
+			else
+				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
+		}
+
+		private static int GetCurrentXP(int? skillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is not null)
+				return SpaceCoreBridge.GetCurrentXP(spaceCoreSkillName);
+			else if (skillIndex is not null)
+				return Game1.player.experiencePoints[skillIndex.Value];
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
+		}
+
+		private static void Farmer_gainExperience_Postfix(Farmer __instance, int which)
+		{
+			if (__instance != Game1.player)
+				return;
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled || Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds <= 0f)
+				return;
+			Instance.ToolbarCurrentSkill.Value = (which, null);
+			Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
+		}
+
+		private static void SpaceCore_Skills_AddExperience_Postfix(Farmer farmer, string skillName)
+		{
+			if (farmer != Game1.player)
+				return;
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled || Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds <= 0f)
+				return;
+			Instance.ToolbarCurrentSkill.Value = (null, skillName);
+			Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
 		}
 
 		private static void SkillsPage_draw_Postfix(SpriteBatch b)
@@ -611,37 +673,6 @@ namespace Shockah.XPDisplay
 			}
 			SkillBarCorners.Clear();
 			SkillBarHoverExclusions.Clear();
-		}
-
-		private static int GetUnmodifiedSkillLevel(int? skillIndex, string? spaceCoreSkillName)
-		{
-			if (spaceCoreSkillName is not null)
-				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
-			else if (skillIndex is not null)
-				return Game1.player.GetUnmodifiedSkillLevel(skillIndex.Value);
-			else
-				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
-		}
-
-		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
-		{
-			if (Instance.XPValues is null)
-				throw new InvalidOperationException("`XPValues` should be set by now, but it's not.");
-
-			if (spaceCoreSkillName is null)
-				return Instance.XPValues.Length > levelIndex ? Instance.XPValues[levelIndex] : int.MaxValue;
-			else
-				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
-		}
-
-		private static int GetCurrentXP(int? skillIndex, string? spaceCoreSkillName)
-		{
-			if (spaceCoreSkillName is not null)
-				return SpaceCoreBridge.GetCurrentXP(spaceCoreSkillName);
-			else if (skillIndex is not null)
-				return Game1.player.experiencePoints[skillIndex.Value];
-			else
-				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
 	}
 }
