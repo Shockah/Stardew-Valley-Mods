@@ -305,7 +305,13 @@ namespace Shockah.XPDisplay
 
 			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
-			if (levelIndex is 0 or 9)
+
+			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
+			if (levelIndex is 4 or 9 && currentLevel >= levelIndex)
+				SkillBarHoverExclusions.Add((topLeft, bottomRight));
+
+			if (nextLevelXP != int.MaxValue && levelIndex is 0 or 9)
 			{
 				var key = (uiSkillIndex, spaceCoreSkillName);
 				if (!SkillBarCorners.ContainsKey(key))
@@ -316,13 +322,8 @@ namespace Shockah.XPDisplay
 					SkillBarCorners[key] = (SkillBarCorners[key].Item1, bottomRight);
 			}
 
-			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
-			if (levelIndex is 4 or 9 && currentLevel >= levelIndex)
-				SkillBarHoverExclusions.Add((topLeft, bottomRight));
-
 			if (currentLevel % 10 != levelIndex)
 				return;
-			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
 			int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
 			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
@@ -435,7 +436,7 @@ namespace Shockah.XPDisplay
 				throw new InvalidOperationException("`XPValues` should be set by now, but it's not.");
 
 			if (spaceCoreSkillName is null)
-				return Instance.XPValues[levelIndex];
+				return Instance.XPValues.Length > levelIndex ? Instance.XPValues[levelIndex] : int.MaxValue;
 			else
 				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
 		}
