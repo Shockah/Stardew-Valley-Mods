@@ -13,9 +13,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.0.2" />
-	<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll">
-		<Private>false</Private>
-	</Reference>
+    <Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll">
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)BaseMod.cs" />
@@ -30,7 +30,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SMAPI\ITranslationSet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LinqExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ObjectTokens.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ReflectionExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ReflectionExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SMAPI\JsonSerializerExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SMAPI\MultiplayerHelperExt.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stardew\FarmHouseExtensions.cs" />

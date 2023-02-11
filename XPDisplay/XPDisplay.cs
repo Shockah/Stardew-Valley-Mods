@@ -8,8 +8,10 @@ using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
+using StardewValley.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +21,13 @@ namespace Shockah.XPDisplay
 {
 	public class XPDisplay : BaseMod<ModConfig>
 	{
+		private static readonly Rectangle SmallUnobtainedLevelCursorsRectangle = new(129, 338, 7, 9);
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
+		private static readonly Rectangle BigUnobtainedLevelCursorsRectangle = new(145, 338, 13, 9);
+		private const int BarSegmentSpacing = 2;
+
+		private const int FPS = 60;
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 
@@ -33,11 +40,29 @@ namespace Shockah.XPDisplay
 		private static readonly IList<(Vector2, Vector2)> SkillBarHoverExclusions = new List<(Vector2, Vector2)>();
 		private static readonly IList<Action> SkillsPageDrawQueuedDelegates = new List<Action>();
 
+		private static readonly Lazy<Func<Toolbar, List<ClickableComponent>>> ToolbarButtonsGetter = new(() => AccessTools.DeclaredField(typeof(Toolbar), "buttons").EmitInstanceGetter<Toolbar, List<ClickableComponent>>());
+
+		private readonly List<Func<Item, (int? SkillIndex, string? SpaceCoreSkillName)>> ToolSkillMatchers = new()
+		{
+			o => o is Hoe or WateringCan or MilkPail or Shears ? (Farmer.farmingSkill, null) : (null, null),
+			o => o is Pickaxe ? (Farmer.miningSkill, null) : (null, null),
+			o => o is Axe ? (Farmer.foragingSkill, null) : (null, null),
+			o => o is FishingRod ? (Farmer.fishingSkill, null) : (null, null),
+			o => o is Sword or Slingshot || (o is MeleeWeapon && !o.Name.Contains("Scythe")) ? (Farmer.combatSkill, null) : (null, null),
+		};
+
+		private readonly PerScreen<(int? SkillIndex, string? SpaceCoreSkillName)> ToolbarCurrentSkill = new(() => (null, null));
+		private readonly PerScreen<float> ToolbarActiveDuration = new(() => 0f);
+		private readonly PerScreen<float> ToolbarAlpha = new(() => 0f);
+		private readonly PerScreen<Item?> LastCurrentItem = new(() => null);
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.Display.MenuChanged += OnMenuChanged;
+			helper.Events.Display.RenderingHud += OnRenderingHud;
 		}
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
@@ -71,10 +96,81 @@ namespace Shockah.XPDisplay
 			}
 		}
 
+		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		{
+			if (Config.ToolbarSkillBar.IsEnabled)
+			{
+				if (ToolbarActiveDuration.Value > 0f)
+				{
+					ToolbarActiveDuration.Value = Math.Max(ToolbarActiveDuration.Value - 1f / FPS, 0f);
+					if (ToolbarActiveDuration.Value <= 0f && Config.ToolbarSkillBar.AlwaysShowCurrentTool)
+						ToolbarCurrentSkill.Value = GetSkillForItem(Game1.player.CurrentItem);
+				}
+
+				var targetAlpha = (Config.ToolbarSkillBar.AlwaysShowCurrentTool && (ToolbarCurrentSkill.Value.SkillIndex is not null || ToolbarCurrentSkill.Value.SpaceCoreSkillName is not null)) || ToolbarActiveDuration.Value > 0f ? 1f : 0f;
+				ToolbarAlpha.Value += (targetAlpha - ToolbarAlpha.Value) * 0.15f;
+				if (ToolbarAlpha.Value <= 0.01f)
+					ToolbarAlpha.Value = 0f;
+				else if (ToolbarAlpha.Value >= 0.99f)
+					ToolbarAlpha.Value = 1f;
+			}
+
+			if (!ReferenceEquals(Game1.player.CurrentItem, LastCurrentItem.Value))
+			{
+				if (Config.ToolbarSkillBar.IsEnabled && (Config.ToolbarSkillBar.AlwaysShowCurrentTool || Config.ToolbarSkillBar.ToolSwitchDurationInSeconds > 0f))
+				{
+					var skill = GetSkillForItem(Game1.player.CurrentItem);
+					if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
+					{
+						ToolbarCurrentSkill.Value = skill;
+						ToolbarActiveDuration.Value = Config.ToolbarSkillBar.ToolSwitchDurationInSeconds;
+					}
+					else
+					{
+						ToolbarActiveDuration.Value = 0f;
+					}
+				}
+				LastCurrentItem.Value = Game1.player.CurrentItem;
+			}
+		}
+
 		private void OnMenuChanged(object? sender, MenuChangedEventArgs e)
 		{
 			if (e.NewMenu is GameMenu)
 				UpdateXPValues();
+		}
+
+		private void OnRenderingHud(object? sender, RenderingHudEventArgs e)
+		{
+			if (!Config.ToolbarSkillBar.IsEnabled)
+				return;
+			if (ToolbarAlpha.Value <= 0f)
+				return;
+
+			var (skillIndex, spaceCoreSkillName) = ToolbarCurrentSkill.Value;
+			if (skillIndex is null && spaceCoreSkillName is null)
+				return;
+
+			if (Instance.XPValues is null)
+				UpdateXPValues();
+
+			var toolbar = GetToolbar();
+			if (toolbar is null)
+				return;
+
+			var buttons = ToolbarButtonsGetter.Value(toolbar);
+			int toolbarMinX = buttons.Select(b => b.bounds.X).Min();
+			int toolbarMaxX = buttons.Select(b => b.bounds.X).Max();
+			int toolbarMinY = buttons.Select(b => b.bounds.Y).Min();
+			Rectangle toolbarBounds = new(toolbarMinX, toolbarMinY, toolbarMaxX - toolbarMinX + 64, 64);
+
+			var viewportBounds = Game1.graphics.GraphicsDevice.Viewport.Bounds;
+			bool drawBarAboveToolbar = toolbarBounds.Center.Y >= viewportBounds.Center.Y;
+			Vector2 barPosition = new(
+				toolbarBounds.Center.X,
+				drawBarAboveToolbar ? toolbarBounds.Top - Config.ToolbarSkillBar.SpacingFromToolbar : toolbarBounds.Bottom + Config.ToolbarSkillBar.SpacingFromToolbar
+			);
+			DrawSkillBar(skillIndex, spaceCoreSkillName, e.SpriteBatch, drawBarAboveToolbar ? UIAnchorSide.Bottom : UIAnchorSide.Top, barPosition, new Vector2(4f), Color.White * ToolbarAlpha.Value);
 		}
 
 		private void SetupConfig()
@@ -131,6 +227,99 @@ namespace Shockah.XPDisplay
 			}
 
 			XPValues = values;
+		}
+
+		private (int? SkillIndex, string? SpaceCoreSkillName) GetSkillForItem(Item? item)
+		{
+			if (item is null)
+				return (null, null);
+
+			foreach (var matcher in ToolSkillMatchers)
+			{
+				var skill = matcher(item);
+				if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
+					return skill;
+			}
+
+			return (null, null);
+		}
+
+		private static Toolbar? GetToolbar()
+			=> Game1.onScreenMenus.OfType<Toolbar>().FirstOrDefault();
+
+		private void DrawSkillBar(int? skillIndex, string? spaceCoreSkillName, SpriteBatch b, UIAnchorSide anchorSide, Vector2 position, Vector2 scale, Color color)
+		{
+			int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
+			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
+			int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
+			int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
+			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
+
+			var barSize = new Vector2(
+				SmallObtainedLevelCursorsRectangle.Size.X * 8 + BigObtainedLevelCursorsRectangle.Size.X * 2 + BarSegmentSpacing * 9,
+				BigObtainedLevelCursorsRectangle.Size.Y
+			) * scale;
+
+			float xOffset = 0;
+			for (int levelIndex = 0; levelIndex < 10; levelIndex++)
+			{
+				bool isBigLevel = (levelIndex + 1) % 5 == 0;
+				Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
+				Texture2D barTexture = Game1.mouseCursors;
+				Rectangle barTextureRectangle = isBigLevel
+					? (currentLevel > levelIndex) ? BigObtainedLevelCursorsRectangle : BigUnobtainedLevelCursorsRectangle
+					: (currentLevel > levelIndex) ? SmallObtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
+
+				var topLeft = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset * scale.X, 0);
+				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * (color.A / 255f) * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				b.Draw(barTexture, topLeft, barTextureRectangle, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+
+				if (currentLevel % 10 != levelIndex)
+				{
+					xOffset += barTextureRectangle.Width + BarSegmentSpacing;
+					continue;
+				}
+
+				barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
+
+				if (currentLevel >= 10 && currentLevel > levelIndex + 10)
+				{
+					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+						(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
+					else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
+						(barTexture, barTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
+				}
+
+				Vector2 barPosition;
+				switch (orientation)
+				{
+					case Orientation.Horizontal:
+						int rectangleWidthPixels = (int)(barTextureRectangle.Width * nextLevelProgress);
+						barPosition = topLeft;
+						barTextureRectangle = new(
+							barTextureRectangle.Left,
+							barTextureRectangle.Top,
+							rectangleWidthPixels,
+							barTextureRectangle.Height
+						);
+						break;
+					case Orientation.Vertical:
+						int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
+						barPosition = topLeft + new Vector2(0f, (barTextureRectangle.Height - rectangleHeightPixels) * scale.Y);
+						barTextureRectangle = new(
+							barTextureRectangle.Left,
+							barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
+							barTextureRectangle.Width,
+							rectangleHeightPixels
+						);
+						break;
+					default:
+						throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
+				}
+
+				b.Draw(barTexture, barPosition, barTextureRectangle, color * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				xOffset += barTextureRectangle.Width + BarSegmentSpacing;
+			}
 		}
 
 		private static void SkillsPage_draw_Postfix(SpriteBatch b)
@@ -193,7 +382,7 @@ namespace Shockah.XPDisplay
 			}
 			catch (Exception ex)
 			{
-				Instance.Monitor.Log($"Could not patch methods - XP Display probably won't work.\nReason: {ex}", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
@@ -288,13 +477,14 @@ namespace Shockah.XPDisplay
 			}
 			catch (Exception ex)
 			{
-				Instance.Monitor.Log($"Could not patch SpaceCore methods - XP Display probably won't work.\nReason: {ex}", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch SpaceCore methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
 
 		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
+			int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
 			if (Instance.XPValues is null)
 				return;
 
@@ -306,7 +496,7 @@ namespace Shockah.XPDisplay
 			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
 
-			int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+			int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
 			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
 			if (levelIndex is 4 or 9 && currentLevel >= levelIndex)
 				SkillBarHoverExclusions.Add((topLeft, bottomRight));
@@ -325,7 +515,7 @@ namespace Shockah.XPDisplay
 			if (currentLevel % 10 != levelIndex)
 				return;
 			int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
-			int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
+			int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
 			Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
@@ -392,10 +582,11 @@ namespace Shockah.XPDisplay
 				if (hoveredUiSkill is not null)
 				{
 					var (uiSkillIndex, spaceCoreSkillName) = hoveredUiSkill.Value;
-					int currentLevel = GetUnmodifiedSkillLevel(uiSkillIndex, spaceCoreSkillName);
+					int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
+					int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
 					int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
 					int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
-					int currentXP = GetCurrentXP(uiSkillIndex, spaceCoreSkillName);
+					int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
 					float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
 					if (currentXP < nextLevelXP)
@@ -422,12 +613,14 @@ namespace Shockah.XPDisplay
 			SkillBarHoverExclusions.Clear();
 		}
 
-		private static int GetUnmodifiedSkillLevel(int uiSkillIndex, string? spaceCoreSkillName)
+		private static int GetUnmodifiedSkillLevel(int? skillIndex, string? spaceCoreSkillName)
 		{
-			if (spaceCoreSkillName is null)
-				return Game1.player.GetUnmodifiedSkillLevel(OrderedSkillIndexes[uiSkillIndex]);
-			else
+			if (spaceCoreSkillName is not null)
 				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
+			else if (skillIndex is not null)
+				return Game1.player.GetUnmodifiedSkillLevel(skillIndex.Value);
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
 
 		private static int GetLevelXP(int levelIndex, string? spaceCoreSkillName)
@@ -441,12 +634,14 @@ namespace Shockah.XPDisplay
 				return SpaceCoreBridge.GetLevelXP(levelIndex, spaceCoreSkillName);
 		}
 
-		private static int GetCurrentXP(int uiSkillIndex, string? spaceCoreSkillName)
+		private static int GetCurrentXP(int? skillIndex, string? spaceCoreSkillName)
 		{
-			if (spaceCoreSkillName is null)
-				return Game1.player.experiencePoints[OrderedSkillIndexes[uiSkillIndex]];
-			else
+			if (spaceCoreSkillName is not null)
 				return SpaceCoreBridge.GetCurrentXP(spaceCoreSkillName);
+			else if (skillIndex is not null)
+				return Game1.player.experiencePoints[skillIndex.Value];
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
 	}
 }
