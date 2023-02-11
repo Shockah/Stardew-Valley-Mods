@@ -92,6 +92,11 @@ namespace Shockah.XPDisplay
 				prefix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Prefix)),
 				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Postfix))
 			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(Farmer), "performFireTool"),
+				prefix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_performFireTool_Prefix))
+			);
 
 			if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 			{
@@ -433,6 +438,28 @@ namespace Shockah.XPDisplay
 			{
 				Instance.ToolbarCurrentSkill.Value = (which, null);
 				Instance.ToolbarActiveDuration.Value = maxDuration;
+			}
+		}
+
+		private static void Farmer_performFireTool_Prefix(Farmer __instance)
+		{
+			if (__instance != Game1.player)
+				return;
+			if (!Instance.Config.ToolbarSkillBar.IsEnabled)
+				return;
+
+			if (Instance.Config.ToolbarSkillBar.ToolUseDurationInSeconds > 0f)
+			{
+				var skill = Instance.GetSkillForItem(Game1.player.CurrentItem);
+				if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
+				{
+					Instance.ToolbarCurrentSkill.Value = skill;
+					Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.ToolUseDurationInSeconds;
+				}
+				else
+				{
+					Instance.ToolbarActiveDuration.Value = 0f;
+				}
 			}
 		}
 
