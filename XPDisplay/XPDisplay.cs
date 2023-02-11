@@ -25,7 +25,8 @@ namespace Shockah.XPDisplay
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
 		private static readonly Rectangle BigUnobtainedLevelCursorsRectangle = new(145, 338, 13, 9);
-		private const int BarSegmentSpacing = 2;
+		private const float IconToBarSpacing = 3;
+		private const float BarSegmentSpacing = 2;
 
 		private const int FPS = 60;
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
@@ -266,12 +267,23 @@ namespace Shockah.XPDisplay
 			int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
 			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
 
+			var icon = Config.ToolbarSkillBar.ShowIcon ? GetSkillIcon(skillIndex, spaceCoreSkillName) : null;
+
 			var barSize = new Vector2(
-				SmallObtainedLevelCursorsRectangle.Size.X * 8 + BigObtainedLevelCursorsRectangle.Size.X * 2 + BarSegmentSpacing * 9,
+				SmallObtainedLevelCursorsRectangle.Size.X * 8 + BigObtainedLevelCursorsRectangle.Size.X * 2 + BarSegmentSpacing * 9 + (icon is null ? 0f : icon.Value.Rectangle.Width + IconToBarSpacing),
 				BigObtainedLevelCursorsRectangle.Size.Y
 			) * scale;
 
 			float xOffset = 0;
+			if (icon is not null)
+			{
+				Vector2 iconSize = new(icon.Value.Rectangle.Width, icon.Value.Rectangle.Height);
+				var iconPosition = position - anchorSide.GetAnchorOffset(barSize) + UIAnchorSide.Center.GetAnchorOffset(iconSize) * scale;
+				b.Draw(icon.Value.Texture, iconPosition + new Vector2(-1, 1) * scale, icon.Value.Rectangle, Color.Black * (color.A / 255f) * 0.3f, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
+				b.Draw(icon.Value.Texture, iconPosition, icon.Value.Rectangle, color, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
+				xOffset += icon.Value.Rectangle.Width + IconToBarSpacing;
+			}
+
 			for (int levelIndex = 0; levelIndex < 10; levelIndex++)
 			{
 				bool isBigLevel = (levelIndex + 1) % 5 == 0;
@@ -360,6 +372,34 @@ namespace Shockah.XPDisplay
 				return SpaceCoreBridge.GetCurrentXP(spaceCoreSkillName);
 			else if (skillIndex is not null)
 				return Game1.player.experiencePoints[skillIndex.Value];
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
+		}
+
+		private static (Texture2D Texture, Rectangle Rectangle)? GetSkillIcon(int? skillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is not null)
+			{
+				var icon = SpaceCoreBridge.GetSkillIcon(spaceCoreSkillName);
+				if (icon is null)
+					return null;
+				return (icon, new(0, 0, icon.Width, icon.Height));
+			}
+
+			if (skillIndex is Farmer.farmingSkill)
+				return (Game1.mouseCursors, new(10, 428, 10, 10));
+			else if (skillIndex is Farmer.miningSkill)
+				return (Game1.mouseCursors, new(30, 428, 10, 10));
+			else if (skillIndex is Farmer.foragingSkill)
+				return (Game1.mouseCursors, new(60, 428, 10, 10));
+			else if (skillIndex is Farmer.fishingSkill)
+				return (Game1.mouseCursors, new(20, 428, 10, 10));
+			else if (skillIndex is Farmer.combatSkill)
+				return (Game1.mouseCursors, new(120, 428, 10, 10));
+			else if (skillIndex is Farmer.luckSkill)
+				return (Game1.mouseCursors, new(50, 428, 10, 10));
+			else if (skillIndex is not null)
+				throw new ArgumentException($"Unknown skill index {skillIndex}.");
 			else
 				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}

@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 using System;
 using System.Reflection;
@@ -16,6 +17,7 @@ namespace Shockah.XPDisplay
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillLevelDelegate = null!;
 		private static Func<object /* Skill */, int[]> ExperienceCurveDelegate = null!;
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillExperienceDelegate = null!;
+		private static Func<object /* Skill */, Texture2D?> GetSkillsPageIconDelegate = null!;
 
 		private static void SetupReflectionIfNeeded()
 		{
@@ -37,6 +39,9 @@ namespace Shockah.XPDisplay
 
 			MethodInfo getCustomSkillExperienceMethod = AccessTools.Method(skillExtensionsType, "GetCustomSkillExperience", new Type[] { typeof(Farmer), skillType });
 			GetCustomSkillExperienceDelegate = (farmer, skill) => (int)getCustomSkillExperienceMethod.Invoke(null, new object[] { farmer, skill })!;
+
+			MethodInfo getSkillsPageIconMethod = AccessTools.PropertyGetter(skillType, "SkillsPageIcon");
+			GetSkillsPageIconDelegate = (skill) => getSkillsPageIconMethod.Invoke(null, new object[] { skill }) as Texture2D;
 
 			IsReflectionSetup = true;
 		}
@@ -61,6 +66,13 @@ namespace Shockah.XPDisplay
 			SetupReflectionIfNeeded();
 			object skill = GetSkillDelegate(spaceCoreSkillName)!;
 			return GetCustomSkillExperienceDelegate(Game1.player, skill);
+		}
+
+		internal static Texture2D? GetSkillIcon(string spaceCoreSkillName)
+		{
+			SetupReflectionIfNeeded();
+			object skill = GetSkillDelegate(spaceCoreSkillName)!;
+			return GetSkillsPageIconDelegate(skill);
 		}
 	}
 }
