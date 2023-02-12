@@ -124,10 +124,22 @@ namespace Shockah.XPDisplay
 			{
 				if (ToolbarActiveDuration.Value > 0f)
 				{
-					if (!Config.ToolbarSkillBar.AlwaysShowCurrentTool)
+					bool shouldCountDown = !Config.ToolbarSkillBar.AlwaysShowCurrentTool;
+					if (!shouldCountDown)
+					{
+						var skill = GetSkillForItem(Game1.player.CurrentItem);
+						if (skill.SkillIndex != ToolbarCurrentSkill.Value.SkillIndex || skill.SpaceCoreSkillName != ToolbarCurrentSkill.Value.SpaceCoreSkillName)
+							shouldCountDown = true;
+					}
+
+					if (shouldCountDown)
 						ToolbarActiveDuration.Value = Math.Max(ToolbarActiveDuration.Value - 1f / FPS, 0f);
 					if (ToolbarActiveDuration.Value <= 0f && Config.ToolbarSkillBar.AlwaysShowCurrentTool)
-						ToolbarCurrentSkill.Value = GetSkillForItem(Game1.player.CurrentItem);
+					{
+						var skill = GetSkillForItem(Game1.player.CurrentItem);
+						if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
+							ToolbarCurrentSkill.Value = skill;
+					}
 				}
 
 				var targetAlpha = ToolbarActiveDuration.Value > 0f ? 1f : 0f;
