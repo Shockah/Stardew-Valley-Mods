@@ -223,12 +223,24 @@ namespace Shockah.XPDisplay
 				}
 			);
 
-			helper.AddSectionTitle("config.orientation.section");
-			helper.AddEnumOption("config.orientation.smallBars", valuePrefix: "config.orientation", property: () => Config.SmallBarOrientation);
-			helper.AddEnumOption("config.orientation.bigBars", valuePrefix: "config.orientation", property: () => Config.BigBarOrientation);
+			helper.AddTextOption("config.levelUpSoundName", () => Config.LevelUpSoundName ?? "", value => Config.LevelUpSoundName = string.IsNullOrEmpty(value) ? null : value);
 
-			helper.AddSectionTitle("config.appearance.section");
-			helper.AddNumberOption("config.appearance.alpha", () => Config.Alpha, min: 0f, max: 1f, interval: 0.05f);
+			helper.AddSectionTitle("config.partialBar.section");
+			helper.AddEnumOption("config.partialBar.smallBars", valuePrefix: "config.orientation", property: () => Config.SmallBarOrientation);
+			helper.AddEnumOption("config.partialBar.bigBars", valuePrefix: "config.orientation", property: () => Config.BigBarOrientation);
+			helper.AddNumberOption("config.partialBar.alpha", () => Config.Alpha, min: 0f, max: 1f, interval: 0.05f);
+
+			helper.AddSectionTitle("config.toolbar.section");
+			helper.AddBoolOption("config.toolbar.enabled", () => Config.ToolbarSkillBar.IsEnabled);
+			helper.AddNumberOption("config.toolbar.scale", () => Config.ToolbarSkillBar.Scale, min: 0.2f, max: 12f, interval: 0.05f);
+			helper.AddNumberOption("config.toolbar.spacingFromToolbar", () => Config.ToolbarSkillBar.SpacingFromToolbar, min: -32f, max: 128, interval: 1f);
+			helper.AddBoolOption("config.toolbar.showIcon", () => Config.ToolbarSkillBar.ShowIcon);
+			helper.AddBoolOption("config.toolbar.showLevelNumber", () => Config.ToolbarSkillBar.ShowLevelNumber);
+			helper.AddBoolOption("config.toolbar.alwaysShowCurrentTool", () => Config.ToolbarSkillBar.AlwaysShowCurrentTool);
+			helper.AddNumberOption("config.toolbar.toolSwitchDurationInSeconds", () => Config.ToolbarSkillBar.ToolSwitchDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
+			helper.AddNumberOption("config.toolbar.toolUseDurationInSeconds", () => Config.ToolbarSkillBar.ToolUseDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
+			helper.AddNumberOption("config.toolbar.xpChangedDurationInSeconds", () => Config.ToolbarSkillBar.XPChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
+			helper.AddNumberOption("config.toolbar.levelChangedDurationInSeconds", () => Config.ToolbarSkillBar.LevelChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
 		}
 
 		private void UpdateXPValues()

@@ -17,12 +17,12 @@ namespace Shockah.XPDisplay
 		[JsonProperty] public bool IsEnabled { get; internal set; } = true;
 		[JsonProperty] public float Scale { get; internal set; } = 4f;
 		[JsonProperty] public float SpacingFromToolbar { get; internal set; } = 24f;
+		[JsonProperty] public bool ShowIcon { get; internal set; } = true;
+		[JsonProperty] public bool ShowLevelNumber { get; internal set; } = true;
 		[JsonProperty] public bool AlwaysShowCurrentTool { get; internal set; } = false;
 		[JsonProperty] public float ToolSwitchDurationInSeconds { get; internal set; } = 3f;
 		[JsonProperty] public float ToolUseDurationInSeconds { get; internal set; } = 3f;
 		[JsonProperty] public float XPChangedDurationInSeconds { get; internal set; } = 3f;
 		[JsonProperty] public float LevelChangedDurationInSeconds { get; internal set; } = 5f;
-		[JsonProperty] public bool ShowIcon { get; internal set; } = true;
-		[JsonProperty] public bool ShowLevelNumber { get; internal set; } = true;
 	}
 }
