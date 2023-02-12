@@ -47,7 +47,7 @@ namespace Shockah.XPDisplay
 
 		private readonly List<Func<Item, (int? SkillIndex, string? SpaceCoreSkillName)?>> ToolSkillMatchers = new()
 		{
-			o => o is Hoe or WateringCan or MilkPail or Shears ? (Farmer.farmingSkill, null) : null,
+			o => o is Hoe or WateringCan or MilkPail or Shears || (o is MeleeWeapon && o.Name.Contains("Scythe")) ? (Farmer.farmingSkill, null) : null,
 			o => o is Pickaxe ? (Farmer.miningSkill, null) : null,
 			o => o is Axe ? (Farmer.foragingSkill, null) : null,
 			o => o is FishingRod ? (Farmer.fishingSkill, null) : null,
