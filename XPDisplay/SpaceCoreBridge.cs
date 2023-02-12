@@ -41,7 +41,7 @@ namespace Shockah.XPDisplay
 			GetCustomSkillExperienceDelegate = (farmer, skill) => (int)getCustomSkillExperienceMethod.Invoke(null, new object[] { farmer, skill })!;
 
 			MethodInfo getSkillsPageIconMethod = AccessTools.PropertyGetter(skillType, "SkillsPageIcon");
-			GetSkillsPageIconDelegate = (skill) => getSkillsPageIconMethod.Invoke(null, new object[] { skill }) as Texture2D;
+			GetSkillsPageIconDelegate = (skill) => getSkillsPageIconMethod.Invoke(skill, null) as Texture2D;
 
 			IsReflectionSetup = true;
 		}
