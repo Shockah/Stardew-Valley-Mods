@@ -124,12 +124,13 @@ namespace Shockah.XPDisplay
 			{
 				if (ToolbarActiveDuration.Value > 0f)
 				{
-					ToolbarActiveDuration.Value = Math.Max(ToolbarActiveDuration.Value - 1f / FPS, 0f);
+					if (!Config.ToolbarSkillBar.AlwaysShowCurrentTool)
+						ToolbarActiveDuration.Value = Math.Max(ToolbarActiveDuration.Value - 1f / FPS, 0f);
 					if (ToolbarActiveDuration.Value <= 0f && Config.ToolbarSkillBar.AlwaysShowCurrentTool)
 						ToolbarCurrentSkill.Value = GetSkillForItem(Game1.player.CurrentItem);
 				}
 
-				var targetAlpha = (Config.ToolbarSkillBar.AlwaysShowCurrentTool && (ToolbarCurrentSkill.Value.SkillIndex is not null || ToolbarCurrentSkill.Value.SpaceCoreSkillName is not null)) || ToolbarActiveDuration.Value > 0f ? 1f : 0f;
+				var targetAlpha = ToolbarActiveDuration.Value > 0f ? 1f : 0f;
 				ToolbarAlpha.Value += (targetAlpha - ToolbarAlpha.Value) * 0.15f;
 				if (ToolbarAlpha.Value <= 0.01f)
 					ToolbarAlpha.Value = 0f;
