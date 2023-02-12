@@ -170,6 +170,8 @@ namespace Shockah.XPDisplay
 				return;
 			if (ToolbarAlpha.Value <= 0f)
 				return;
+			if (Game1.activeClickableMenu is not null)
+				return;
 
 			var (skillIndex, spaceCoreSkillName) = ToolbarCurrentSkill.Value;
 			if (skillIndex is null && spaceCoreSkillName is null)
