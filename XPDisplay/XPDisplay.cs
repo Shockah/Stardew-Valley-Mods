@@ -340,19 +340,23 @@ namespace Shockah.XPDisplay
 					? (currentLevel > levelIndex) ? BigObtainedLevelCursorsRectangle : BigUnobtainedLevelCursorsRectangle
 					: (currentLevel > levelIndex) ? SmallObtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
 
+				if (currentLevel >= 10 && currentLevel > levelIndex + 10)
+				{
+					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+						(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
+					else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
+						(barTexture, barTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
+				}
+
 				var topLeft = wholeToolbarTopLeft + new Vector2(xOffset * scale, 0);
 				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 				b.Draw(barTexture, topLeft, barTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				xOffset += barTextureRectangle.Width;
 
 				if (currentLevel % 10 != levelIndex)
-				{
-					xOffset += barTextureRectangle.Width;
 					continue;
-				}
 
-				barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
-
-				if (currentLevel >= 10 && currentLevel > levelIndex + 10)
+				if (currentLevel >= 10 && currentLevel >= levelIndex + 10)
 				{
 					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
 						(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
@@ -388,7 +392,6 @@ namespace Shockah.XPDisplay
 				}
 
 				b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * alpha * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-				xOffset += barTextureRectangle.Width;
 			}
 
 			if (Config.ToolbarSkillBar.ShowLevelNumber)
@@ -397,9 +400,17 @@ namespace Shockah.XPDisplay
 				bool isModifiedSkill = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName) != currentLevel;
 				int modifiedLevel = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName);
 
+				Color textColor = Color.SandyBrown;
+				if (currentLevel == 20 && ((Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled()) || (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())))
+					textColor = Color.Cornsilk;
+				if (isModifiedSkill)
+					textColor = Color.LightGreen;
+				if (modifiedLevel == 0)
+					textColor *= 0.75f;
+
 				Vector2 levelNumberPosition = wholeToolbarTopLeft + new Vector2(xOffset + 2f + NumberSprite.getWidth(modifiedLevel) / 2f, NumberSprite.getHeight() / 2f) * scale;
 				NumberSprite.draw(modifiedLevel, b, levelNumberPosition + new Vector2(-1, 1) * scale, Color.Black * alpha * 0.35f, 1f, 0f, 1f, 0);
-				NumberSprite.draw(modifiedLevel, b, levelNumberPosition, (isModifiedSkill ? Color.LightGreen : Color.SandyBrown) * (modifiedLevel == 0 ? 0.75f : 1f) * alpha, 1f, 0f, 1f, 0);
+				NumberSprite.draw(modifiedLevel, b, levelNumberPosition, textColor * alpha, 1f, 0f, 1f, 0);
 			}
 
 			if (nextLevelXP != int.MaxValue)
