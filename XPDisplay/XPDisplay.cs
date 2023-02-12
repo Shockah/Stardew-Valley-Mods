@@ -26,6 +26,7 @@ namespace Shockah.XPDisplay
 		private static readonly Rectangle BigObtainedLevelCursorsRectangle = new(159, 338, 13, 9);
 		private static readonly Rectangle BigUnobtainedLevelCursorsRectangle = new(145, 338, 13, 9);
 		private const float IconToBarSpacing = 3;
+		private const float LevelNumberToBarSpacing = 2;
 		private const float BarSegmentSpacing = 2;
 
 		private const int FPS = 60;
@@ -189,7 +190,7 @@ namespace Shockah.XPDisplay
 				toolbarBounds.Center.X,
 				drawBarAboveToolbar ? toolbarBounds.Top - Config.ToolbarSkillBar.SpacingFromToolbar : toolbarBounds.Bottom + Config.ToolbarSkillBar.SpacingFromToolbar
 			);
-			DrawSkillBar(skillIndex, spaceCoreSkillName, e.SpriteBatch, drawBarAboveToolbar ? UIAnchorSide.Bottom : UIAnchorSide.Top, barPosition, new Vector2(4f), Color.White * ToolbarAlpha.Value);
+			DrawSkillBar(skillIndex, spaceCoreSkillName, e.SpriteBatch, drawBarAboveToolbar ? UIAnchorSide.Bottom : UIAnchorSide.Top, barPosition, Config.ToolbarSkillBar.Scale, ToolbarAlpha.Value);
 		}
 
 		private void SetupConfig()
@@ -266,7 +267,7 @@ namespace Shockah.XPDisplay
 		private static Toolbar? GetToolbar()
 			=> Game1.onScreenMenus.OfType<Toolbar>().FirstOrDefault();
 
-		private void DrawSkillBar(int? skillIndex, string? spaceCoreSkillName, SpriteBatch b, UIAnchorSide anchorSide, Vector2 position, Vector2 scale, Color color)
+		private void DrawSkillBar(int? skillIndex, string? spaceCoreSkillName, SpriteBatch b, UIAnchorSide anchorSide, Vector2 position, float scale, float alpha)
 		{
 			int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
 			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
@@ -277,7 +278,9 @@ namespace Shockah.XPDisplay
 			var icon = Config.ToolbarSkillBar.ShowIcon ? GetSkillIcon(skillIndex, spaceCoreSkillName) : null;
 
 			var barSize = new Vector2(
-				SmallObtainedLevelCursorsRectangle.Size.X * 8 + BigObtainedLevelCursorsRectangle.Size.X * 2 + BarSegmentSpacing * 9 + (icon is null ? 0f : icon.Value.Rectangle.Width + IconToBarSpacing),
+				SmallObtainedLevelCursorsRectangle.Size.X * 8 + BigObtainedLevelCursorsRectangle.Size.X * 2 + BarSegmentSpacing * 9
+					+ (icon is null ? 0f : icon.Value.Rectangle.Width + IconToBarSpacing)
+					+ (Config.ToolbarSkillBar.ShowLevelNumber ? NumberSprite.getWidth(99) - 2 + LevelNumberToBarSpacing : 0f),
 				BigObtainedLevelCursorsRectangle.Size.Y
 			) * scale;
 
@@ -286,13 +289,16 @@ namespace Shockah.XPDisplay
 			{
 				Vector2 iconSize = new(icon.Value.Rectangle.Width, icon.Value.Rectangle.Height);
 				var iconPosition = position - anchorSide.GetAnchorOffset(barSize) + UIAnchorSide.Center.GetAnchorOffset(iconSize) * scale;
-				b.Draw(icon.Value.Texture, iconPosition + new Vector2(-1, 1) * scale, icon.Value.Rectangle, Color.Black * (color.A / 255f) * 0.3f, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
-				b.Draw(icon.Value.Texture, iconPosition, icon.Value.Rectangle, color, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
+				b.Draw(icon.Value.Texture, iconPosition + new Vector2(-1, 1) * scale, icon.Value.Rectangle, Color.Black * alpha * 0.3f, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
+				b.Draw(icon.Value.Texture, iconPosition, icon.Value.Rectangle, Color.White * alpha, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
 				xOffset += icon.Value.Rectangle.Width + IconToBarSpacing;
 			}
 
 			for (int levelIndex = 0; levelIndex < 10; levelIndex++)
 			{
+				if (levelIndex != 0)
+					xOffset += BarSegmentSpacing;
+
 				bool isBigLevel = (levelIndex + 1) % 5 == 0;
 				Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
 				Texture2D barTexture = Game1.mouseCursors;
@@ -300,13 +306,13 @@ namespace Shockah.XPDisplay
 					? (currentLevel > levelIndex) ? BigObtainedLevelCursorsRectangle : BigUnobtainedLevelCursorsRectangle
 					: (currentLevel > levelIndex) ? SmallObtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
 
-				var topLeft = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset * scale.X, 0);
-				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * (color.A / 255f) * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-				b.Draw(barTexture, topLeft, barTextureRectangle, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				var topLeft = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset * scale, 0);
+				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				b.Draw(barTexture, topLeft, barTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
 				if (currentLevel % 10 != levelIndex)
 				{
-					xOffset += barTextureRectangle.Width + BarSegmentSpacing;
+					xOffset += barTextureRectangle.Width;
 					continue;
 				}
 
@@ -335,7 +341,7 @@ namespace Shockah.XPDisplay
 						break;
 					case Orientation.Vertical:
 						int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-						barPosition = topLeft + new Vector2(0f, (barTextureRectangle.Height - rectangleHeightPixels) * scale.Y);
+						barPosition = topLeft + new Vector2(0f, (barTextureRectangle.Height - rectangleHeightPixels) * scale);
 						barTextureRectangle = new(
 							barTextureRectangle.Left,
 							barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
@@ -347,8 +353,19 @@ namespace Shockah.XPDisplay
 						throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
 				}
 
-				b.Draw(barTexture, barPosition, barTextureRectangle, color * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-				xOffset += barTextureRectangle.Width + BarSegmentSpacing;
+				b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * alpha * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				xOffset += barTextureRectangle.Width;
+			}
+
+			if (Config.ToolbarSkillBar.ShowLevelNumber)
+			{
+				xOffset += LevelNumberToBarSpacing;
+				bool isModifiedSkill = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName) != currentLevel;
+				int modifiedLevel = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName);
+
+				Vector2 levelNumberPosition = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset + 2f + NumberSprite.getWidth(modifiedLevel) / 2f, NumberSprite.getHeight() / 2f) * scale;
+				NumberSprite.draw(modifiedLevel, b, levelNumberPosition + new Vector2(-1, 1) * scale, Color.Black * alpha * 0.35f, 1f, 0f, 1f, 0);
+				NumberSprite.draw(modifiedLevel, b, levelNumberPosition, (isModifiedSkill ? Color.LightGreen : Color.SandyBrown) * (modifiedLevel == 0 ? 0.75f : 1f) * alpha, 1f, 0f, 1f, 0);
 			}
 		}
 
@@ -358,6 +375,16 @@ namespace Shockah.XPDisplay
 				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
 			else if (skillIndex is not null)
 				return Game1.player.GetUnmodifiedSkillLevel(skillIndex.Value);
+			else
+				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
+		}
+
+		private static int GetModifiedSkillLevel(int? skillIndex, string? spaceCoreSkillName)
+		{
+			if (spaceCoreSkillName is not null)
+				return SpaceCoreBridge.GetUnmodifiedSkillLevel(spaceCoreSkillName);
+			else if (skillIndex is not null)
+				return Game1.player.GetSkillLevel(skillIndex.Value);
 			else
 				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
