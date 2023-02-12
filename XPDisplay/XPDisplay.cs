@@ -346,56 +346,63 @@ namespace Shockah.XPDisplay
 					xOffset += BarSegmentSpacing;
 
 				bool isBigLevel = (levelIndex + 1) % 5 == 0;
-				Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
-				Texture2D barTexture = Game1.mouseCursors;
-				Rectangle barTextureRectangle = isBigLevel
-					? (currentLevel > levelIndex) ? BigObtainedLevelCursorsRectangle : BigUnobtainedLevelCursorsRectangle
-					: (currentLevel > levelIndex) ? SmallObtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
+				Texture2D obtainedBarTexture;
+				Texture2D unobtainedBarTexture;
+				Rectangle obtainedBarTextureRectangle;
+				Rectangle unobtainedBarTextureRectangle;
 
-				if (currentLevel >= 10 && currentLevel > levelIndex + 10)
+				void UpdateExtendedLevelTextures(int level)
 				{
-					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
-						(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
-					else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
-						(barTexture, barTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
+					obtainedBarTexture = Game1.mouseCursors;
+					unobtainedBarTexture = Game1.mouseCursors;
+					obtainedBarTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
+					unobtainedBarTextureRectangle = isBigLevel ? BigUnobtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
+
+					if (level >= 10 && level > levelIndex + 10)
+					{
+						if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
+							(obtainedBarTexture, obtainedBarTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
+						else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
+							(obtainedBarTexture, obtainedBarTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
+					}
 				}
 
+				UpdateExtendedLevelTextures(currentLevel);
+
+				var backgroundBarTexture = currentLevel > levelIndex ? obtainedBarTexture : unobtainedBarTexture;
+				var backgroundBarTextureRectangle = currentLevel > levelIndex ? obtainedBarTextureRectangle : unobtainedBarTextureRectangle;
+
 				var topLeft = wholeToolbarTopLeft + new Vector2(xOffset * scale, 0);
-				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-				b.Draw(barTexture, topLeft, barTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-				xOffset += barTextureRectangle.Width;
+				b.Draw(backgroundBarTexture, topLeft + new Vector2(-1, 1) * scale, backgroundBarTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				b.Draw(backgroundBarTexture, topLeft, backgroundBarTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				xOffset += backgroundBarTextureRectangle.Width;
 
 				if (currentLevel % 10 != levelIndex)
 					continue;
 
-				if (currentLevel >= 10 && currentLevel >= levelIndex + 10)
-				{
-					if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
-						(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
-					else if (Instance.IsMargoInstalled && MargoBridge.IsPrestigeEnabled())
-						(barTexture, barTextureRectangle) = isBigLevel ? MargoBridge.GetExtendedBigBar()!.Value : MargoBridge.GetExtendedSmallBar()!.Value;
-				}
+				UpdateExtendedLevelTextures(currentLevel + 1);
 
-				Vector2 barPosition;
-				switch (orientation)
+				Vector2 partialBarPosition;
+				Rectangle partialBarTextureRectangle;
+				switch (isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation)
 				{
 					case Orientation.Horizontal:
-						int rectangleWidthPixels = (int)(barTextureRectangle.Width * nextLevelProgress);
-						barPosition = topLeft;
-						barTextureRectangle = new(
-							barTextureRectangle.Left,
-							barTextureRectangle.Top,
+						int rectangleWidthPixels = (int)(obtainedBarTextureRectangle.Width * nextLevelProgress);
+						partialBarPosition = topLeft;
+						partialBarTextureRectangle = new(
+							obtainedBarTextureRectangle.Left,
+							obtainedBarTextureRectangle.Top,
 							rectangleWidthPixels,
-							barTextureRectangle.Height
+							obtainedBarTextureRectangle.Height
 						);
 						break;
 					case Orientation.Vertical:
-						int rectangleHeightPixels = (int)(barTextureRectangle.Height * nextLevelProgress);
-						barPosition = topLeft + new Vector2(0f, (barTextureRectangle.Height - rectangleHeightPixels) * scale);
-						barTextureRectangle = new(
-							barTextureRectangle.Left,
-							barTextureRectangle.Top + barTextureRectangle.Height - rectangleHeightPixels,
-							barTextureRectangle.Width,
+						int rectangleHeightPixels = (int)(obtainedBarTextureRectangle.Height * nextLevelProgress);
+						partialBarPosition = topLeft + new Vector2(0f, (obtainedBarTextureRectangle.Height - rectangleHeightPixels) * scale);
+						partialBarTextureRectangle = new(
+							obtainedBarTextureRectangle.Left,
+							obtainedBarTextureRectangle.Top + obtainedBarTextureRectangle.Height - rectangleHeightPixels,
+							obtainedBarTextureRectangle.Width,
 							rectangleHeightPixels
 						);
 						break;
@@ -403,7 +410,7 @@ namespace Shockah.XPDisplay
 						throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
 				}
 
-				b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * alpha * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+				b.Draw(obtainedBarTexture, partialBarPosition, partialBarTextureRectangle, Color.White * alpha * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 			}
 
 			if (Config.ToolbarSkillBar.ShowLevelNumber)
