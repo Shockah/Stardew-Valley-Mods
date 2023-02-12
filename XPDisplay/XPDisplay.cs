@@ -58,6 +58,7 @@ namespace Shockah.XPDisplay
 		private readonly PerScreen<float> ToolbarActiveDuration = new(() => 0f);
 		private readonly PerScreen<float> ToolbarAlpha = new(() => 0f);
 		private readonly PerScreen<Item?> LastCurrentItem = new(() => null);
+		private readonly PerScreen<string?> ToolbarTooltip = new(() => null);
 
 		public override void OnEntry(IModHelper helper)
 		{
@@ -66,6 +67,7 @@ namespace Shockah.XPDisplay
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			helper.Events.Display.MenuChanged += OnMenuChanged;
 			helper.Events.Display.RenderingHud += OnRenderingHud;
+			helper.Events.Display.RenderedHud += OnRenderedHud;
 		}
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
@@ -162,6 +164,7 @@ namespace Shockah.XPDisplay
 
 		private void OnRenderingHud(object? sender, RenderingHudEventArgs e)
 		{
+			ToolbarTooltip.Value = null;
 			if (!Config.ToolbarSkillBar.IsEnabled)
 				return;
 			if (ToolbarAlpha.Value <= 0f)
@@ -191,6 +194,15 @@ namespace Shockah.XPDisplay
 				drawBarAboveToolbar ? toolbarBounds.Top - Config.ToolbarSkillBar.SpacingFromToolbar : toolbarBounds.Bottom + Config.ToolbarSkillBar.SpacingFromToolbar
 			);
 			DrawSkillBar(skillIndex, spaceCoreSkillName, e.SpriteBatch, drawBarAboveToolbar ? UIAnchorSide.Bottom : UIAnchorSide.Top, barPosition, Config.ToolbarSkillBar.Scale, ToolbarAlpha.Value);
+		}
+
+		private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
+		{
+			if (ToolbarTooltip.Value is not null)
+			{
+				IClickableMenu.drawToolTip(e.SpriteBatch, ToolbarTooltip.Value, null, null);
+				ToolbarTooltip.Value = null;
+			}
 		}
 
 		private void SetupConfig()
@@ -283,12 +295,13 @@ namespace Shockah.XPDisplay
 					+ (Config.ToolbarSkillBar.ShowLevelNumber ? NumberSprite.getWidth(99) - 2 + LevelNumberToBarSpacing : 0f),
 				BigObtainedLevelCursorsRectangle.Size.Y
 			) * scale;
+			var wholeToolbarTopLeft = position - anchorSide.GetAnchorOffset(barSize);
 
 			float xOffset = 0;
 			if (icon is not null)
 			{
 				Vector2 iconSize = new(icon.Value.Rectangle.Width, icon.Value.Rectangle.Height);
-				var iconPosition = position - anchorSide.GetAnchorOffset(barSize) + UIAnchorSide.Center.GetAnchorOffset(iconSize) * scale;
+				var iconPosition = wholeToolbarTopLeft + UIAnchorSide.Center.GetAnchorOffset(iconSize) * scale;
 				b.Draw(icon.Value.Texture, iconPosition + new Vector2(-1, 1) * scale, icon.Value.Rectangle, Color.Black * alpha * 0.3f, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
 				b.Draw(icon.Value.Texture, iconPosition, icon.Value.Rectangle, Color.White * alpha, 0f, iconSize / 2f, scale, SpriteEffects.None, 0f);
 				xOffset += icon.Value.Rectangle.Width + IconToBarSpacing;
@@ -306,7 +319,7 @@ namespace Shockah.XPDisplay
 					? (currentLevel > levelIndex) ? BigObtainedLevelCursorsRectangle : BigUnobtainedLevelCursorsRectangle
 					: (currentLevel > levelIndex) ? SmallObtainedLevelCursorsRectangle : SmallUnobtainedLevelCursorsRectangle;
 
-				var topLeft = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset * scale, 0);
+				var topLeft = wholeToolbarTopLeft + new Vector2(xOffset * scale, 0);
 				b.Draw(barTexture, topLeft + new Vector2(-1, 1) * scale, barTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 				b.Draw(barTexture, topLeft, barTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
@@ -363,9 +376,19 @@ namespace Shockah.XPDisplay
 				bool isModifiedSkill = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName) != currentLevel;
 				int modifiedLevel = GetModifiedSkillLevel(skillIndex, spaceCoreSkillName);
 
-				Vector2 levelNumberPosition = position - anchorSide.GetAnchorOffset(barSize) + new Vector2(xOffset + 2f + NumberSprite.getWidth(modifiedLevel) / 2f, NumberSprite.getHeight() / 2f) * scale;
+				Vector2 levelNumberPosition = wholeToolbarTopLeft + new Vector2(xOffset + 2f + NumberSprite.getWidth(modifiedLevel) / 2f, NumberSprite.getHeight() / 2f) * scale;
 				NumberSprite.draw(modifiedLevel, b, levelNumberPosition + new Vector2(-1, 1) * scale, Color.Black * alpha * 0.35f, 1f, 0f, 1f, 0);
 				NumberSprite.draw(modifiedLevel, b, levelNumberPosition, (isModifiedSkill ? Color.LightGreen : Color.SandyBrown) * (modifiedLevel == 0 ? 0.75f : 1f) * alpha, 1f, 0f, 1f, 0);
+			}
+
+			if (nextLevelXP != int.MaxValue)
+			{
+				Vector2 mouse = new(Game1.getMouseX(), Game1.getMouseY());
+				if (mouse.X >= wholeToolbarTopLeft.X && mouse.Y >= wholeToolbarTopLeft.Y && mouse.X < wholeToolbarTopLeft.X + barSize.X && mouse.Y < wholeToolbarTopLeft.Y + barSize.Y)
+				{
+					ToolbarTooltip.Value = GetSkillTooltip(skillIndex, spaceCoreSkillName);
+					ToolbarActiveDuration.Value = Math.Max(ToolbarActiveDuration.Value, 1f);
+				}
 			}
 		}
 
@@ -437,6 +460,29 @@ namespace Shockah.XPDisplay
 			else
 				throw new ArgumentException($"Missing both {nameof(skillIndex)} and {spaceCoreSkillName} parameters.");
 		}
+
+		private string GetSkillTooltip(int? skillIndex, string? spaceCoreSkillName)
+		{
+			int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
+			int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
+			int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
+			int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
+			float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
+
+			return Helper.Translation.Get(
+				"tooltip.text",
+				new
+				{
+					CurrentXP = currentXP - currentLevelXP,
+					NextLevelXP = nextLevelXP - currentLevelXP,
+					LevelPercent = (int)(nextLevelProgress * 100f)
+				}
+			);
+
+		}
+
+		private void DrawSkillTooltip(SpriteBatch b, int? skillIndex, string? spaceCoreSkillName)
+			=> IClickableMenu.drawToolTip(b, GetSkillTooltip(skillIndex, spaceCoreSkillName), null, null);
 
 		private static void Farmer_gainExperience_Prefix(Farmer __instance, int which, ref int __state)
 		{
@@ -785,28 +831,8 @@ namespace Shockah.XPDisplay
 					int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
 					int currentLevel = GetUnmodifiedSkillLevel(skillIndex, spaceCoreSkillName);
 					int nextLevelXP = GetLevelXP(currentLevel, spaceCoreSkillName);
-					int currentLevelXP = currentLevel == 0 ? 0 : GetLevelXP(currentLevel - 1, spaceCoreSkillName);
-					int currentXP = GetCurrentXP(skillIndex, spaceCoreSkillName);
-					float nextLevelProgress = Math.Clamp(1f * (currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP), 0f, 1f);
-
-					if (currentXP < nextLevelXP)
-					{
-						string tooltip = Instance.Helper.Translation.Get(
-							"tooltip.text",
-							new
-							{
-								CurrentXP = currentXP - currentLevelXP,
-								NextLevelXP = nextLevelXP - currentLevelXP,
-								LevelPercent = (int)(nextLevelProgress * 100f)
-							}
-						);
-						IClickableMenu.drawToolTip(
-							b,
-							tooltip,
-							null,
-							null
-						);
-					}
+					if (nextLevelXP != int.MaxValue)
+						Instance.DrawSkillTooltip(b, skillIndex, spaceCoreSkillName);
 				}
 			}
 			SkillBarCorners.Clear();
