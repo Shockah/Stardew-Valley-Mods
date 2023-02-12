@@ -2,6 +2,13 @@
 
 # Release notes
 
+## 1.2.0
+Released 12 February 2023.
+
+* Added a new feature: context-sensitive skill bar toolbar.
+* Added an option to play a sound whenever you level up any skill.
+* Fixed an issue causing errors and closing the menu when any skill was maxed out.
+
 ## 1.1.4
 Released 10 February 2023.
 
