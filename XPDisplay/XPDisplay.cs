@@ -19,7 +19,7 @@ using System.Reflection.Emit;
 
 namespace Shockah.XPDisplay
 {
-	public class XPDisplay : BaseMod<ModConfig>
+	public class XPDisplay : BaseMod<ModConfig>, IXPDisplayApi
 	{
 		private static readonly Rectangle SmallUnobtainedLevelCursorsRectangle = new(129, 338, 7, 9);
 		private static readonly Rectangle SmallObtainedLevelCursorsRectangle = new(137, 338, 7, 9);
@@ -45,13 +45,13 @@ namespace Shockah.XPDisplay
 
 		private static readonly Lazy<Func<Toolbar, List<ClickableComponent>>> ToolbarButtonsGetter = new(() => AccessTools.DeclaredField(typeof(Toolbar), "buttons").EmitInstanceGetter<Toolbar, List<ClickableComponent>>());
 
-		private readonly List<Func<Item, (int? SkillIndex, string? SpaceCoreSkillName)>> ToolSkillMatchers = new()
+		private readonly List<Func<Item, (int? SkillIndex, string? SpaceCoreSkillName)?>> ToolSkillMatchers = new()
 		{
-			o => o is Hoe or WateringCan or MilkPail or Shears ? (Farmer.farmingSkill, null) : (null, null),
-			o => o is Pickaxe ? (Farmer.miningSkill, null) : (null, null),
-			o => o is Axe ? (Farmer.foragingSkill, null) : (null, null),
-			o => o is FishingRod ? (Farmer.fishingSkill, null) : (null, null),
-			o => o is Sword or Slingshot || (o is MeleeWeapon && !o.Name.Contains("Scythe")) ? (Farmer.combatSkill, null) : (null, null),
+			o => o is Hoe or WateringCan or MilkPail or Shears ? (Farmer.farmingSkill, null) : null,
+			o => o is Pickaxe ? (Farmer.miningSkill, null) : null,
+			o => o is Axe ? (Farmer.foragingSkill, null) : null,
+			o => o is FishingRod ? (Farmer.fishingSkill, null) : null,
+			o => o is Sword or Slingshot || (o is MeleeWeapon && !o.Name.Contains("Scythe")) ? (Farmer.combatSkill, null) : null,
 		};
 
 		private readonly PerScreen<(int? SkillIndex, string? SpaceCoreSkillName)> ToolbarCurrentSkill = new(() => (null, null));
@@ -206,6 +206,11 @@ namespace Shockah.XPDisplay
 			}
 		}
 
+		public void RegisterToolSkillMatcher(Func<Item, (int? SkillIndex, string? SpaceCoreSkillName)?> matcher)
+		{
+			ToolSkillMatchers.Insert(0, matcher);
+		}
+
 		private void SetupConfig()
 		{
 			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -282,8 +287,9 @@ namespace Shockah.XPDisplay
 			foreach (var matcher in ToolSkillMatchers)
 			{
 				var skill = matcher(item);
-				if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
-					return skill;
+				if (skill is null)
+					continue;
+				return skill.Value;
 			}
 
 			return (null, null);
