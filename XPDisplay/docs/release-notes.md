@@ -2,6 +2,16 @@
 
 # Release notes
 
+## 1.2.1
+Released 12 February 2023.
+
+* The skill toolbar no longer displays when any menu is up.
+* Scythes now count as Farming tools.
+* Fixed sometimes misplaced level number on the skill toolbar.
+* Fixed skill toolbar fading with the "always show current tool" option enabled.
+* Fixed integration with SpaceCore skills.
+* Fixed MARGO integration.
+
 ## 1.2.0
 Released 12 February 2023.
 
