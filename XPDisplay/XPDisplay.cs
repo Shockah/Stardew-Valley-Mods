@@ -138,7 +138,10 @@ namespace Shockah.XPDisplay
 					{
 						var skill = GetSkillForItem(Game1.player.CurrentItem);
 						if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
+						{
 							ToolbarCurrentSkill.Value = skill;
+							ToolbarActiveDuration.Value = 0.1f;
+						}
 					}
 				}
 
@@ -158,7 +161,7 @@ namespace Shockah.XPDisplay
 					if (skill.SkillIndex is not null || skill.SpaceCoreSkillName is not null)
 					{
 						ToolbarCurrentSkill.Value = skill;
-						ToolbarActiveDuration.Value = Config.ToolbarSkillBar.ToolSwitchDurationInSeconds;
+						ToolbarActiveDuration.Value = Config.ToolbarSkillBar.AlwaysShowCurrentTool ? 0.1f : Config.ToolbarSkillBar.ToolSwitchDurationInSeconds;
 					}
 					else
 					{
