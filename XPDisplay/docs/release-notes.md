@@ -2,6 +2,12 @@
 
 # Release notes
 
+## 1.2.2
+Released 13 February 2023.
+
+* Fixed skill toolbar disappearing when using the "always show current tool" option.
+* Improved XP and level change checking compatibility with other mods. This fixes an issue with [Skill Rings](https://www.nexusmods.com/stardewvalley/mods/7515).
+
 ## 1.2.1
 Released 12 February 2023.
 
@@ -9,8 +15,8 @@ Released 12 February 2023.
 * Scythes now count as Farming tools.
 * Fixed sometimes misplaced level number on the skill toolbar.
 * Fixed skill toolbar fading with the "always show current tool" option enabled.
-* Fixed integration with SpaceCore skills.
-* Fixed MARGO integration.
+* Fixed integration with [SpaceCore](https://www.nexusmods.com/stardewvalley/mods/1348) skills.
+* Fixed [MARGO](https://www.nexusmods.com/stardewvalley/mods/14470) integration.
 
 ## 1.2.0
 Released 12 February 2023.
@@ -51,7 +57,7 @@ Released 19 March 2022.
 ## 1.0.1
 Released 24 February 2022.
 
-* Fixed SpaceCore skills not showing experience.
+* Fixed [SpaceCore](https://www.nexusmods.com/stardewvalley/mods/1348) skills not showing experience.
 * Potentially fixed a crash.
 
 ## 1.0.0
