@@ -1,0 +1,10 @@
+﻿{
+    "Name": "Dynamic Weather",
+    "Author": "Shockah",
+    "Version": "0.1.0",
+    "Description": "TODO: Add description",
+    "UniqueID": "Shockah.DynamicWeather",
+    "EntryDll": "DynamicWeather.dll",
+    "MinimumApiVersion": "3.0.0",
+    "UpdateKeys": []
+}
