@@ -14,7 +14,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using Shockah.CommonModCode;
+using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 
 namespace Shockah.DontStopMeNow
 {

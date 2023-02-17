@@ -2,7 +2,6 @@
 using Nanoray.Shrike.Harmony;
 using Nanoray.Shrike;
 using Netcode;
-using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -12,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Reflection;
+using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro;
 
 namespace Shockah.SafeLightning
 {

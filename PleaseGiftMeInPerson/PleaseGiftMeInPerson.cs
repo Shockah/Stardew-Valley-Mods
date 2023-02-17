@@ -3,11 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Nanoray.Shrike.Harmony;
 using Nanoray.Shrike;
-using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.CommonModCode.GMCM.Helper;
-using Shockah.CommonModCode.SMAPI;
-using Shockah.CommonModCode.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -17,6 +14,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.SMAPI;
 
 namespace Shockah.PleaseGiftMeInPerson
 {

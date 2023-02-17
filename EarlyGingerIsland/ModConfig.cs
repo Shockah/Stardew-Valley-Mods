@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Shockah.CommonModCode;
+using Shockah.Kokoro;
 using StardewModdingAPI;
 using System.Collections.Generic;
 

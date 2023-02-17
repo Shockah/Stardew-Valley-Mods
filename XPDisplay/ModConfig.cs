@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Shockah.CommonModCode.UI;
+using Shockah.Kokoro.UI;
 
 namespace Shockah.XPDisplay
 {

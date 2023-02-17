@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Shockah.CommonModCode.SMAPI;
+using Shockah.Kokoro.SMAPI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;

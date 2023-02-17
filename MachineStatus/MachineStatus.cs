@@ -1,11 +1,12 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Shockah.CommonModCode;
 using Shockah.CommonModCode.GMCM;
-using Shockah.CommonModCode.SMAPI;
-using Shockah.CommonModCode.Stardew;
-using Shockah.CommonModCode.UI;
+using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.SMAPI;
+using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;

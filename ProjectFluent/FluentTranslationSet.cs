@@ -1,4 +1,4 @@
-﻿using Shockah.CommonModCode.SMAPI;
+﻿using Shockah.Kokoro.SMAPI;
 
 namespace Shockah.ProjectFluent
 {

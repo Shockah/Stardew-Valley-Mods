@@ -1,5 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
-using Shockah.CommonModCode;
+using Shockah.Kokoro;
 using StardewValley;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;

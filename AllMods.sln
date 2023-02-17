@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "_Common", "_Common\_Common.shproj", "{5755B5E3-AC9D-4A3E-9C01-2731828B9CAA}"
-EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "_CommonWithHarmony", "_CommonWithHarmony\_CommonWithHarmony.shproj", "{D9B27087-1AAA-4459-81EC-8C2F80D2E5FC}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{22CED42A-3C4C-4282-BB23-2B999492A3F5}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -33,6 +29,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackSizeChanger", "StackSizeChanger\StackSizeChanger.csproj", "{09AC8019-8037-4722-BCD7-0FEFF8B3BAD8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XPDisplay", "XPDisplay\XPDisplay.csproj", "{CF69A9C6-39DC-4FDB-9034-57D56C5E51AB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kokoro", "Kokoro\Kokoro.csproj", "{391577D4-AAF3-42A5-80FE-A637F449B2FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -84,37 +82,15 @@ Global
 		{CF69A9C6-39DC-4FDB-9034-57D56C5E51AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF69A9C6-39DC-4FDB-9034-57D56C5E51AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF69A9C6-39DC-4FDB-9034-57D56C5E51AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{391577D4-AAF3-42A5-80FE-A637F449B2FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{391577D4-AAF3-42A5-80FE-A637F449B2FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{391577D4-AAF3-42A5-80FE-A637F449B2FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{391577D4-AAF3-42A5-80FE-A637F449B2FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {740E3A5B-D4B3-423E-86ED-F1C6C5E553D4}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{09ac8019-8037-4722-bcd7-0feff8b3bad8}*SharedItemsImports = 5
-		_Common\_Common.projitems*{09ac8019-8037-4722-bcd7-0feff8b3bad8}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{3adf6c34-67f2-4cee-adc4-3b06ee3dbd7d}*SharedItemsImports = 5
-		_Common\_Common.projitems*{3adf6c34-67f2-4cee-adc4-3b06ee3dbd7d}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{50967b01-184b-4b9d-b308-14b611e05018}*SharedItemsImports = 5
-		_Common\_Common.projitems*{50967b01-184b-4b9d-b308-14b611e05018}*SharedItemsImports = 5
-		_Common\_Common.projitems*{5755b5e3-ac9d-4a3e-9c01-2731828b9caa}*SharedItemsImports = 13
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{580d339a-1525-4f3b-862f-b1fa06adc6fe}*SharedItemsImports = 5
-		_Common\_Common.projitems*{580d339a-1525-4f3b-862f-b1fa06adc6fe}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{952e9aec-b813-4b98-90bd-ae1611d8c0cf}*SharedItemsImports = 5
-		_Common\_Common.projitems*{952e9aec-b813-4b98-90bd-ae1611d8c0cf}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{9f06146a-e7f9-4123-8bc5-a70f13239cd0}*SharedItemsImports = 5
-		_Common\_Common.projitems*{9f06146a-e7f9-4123-8bc5-a70f13239cd0}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{b698376f-972f-4416-a997-f338009a2e35}*SharedItemsImports = 5
-		_Common\_Common.projitems*{b698376f-972f-4416-a997-f338009a2e35}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{cf69a9c6-39dc-4fdb-9034-57d56c5e51ab}*SharedItemsImports = 5
-		_Common\_Common.projitems*{cf69a9c6-39dc-4fdb-9034-57d56c5e51ab}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{d048b28c-4a4d-4668-99e0-d3d81044eba2}*SharedItemsImports = 5
-		_Common\_Common.projitems*{d048b28c-4a4d-4668-99e0-d3d81044eba2}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{d206436e-7b49-4859-bf52-2a90bda42834}*SharedItemsImports = 5
-		_Common\_Common.projitems*{d206436e-7b49-4859-bf52-2a90bda42834}*SharedItemsImports = 5
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{d9b27087-1aaa-4459-81ec-8c2f80d2e5fc}*SharedItemsImports = 13
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{f1c0b253-7af6-4861-8b5d-3904f2078b9c}*SharedItemsImports = 5
-		_Common\_Common.projitems*{f1c0b253-7af6-4861-8b5d-3904f2078b9c}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

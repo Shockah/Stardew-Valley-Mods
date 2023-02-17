@@ -1,5 +1,5 @@
-﻿using Shockah.CommonModCode;
-using Shockah.CommonModCode.Stardew;
+﻿using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using StardewValley;
 using System;
 using System.Linq;

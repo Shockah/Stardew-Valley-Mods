@@ -9,9 +9,9 @@
 	"UpdateKeys": [ "Nexus:11089" ],
 	"Dependencies": [
 		{
-			"UniqueID": "DaLion.ImmersiveProfessions",
-			"IsRequired": false,
-			"MinimumVersion": "5.0.1"
+			"UniqueID": "Shockah.Kokoro",
+			"IsRequired": true,
+			"MinimumVersion": "0.1.0"
 		}
 	]
 }

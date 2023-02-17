@@ -9,6 +9,11 @@
     "UpdateKeys": [ "Nexus:11177" ],
     "Dependencies": [
         {
+            "UniqueID": "Shockah.Kokoro",
+            "IsRequired": true,
+            "MinimumVersion": "0.1.0"
+        },
+        {
             "UniqueID": "aedenthorn.CustomObjectProduction",
             "IsRequired": false
         },

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
-using Shockah.CommonModCode;
-using Shockah.CommonModCode.UI;
+using Shockah.Kokoro;
+using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Utilities;
 using System.Collections.Generic;

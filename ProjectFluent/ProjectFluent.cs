@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Shockah.CommonModCode.GMCM;
+using Shockah.Kokoro.GMCM;
 using Shockah.ProjectFluent.ContentPatcher;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
