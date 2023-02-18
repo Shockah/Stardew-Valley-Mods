@@ -32,7 +32,6 @@ namespace Shockah.XPDisplay
 		private const float BarSegmentSpacing = 2;
 
 		private const int FPS = 60;
-		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
 		private static readonly string SpaceCoreNewSkillsPageQualifiedName = "SpaceCore.Interface.NewSkillsPage, SpaceCore";
 		private static readonly string SpaceCoreSkillsQualifiedName = "SpaceCore.Skills, SpaceCore";
 
@@ -741,8 +740,7 @@ namespace Shockah.XPDisplay
 
 		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
 		{
-			int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
-			ISkill skill = SkillExt.GetSkill(skillIndex, spaceCoreSkillName);
+			ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
 
 			bool isBigLevel = (levelIndex + 1) % 5 == 0;
 			Texture2D barTexture = Game1.mouseCursors;
@@ -836,8 +834,7 @@ namespace Shockah.XPDisplay
 				if (hoveredUiSkill is not null)
 				{
 					var (uiSkillIndex, spaceCoreSkillName) = hoveredUiSkill.Value;
-					int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
-					ISkill skill = SkillExt.GetSkill(skillIndex, spaceCoreSkillName);
+					ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
 
 					int currentLevel = skill.GetBaseLevel(Game1.player);
 					int nextLevelXP = skill.GetLevelXP(currentLevel + 1);
