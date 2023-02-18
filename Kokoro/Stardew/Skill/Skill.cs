@@ -38,6 +38,13 @@ namespace Shockah.Kokoro.Stardew.Skill
 		int SkillIndex
 	) : ISkill
 	{
+		public static VanillaSkill Farming { get; private set; } = new(Farmer.farmingSkill);
+		public static VanillaSkill Mining { get; private set; } = new(Farmer.miningSkill);
+		public static VanillaSkill Foraging { get; private set; } = new(Farmer.foragingSkill);
+		public static VanillaSkill Fishing { get; private set; } = new(Farmer.fishingSkill);
+		public static VanillaSkill Combat { get; private set; } = new(Farmer.combatSkill);
+		public static VanillaSkill Luck { get; private set; } = new(Farmer.luckSkill);
+
 		private static int[]? XPValues;
 		private static DateTime? LastUpdateTime;
 		private static WeakReference<IClickableMenu>? LastMenu;
