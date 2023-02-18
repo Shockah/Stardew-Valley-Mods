@@ -10,6 +10,7 @@ namespace Shockah.Talented
 		TextureRectangle Icon { get; }
 		string Name { get; }
 		ITalentTag? Parent => null;
+		ISkill? Skill => null;
 	}
 
 	public record BasicTalentTag(

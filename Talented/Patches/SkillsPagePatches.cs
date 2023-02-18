@@ -13,6 +13,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using System.Linq;
 
 namespace Shockah.Talented.Patches
 {
@@ -250,7 +251,8 @@ namespace Shockah.Talented.Patches
 					continue;
 
 				ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
-				if (!Instance.HasTalentDefinitions(skill))
+				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => t.Skill == skill);
+				if (talentTag is null)
 					continue;
 
 				Vector2 hoverTopLeft = new(topLeft.Value.X - 184, topLeft.Value.Y - 8);
@@ -258,7 +260,7 @@ namespace Shockah.Talented.Patches
 
 				Vector2 iconLeftPosition = new(topLeft.Value.X - 208, (topLeft.Value.Y + bottomRight.Value.Y) / 2f + 4f);
 				Vector2 iconRightPosition = new(bottomRight.Value.X + 72, (topLeft.Value.Y + bottomRight.Value.Y) / 2f + 4f);
-				if (Instance.HasUnspentTalentPoints(skill))
+				if (Instance.GetAvailableTalentPoints().TryGetValue(talentTag, out var availablePoints) && availablePoints > 0)
 				{
 					b.Draw(
 						Game1.mouseCursors,
@@ -327,7 +329,8 @@ namespace Shockah.Talented.Patches
 					continue;
 
 				ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
-				if (!Instance.HasTalentDefinitions(skill))
+				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => t.Skill == skill);
+				if (talentTag is null)
 					continue;
 
 				Vector2 hoverTopLeft = new(topLeft.Value.X - 184, topLeft.Value.Y - 8);

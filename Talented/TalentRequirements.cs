@@ -21,31 +21,18 @@ namespace Shockah.Talented
 
 	internal record TagCountTalentRequirements(
 		ITalentTag Tag,
-		int Count,
-		bool CountEachRank
+		int Count
 	) : ITalentRequirements
 	{
 		public bool AreSatisifed(IEnumerable<ITalent> talents)
-		{
-			bool Matches(ITalentTag tag)
-			{
-				if (tag == Tag)
-					return true;
-				if (tag.Parent is not null)
-					return Matches(tag.Parent);
-				return false;
-			}
-
-			return talents.Where(t => t.Definition.Tags.Any(tag => Matches(tag))).Select(t => CountEachRank ? t.Rank : 1).Sum() >= Count;
-		}
+			=> talents.Count(t => t.Matches(Tag)) >= Count;
 	}
 
 	internal record SpecificTalentTalentRequirements(
-		string UniqueID,
-		int MinimumRank
+		string UniqueID
 	) : ITalentRequirements
 	{
 		public bool AreSatisifed(IEnumerable<ITalent> talents)
-			=> talents.Any(t => t.Definition.UniqueID == UniqueID && t.Rank >= MinimumRank);
+			=> talents.Any(t => t.UniqueID == UniqueID);
 	}
 }
