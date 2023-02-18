@@ -22,6 +22,7 @@ namespace Shockah.Talented
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			var harmony = new Harmony(ModManifest.UniqueID);
+			GameMenuPatches.Apply(harmony);
 			SkillsPagePatches.Apply(harmony);
 		}
 
