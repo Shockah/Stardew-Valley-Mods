@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
 using Shockah.Kokoro;
+using Shockah.Talented.UI;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -68,7 +69,7 @@ namespace Shockah.Talented.Patches
 				tryDefaultIfNoDownNeighborExists = true,
 				fullyImmutable = true
 			});
-			__instance.pages.Add(new SocialPage(__instance.xPositionOnScreen, __instance.yPositionOnScreen, __instance.width + 36, __instance.height));
+			__instance.pages.Add(new TalentsPage(__instance.xPositionOnScreen, __instance.yPositionOnScreen, __instance.width, __instance.height));
 
 			// updating neighbor IDs
 			__instance.tabs[1].rightNeighborID = TalentsTabID;

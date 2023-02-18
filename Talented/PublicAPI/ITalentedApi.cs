@@ -6,6 +6,10 @@ namespace Shockah.Talented
 	{
 		IRequirementFactories Factories { get; }
 
+		IReadOnlyList<ITalentTag> RootTalentTags { get; }
+		IReadOnlyList<ITalentTag> GetChildTalentTags(ITalentTag parent);
+		IReadOnlyList<ITalent> GetTalents(ITalentTag tag);
+
 		public interface IRequirementFactories
 		{
 			ITalentRequirements Talent(string uniqueID, int minimumRank = 1);
