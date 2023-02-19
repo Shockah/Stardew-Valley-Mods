@@ -3,7 +3,7 @@
 	public interface ITalent
 	{
 		string UniqueID { get; }
-		string Name { get; set; }
+		string Name { get; }
 		ITalent? ReplacedTalent { get; }
 		ITalentTag Tag { get; }
 		ITalentRequirements? Requirements { get; }

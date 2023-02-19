@@ -4,7 +4,6 @@ using StardewValley;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Shockah.Talented.UI
 {
@@ -16,7 +15,7 @@ namespace Shockah.Talented.UI
 		private readonly ClickableTextureComponent UpButton;
 		private readonly ClickableTextureComponent DownButton;
 		private readonly ClickableTextureComponent ScrollBar;
-		private readonly List<TalentTagButton> RootTalentTagButtons = new();
+		private readonly List<TalentTagButton> TalentTagButtons = new();
 
 		private readonly Rectangle ScrollBarRunner;
 		private int SlotPosition = 0;
@@ -34,27 +33,57 @@ namespace Shockah.Talented.UI
 			ScrollBarRunner = new Rectangle(ScrollBar.bounds.X, UpButton.bounds.Y + UpButton.bounds.Height + 4, ScrollBar.bounds.Width, height - 128 - UpButton.bounds.Height - 8);
 
 			RecreateComponents();
-			populateClickableComponentList();
 		}
 
 		private new void populateClickableComponentList()
 		{
 			base.populateClickableComponentList();
-			allClickableComponents.AddRange(RootTalentTagButtons);
+			allClickableComponents.AddRange(TalentTagButtons);
 		}
 
 		private void RecreateComponents()
 		{
-			RootTalentTagButtons.Clear();
+			TalentTagButtons.Clear();
+
+			int xOffset = xPositionOnScreen + borderWidth;
 
 			foreach (var rootTalentTag in Instance.RootTalentTags)
 			{
-				int xOffset = RootTalentTagButtons.Count == 0 ? (xPositionOnScreen + borderWidth) : RootTalentTagButtons.Last().bounds.Right + 8;
 				var button = new TalentTagButton(new Rectangle(xOffset, yPositionOnScreen + borderWidth + 64, 40, 40), rootTalentTag);
-				RootTalentTagButtons.Add(button);
+				TalentTagButtons.Add(button);
+				xOffset += button.bounds.Width + 8;
+			}
+
+			var hierarchy = GetTalentTagHierarchy(SelectedTag);
+			for (int i = 0; i < hierarchy.Count; i++)
+			{
+				var tag = hierarchy[i];
+
+				xOffset += 24;
+				foreach (var childTag in Instance.GetChildTalentTags(tag))
+				{
+					var button = new TalentTagButton(new Rectangle(xOffset, yPositionOnScreen + borderWidth + 64, 40, 40), childTag);
+					TalentTagButtons.Add(button);
+					xOffset += button.bounds.Width + 8;
+				}
 			}
 
 			populateClickableComponentList();
+		}
+		
+		private static List<ITalentTag> GetTalentTagHierarchy(ITalentTag? tag)
+		{
+			List<ITalentTag> hierarchy = new();
+			ITalentTag? current = tag;
+			while (true)
+			{
+				if (current is not null)
+					hierarchy.Insert(0, current);
+				else
+					break;
+				current = current.Parent;
+			}
+			return hierarchy;
 		}
 
 		public override void draw(SpriteBatch b)
@@ -64,11 +93,11 @@ namespace Shockah.Talented.UI
 			drawTextureBox(b, Game1.mouseCursors, new Rectangle(403, 383, 6, 6), ScrollBarRunner.X, ScrollBarRunner.Y, ScrollBarRunner.Width, ScrollBarRunner.Height, Color.White, 4f);
 			ScrollBar.draw(b);
 
-			foreach (var button in RootTalentTagButtons)
+			foreach (var button in TalentTagButtons)
 			{
 				if (button.Tag == HoveredTag)
 					button.DisplayStyle = TalentTagButton.DisplayStyleEnum.Hovered;
-				else if (SelectedTag is not null && button.Tag != SelectedTag)
+				else if (SelectedTag is not null && button.Tag.Parent != SelectedTag && !GetTalentTagHierarchy(SelectedTag).Contains(button.Tag))
 					button.DisplayStyle = TalentTagButton.DisplayStyleEnum.Deselected;
 				else
 					button.DisplayStyle = TalentTagButton.DisplayStyleEnum.Normal;
@@ -86,7 +115,7 @@ namespace Shockah.Talented.UI
 			HoverText = null;
 			HoveredTag = null;
 
-			foreach (var button in RootTalentTagButtons)
+			foreach (var button in TalentTagButtons)
 			{
 				if (button.containsPoint(x, y))
 				{
@@ -115,11 +144,16 @@ namespace Shockah.Talented.UI
 				return;
 			}
 
-			foreach (var button in RootTalentTagButtons)
+			foreach (var button in TalentTagButtons)
 			{
 				if (button.containsPoint(x, y))
 				{
-					SelectedTag = SelectedTag == button.Tag ? null : button.Tag;
+					if (SelectedTag == button.Tag)
+						SelectedTag = button.Tag.Parent is null ? null : button.Tag.Parent;
+					else
+						SelectedTag = button.Tag;
+					RecreateComponents();
+
 					Game1.playSound("smallSelect");
 					return;
 				}

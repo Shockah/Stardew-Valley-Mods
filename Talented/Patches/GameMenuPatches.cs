@@ -53,6 +53,9 @@ namespace Shockah.Talented.Patches
 
 		private static void GameMenu_constructor_Postfix(GameMenu __instance)
 		{
+			if (Instance.RootTalentTags.Count == 0)
+				return;
+
 			int tabOffset = __instance.tabs[1].bounds.X - __instance.tabs[0].bounds.X;
 
 			// making space for a new tab
