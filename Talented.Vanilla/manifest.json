@@ -1,0 +1,22 @@
+﻿{
+	"Name": "Talented: Vanilla",
+	"Author": "Shockah",
+	"Version": "0.1.0",
+	"Description": "Adds talent trees for vanilla skills and/or makes their effects configurable.",
+	"UniqueID": "Shockah.Talented.Vanilla",
+	"EntryDll": "Talented.Vanilla.dll",
+	"MinimumApiVersion": "3.0.0",
+	"UpdateKeys": [],
+	"Dependencies": [
+		{
+			"UniqueID": "Shockah.Kokoro",
+			"IsRequired": true,
+			"MinimumVersion": "0.1.0"
+		},
+		{
+			"UniqueID": "Shockah.Talented",
+			"IsRequired": false,
+			"MinimumVersion": "0.1.0"
+		}
+	]
+}
