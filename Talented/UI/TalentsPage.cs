@@ -4,6 +4,7 @@ using StardewValley;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.Talented.UI
 {
@@ -16,6 +17,7 @@ namespace Shockah.Talented.UI
 		private readonly ClickableTextureComponent DownButton;
 		private readonly ClickableTextureComponent ScrollBar;
 		private readonly List<TalentTagButton> TalentTagButtons = new();
+		private readonly List<TalentButton> TalentButtons = new();
 
 		private readonly Rectangle ScrollBarRunner;
 		private int SlotPosition = 0;
@@ -39,11 +41,13 @@ namespace Shockah.Talented.UI
 		{
 			base.populateClickableComponentList();
 			allClickableComponents.AddRange(TalentTagButtons);
+			allClickableComponents.AddRange(TalentButtons);
 		}
 
 		private void RecreateComponents()
 		{
 			TalentTagButtons.Clear();
+			TalentButtons.Clear();
 
 			int xOffset = xPositionOnScreen + borderWidth;
 
@@ -66,6 +70,16 @@ namespace Shockah.Talented.UI
 					TalentTagButtons.Add(button);
 					xOffset += button.bounds.Width + 8;
 				}
+			}
+
+			int yOffset = 0;
+
+			foreach (var talent in Instance.GetTalents().Where(t => SelectedTag is null || t.Matches(SelectedTag)))
+			{
+				var button = new TalentButton(xPositionOnScreen + borderWidth, yPositionOnScreen + borderWidth + 120 + yOffset, width - borderWidth * 2, talent);
+				button.UpdateHeight();
+				TalentButtons.Add(button);
+				yOffset += button.bounds.Height;
 			}
 
 			populateClickableComponentList();
@@ -104,7 +118,14 @@ namespace Shockah.Talented.UI
 				button.Draw(b);
 			}
 
+			foreach (var button in TalentButtons)
+			{
+				button.Draw(b);
+			}
+
 			drawHorizontalPartition(b, yPositionOnScreen + borderWidth + 88, small: true);
+			foreach (var button in TalentButtons)
+				drawHorizontalPartition(b, button.bounds.Bottom - 32, small: true);
 
 			if (!string.IsNullOrEmpty(HoverText))
 				drawHoverText(b, HoverText, Game1.smallFont);

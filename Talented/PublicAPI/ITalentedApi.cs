@@ -14,6 +14,7 @@ namespace Shockah.Talented
 
 		IReadOnlyList<ITalentTag> RootTalentTags { get; }
 		IReadOnlyList<ITalentTag> AllTalentTags { get; }
+		ITalentTag? GetTalentTag(string uniqueID);
 		IReadOnlyList<ITalentTag> GetChildTalentTags(ITalentTag parent);
 		IReadOnlyList<ITalent> GetTalents(ITalentTag tag);
 
@@ -31,10 +32,11 @@ namespace Shockah.Talented
 
 		public interface IRequirementFactories
 		{
-			ITalentRequirements Talent(string uniqueID);
-			ITalentRequirements Talent(ITalent definition);
+			ITalentRequirements Talent(string talentUniqueID);
+			ITalentRequirements Talent(ITalent talent);
 
-			ITalentRequirements Tag(string tag, int count);
+			ITalentRequirements Tag(string tagUniqueID, int count);
+			ITalentRequirements Tag(ITalentTag tag, int count);
 
 			ITalentRequirements All(params ITalentRequirements[] requirements);
 			ITalentRequirements All(IEnumerable<ITalentRequirements> requirements);

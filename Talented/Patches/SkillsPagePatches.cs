@@ -251,7 +251,7 @@ namespace Shockah.Talented.Patches
 					continue;
 
 				ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
-				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => t.Skill == skill);
+				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => skill.Equals(t.Skill));
 				if (talentTag is null)
 					continue;
 
@@ -329,7 +329,7 @@ namespace Shockah.Talented.Patches
 					continue;
 
 				ISkill skill = SkillExt.GetSkillFromUI(uiSkillIndex, spaceCoreSkillName);
-				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => t.Skill == skill);
+				ITalentTag? talentTag = Instance.AllTalentTags.FirstOrDefault(t => skill.Equals(t.Skill));
 				if (talentTag is null)
 					continue;
 

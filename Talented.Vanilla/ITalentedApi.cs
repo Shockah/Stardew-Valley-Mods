@@ -7,11 +7,28 @@ namespace Shockah.Talented.Vanilla
 {
 	public interface ITalentedApi
 	{
+		IRequirementFactories RequirementFactories { get; }
+
 		void RegisterTalentTag(ITalentTag tag);
 		void UnregisterTalentTag(ITalentTag tag);
 
 		void RegisterTalent(ITalent talent);
 		void UnregisterTalent(ITalent talent);
+
+		public interface IRequirementFactories
+		{
+			ITalentRequirements Talent(string talentUniqueID);
+			ITalentRequirements Talent(ITalent talent);
+
+			ITalentRequirements Tag(string tagUniqueID, int count);
+			ITalentRequirements Tag(ITalentTag tag, int count);
+
+			ITalentRequirements All(params ITalentRequirements[] requirements);
+			ITalentRequirements All(IEnumerable<ITalentRequirements> requirements);
+
+			ITalentRequirements Any(params ITalentRequirements[] requirements);
+			ITalentRequirements Any(IEnumerable<ITalentRequirements> requirements);
+		}
 	}
 
 	public interface ITalentTag
@@ -52,7 +69,9 @@ namespace Shockah.Talented.Vanilla
 	public interface ITalent
 	{
 		string UniqueID { get; }
+		TextureRectangle Icon { get; }
 		string Name { get; }
+		string Description { get; }
 		ITalent? ReplacedTalent { get; }
 		ITalentTag Tag { get; }
 		ITalentRequirements? Requirements { get; }
@@ -63,9 +82,9 @@ namespace Shockah.Talented.Vanilla
 			ITalentTag? current = Tag;
 			while (true)
 			{
-				if (current == tag)
+				if (tag.Equals(current))
 					return true;
-				current = tag.Parent;
+				current = current.Parent;
 				if (current == null)
 					return false;
 			}
@@ -74,15 +93,23 @@ namespace Shockah.Talented.Vanilla
 
 	public record Talent(
 		string UniqueID,
+		Func<TextureRectangle> IconProvider,
 		Func<string> NameProvider,
+		Func<string> DescriptionProvider,
 		ITalent? ReplacedTalent,
 		ITalentTag Tag,
 		ITalentRequirements? Requirements,
 		int PointCost = 1
 	) : ITalent
 	{
+		public TextureRectangle Icon
+			=> IconProvider();
+
 		public string Name
 			=> NameProvider();
+
+		public string Description
+			=> DescriptionProvider();
 	}
 
 	public interface ITalentRequirements

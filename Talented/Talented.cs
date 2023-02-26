@@ -41,7 +41,7 @@ namespace Shockah.Talented
 
 		#region API
 
-		public ITalentedApi.IRequirementFactories RequirementFactories => throw new NotImplementedException();
+		public ITalentedApi.IRequirementFactories RequirementFactories { get; private set; } = new RequirementFactories();
 
 		public void RegisterTalentTag(ITalentTag tag)
 		{
@@ -76,6 +76,9 @@ namespace Shockah.Talented
 
 		public IReadOnlyList<ITalentTag> AllTalentTags
 			=> TalentTags.ToList();
+
+		public ITalentTag? GetTalentTag(string uniqueID)
+			=> TalentTags.FirstOrDefault(t => t.UniqueID == uniqueID);
 
 		public IReadOnlyList<ITalentTag> GetChildTalentTags(ITalentTag parent)
 			=> TalentTags.Where(t => t.Parent == parent).ToList();

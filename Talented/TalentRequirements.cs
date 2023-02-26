@@ -29,10 +29,10 @@ namespace Shockah.Talented
 	}
 
 	internal record SpecificTalentTalentRequirements(
-		string UniqueID
+		ITalent Talent
 	) : ITalentRequirements
 	{
 		public bool AreSatisifed(IEnumerable<ITalent> talents)
-			=> talents.Any(t => t.UniqueID == UniqueID);
+			=> talents.Contains(Talent);
 	}
 }
