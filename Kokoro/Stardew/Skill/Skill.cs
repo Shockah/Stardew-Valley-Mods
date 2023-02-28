@@ -23,6 +23,8 @@ namespace Shockah.Kokoro.Stardew.Skill
 
 	public static class SkillExt
 	{
+		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
+
 		public static ISkill GetSkill(int? vanillaSkillIndex, string? spaceCoreSkillName)
 		{
 			if (spaceCoreSkillName is not null)
@@ -31,6 +33,12 @@ namespace Shockah.Kokoro.Stardew.Skill
 				return new VanillaSkill(vanillaSkillIndex.Value);
 			else
 				throw new ArgumentException($"Invalid values of arguments {nameof(vanillaSkillIndex)} ({vanillaSkillIndex}) and {nameof(spaceCoreSkillName)} ({spaceCoreSkillName}).");
+		}
+
+		public static ISkill GetSkillFromUI(int? uiSkillIndex, string? spaceCoreSkillName)
+		{
+			int? skillIndex = uiSkillIndex is null ? null : (OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex.Value] : uiSkillIndex);
+			return GetSkill(skillIndex, spaceCoreSkillName);
 		}
 	}
 
