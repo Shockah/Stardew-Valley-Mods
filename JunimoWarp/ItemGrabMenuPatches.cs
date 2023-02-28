@@ -89,10 +89,9 @@ namespace Shockah.JunimoWarp
 					.Insert(
 						SequenceMatcherPastBoundsDirection.After, true,
 
-						ldlocSideButtons,
 						new CodeInstruction(OpCodes.Ldarg_0),
-						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(ObtainWarpButton))),
-						new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(List<ClickableComponent>), nameof(List<ClickableComponent>.Add)))
+						ldlocSideButtons,
+						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(RepositionSideButtons_Transpiler_ModifySideButtons)))
 					)
 					.AllElements();
 			}
@@ -101,6 +100,15 @@ namespace Shockah.JunimoWarp
 				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
+		}
+
+		public static void RepositionSideButtons_Transpiler_ModifySideButtons(ItemGrabMenu menu, List<ClickableComponent> sideButtons)
+		{
+			if (menu.context is not Chest chest)
+				return;
+			if (chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest)
+				return;
+			sideButtons.Add(ObtainWarpButton(menu));
 		}
 
 		private static IEnumerable<CodeInstruction> draw_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -119,9 +127,8 @@ namespace Shockah.JunimoWarp
 						SequenceMatcherPastBoundsDirection.Before, true,
 
 						new CodeInstruction(OpCodes.Ldarg_0).WithLabels(labels),
-						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(ObtainWarpButton))),
 						new CodeInstruction(OpCodes.Ldarg_1),
-						new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(ClickableTextureComponent), nameof(ClickableTextureComponent.draw), new Type[] { typeof(SpriteBatch) }))
+						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(draw_Transpiler_DrawWarpButton)))
 					)
 					.AllElements();
 			}
@@ -130,6 +137,15 @@ namespace Shockah.JunimoWarp
 				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
+		}
+
+		public static void draw_Transpiler_DrawWarpButton(ItemGrabMenu menu, SpriteBatch b)
+		{
+			if (menu.context is not Chest chest)
+				return;
+			if (chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest)
+				return;
+			ObtainWarpButton(menu).draw(b);
 		}
 
 		private static IEnumerable<CodeInstruction> performHoverAction_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -147,11 +163,9 @@ namespace Shockah.JunimoWarp
 						SequenceMatcherPastBoundsDirection.After, true,
 
 						new CodeInstruction(OpCodes.Ldarg_0),
-						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(ObtainWarpButton))),
 						new CodeInstruction(OpCodes.Ldarg_1),
 						new CodeInstruction(OpCodes.Ldarg_2),
-						new CodeInstruction(OpCodes.Ldc_R4, 0.25f),
-						new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(ClickableTextureComponent), nameof(ClickableTextureComponent.tryHover)))
+						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ItemGrabMenuPatches), nameof(performHoverAction_Transpiler_TryHoverWarpButton)))
 					)
 					.AllElements();
 			}
@@ -162,8 +176,22 @@ namespace Shockah.JunimoWarp
 			}
 		}
 
+		public static void performHoverAction_Transpiler_TryHoverWarpButton(ItemGrabMenu menu, int x, int y)
+		{
+			if (menu.context is not Chest chest)
+				return;
+			if (chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest)
+				return;
+			ObtainWarpButton(menu).tryHover(x, y, 0.25f);
+		}
+
 		private static void performHoverAction_Postfix(ItemGrabMenu __instance, int x, int y)
 		{
+			if (__instance.context is not Chest chest)
+				return;
+			if (chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest)
+				return;
+
 			var button = ObtainWarpButton(__instance);
 			button.tryHover(x, y);
 			if (button.containsPoint(x, y))
@@ -172,12 +200,14 @@ namespace Shockah.JunimoWarp
 
 		private static void receiveLeftClick_Postfix(ItemGrabMenu __instance, int x, int y)
 		{
+			if (__instance.context is not Chest chest)
+				return;
+			if (chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest)
+				return;
+
 			var button = ObtainWarpButton(__instance);
 			if (button.containsPoint(x, y))
 			{
-				if (__instance.context is not Chest chest)
-					return;
-
 				Game1.exitActiveMenu();
 
 				if (Instance.Config.RequiredEmptyChest)
