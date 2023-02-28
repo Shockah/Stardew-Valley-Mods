@@ -8,6 +8,8 @@ This is a list of all Stardew Valley mods I made. Issues or ideas can be reporte
   Access the Ginger Island early, depending on your friendship with Willy. Optionally access the Ginger Island west/farm, too. Configure the boat fix materials, ticket price and Golden Walnut requirements.
 * **Flexible Sprinklers** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/10931), [GitHub](FlexibleSprinklers))  
   Ever hated having to put a sprinkler in the middle of your crops? Ever wanted to make a layout that isn't 5x5? Now you can!
+* **Kokoro** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/15682), [GitHub](Kokoro))  
+  A core mod for Shockah's mods.
 * **Machine Status** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11177), [GitHub](EarlyGingerIsland))  
   Machine ready/waiting/busy status at a glance.
 * **Please Gift Me In Person** ([Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/11217), [GitHub](PleaseGiftMeInPerson))  
