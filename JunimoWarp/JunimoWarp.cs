@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.SMAPI;
 using Shockah.Kokoro.Stardew;
 using StardewModdingAPI;
@@ -14,20 +16,46 @@ using System.Linq;
 
 namespace Shockah.JunimoWarp
 {
-	public class JunimoWarp : BaseMod
+	public class JunimoWarp : BaseMod<ModConfig>
 	{
 		internal static JunimoWarp Instance { get; private set; } = null!;
 
 		private readonly PerScreen<Dictionary<Guid, Action<GameLocation, IntPoint>>> AwaitingNextWarpResponse = new(() => new());
 
-		public override void Entry(IModHelper helper)
+		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
 
+			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			ItemGrabMenuPatches.Apply(harmony);
+		}
+
+		private void SetupConfig()
+		{
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			GMCMI18nHelper helper = new(api, ModManifest, Helper.Translation);
+
+			api.Register(
+				ModManifest,
+				reset: () => Config = new(),
+				save: () =>
+				{
+					WriteConfig();
+					LogConfig();
+				}
+			);
+
+			helper.AddBoolOption("config.requiredEmptyChest", () => Config.RequiredEmptyChest);
+		}
+
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		{
+			SetupConfig();
 		}
 
 		private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)

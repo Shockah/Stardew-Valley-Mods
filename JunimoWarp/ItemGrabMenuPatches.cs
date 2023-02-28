@@ -13,7 +13,6 @@ using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley.Objects;
-using Shockah.Kokoro.Stardew;
 
 namespace Shockah.JunimoWarp
 {
@@ -52,16 +51,22 @@ namespace Shockah.JunimoWarp
 				original: () => AccessTools.Method(typeof(ItemGrabMenu), nameof(ItemGrabMenu.receiveLeftClick)),
 				postfix: new HarmonyMethod(typeof(ItemGrabMenuPatches), nameof(receiveLeftClick_Postfix))
 			);
+
+			harmony.TryPatch(
+				monitor: Instance.Monitor,
+				original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.populateClickableComponentList)),
+				postfix: new HarmonyMethod(typeof(ItemGrabMenuPatches), nameof(IClickableMenu_populateClickableComponentList_Postfix))
+			);
 		}
 
 		public static ClickableTextureComponent ObtainWarpButton(ItemGrabMenu menu)
 		{
 			if (!WarpButtons.TryGetValue(menu, out var button))
 			{
-				// TODO: i18n
-				button = new ClickableTextureComponent("", new Rectangle(menu.xPositionOnScreen + menu.width, menu.yPositionOnScreen + menu.height / 3 - 64, 64, 64), "", "Warp", Game1.mouseCursors, new Rectangle(108, 491, 16, 16), 4f)
+				button = new ClickableTextureComponent("", new Rectangle(menu.xPositionOnScreen + menu.width, menu.yPositionOnScreen + menu.height / 3 - 64, 64, 64), "", Instance.Helper.Translation.Get("junimoWarp.tooltip"), Game1.mouseCursors, new Rectangle(108, 491, 16, 16), 4f)
 				{
 					myID = WarpButtonID,
+					leftNeighborID = 53912,
 					region = 15923
 				};
 				WarpButtons.AddOrUpdate(menu, button);
@@ -174,11 +179,29 @@ namespace Shockah.JunimoWarp
 					return;
 
 				Game1.exitActiveMenu();
+
+				if (Instance.Config.RequiredEmptyChest)
+				{
+					foreach (var item in __instance.ItemsToGrabMenu.actualInventory)
+						if (item is not null && item.Stack > 0)
+						{
+							Kokoro.Kokoro.Instance.QueueObjectDialogue(Instance.Helper.Translation.Get("junimoWarp.notEmpty.message"));
+							return;
+						}
+				}
+
 				Instance.RequestNextWarp(Game1.player.currentLocation, new((int)chest.TileLocation.X, (int)chest.TileLocation.Y), (warpLocation, warpPoint) =>
 				{
 					JunimoWarp.AnimatePlayerWarp(warpLocation, warpPoint);
 				});
 			}
+		}
+
+		private static void IClickableMenu_populateClickableComponentList_Postfix(IClickableMenu __instance)
+		{
+			if (__instance is not ItemGrabMenu menu)
+				return;
+			menu.allClickableComponents.Add(ObtainWarpButton(menu));
 		}
 	}
 }

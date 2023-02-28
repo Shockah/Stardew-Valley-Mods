@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Shockah.Kokoro.Stardew
 {
-    public enum MultiplayerMode { SinglePlayer, Client, Server }
+	public enum MultiplayerMode { SinglePlayer, Client, Server }
 	
 	public static class GameExt
 	{
