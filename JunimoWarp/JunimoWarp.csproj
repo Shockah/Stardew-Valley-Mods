@@ -7,6 +7,8 @@
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>Nullable</WarningsAsErrors>
 		<EnableHarmony>true</EnableHarmony>
+		<BundleExtraAssemblies>ThirdParty</BundleExtraAssemblies>
+		<IgnoreModFilePaths>Mono.Cecil.Rocks.dll</IgnoreModFilePaths>
 		<EnableModZip Condition="$(Configuration) != 'Release'">False</EnableModZip>
 	</PropertyGroup>
 	<ItemGroup>
