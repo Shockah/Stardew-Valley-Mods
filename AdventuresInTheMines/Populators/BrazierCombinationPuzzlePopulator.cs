@@ -1,8 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Shockah.AdventuresInTheMines.Config;
-using Shockah.CommonModCode;
-using Shockah.CommonModCode.Map;
-using Shockah.CommonModCode.Stardew;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Map;
+using Shockah.Kokoro.Stardew;
 using StardewValley;
 using StardewValley.Locations;
 using System;

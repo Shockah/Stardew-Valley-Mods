@@ -1,5 +1,5 @@
-﻿using Shockah.CommonModCode;
-using Shockah.CommonModCode.Map;
+﻿using Shockah.Kokoro;
+using Shockah.Kokoro.Map;
 using StardewValley.Locations;
 using System;
 using System.Runtime.CompilerServices;
@@ -24,10 +24,8 @@ namespace Shockah.AdventuresInTheMines
 
 		public IMap<bool>.WithKnownSize MapReachableTiles(MineShaft location)
 		{
-			var ladderPosition = LadderFinder.FindLadderPosition(location);
-			if (ladderPosition is null)
-				throw new ArgumentException($"The {location} location does not seem to have a ladder.");
-			IntPoint belowLadderPosition = new(ladderPosition.Value.X, ladderPosition.Value.Y + 1);
+			var ladderPosition = LadderFinder.FindLadderPosition(location) ?? throw new ArgumentException($"The {location} location does not seem to have a ladder.");
+			IntPoint belowLadderPosition = new(ladderPosition.X, ladderPosition.Y + 1);
 
 			var occupancyMap = MapOccupancyMapper.MapOccupancy(location);
 			return FloodFill.Run(occupancyMap, belowLadderPosition, (map, point) => map[point] != IMapOccupancyMapper.Tile.Blocked);

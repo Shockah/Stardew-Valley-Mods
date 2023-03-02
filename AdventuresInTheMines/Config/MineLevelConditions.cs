@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Shockah.CommonModCode.Stardew;
+using Shockah.Kokoro.Stardew;
 using StardewValley.Locations;
 using System;
 using System.Collections.Generic;

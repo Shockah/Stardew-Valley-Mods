@@ -1,8 +1,11 @@
-﻿using Shockah.CommonModCode;
-using Shockah.CommonModCode.Map;
+﻿using Shockah.Kokoro;
+using Shockah.Kokoro.Map;
 using StardewValley.Locations;
-using System;
 using System.Runtime.CompilerServices;
+
+#if DEBUG
+using System;
+#endif
 
 namespace Shockah.AdventuresInTheMines
 {

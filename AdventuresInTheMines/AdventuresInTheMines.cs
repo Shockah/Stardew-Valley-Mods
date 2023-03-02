@@ -1,8 +1,8 @@
 ﻿using HarmonyLib;
 using Shockah.AdventuresInTheMines.Config;
 using Shockah.AdventuresInTheMines.Populators;
-using Shockah.CommonModCode;
-using Shockah.CommonModCode.Stardew;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using Shockah.CommonModCode;
-using Shockah.CommonModCode.Stardew;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;

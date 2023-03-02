@@ -1,4 +1,4 @@
-﻿using Shockah.CommonModCode;
+﻿using Shockah.Kokoro;
 using StardewValley.Locations;
 using System.Runtime.CompilerServices;
 
