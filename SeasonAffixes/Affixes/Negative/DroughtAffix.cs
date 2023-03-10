@@ -1,4 +1,6 @@
 ﻿using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.UI;
+using StardewValley;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -9,9 +11,9 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static string ShortID => "Drought";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public AffixScore Score => AffixScore.Negative;
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 333, 13, 13));
 
 		public DroughtAffix(SeasonAffixes mod)
 		{
@@ -19,10 +21,19 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		double ISeasonAffix.GetProbabilityWeight(Season season, int year)
-		{
-			return season == Season.Winter ? 0 : 1;
-		}
+		public int GetPositivity(Season season, int year)
+			=> 0;
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public int GetNegativity(Season season, int year)
+			=> 1;
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public double GetProbabilityWeight(Season season, int year)
+			=> season == Season.Winter ? 0 : 1;
+
+		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
+			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Thunder";
 
 		// TODO: Drought implementation
 	}

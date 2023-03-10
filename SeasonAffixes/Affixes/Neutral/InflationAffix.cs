@@ -5,17 +5,17 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
-	internal sealed class ThunderAffix : ISeasonAffix
+	internal sealed class InflationAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Thunder";
+		private static string ShortID => "Inflation";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
-		public ThunderAffix(SeasonAffixes mod)
+		public InflationAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -28,13 +28,6 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public int GetNegativity(Season season, int year)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(Season season, int year)
-			=> season == Season.Winter ? 0 : 1;
-
-		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Drought";
-
-		// TODO: Thunder implementation
+		// TODO: Inflation implementation
 	}
 }

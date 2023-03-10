@@ -9,7 +9,7 @@ namespace Shockah.SeasonAffixes
 		IEnumerable<ISeasonAffix> Affixes { get; }
 	}
 
-	internal class AllAffixesProvider : IAffixesProvider
+	internal sealed class AllAffixesProvider : IAffixesProvider
 	{
 		private ISeasonAffixesApi Api { get; init; }
 
@@ -22,7 +22,7 @@ namespace Shockah.SeasonAffixes
 		}
 	}
 
-	internal class ApplicableToSeasonAffixesProvider : IAffixesProvider
+	internal sealed class ApplicableToSeasonAffixesProvider : IAffixesProvider
 	{
 		private IAffixesProvider Wrapped { get; init; }
 		private Season Season { get; init; }

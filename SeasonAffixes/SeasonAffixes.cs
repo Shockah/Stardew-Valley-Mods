@@ -7,6 +7,9 @@ using StardewValley.Menus;
 using System.Linq;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
+using Shockah.SeasonAffixes.Affixes.Positive;
+using Shockah.SeasonAffixes.Affixes.Negative;
+using Shockah.SeasonAffixes.Affixes.Neutral;
 
 namespace Shockah.SeasonAffixes
 {
@@ -21,6 +24,21 @@ namespace Shockah.SeasonAffixes
 		{
 			Instance = this;
 
+			// positive
+			RegisterAffix(new DescentAffix(this));
+			RegisterAffix(new FortuneAffix(this));
+			RegisterAffix(new LoveAffix(this));
+
+			// negative
+			RegisterAffix(new CrowsAffix(this));
+			RegisterAffix(new DroughtAffix(this));
+			RegisterAffix(new HardWaterAffix(this));
+			RegisterAffix(new RustAffix(this));
+
+			// neutral
+			RegisterAffix(new InflationAffix(this));
+			RegisterAffix(new ThunderAffix(this));
+
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
 				monitor: Monitor,
@@ -29,59 +47,42 @@ namespace Shockah.SeasonAffixes
 			);
 		}
 
-		private static ISeasonAffix? GetWeightedRandomAffix(IEnumerable<ISeasonAffix> possibleAffixes, Season season, int year, int seedExtra = 0)
+		private IClickableMenu CreateAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen)
 		{
-			List<(ISeasonAffix, double)> items = new();
-			double weightSum = 0;
-
-			foreach (var affix in possibleAffixes)
-			{
-				var weight = affix.GetProbabilityWeight(season, year);
-				if (weight > 0)
-				{
-					items.Add((affix, weight));
-					weightSum += weight;
-				}
-			}
-			if (items.Count == 0)
-				return null;
-
 			int seed = 0;
 			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
 			seed = 31 * seed + (int)season;
-			seed = 31 * seed + (int)year;
-			seed = 31 * seed + seedExtra;
+			seed = 31 * seed + year;
 			Random random = new(seed);
 
-			double weightedRandom = random.NextDouble() * weightSum;
-			weightSum = 0;
+			WeightedRandom<ModConfig.AffixSetEntry> affixSetEntries = new();
+			foreach (var entry in Config.AffixSetEntries)
+				affixSetEntries.Add(new(entry.Weight, entry));
+			var affixSetEntry = affixSetEntries.Next(random);
 
-			foreach (var (affix, weight) in items)
-			{
-				weightSum += weight;
-				if (weightSum < weightedRandom)
-					return affix;
-			}
-			throw new InvalidOperationException("Reached invalid state.");
+			var allAffixesProvider = new AllAffixesProvider(this);
+			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season, year);
+			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider);
+			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(allCombinationsAffixSetGenerator);
+			var fittingScoreAffixSetGenerator = new FittingScoreAffixSetGenerator(nonConflictingAffixSetGenerator, affixSetEntry.Positive, affixSetEntry.Negative);
+			var shuffledAffixSetGenerator = new ShuffledAffixSetGenerator(fittingScoreAffixSetGenerator, random);
+			var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(shuffledAffixSetGenerator);
+			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(asLittleAsPossibleAffixSetGenerator);
+
+			var affixSets = avoidingDuplicatesIfPossibleAffixSetGenerator.Generate(season, year).Take(Config.Choices);
+			return CreateAffixChoiceMenu(affixSets, rerollCount, onAffixChosen);
 		}
 
-		private IClickableMenu CreateAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen)
+		private IClickableMenu CreateAffixChoiceMenu(IEnumerable<IReadOnlySet<ISeasonAffix>> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
 		{
-			var choices = GetWeightedRandomAffixes(AllAffixesStorage.Values, Config.Choices, season, year);
-			return CreateAffixChoiceMenu(choices, rerollCount, onAffixChosen);
-		}
-
-		private IClickableMenu CreateAffixChoiceMenu(IEnumerable<ISeasonAffix> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
-		{
-			// TODO:
-			throw new NotImplementedException();
+			return new AffixChoiceMenu(choices.Select(affixes => affixes.ToList()).ToList());
 		}
 
 		private static void Game1_showEndOfNightStuff_Prefix()
 		{
 			var tomorrow = Game1.Date.GetByAddingDays(1);
-			if (tomorrow.GetSeason() == Game1.Date.GetSeason())
-				return;
+			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
+			//	return;
 
 			Game1.endOfNightMenus.Push(Instance.CreateAffixChoiceMenu(
 				season: tomorrow.GetSeason(),
@@ -127,30 +128,12 @@ namespace Shockah.SeasonAffixes
 				.Where(affix => affix.GetProbabilityWeight(season, year) > 0)
 				.ToHashSet();
 
-		public IReadOnlySet<ISeasonAffix> GetWeightedRandomAffixes(IEnumerable<ISeasonAffix> possibleAffixes, int choices, Season season, int year)
-		{
-			HashSet<ISeasonAffix> affixesChosen = new();
-			var affixesLeft = possibleAffixes.ToHashSet();
-
-			for (int i = 0; i < choices; i++)
-			{
-				var affix = GetWeightedRandomAffix(affixesLeft, season, year, i);
-				if (affix is null)
-					continue;
-
-				affixesLeft.Remove(affix);
-				affixesChosen.Add(affix);
-			}
-			return affixesChosen;
-		}
-
 		public void PresentAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen)
 		{
-			var choices = GetWeightedRandomAffixes(AllAffixesStorage.Values, Config.Choices, season, year);
-			PresentAffixChoiceMenu(choices, rerollCount, onAffixChosen);
+			Game1.activeClickableMenu = CreateAffixChoiceMenu(season, year, rerollCount, onAffixChosen);
 		}
 
-		public void PresentAffixChoiceMenu(IEnumerable<ISeasonAffix> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
+		public void PresentAffixChoiceMenu(IEnumerable<IReadOnlySet<ISeasonAffix>> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
 		{
 			Game1.activeClickableMenu = CreateAffixChoiceMenu(choices, rerollCount, onAffixChosen);
 		}

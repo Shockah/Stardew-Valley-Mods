@@ -1,23 +1,21 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using Shockah.Kokoro.Stardew;
+﻿using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
-using StardewValley.BellsAndWhistles;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class CrowsAffix : ISeasonAffix
+	internal sealed class RustAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Crows";
+		private static string ShortID => "Rust";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>(Critter.critterTexture), new(134, 46, 21, 17));
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 64, 16, 16));
 
-		public CrowsAffix(SeasonAffixes mod)
+		public RustAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -30,10 +28,6 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public int GetNegativity(Season season, int year)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(Season season, int year)
-			=> season == Season.Winter ? 0 : 1;
-
-		// TODO: Crows implementation
+		// TODO: Rust implementation
 	}
 }

@@ -20,8 +20,7 @@ namespace Shockah.SeasonAffixes
 
 		IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(Season season, int year);
 
-		IReadOnlySet<ISeasonAffix> GetWeightedRandomAffixes(IEnumerable<ISeasonAffix> possibleAffixes, int choices, Season season, int year);
 		void PresentAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen);
-		void PresentAffixChoiceMenu(IEnumerable<ISeasonAffix> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen);
+		void PresentAffixChoiceMenu(IEnumerable<IReadOnlySet<ISeasonAffix>> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen);
 	}
 }

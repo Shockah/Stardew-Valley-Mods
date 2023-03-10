@@ -1,17 +1,34 @@
 ﻿{
-  // positive affixes
-  "affix.positive.Descent.name": "Descent",
-  "affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
-  "affix.positive.Fortune.name": "Fortune",
-  "affix.positive.Fortune.description": "Greatly increased daily luck.",
+	// affix choice menu
+	"season.title": "New season",
+	"season.replacement.description": "Choose the theme of the season.",
+	"season.incremental.description": "Choose additional affixes for the season.",
 
-  // negative affixes
-  "affix.positive.Crows.name": "Crows",
-  "affix.positive.Crows.description": "Scarecrows do not work.",
-  "affix.positive.Drought.name": "Drought",
-  "affix.positive.Drought.description": "It never rains.",
+	// season name
+	"season.separator.last": " and ",
+	"season.separator.other": ", ",
 
-  // neutral affixes
-  "affix.positive.Thunder.name": "Thunder",
-  "affix.positive.Thunder.description": "Storms are twice as likely as usual."
+	// positive affixes
+	"affix.positive.Descent.name": "Descent",
+	"affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
+	"affix.positive.Fortune.name": "Fortune",
+	"affix.positive.Fortune.description": "Greatly increased daily luck.",
+	"affix.positive.Love.name": "Love",
+	"affix.positive.Love.description": "Double friendship gain with romanceable characters.",
+
+	// negative affixes
+	"affix.negative.Crows.name": "Crows",
+	"affix.negative.Crows.description": "Scarecrows do not work.",
+	"affix.negative.Drought.name": "Drought",
+	"affix.negative.Drought.description": "It never rains.",
+	"affix.negative.HardWater.name": "Hard Water",
+	"affix.negative.HardWater.description": "Sprinklers do not work.",
+	"affix.negative.Rust.name": "Rust",
+	"affix.negative.Rust.description": "All machines take 50% longer to process items.",
+
+	// neutral affixes
+	"affix.neutral.Thunder.name": "Thunder",
+	"affix.neutral.Thunder.description": "Storms are twice as likely as usual.",
+	"affix.neutral.Inflation.name": "Inflation",
+	"affix.neutral.Inflation.description": "All prices are increased by 20%."
 }

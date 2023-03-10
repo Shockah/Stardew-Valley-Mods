@@ -17,18 +17,10 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public int AffixRepeatPeriod { get; internal set; } = 2;
 		[JsonProperty] public int AffixSetRepeatPeriod { get; internal set; } = 8;
 
-		public readonly struct AffixSetEntry
-		{
-			public int Positive { get; init; }
-			public int Negative { get; init; }
-			public double Weight { get; init; }
-
-			public AffixSetEntry(int positive, int negative, double weight)
-			{
-				this.Positive = positive;
-				this.Negative = negative;
-				this.Weight = weight;
-			}
-		}
+		public record AffixSetEntry(
+			int Positive,
+			int Negative,
+			double Weight
+		);
 	}
 }
