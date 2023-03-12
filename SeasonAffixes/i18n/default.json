@@ -11,8 +11,12 @@
 	// positive affixes
 	"affix.positive.Descent.name": "Descent",
 	"affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
+	"affix.positive.FairyTales.name": "Fairy Tales",
+	"affix.positive.FairyTales.description": "Greatly increased chance for a Fairy or Witch nightly event.",
 	"affix.positive.Fortune.name": "Fortune",
 	"affix.positive.Fortune.description": "Greatly increased daily luck.",
+	"affix.positive.Innovation.name": "Innovation",
+	"affix.positive.Innovation.description": "All machines take 25% shorter to process items.",
 	"affix.positive.Love.name": "Love",
 	"affix.positive.Love.description": "Double friendship gain with romanceable characters.",
 
@@ -23,12 +27,21 @@
 	"affix.negative.Drought.description": "It never rains.",
 	"affix.negative.HardWater.name": "Hard Water",
 	"affix.negative.HardWater.description": "Sprinklers do not work.",
+	"affix.negative.Hurricane.name": "Hurricane",
+	"affix.negative.Hurricane.description": "Forage items do not spawn.",
 	"affix.negative.Rust.name": "Rust",
 	"affix.negative.Rust.description": "All machines take 50% longer to process items.",
+	"affix.negative.Silence.name": "Silence",
+	"affix.negative.Silence.description": "You cannot speak.",
 
 	// neutral affixes
+	"affix.neutral.Inflation.name": "Inflation",
+	"affix.neutral.Inflation.description": "All prices are increased by 20%.",
 	"affix.neutral.Thunder.name": "Thunder",
 	"affix.neutral.Thunder.description": "Storms are twice as likely as usual.",
-	"affix.neutral.Inflation.name": "Inflation",
-	"affix.neutral.Inflation.description": "All prices are increased by 20%."
+	"affix.neutral.Tides.name": "Tides",
+	"affix.neutral.Tides.description": "Common fish become uncommon.",
+
+	// special affixes
+	"affix.positive.Skill.description": "Increased {{Skill}} level by 3. {{Skill}} experience gain increased by 20%."
 }

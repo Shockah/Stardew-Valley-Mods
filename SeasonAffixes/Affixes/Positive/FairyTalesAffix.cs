@@ -1,21 +1,22 @@
-﻿using Shockah.Kokoro.Stardew;
+﻿using Microsoft.Xna.Framework.Graphics;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class LoveAffix : ISeasonAffix
+	internal sealed class FairyTalesAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Love";
+		private static string ShortID => "FairyTales";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
+		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>("LooseSprites\\temporary_sprites_1"), new(2, 129, 18, 16));
 
-		public LoveAffix(SeasonAffixes mod)
+		public FairyTalesAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -28,9 +29,6 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public int GetNegativity(Season season, int year)
 			=> 0;
 
-		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Silence";
-
-		// TODO: Love implementation
+		// TODO: Fairy Tales implementation
 	}
 }

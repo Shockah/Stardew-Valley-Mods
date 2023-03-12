@@ -14,34 +14,46 @@ namespace Shockah.SeasonAffixes
 	internal sealed class AllCombinationsAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixesProvider AffixesProvider { get; init; }
+		private int? Positivity { get; init; }
+		private int? Negativity { get; init; }
 
-		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider)
+		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, int? positivity, int? negativity)
 		{
 			this.AffixesProvider = affixesProvider;
+			this.Positivity = positivity;
+			this.Negativity = negativity;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
 		{
 			var affixes = AffixesProvider.Affixes.ToList();
-			return GetAllCombinations(affixes.Select(a => a.UniqueID).ToList(), new())
+			return GetAllCombinations(affixes.ToDictionary(a => a.UniqueID, a => a.GetPositivity(season, year)), affixes.ToDictionary(a => a.UniqueID, a => a.GetNegativity(season, year)), affixes.Select(a => a.UniqueID).ToList(), new(), 0, 0)
 				.ToHashSet()
-				.Select(affixIds => affixIds.Select(id => SeasonAffixes.Instance.AllAffixes[id]!).ToHashSet());
+				.Select(affixIds => affixIds.Select(id => SeasonAffixes.Instance.GetAffix(id)!).ToHashSet());
 		}
 
-		private IEnumerable<IReadOnlySet<string>> GetAllCombinations(List<string> remainingAffixes, HashSet<string> current)
+		private IEnumerable<IReadOnlySet<string>> GetAllCombinations(Dictionary<string, int> affixPositivity, Dictionary<string, int> affixNegativity, List<string> remainingAffixes, HashSet<string> current, int currentPositivity, int currentNegativity)
 		{
 			if (remainingAffixes.Count == 0)
 			{
+				if (Positivity is not null && currentPositivity < Positivity.Value)
+					yield break;
+				if (Negativity is not null && currentNegativity < Negativity.Value)
+					yield break;
 				yield return current;
 				yield break;
 			}
+			if (Positivity is not null && currentPositivity > Positivity.Value)
+				yield break;
+			if (Negativity is not null && currentNegativity > Negativity.Value)
+				yield break;
 
-			var affix = remainingAffixes[0];
+			var affixID = remainingAffixes[0];
 			var newRemainingAffixes = remainingAffixes.Skip(1).ToList();
 
-			foreach (var result in GetAllCombinations(newRemainingAffixes, current))
+			foreach (var result in GetAllCombinations(affixPositivity, affixNegativity, newRemainingAffixes, current, currentPositivity, currentNegativity))
 				yield return result;
-			foreach (var result in GetAllCombinations(newRemainingAffixes, new HashSet<string>(current) { affix }))
+			foreach (var result in GetAllCombinations(affixPositivity, affixNegativity, newRemainingAffixes, new HashSet<string>(current) { affixID }, currentPositivity + affixPositivity[affixID], currentNegativity + affixNegativity[affixID]))
 				yield return result;
 		}
 	}
@@ -57,7 +69,8 @@ namespace Shockah.SeasonAffixes
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
 		{
-			return AffixSetGenerator.Generate(season, year)
+			var test = AffixSetGenerator.Generate(season, year).ToList();
+			return test
 				.Where(c =>
 				{
 					var list = c.ToList();
@@ -70,39 +83,25 @@ namespace Shockah.SeasonAffixes
 		}
 	}
 
-	internal sealed class FittingScoreAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-		private int Positivity { get; init; }
-		private int Negativity { get; init; }
-
-		public FittingScoreAffixSetGenerator(IAffixSetGenerator affixSetGenerator, int positivity, int negativity)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-			this.Positivity = positivity;
-			this.Negativity = negativity;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
-		{
-			return AffixSetGenerator.Generate(season, year)
-				.Where(c => c.Sum(a => a.GetPositivity(season, year)) == Positivity && c.Sum(a => a.GetNegativity(season, year)) == Negativity);
-		}
-	}
-
-	internal sealed class ShuffledAffixSetGenerator : IAffixSetGenerator
+	internal sealed class WeightedRandomAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
 		private Random Random { get; init; }
 
-		public ShuffledAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random)
+		public WeightedRandomAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
 			this.Random = random;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
-			=> AffixSetGenerator.Generate(season, year).Shuffled(Random);
+		{
+			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
+			foreach (var choice in AffixSetGenerator.Generate(season, year))
+				weightedRandom.Add(new(choice.Average(a => a.GetProbabilityWeight(season, year)), choice));
+			while (weightedRandom.Items.Count != 0)
+				yield return weightedRandom.Next(Random, consume: true);
+		}
 	}
 
 	internal sealed class AsLittleAsPossibleAffixSetGenerator : IAffixSetGenerator

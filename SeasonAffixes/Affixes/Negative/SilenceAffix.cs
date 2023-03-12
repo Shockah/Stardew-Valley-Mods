@@ -5,17 +5,17 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class RustAffix : ISeasonAffix
+	internal sealed class SilenceAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Rust";
+		private static string ShortID => "Silence";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 64, 16, 16));
+		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 144, 16, 16));
 
-		public RustAffix(SeasonAffixes mod)
+		public SilenceAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -29,8 +29,8 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			=> 1;
 
 		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Innovation";
+			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Love";
 
-		// TODO: Rust implementation
+		// TODO: Silence implementation
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.Stardew.Skill;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
@@ -33,6 +34,9 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public double GetProbabilityWeight(Season season, int year)
 			=> season == Season.Winter ? 0 : 1;
+
+		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
+			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Skill:{VanillaSkill.Farming.UniqueID}";
 
 		// TODO: Crows implementation
 	}

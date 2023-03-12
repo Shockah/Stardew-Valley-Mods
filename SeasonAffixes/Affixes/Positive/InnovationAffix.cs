@@ -5,17 +5,17 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class LoveAffix : ISeasonAffix
+	internal sealed class InnovationAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Love";
+		private static string ShortID => "Innovation";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 80, 16, 16));
 
-		public LoveAffix(SeasonAffixes mod)
+		public InnovationAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -29,8 +29,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			=> 0;
 
 		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Silence";
+			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Rust";
 
-		// TODO: Love implementation
+		// TODO: Innovation implementation
 	}
 }

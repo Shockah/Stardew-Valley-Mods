@@ -10,6 +10,7 @@ using Shockah.Kokoro.Stardew;
 using Shockah.SeasonAffixes.Affixes.Positive;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
+using Shockah.Kokoro.Stardew.Skill;
 
 namespace Shockah.SeasonAffixes
 {
@@ -24,20 +25,29 @@ namespace Shockah.SeasonAffixes
 		{
 			Instance = this;
 
-			// positive
+			// positive affixes
 			RegisterAffix(new DescentAffix(this));
+			RegisterAffix(new FairyTalesAffix(this));
 			RegisterAffix(new FortuneAffix(this));
+			RegisterAffix(new InnovationAffix(this));
 			RegisterAffix(new LoveAffix(this));
 
-			// negative
+			// negative affixes
 			RegisterAffix(new CrowsAffix(this));
 			RegisterAffix(new DroughtAffix(this));
 			RegisterAffix(new HardWaterAffix(this));
+			RegisterAffix(new HurricaneAffix(this));
 			RegisterAffix(new RustAffix(this));
+			RegisterAffix(new SilenceAffix(this));
 
-			// neutral
+			// neutral affixes
 			RegisterAffix(new InflationAffix(this));
 			RegisterAffix(new ThunderAffix(this));
+			RegisterAffix(new TidesAffix(this));
+
+			// special affixes
+			for (int i = 0; i < 5; i++)
+				RegisterAffix(new SkillAffix(this, new VanillaSkill(i), 2f / 5));
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -62,12 +72,11 @@ namespace Shockah.SeasonAffixes
 
 			var allAffixesProvider = new AllAffixesProvider(this);
 			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season, year);
-			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider);
+			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative);
 			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(allCombinationsAffixSetGenerator);
-			var fittingScoreAffixSetGenerator = new FittingScoreAffixSetGenerator(nonConflictingAffixSetGenerator, affixSetEntry.Positive, affixSetEntry.Negative);
-			var shuffledAffixSetGenerator = new ShuffledAffixSetGenerator(fittingScoreAffixSetGenerator, random);
-			var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(shuffledAffixSetGenerator);
-			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(asLittleAsPossibleAffixSetGenerator);
+			var weightedRandomAffixSetGenerator = new WeightedRandomAffixSetGenerator(nonConflictingAffixSetGenerator, random);
+			//var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
+			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
 
 			var affixSets = avoidingDuplicatesIfPossibleAffixSetGenerator.Generate(season, year).Take(Config.Choices);
 			return CreateAffixChoiceMenu(affixSets, rerollCount, onAffixChosen);
@@ -83,6 +92,9 @@ namespace Shockah.SeasonAffixes
 			var tomorrow = Game1.Date.GetByAddingDays(1);
 			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
 			//	return;
+
+			if (Game1.endOfNightMenus.Count == 0)
+				Game1.endOfNightMenus.Push(new SaveGameMenu());
 
 			Game1.endOfNightMenus.Push(Instance.CreateAffixChoiceMenu(
 				season: tomorrow.GetSeason(),
@@ -101,6 +113,9 @@ namespace Shockah.SeasonAffixes
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 		public IReadOnlyList<ISeasonAffix> ActiveAffixes => ActiveAffixes.ToList();
+
+		public ISeasonAffix? GetAffix(string uniqueID)
+			=> AllAffixesStorage.TryGetValue(uniqueID, out var affix) ? affix : null;
 
 		public void RegisterAffix(ISeasonAffix affix)
 			=> AllAffixesStorage[affix.UniqueID] = affix;
