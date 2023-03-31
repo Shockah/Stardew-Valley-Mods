@@ -8,9 +8,12 @@ using Shockah.Kokoro.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.TerrainFeatures;
+using StardewValley.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
@@ -81,8 +84,13 @@ namespace Shockah.FlexibleSprinklers
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 		{
-			// do nothing, for now
-			// later on, migrate users from Flood Fill to Cluster
+			if (configVersion is not null && configVersion.IsOlderThan("2.0.0"))
+			{
+				if (Config.SprinklerBehavior == SprinklerBehaviorEnum.Flexible)
+					Config.SprinklerBehavior = SprinklerBehaviorEnum.Cluster;
+				else if (Config.SprinklerBehavior == SprinklerBehaviorEnum.FlexibleWithoutVanilla)
+					Config.SprinklerBehavior = SprinklerBehaviorEnum.ClusterWithoutVanilla;
+			}
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -245,7 +253,7 @@ namespace Shockah.FlexibleSprinklers
 				}
 			);
 
-			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior);
+			helper.AddEnumOption("config.sprinklerBehavior", () => Config.SprinklerBehavior, isAllowed: b => b != SprinklerBehaviorEnum.Flexible && b != SprinklerBehaviorEnum.FlexibleWithoutVanilla);
 			helper.AddBoolOption("config.ignoreRange", () => Config.IgnoreRange);
 			helper.AddBoolOption("config.waterGardenPots", () => Config.WaterGardenPots);
 			helper.AddBoolOption("config.waterPetBowl", () => Config.WaterPetBowl);
@@ -294,8 +302,6 @@ namespace Shockah.FlexibleSprinklers
 			{
 				SprinklerBehaviorEnum.Cluster => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, Config.IgnoreRange, Config.SplitDisconnectedClusters, new VanillaSprinklerBehavior()),
 				SprinklerBehaviorEnum.ClusterWithoutVanilla => new ClusterSprinklerBehavior(Config.ClusterBehaviorClusterOrdering, Config.ClusterBehaviorBetweenClusterBalanceMode, Config.ClusterBehaviorInClusterBalanceMode, Config.IgnoreRange, Config.SplitDisconnectedClusters, null),
-				SprinklerBehaviorEnum.Flexible => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, new VanillaSprinklerBehavior()),
-				SprinklerBehaviorEnum.FlexibleWithoutVanilla => new FloodFillSprinklerBehavior(Config.TileWaterBalanceMode, null),
 				SprinklerBehaviorEnum.Vanilla => new VanillaSprinklerBehavior(),
 				_ => throw new ArgumentException($"{nameof(SprinklerBehaviorEnum)} has an invalid value."),
 			};
@@ -408,11 +414,18 @@ namespace Shockah.FlexibleSprinklers
 		public int GetSprinklerPower(SObject sprinkler)
 			=> GetSprinklerInfo(sprinkler).Power;
 
-		[Obsolete("Sprinkler range now also depends on its unmodified coverage shape. Use `GetSprinklerSpreadRange` instead to achieve the same result as before. This method will be removed in a future update.")]
-		public int GetFloodFillSprinklerRange(int power)
+		private static void WaterTile(GameLocation location, IntPoint point)
 		{
-			Monitor.LogOnce("An obsolete method `GetFloodFillSprinklerRange` was called, most likely by another mod. This method will be removed in a future update. Any mods using it should be updated before then.", LogLevel.Warn);
-			return GetSprinklerSpreadRange(power);
+			var can = new WateringCan();
+			var tileVector = new Vector2(point.X, point.Y);
+
+			if (location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature))
+				feature.performToolAction(can, 0, tileVector, location);
+			if (location.Objects.TryGetValue(tileVector, out SObject @object))
+				@object.performToolAction(can, location);
+			location.performToolAction(can, point.X, point.Y);
+
+			// TODO: add animation, if needed
 		}
 
 		public int GetSprinklerSpreadRange(int power)

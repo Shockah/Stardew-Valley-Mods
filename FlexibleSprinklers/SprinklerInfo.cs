@@ -1,41 +1,55 @@
 ﻿using Shockah.Kokoro;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
 	public readonly struct SprinklerInfo : IEquatable<SprinklerInfo>
 	{
-		public static SprinklerInfo Basic { get; private set; } = new SprinklerInfo(SprinklerLayouts.Basic);
-		public static SprinklerInfo Quality { get; private set; } = new SprinklerInfo(SprinklerLayouts.Quality);
-		public static SprinklerInfo Iridium { get; private set; } = new SprinklerInfo(SprinklerLayouts.Iridium);
-		public static SprinklerInfo IridiumWithPressureNozzle { get; private set; } = new SprinklerInfo(SprinklerLayouts.IridiumWithPressureNozzle);
+		public readonly IntRectangle OccupiedSpace { get; init; }
+		public readonly IReadOnlySet<IntPoint> Coverage { get; init; }
 
-		public readonly IReadOnlySet<IntPoint> Layout { get; init; }
+		public int Power
+			=> Coverage.Count;
 
-		public readonly int Power { get; init; }
-
-		public SprinklerInfo(IReadOnlySet<IntPoint> layout) : this(layout, layout.Count) { }
-
-		public SprinklerInfo(IReadOnlySet<IntPoint> layout, int power)
+		public SprinklerInfo(IntRectangle occupiedSpace, IReadOnlySet<IntPoint> coverage)
 		{
-			this.Layout = layout;
-			this.Power = power;
+			this.OccupiedSpace = occupiedSpace;
+			this.Coverage = coverage.ToHashSet();
+		}
+
+		public void Deconstruct(out IntRectangle occupiedSpace, out IReadOnlySet<IntPoint> coverage)
+		{
+			occupiedSpace = OccupiedSpace;
+			coverage = Coverage;
 		}
 
 		public bool Equals(SprinklerInfo other)
-			=> Power == other.Power && Layout.SetEquals(other.Layout);
+			=> OccupiedSpace == other.OccupiedSpace && Coverage.SetEquals(other.Coverage);
 
 		public override bool Equals(object? obj)
 			=> obj is SprinklerInfo info && Equals(info);
 
 		public override int GetHashCode()
-			=> (Layout.Count, Power).GetHashCode();
+			=> (OccupiedSpace, Coverage).GetHashCode();
 
 		public static bool operator ==(SprinklerInfo left, SprinklerInfo right)
 			=> left.Equals(right);
 
 		public static bool operator !=(SprinklerInfo left, SprinklerInfo right)
 			=> !(left == right);
+
+		public static SprinklerInfo CreateBasic(IntPoint position)
+			=> new(new(position), SprinklerLayouts.Basic.Select(p => position + p).ToHashSet());
+
+		public static SprinklerInfo CreateQuality(IntPoint position)
+			=> new(new(position), SprinklerLayouts.Quality.Select(p => position + p).ToHashSet());
+
+		public static SprinklerInfo CreateIridium(IntPoint position)
+			=> new(new(position), SprinklerLayouts.Iridium.Select(p => position + p).ToHashSet());
+
+		public static SprinklerInfo CreateIridiumWithPressureNozzle(IntPoint position)
+			=> new(new(position), SprinklerLayouts.IridiumWithPressureNozzle.Select(p => position + p).ToHashSet());
 	}
 }

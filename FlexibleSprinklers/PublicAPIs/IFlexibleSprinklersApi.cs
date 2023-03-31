@@ -48,10 +48,6 @@ namespace Shockah.FlexibleSprinklers
 		/// <summary>Returns the sprinkler's power after config modifications (that is, the number of tiles it will water).</summary>
 		int GetSprinklerPower(SObject sprinkler);
 
-		/// <summary>Returns a sprinkler's flood fill range (that is, how many tiles away will it look for tiles to water) for a given sprinkler power.</summary>
-		[Obsolete("Sprinkler range now also depends on its unmodified coverage shape. Use `GetSprinklerSpreadRange` instead to achieve the same result as before. This method will be removed in a future update.")]
-		int GetFloodFillSprinklerRange(int power);
-
 		/// <summary>Returns a sprinkler's spread range (that is, how many tiles away will it look for tiles to water) for a given sprinkler power (if evenly spread around it).</summary>
 		int GetSprinklerSpreadRange(int power);
 
