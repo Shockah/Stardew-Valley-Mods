@@ -14,6 +14,8 @@ namespace Shockah.Kokoro
 		public int Height
 			=> Max.Y - Min.Y + 1;
 
+		public IntRectangle(IntPoint point) : this(point, point) { }
+
 		public IntRectangle(IntPoint a, IntPoint b) : this()
 		{
 			this.Min = new(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y));
