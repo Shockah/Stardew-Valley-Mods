@@ -5,17 +5,17 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class LoveAffix : ISeasonAffix
+	internal sealed class AgricultureAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
-		private static string ShortID => "Love";
+		private static string ShortID => "Agriculture";
 		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
 		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(96, 176, 16, 16));
 
-		public LoveAffix(SeasonAffixes mod)
+		public AgricultureAffix(SeasonAffixes mod)
 		{
 			this.Mod = mod;
 		}
@@ -28,6 +28,6 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public int GetNegativity(Season season, int year)
 			=> 0;
 
-		// TODO: Love implementation
+		// TODO: Agriculture implementation
 	}
 }

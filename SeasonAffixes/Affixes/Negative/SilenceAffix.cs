@@ -28,9 +28,6 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public int GetNegativity(Season season, int year)
 			=> 1;
 
-		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Love";
-
 		// TODO: Silence implementation
 	}
 }

@@ -102,9 +102,7 @@ namespace Shockah.SeasonAffixes
 			}
 
 			if (SelectedChoice >= 0)
-			{
 				drawToolTip(b, GetSeasonDescription(Choices[SelectedChoice]), GetSeasonName(Choices[SelectedChoice]), null);
-			}
 
 			if (!Game1.options.SnappyMenus)
 			{
@@ -135,7 +133,7 @@ namespace Shockah.SeasonAffixes
 
 		private static string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			for (int i = 0; i < affixes.Count; i++)
 			{
 				if (i != 0)

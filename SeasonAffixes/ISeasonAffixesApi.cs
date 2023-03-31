@@ -15,6 +15,7 @@ namespace Shockah.SeasonAffixes
 
 		void RegisterAffix(ISeasonAffix affix);
 		void UnregisterAffix(ISeasonAffix affix);
+		void RegisterAffixConflictHandler(Func<ISeasonAffix, ISeasonAffix, Season, int, bool> handler);
 
 		void ActivateAffix(ISeasonAffix affix);
 		void DeactivateAffix(ISeasonAffix affix);

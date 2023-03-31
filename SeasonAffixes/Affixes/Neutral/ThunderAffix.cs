@@ -32,9 +32,6 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public double GetProbabilityWeight(Season season, int year)
 			=> season == Season.Winter ? 0 : 1;
 
-		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Drought";
-
 		// TODO: Thunder implementation
 	}
 }

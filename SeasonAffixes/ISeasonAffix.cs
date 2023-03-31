@@ -15,14 +15,5 @@ namespace Shockah.SeasonAffixes
 
 		double GetProbabilityWeight(Season season, int year)
 			=> 1;
-
-		protected internal bool ShouldConflict(ISeasonAffix affix)
-			=> false;
-	}
-
-	public static class ISeasonAffixExt
-	{
-		public static bool Conflicts(this ISeasonAffix lhs, ISeasonAffix rhs)
-			=> lhs.ShouldConflict(rhs) || rhs.ShouldConflict(lhs);
 	}
 }

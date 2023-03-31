@@ -18,36 +18,54 @@ namespace Shockah.SeasonAffixes
 	{
 		public static SeasonAffixes Instance { get; private set; } = null!;
 		
-		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new Dictionary<string, ISeasonAffix>();
-		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new List<ISeasonAffix>();
+		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
+		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new();
+		private List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> AffixConflictHandlers { get; init; } = new();
 
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
 
 			// positive affixes
-			RegisterAffix(new DescentAffix(this));
-			RegisterAffix(new FairyTalesAffix(this));
-			RegisterAffix(new FortuneAffix(this));
-			RegisterAffix(new InnovationAffix(this));
-			RegisterAffix(new LoveAffix(this));
+			foreach (var affix in new List<ISeasonAffix>()
+			{
+				// positive affixes
+				new AgricultureAffix(this),
+				new ArtifactsAffix(this),
+				new DescentAffix(this),
+				new FairyTalesAffix(this),
+				new FortuneAffix(this),
+				new InnovationAffix(this),
+				new LoveAffix(this),
+				new RanchingAffix(this),
 
-			// negative affixes
-			RegisterAffix(new CrowsAffix(this));
-			RegisterAffix(new DroughtAffix(this));
-			RegisterAffix(new HardWaterAffix(this));
-			RegisterAffix(new HurricaneAffix(this));
-			RegisterAffix(new RustAffix(this));
-			RegisterAffix(new SilenceAffix(this));
+				// negative affixes
+				new CrowsAffix(this),
+				new DroughtAffix(this),
+				new HardWaterAffix(this),
+				new HurricaneAffix(this),
+				new PoorYieldsAffix(this),
+				new RustAffix(this),
+				new SilenceAffix(this),
 
-			// neutral affixes
-			RegisterAffix(new InflationAffix(this));
-			RegisterAffix(new ThunderAffix(this));
-			RegisterAffix(new TidesAffix(this));
+				// neutral affixes
+				new InflationAffix(this),
+				new ThunderAffix(this),
+				new TidesAffix(this),
+			})
+				RegisterAffix(affix);
 
 			// special affixes
 			for (int i = 0; i < 5; i++)
 				RegisterAffix(new SkillAffix(this, new VanillaSkill(i), 2f / 5));
+
+			// conflicts
+			RegisterAffixConflictHandler((a, b, season, year) => a is DroughtAffix && b is ThunderAffix);
+			RegisterAffixConflictHandler((a, b, season, year) => a is RustAffix && b is InnovationAffix);
+			RegisterAffixConflictHandler((a, b, season, year) => a is SilenceAffix && b is LoveAffix);
+			RegisterAffixConflictHandler((a, b, season, year) => a is CrowsAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming));
+			RegisterAffixConflictHandler((a, b, season, year) => a is HurricaneAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging));
+			RegisterAffixConflictHandler((a, b, season, year) => a is SkillAffix skillAffixA && b is SkillAffix skillAffixB && skillAffixA.Skill.Equals(skillAffixB.Skill));
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -73,7 +91,8 @@ namespace Shockah.SeasonAffixes
 			var allAffixesProvider = new AllAffixesProvider(this);
 			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season, year);
 			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative);
-			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(allCombinationsAffixSetGenerator);
+			var maxAffixesAffixSetGenerator = new MaxAffixesAffixSetGenerator(allCombinationsAffixSetGenerator, 3);
+			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(maxAffixesAffixSetGenerator, AffixConflictHandlers);
 			var weightedRandomAffixSetGenerator = new WeightedRandomAffixSetGenerator(nonConflictingAffixSetGenerator, random);
 			//var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
 			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
@@ -119,6 +138,9 @@ namespace Shockah.SeasonAffixes
 
 		public void RegisterAffix(ISeasonAffix affix)
 			=> AllAffixesStorage[affix.UniqueID] = affix;
+
+		public void RegisterAffixConflictHandler(Func<ISeasonAffix, ISeasonAffix, Season, int, bool> handler)
+			=> AffixConflictHandlers.Add(handler);
 
 		public void UnregisterAffix(ISeasonAffix affix)
 		{

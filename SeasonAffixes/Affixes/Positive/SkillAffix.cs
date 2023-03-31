@@ -8,7 +8,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class SkillAffix : ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
-		private ISkill Skill { get; init; }
+		public ISkill Skill { get; init; }
 		private double Weight { get; init; }
 
 		private static string ShortID => "Skill";

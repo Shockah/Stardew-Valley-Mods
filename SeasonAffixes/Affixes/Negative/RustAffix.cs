@@ -1,5 +1,6 @@
 ﻿using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
+using Shockah.SeasonAffixes.Affixes.Positive;
 using StardewValley;
 using System.Runtime.CompilerServices;
 
@@ -27,9 +28,6 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public int GetNegativity(Season season, int year)
 			=> 1;
-
-		bool ISeasonAffix.ShouldConflict(ISeasonAffix affix)
-			=> affix.UniqueID == $"{Mod.ModManifest.UniqueID}.Innovation";
 
 		// TODO: Rust implementation
 	}

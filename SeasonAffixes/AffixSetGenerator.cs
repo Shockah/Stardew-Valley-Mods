@@ -61,10 +61,12 @@ namespace Shockah.SeasonAffixes
 	internal sealed class NonConflictingAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
+		private List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> AffixConflictHandlers { get; init; }
 
-		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> affixConflictHandlers)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
+			this.AffixConflictHandlers = affixConflictHandlers;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
@@ -75,9 +77,15 @@ namespace Shockah.SeasonAffixes
 				{
 					var list = c.ToList();
 					for (int i = 1; i < list.Count; i++)
+					{
 						for (int j = 0; j < i; j++)
-							if (list[i].Conflicts(list[j]))
+						{
+							if (AffixConflictHandlers.Any(h => h(list[i], list[j], season, year)))
 								return false;
+							if (AffixConflictHandlers.Any(h => h(list[j], list[i], season, year)))
+								return false;
+						}
+					}
 					return true;
 				});
 		}
@@ -102,6 +110,21 @@ namespace Shockah.SeasonAffixes
 			while (weightedRandom.Items.Count != 0)
 				yield return weightedRandom.Next(Random, consume: true);
 		}
+	}
+
+	internal sealed class MaxAffixesAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+		private int Max { get; init; }
+
+		public MaxAffixesAffixSetGenerator(IAffixSetGenerator affixSetGenerator, int max)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+			this.Max = max;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+			=> AffixSetGenerator.Generate(season, year).Where(affixes => affixes.Count <= Max);
 	}
 
 	internal sealed class AsLittleAsPossibleAffixSetGenerator : IAffixSetGenerator

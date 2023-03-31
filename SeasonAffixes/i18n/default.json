@@ -9,6 +9,10 @@
 	"season.separator.other": ", ",
 
 	// positive affixes
+	"affix.positive.Agriculture.name": "Agriculture",
+	"affix.positive.Agriculture.description": "Unprocessed crops are worth 200%.",
+	"affix.positive.Artifacts.name": "Artifacts",
+	"affix.positive.Artifacts.description": "Artifact spots have a high chance of containing Artifact Troves.",
 	"affix.positive.Descent.name": "Descent",
 	"affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
 	"affix.positive.FairyTales.name": "Fairy Tales",
@@ -19,6 +23,8 @@
 	"affix.positive.Innovation.description": "All machines take 25% shorter to process items.",
 	"affix.positive.Love.name": "Love",
 	"affix.positive.Love.description": "Double friendship gain with romanceable characters.",
+	"affix.positive.Ranching.name": "Ranching",
+	"affix.positive.Ranching.description": "Unprocessed animal products are worth 200%.",
 
 	// negative affixes
 	"affix.negative.Crows.name": "Crows",
@@ -29,6 +35,8 @@
 	"affix.negative.HardWater.description": "Sprinklers do not work.",
 	"affix.negative.Hurricane.name": "Hurricane",
 	"affix.negative.Hurricane.description": "Forage items do not spawn.",
+	"affix.negative.PoorYields.name": "Poor Yields",
+	"affix.negative.PoorYields.description": "Crops do not regrow.",
 	"affix.negative.Rust.name": "Rust",
 	"affix.negative.Rust.description": "All machines take 50% longer to process items.",
 	"affix.negative.Silence.name": "Silence",
