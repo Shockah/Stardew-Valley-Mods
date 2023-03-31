@@ -6,10 +6,11 @@ using System;
 using System.Reflection;
 using Shockah.Kokoro.UI;
 
-namespace Shockah.Kokoro.Stardew.Skill
+namespace Shockah.Kokoro.Stardew
 {
 	public interface ISkill : IEquatable<ISkill>
 	{
+		string UniqueID { get; }
 		TextureRectangle? Icon { get; }
 		string Name { get; }
 		int MaxLevel { get; }
@@ -37,7 +38,7 @@ namespace Shockah.Kokoro.Stardew.Skill
 
 		public static ISkill GetSkillFromUI(int? uiSkillIndex, string? spaceCoreSkillName)
 		{
-			int? skillIndex = uiSkillIndex is null ? null : (OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex.Value] : uiSkillIndex);
+			int? skillIndex = uiSkillIndex is null ? null : OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex.Value] : uiSkillIndex;
 			return GetSkill(skillIndex, spaceCoreSkillName);
 		}
 	}
@@ -56,6 +57,18 @@ namespace Shockah.Kokoro.Stardew.Skill
 		private static int[]? XPValues;
 		private static DateTime? LastUpdateTime;
 		private static WeakReference<IClickableMenu>? LastMenu;
+
+		public string UniqueID
+			=> SkillIndex switch
+			{
+				Farmer.farmingSkill => "Farming",
+				Farmer.miningSkill => "Mining",
+				Farmer.foragingSkill => "Foraging",
+				Farmer.fishingSkill => "Fishing",
+				Farmer.combatSkill => "Combat",
+				Farmer.luckSkill => "Luck",
+				_ => throw new ArgumentException($"{nameof(SkillIndex)} has an invalid value.")
+			};
 
 		public TextureRectangle? Icon
 			=> new(
@@ -187,6 +200,9 @@ namespace Shockah.Kokoro.Stardew.Skill
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillExperienceDelegate = null!;
 		private static Func<object /* Skill */, string> GetNameDelegate = null!;
 		private static Func<object /* Skill */, Texture2D?> GetSkillsPageIconDelegate = null!;
+
+		public string UniqueID
+			=> SkillName;
 
 		public TextureRectangle? Icon
 		{
