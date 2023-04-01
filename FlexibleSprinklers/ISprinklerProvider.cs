@@ -14,10 +14,18 @@ namespace Shockah.FlexibleSprinklers
 	{
 		public IReadOnlySet<SprinklerInfo> GetSprinklers(GameLocation location)
 		{
-			return location.Objects.Values
-				.Where(o => o.IsSprinkler())
-				.Select(s => FlexibleSprinklers.Instance.GetSprinklerInfo(s))
-				.ToHashSet();
+			HashSet<SprinklerInfo> results = new();
+			results.UnionWith(
+				location.Objects.Values
+					.Where(o => o.IsSprinkler())
+					.Select(s => FlexibleSprinklers.Instance.GetSprinklerInfo(s))
+			);
+			results.UnionWith(
+				location.furniture
+					.Where(o => o.IsSprinkler())
+					.Select(s => FlexibleSprinklers.Instance.GetSprinklerInfo(s))
+			);
+			return results;
 		}
 	}
 

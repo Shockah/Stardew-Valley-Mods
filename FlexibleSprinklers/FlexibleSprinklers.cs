@@ -54,6 +54,7 @@ namespace Shockah.FlexibleSprinklers
 			helper.Events.GameLoop.DayStarted += OnDayStarted;
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.World.ObjectListChanged += OnObjectListChanged;
+			helper.Events.World.FurnitureListChanged += OnFurnitureListChanged;
 			helper.Events.World.TerrainFeatureListChanged += OnTerrainFeatureListChanged;
 			helper.Events.World.LargeTerrainFeatureListChanged += OnLargeTerrainFeatureListChanged;
 			helper.Events.Input.ButtonPressed += OnButtonPressed;
@@ -176,17 +177,17 @@ namespace Shockah.FlexibleSprinklers
 		private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
-			if (!e.Added.Where(o => o.Value.IsSprinkler()).Any() && !e.Removed.Where(o => o.Value.IsSprinkler()).Any())
-				return;
+			foreach (var @object in e.Added)
+				if (@object.Value.IsSprinkler())
+					OnSprinklerAdded(e.Location, @object.Value);
+		}
 
-			if (Config.ActivateOnPlacement && SprinklerBehavior is ISprinklerBehavior.Independent)
-			{
-				foreach (var (_, @object) in e.Added)
-					if (@object.IsSprinkler())
-						ActivateSprinkler(@object, e.Location);
-			}
-			if (Config.ShowCoverageOnPlacement)
-				DisplaySprinklerCoverage();
+		private void OnFurnitureListChanged(object? sender, FurnitureListChangedEventArgs e)
+		{
+			SprinklerBehavior.ClearCacheForMap(new GameLocationMap(e.Location, CustomWaterableTileProviders));
+			foreach (var @object in e.Added)
+				if (@object.IsSprinkler())
+					OnSprinklerAdded(e.Location, @object);
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
@@ -234,6 +235,14 @@ namespace Shockah.FlexibleSprinklers
 			if (Config.ShowCoverageOnAction)
 				DisplaySprinklerCoverage();
 			Helper.Input.Suppress(e.Button);
+		}
+
+		private void OnSprinklerAdded(GameLocation location, SObject sprinkler)
+		{
+			if (Config.ActivateOnPlacement && SprinklerBehavior is ISprinklerBehavior.Independent)
+				ActivateSprinkler(sprinkler, location);
+			if (Config.ShowCoverageOnPlacement)
+				DisplaySprinklerCoverage();
 		}
 
 		private void SetupConfig()
