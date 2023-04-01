@@ -1,5 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-using Shockah.Kokoro;
+﻿using Shockah.Kokoro;
 using Shockah.Kokoro.Map;
 using System;
 using System.Collections.Generic;
@@ -140,7 +139,7 @@ namespace Shockah.FlexibleSprinklers
 					else
 					{
 						var sprinklerSpreadRange = FlexibleSprinklers.Instance.GetSprinklerSpreadRange((int)Math.Ceiling(1.0 * sprinkler.Power / sprinklerClusterCount));
-						var sprinklerFocusedRange = FlexibleSprinklers.Instance.GetSprinklerFocusedRange(sprinkler.Coverage.Select(p => new Vector2(p.X, p.Y)).ToArray());
+						var sprinklerFocusedRange = FlexibleSprinklers.Instance.GetSprinklerFocusedRange(sprinkler.OccupiedSpace, sprinkler.Coverage);
 						sprinklerRange = Math.Max(sprinklerSpreadRange, sprinklerFocusedRange);
 					}
 
@@ -218,21 +217,11 @@ namespace Shockah.FlexibleSprinklers
 				Dictionary<SprinklerInfo, ISet<IntPoint>> sprinklerStartingPoints = new();
 				foreach (var sprinkler in sprinklers)
 				{
-					HashSet<IntPoint> thisSprinklerStartingPoints = sprinkler.Coverage
-						.Where(c => sprinkler.OccupiedSpace.Contains(c))
-						.ToHashSet();
-
-					if (thisSprinklerStartingPoints.Count == 0)
-					{
-						thisSprinklerStartingPoints = sprinkler.Coverage
-							.Select(c => (CoveragePoint: c, DistanceFromOccupiedSpace: DistanceFromRange(c.X, sprinkler.OccupiedSpace.Min.X, sprinkler.OccupiedSpace.Max.X) + DistanceFromRange(c.Y, sprinkler.OccupiedSpace.Min.Y, sprinkler.OccupiedSpace.Max.Y)))
-							.GroupBy(e => e.DistanceFromOccupiedSpace, e => e.CoveragePoint)
-							.OrderBy(e => e.Key)
-							.First()
-							.ToHashSet();
-					}
-
-					thisSprinklerStartingPoints = thisSprinklerStartingPoints
+					var thisSprinklerStartingPoints = sprinkler.Coverage
+						.Select(c => (CoveragePoint: c, DistanceFromOccupiedSpace: DistanceFromRange(c.X, sprinkler.OccupiedSpace.Min.X, sprinkler.OccupiedSpace.Max.X) + DistanceFromRange(c.Y, sprinkler.OccupiedSpace.Min.Y, sprinkler.OccupiedSpace.Max.Y)))
+						.GroupBy(e => e.DistanceFromOccupiedSpace, e => e.CoveragePoint)
+						.OrderBy(e => e.Key)
+						.First()
 						.Where(p => cachingMap[p] == SoilType.Waterable)
 						.ToHashSet();
 

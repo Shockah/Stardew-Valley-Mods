@@ -13,7 +13,7 @@ namespace Shockah.FlexibleSprinklers
 	internal class GameLocationMap : IMap<SoilType>.WithKnownSize
 	{
 		private readonly GameLocation Location;
-		private readonly IEnumerable<Func<GameLocation, Vector2, bool?>> CustomWaterableTileProviders;
+		private readonly IEnumerable<Func<GameLocation, IntPoint, bool?>> CustomWaterableTileProviders;
 
 		public IntRectangle Bounds
 			=> new(IntPoint.Zero, Location.Map.DisplayWidth / Game1.tileSize, Location.Map.DisplayHeight / Game1.tileSize);
@@ -34,7 +34,7 @@ namespace Shockah.FlexibleSprinklers
 
 				foreach (var provider in CustomWaterableTileProviders)
 				{
-					bool? result = provider(Location, tileVector);
+					bool? result = provider(Location, point);
 					if (result.HasValue)
 						return result.Value ? SoilType.Waterable : SoilType.NonWaterable;
 				}
@@ -47,7 +47,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 		}
 
-		internal GameLocationMap(GameLocation location, IEnumerable<Func<GameLocation, Vector2, bool?>> customWaterableTileProviders)
+		internal GameLocationMap(GameLocation location, IEnumerable<Func<GameLocation, IntPoint, bool?>> customWaterableTileProviders)
 		{
 			this.Location = location;
 			this.CustomWaterableTileProviders = customWaterableTileProviders;
