@@ -15,27 +15,27 @@ namespace Shockah.FlexibleSprinklers
 		{
 		}
 
-		IReadOnlyList<(IReadOnlySet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers);
+		IReadOnlyList<WateringStep> GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers);
 
 		IReadOnlySet<IntPoint> GetSprinklerTiles(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers)
-			=> GetSprinklerTilesWithSteps(map, sprinklers).SelectMany(step => step.Item1).ToHashSet();
+			=> GetSprinklerTilesWithSteps(map, sprinklers).SelectMany(step => step.Tiles).ToHashSet();
 
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested in another interface")]
 		public interface Independent : ISprinklerBehavior
 		{
-			IReadOnlyList<(IReadOnlySet<IntPoint>, float)> GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, SprinklerInfo sprinkler);
+			IReadOnlyList<WateringStep> GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, SprinklerInfo sprinkler);
 
-			IReadOnlyList<(IReadOnlySet<IntPoint>, float)> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers)
+			IReadOnlyList<WateringStep> ISprinklerBehavior.GetSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers)
 			{
-				List<(IReadOnlySet<IntPoint>, float)> results = new();
+				List<WateringStep> results = new();
 				foreach (var sprinkler in sprinklers)
 					foreach (var step in GetSprinklerTilesWithSteps(map, sprinkler))
 						results.Add(step);
-				return results.OrderBy(step => step.Item2).ToList();
+				return results.OrderBy(step => step.Time).ToList();
 			}
 
 			IReadOnlySet<IntPoint> GetSprinklerTiles(IMap<SoilType>.WithKnownSize map, SprinklerInfo sprinkler)
-				=> GetSprinklerTilesWithSteps(map, sprinkler).SelectMany(step => step.Item1).ToHashSet();
+				=> GetSprinklerTilesWithSteps(map, sprinkler).SelectMany(step => step.Tiles).ToHashSet();
 		}
 	}
 }

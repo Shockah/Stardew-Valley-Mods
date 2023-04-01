@@ -130,9 +130,9 @@ namespace Shockah.FlexibleSprinklers
 			var alreadyShown = new HashSet<IntPoint>();
 			foreach (var step in sprinklerTilesWithSteps)
 			{
-				if (Config.CoverageAnimationInSeconds > 0f && step.Item2 * Config.CoverageAnimationInSeconds > SprinklerCoverageCurrentAnimationTime)
+				if (Config.CoverageAnimationInSeconds > 0f && step.Time * Config.CoverageAnimationInSeconds > SprinklerCoverageCurrentAnimationTime)
 					break;
-				foreach (var sprinklerTile in step.Item1)
+				foreach (var sprinklerTile in step.Tiles)
 				{
 					if (!Config.CoverageOverlayDuplicates)
 					{
@@ -218,7 +218,7 @@ namespace Shockah.FlexibleSprinklers
 			var tile = e.Cursor.GrabTile;
 			var location = Game1.currentLocation;
 			var @object = location.getObjectAtTile((int)tile.X, (int)tile.Y);
-			if (@object == null || !@object.IsSprinkler())
+			if (@object is null || !@object.IsSprinkler())
 				return;
 
 			var heldItem = Game1.player.CurrentItem;
