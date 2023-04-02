@@ -529,7 +529,7 @@ namespace Shockah.FlexibleSprinklers
 
 			if (LineSprinklersApi != null)
 			{
-				if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[]? tilePositions))
+				if (LineSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out var tilePositions))
 					return tilePositions
 						.Where(t => t != Vector2.Zero)
 						.Select(t => t + sprinkler.TileLocation)
@@ -539,7 +539,7 @@ namespace Shockah.FlexibleSprinklers
 
 			if (BetterSprinklersApi != null)
 			{
-				if (BetterSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out Vector2[]? tilePositions))
+				if (BetterSprinklersApi.GetSprinklerCoverage().TryGetValue(sprinkler.ParentSheetIndex, out var tilePositions))
 					return tilePositions
 						.Where(t => t != Vector2.Zero)
 						.Select(t => t + sprinkler.TileLocation)

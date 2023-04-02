@@ -21,8 +21,9 @@ namespace Shockah.FlexibleSprinklers
 			this.Coverage = coverage.ToHashSet();
 		}
 
-		public void Deconstruct(out IntRectangle occupiedSpace, out IReadOnlySet<IntPoint> coverage)
+		public void Deconstruct(out object owner, out IntRectangle occupiedSpace, out IReadOnlySet<IntPoint> coverage)
 		{
+			owner = Owner;
 			occupiedSpace = OccupiedSpace;
 			coverage = Coverage;
 		}
