@@ -1,5 +1,4 @@
 ﻿using Shockah.Kokoro.Stardew;
-using Shockah.Kokoro.Stardew.Skill;
 using Shockah.Kokoro.UI;
 using System.Runtime.CompilerServices;
 

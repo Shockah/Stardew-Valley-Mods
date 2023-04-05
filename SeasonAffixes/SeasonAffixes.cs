@@ -10,7 +10,6 @@ using Shockah.Kokoro.Stardew;
 using Shockah.SeasonAffixes.Affixes.Positive;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
-using Shockah.Kokoro.Stardew.Skill;
 
 namespace Shockah.SeasonAffixes
 {
