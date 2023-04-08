@@ -67,8 +67,8 @@ namespace Shockah.SeasonAffixes
 				RegisterAffix(affix);
 
 			// special affixes
-			for (int i = 0; i < 5; i++)
-				RegisterAffix(new SkillAffix(this, new VanillaSkill(i), 2f / 5));
+			foreach (var skill in SkillExt.GetAllSkills())
+				RegisterAffix(new SkillAffix(this, skill));
 
 			// conflicts
 			RegisterAffixConflictProvider((a, b, season) => a is DroughtAffix && b is ThunderAffix);

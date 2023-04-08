@@ -51,5 +51,6 @@
 	"affix.neutral.Tides.description": "Common fish become uncommon.",
 
 	// special affixes
-	"affix.positive.Skill.description": "Increased {{Skill}} level by 3. {{Skill}} experience gain increased by 20%."
+	"affix.positive.Skill.description.Vanilla": "Increased {{Skill}} level by 3. {{Skill}} experience gain increased by 20%.",
+	"affix.positive.Skill.description.SpaceCore": "{{Skill}} experience gain increased by 25%."
 }
