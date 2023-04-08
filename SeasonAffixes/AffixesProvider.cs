@@ -1,5 +1,4 @@
-﻿using Shockah.Kokoro.Stardew;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.SeasonAffixes
@@ -25,18 +24,16 @@ namespace Shockah.SeasonAffixes
 	internal sealed class ApplicableToSeasonAffixesProvider : IAffixesProvider
 	{
 		private IAffixesProvider Wrapped { get; init; }
-		private Season Season { get; init; }
-		private int Year { get; init; }
+		private OrdinalSeason Season { get; init; }
 
 		public IEnumerable<ISeasonAffix> Affixes =>
 			Wrapped.Affixes
-				.Where(affix => affix.GetProbabilityWeight(Season, Year) > 0);
+				.Where(affix => affix.GetProbabilityWeight(Season) > 0);
 
-		public ApplicableToSeasonAffixesProvider(IAffixesProvider wrapped, Season season, int year)
+		public ApplicableToSeasonAffixesProvider(IAffixesProvider wrapped, OrdinalSeason season)
 		{
 			this.Wrapped = wrapped;
 			this.Season = season;
-			this.Year = year;
 		}
 	}
 }

@@ -19,7 +19,7 @@ namespace Shockah.SeasonAffixes
 		
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
 		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new();
-		private List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> AffixConflictHandlers { get; init; } = new();
+		private List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
 		public override void OnEntry(IModHelper helper)
 		{
@@ -59,12 +59,12 @@ namespace Shockah.SeasonAffixes
 				RegisterAffix(new SkillAffix(this, new VanillaSkill(i), 2f / 5));
 
 			// conflicts
-			RegisterAffixConflictHandler((a, b, season, year) => a is DroughtAffix && b is ThunderAffix);
-			RegisterAffixConflictHandler((a, b, season, year) => a is RustAffix && b is InnovationAffix);
-			RegisterAffixConflictHandler((a, b, season, year) => a is SilenceAffix && b is LoveAffix);
-			RegisterAffixConflictHandler((a, b, season, year) => a is CrowsAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming));
-			RegisterAffixConflictHandler((a, b, season, year) => a is HurricaneAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging));
-			RegisterAffixConflictHandler((a, b, season, year) => a is SkillAffix skillAffixA && b is SkillAffix skillAffixB && skillAffixA.Skill.Equals(skillAffixB.Skill));
+			RegisterAffixConflictProvider((a, b, season) => a is DroughtAffix && b is ThunderAffix);
+			RegisterAffixConflictProvider((a, b, season) => a is RustAffix && b is InnovationAffix);
+			RegisterAffixConflictProvider((a, b, season) => a is SilenceAffix && b is LoveAffix);
+			RegisterAffixConflictProvider((a, b, season) => a is CrowsAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming));
+			RegisterAffixConflictProvider((a, b, season) => a is HurricaneAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging));
+			RegisterAffixConflictProvider((a, b, season) => a is SkillAffix skillAffixA && b is SkillAffix skillAffixB && skillAffixA.Skill.Equals(skillAffixB.Skill));
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -74,12 +74,12 @@ namespace Shockah.SeasonAffixes
 			);
 		}
 
-		private IClickableMenu CreateAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen)
+		private IClickableMenu CreateAffixChoiceMenu(OrdinalSeason season, int rerollCount, Action<ISeasonAffix> onAffixChosen)
 		{
 			int seed = 0;
 			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
-			seed = 31 * seed + (int)season;
-			seed = 31 * seed + year;
+			seed = 31 * seed + (int)season.Season;
+			seed = 31 * seed + season.Year;
 			Random random = new(seed);
 
 			WeightedRandom<ModConfig.AffixSetEntry> affixSetEntries = new();
@@ -88,15 +88,15 @@ namespace Shockah.SeasonAffixes
 			var affixSetEntry = affixSetEntries.Next(random);
 
 			var allAffixesProvider = new AllAffixesProvider(this);
-			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season, year);
+			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season);
 			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative);
 			var maxAffixesAffixSetGenerator = new MaxAffixesAffixSetGenerator(allCombinationsAffixSetGenerator, 3);
-			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(maxAffixesAffixSetGenerator, AffixConflictHandlers);
+			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(maxAffixesAffixSetGenerator, AffixConflictProviders);
 			var weightedRandomAffixSetGenerator = new WeightedRandomAffixSetGenerator(nonConflictingAffixSetGenerator, random);
 			//var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
 			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
 
-			var affixSets = avoidingDuplicatesIfPossibleAffixSetGenerator.Generate(season, year).Take(Config.Choices);
+			var affixSets = avoidingDuplicatesIfPossibleAffixSetGenerator.Generate(season).Take(Config.Choices);
 			return CreateAffixChoiceMenu(affixSets, rerollCount, onAffixChosen);
 		}
 
@@ -115,8 +115,7 @@ namespace Shockah.SeasonAffixes
 				Game1.endOfNightMenus.Push(new SaveGameMenu());
 
 			Game1.endOfNightMenus.Push(Instance.CreateAffixChoiceMenu(
-				season: tomorrow.GetSeason(),
-				year: tomorrow.Year,
+				season: new(tomorrow.Year, tomorrow.GetSeason()),
 				rerollCount: Instance.Config.RerollsPerSeason,
 				onAffixChosen: affix =>
 				{
@@ -138,8 +137,8 @@ namespace Shockah.SeasonAffixes
 		public void RegisterAffix(ISeasonAffix affix)
 			=> AllAffixesStorage[affix.UniqueID] = affix;
 
-		public void RegisterAffixConflictHandler(Func<ISeasonAffix, ISeasonAffix, Season, int, bool> handler)
-			=> AffixConflictHandlers.Add(handler);
+		public void RegisterAffixConflictProvider(Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool> handler)
+			=> AffixConflictProviders.Add(handler);
 
 		public void UnregisterAffix(ISeasonAffix affix)
 		{
@@ -159,20 +158,10 @@ namespace Shockah.SeasonAffixes
 		public void DeactivateAllAffixes()
 			=> ActiveAffixesStorage.Clear();
 
-		public IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(Season season, int year)
+		public IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season)
 			=> AllAffixesStorage.Values
-				.Where(affix => affix.GetProbabilityWeight(season, year) > 0)
+				.Where(affix => affix.GetProbabilityWeight(season) > 0)
 				.ToHashSet();
-
-		public void PresentAffixChoiceMenu(Season season, int year, int rerollCount, Action<ISeasonAffix> onAffixChosen)
-		{
-			Game1.activeClickableMenu = CreateAffixChoiceMenu(season, year, rerollCount, onAffixChosen);
-		}
-
-		public void PresentAffixChoiceMenu(IEnumerable<IReadOnlySet<ISeasonAffix>> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
-		{
-			Game1.activeClickableMenu = CreateAffixChoiceMenu(choices, rerollCount, onAffixChosen);
-		}
 
 		#endregion
 	}

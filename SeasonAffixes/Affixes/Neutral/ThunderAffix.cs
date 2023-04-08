@@ -21,16 +21,16 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetPositivity(Season season, int year)
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetNegativity(Season season, int year)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(Season season, int year)
-			=> season == Season.Winter ? 0 : 1;
+		public double GetProbabilityWeight(OrdinalSeason season)
+			=> season.Season == Season.Winter ? 0 : 1;
 
 		// TODO: Thunder implementation
 	}

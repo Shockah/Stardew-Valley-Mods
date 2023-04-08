@@ -21,15 +21,15 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetPositivity(Season season, int year)
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetNegativity(Season season, int year)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(Season season, int year)
+		public double GetProbabilityWeight(OrdinalSeason season)
 		{
 			// TODO: return 0 if the Mine is finished, but the bus is not repaired (so Skull Cavern is not accessible)
 			return 1;

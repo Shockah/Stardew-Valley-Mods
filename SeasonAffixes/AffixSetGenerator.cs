@@ -1,5 +1,4 @@
 ﻿using Shockah.Kokoro;
-using Shockah.Kokoro.Stardew;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ namespace Shockah.SeasonAffixes
 {
 	internal interface IAffixSetGenerator
 	{
-		IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year);
+		IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season);
 	}
 
 	internal sealed class AllCombinationsAffixSetGenerator : IAffixSetGenerator
@@ -24,10 +23,10 @@ namespace Shockah.SeasonAffixes
 			this.Negativity = negativity;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
 			var affixes = AffixesProvider.Affixes.ToList();
-			return GetAllCombinations(affixes.ToDictionary(a => a.UniqueID, a => a.GetPositivity(season, year)), affixes.ToDictionary(a => a.UniqueID, a => a.GetNegativity(season, year)), affixes.Select(a => a.UniqueID).ToList(), new(), 0, 0)
+			return GetAllCombinations(affixes.ToDictionary(a => a.UniqueID, a => a.GetPositivity(season)), affixes.ToDictionary(a => a.UniqueID, a => a.GetNegativity(season)), affixes.Select(a => a.UniqueID).ToList(), new(), 0, 0)
 				.ToHashSet()
 				.Select(affixIds => affixIds.Select(id => SeasonAffixes.Instance.GetAffix(id)!).ToHashSet());
 		}
@@ -61,17 +60,17 @@ namespace Shockah.SeasonAffixes
 	internal sealed class NonConflictingAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
-		private List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> AffixConflictHandlers { get; init; }
+		private List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> AffixConflictProviders { get; init; }
 
-		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<ISeasonAffix, ISeasonAffix, Season, int, bool>> affixConflictHandlers)
+		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> affixConflictProviders)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
-			this.AffixConflictHandlers = affixConflictHandlers;
+			this.AffixConflictProviders = affixConflictProviders;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
-			var test = AffixSetGenerator.Generate(season, year).ToList();
+			var test = AffixSetGenerator.Generate(season).ToList();
 			return test
 				.Where(c =>
 				{
@@ -80,9 +79,9 @@ namespace Shockah.SeasonAffixes
 					{
 						for (int j = 0; j < i; j++)
 						{
-							if (AffixConflictHandlers.Any(h => h(list[i], list[j], season, year)))
+							if (AffixConflictProviders.Any(h => h(list[i], list[j], season)))
 								return false;
-							if (AffixConflictHandlers.Any(h => h(list[j], list[i], season, year)))
+							if (AffixConflictProviders.Any(h => h(list[j], list[i], season)))
 								return false;
 						}
 					}
@@ -102,11 +101,11 @@ namespace Shockah.SeasonAffixes
 			this.Random = random;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
 			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
-			foreach (var choice in AffixSetGenerator.Generate(season, year))
-				weightedRandom.Add(new(choice.Average(a => a.GetProbabilityWeight(season, year)), choice));
+			foreach (var choice in AffixSetGenerator.Generate(season))
+				weightedRandom.Add(new(choice.Average(a => a.GetProbabilityWeight(season)), choice));
 			while (weightedRandom.Items.Count != 0)
 				yield return weightedRandom.Next(Random, consume: true);
 		}
@@ -123,8 +122,8 @@ namespace Shockah.SeasonAffixes
 			this.Max = max;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
-			=> AffixSetGenerator.Generate(season, year).Where(affixes => affixes.Count <= Max);
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+			=> AffixSetGenerator.Generate(season).Where(affixes => affixes.Count <= Max);
 	}
 
 	internal sealed class AsLittleAsPossibleAffixSetGenerator : IAffixSetGenerator
@@ -136,9 +135,9 @@ namespace Shockah.SeasonAffixes
 			this.AffixSetGenerator = affixSetGenerator;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
-			var remainingResults = AffixSetGenerator.Generate(season, year).ToList();
+			var remainingResults = AffixSetGenerator.Generate(season).ToList();
 
 			int currentAllowedCount = 0;
 			while (remainingResults.Count != 0)
@@ -164,10 +163,10 @@ namespace Shockah.SeasonAffixes
 			this.AffixSetGenerator = affixSetGenerator;
 		}
 
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(Season season, int year)
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
 			List<HashSet<string>> yielded = new();
-			var remainingResults = AffixSetGenerator.Generate(season, year).ToList();
+			var remainingResults = AffixSetGenerator.Generate(season).ToList();
 
 			int allowedDuplicates = 0;
 			while (remainingResults.Count != 0)

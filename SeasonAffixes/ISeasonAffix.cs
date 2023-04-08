@@ -1,5 +1,4 @@
-﻿using Shockah.Kokoro.Stardew;
-using Shockah.Kokoro.UI;
+﻿using Shockah.Kokoro.UI;
 
 namespace Shockah.SeasonAffixes
 {
@@ -10,10 +9,10 @@ namespace Shockah.SeasonAffixes
 		string LocalizedDescription { get; }
 		TextureRectangle Icon { get; }
 
-		int GetPositivity(Season season, int year);
-		int GetNegativity(Season season, int year);
+		int GetPositivity(OrdinalSeason season);
+		int GetNegativity(OrdinalSeason season);
 
-		double GetProbabilityWeight(Season season, int year)
+		double GetProbabilityWeight(OrdinalSeason season)
 			=> 1;
 	}
 }
