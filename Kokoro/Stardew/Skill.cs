@@ -5,6 +5,7 @@ using StardewValley;
 using System;
 using System.Reflection;
 using Shockah.Kokoro.UI;
+using System.Collections.Generic;
 
 namespace Shockah.Kokoro.Stardew
 {
@@ -25,6 +26,14 @@ namespace Shockah.Kokoro.Stardew
 	public static class SkillExt
 	{
 		private static readonly int[] OrderedSkillIndexes = new[] { 0, 3, 2, 1, 4, 5 };
+
+		public static IEnumerable<ISkill> GetAllSkills()
+		{
+			foreach (var skill in VanillaSkill.GetAllSkills())
+				yield return skill;
+			foreach (var skill in SpaceCoreSkill.GetAllSkills())
+				yield return skill;
+		}
 
 		public static ISkill GetSkill(int? vanillaSkillIndex, string? spaceCoreSkillName)
 		{
@@ -57,6 +66,18 @@ namespace Shockah.Kokoro.Stardew
 		private static int[]? XPValues;
 		private static DateTime? LastUpdateTime;
 		private static WeakReference<IClickableMenu>? LastMenu;
+
+		public static IEnumerable<ISkill> GetAllSkills()
+		{
+			yield return Farming;
+			yield return Mining;
+			yield return Foraging;
+			yield return Fishing;
+			yield return Combat;
+
+			if (Kokoro.Instance.Helper.ModRegistry.IsLoaded("spacechase0.LuckSkill"))
+				yield return Luck;
+		}
 
 		public string UniqueID
 			=> SkillIndex switch
@@ -194,12 +215,20 @@ namespace Shockah.Kokoro.Stardew
 		private static readonly string SpaceCoreSkillExtensionsQualifiedName = "SpaceCore.SkillExtensions, SpaceCore";
 
 		private static bool IsReflectionSetup = false;
+		private static Func<string[]> GetSkillListDelegate = null!;
 		private static Func<string, object? /* Skill */> GetSkillDelegate = null!;
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillLevelDelegate = null!;
 		private static Func<object /* Skill */, int[]> ExperienceCurveDelegate = null!;
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillExperienceDelegate = null!;
 		private static Func<object /* Skill */, string> GetNameDelegate = null!;
 		private static Func<object /* Skill */, Texture2D?> GetSkillsPageIconDelegate = null!;
+
+		public static IEnumerable<ISkill> GetAllSkills()
+		{
+			SetupReflectionIfNeeded();
+			foreach (var skillName in GetSkillListDelegate())
+				yield return new SpaceCoreSkill(skillName);
+		}
 
 		public string UniqueID
 			=> SkillName;
@@ -279,6 +308,9 @@ namespace Shockah.Kokoro.Stardew
 			Type skillsType = AccessTools.TypeByName(SpaceCoreSkillsQualifiedName);
 			Type skillType = AccessTools.TypeByName(SpaceCoreSkillQualifiedName);
 			Type skillExtensionsType = AccessTools.TypeByName(SpaceCoreSkillExtensionsQualifiedName);
+
+			MethodInfo getSkillListMethod = AccessTools.Method(skillsType, "GetSkillList", Array.Empty<Type>());
+			GetSkillListDelegate = () => (string[])getSkillListMethod.Invoke(null, null)!;
 
 			MethodInfo getSkillMethod = AccessTools.Method(skillsType, "GetSkill", new Type[] { typeof(string) });
 			GetSkillDelegate = (skillName) => getSkillMethod.Invoke(null, new object[] { skillName });
