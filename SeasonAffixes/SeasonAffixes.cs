@@ -10,6 +10,7 @@ using Shockah.Kokoro.Stardew;
 using Shockah.SeasonAffixes.Affixes.Positive;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
+using System.Text;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 
@@ -21,9 +22,10 @@ namespace Shockah.SeasonAffixes
 		
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
 		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new();
-		private List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
+		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
+		private readonly PerScreen<bool> PerScreenIsOvernightAffixChoiceQueued = new(() => false);
 
 		internal SaveData SaveData
 		{
@@ -31,11 +33,19 @@ namespace Shockah.SeasonAffixes
 			set => PerScreenSaveData.Value = value;
 		}
 
+		internal bool IsOvernightAffixChoiceQueued
+		{
+			get => PerScreenIsOvernightAffixChoiceQueued.Value;
+			set => PerScreenIsOvernightAffixChoiceQueued.Value = value;
+		}
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
+			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
+			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
 
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
@@ -71,12 +81,11 @@ namespace Shockah.SeasonAffixes
 				RegisterAffix(new SkillAffix(this, skill));
 
 			// conflicts
-			RegisterAffixConflictProvider((a, b, season) => a is DroughtAffix && b is ThunderAffix);
-			RegisterAffixConflictProvider((a, b, season) => a is RustAffix && b is InnovationAffix);
-			RegisterAffixConflictProvider((a, b, season) => a is SilenceAffix && b is LoveAffix);
-			RegisterAffixConflictProvider((a, b, season) => a is CrowsAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming));
-			RegisterAffixConflictProvider((a, b, season) => a is HurricaneAffix && b is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging));
-			RegisterAffixConflictProvider((a, b, season) => a is SkillAffix skillAffixA && b is SkillAffix skillAffixB && skillAffixA.Skill.Equals(skillAffixB.Skill));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -84,6 +93,14 @@ namespace Shockah.SeasonAffixes
 				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
 			);
+		}
+
+		private void OnDayEnding(object? sender, DayEndingEventArgs e)
+		{
+			var tomorrow = Game1.Date.GetByAddingDays(1);
+			if (tomorrow.GetSeason() == Game1.Date.GetSeason())
+				return;
+			IsOvernightAffixChoiceQueued = true;
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
@@ -103,56 +120,108 @@ namespace Shockah.SeasonAffixes
 			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", SaveData);
 		}
 
-		private IClickableMenu CreateAffixChoiceMenu(OrdinalSeason season, int rerollCount, Action<ISeasonAffix> onAffixChosen)
+		private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)
 		{
-			int seed = 0;
-			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
-			seed = 31 * seed + (int)season.Season;
-			seed = 31 * seed + season.Year;
-			Random random = new(seed);
+			if (e.FromModID != ModManifest.UniqueID)
+				return;
 
-			WeightedRandom<ModConfig.AffixSetEntry> affixSetEntries = new();
-			foreach (var entry in Config.AffixSetEntries)
-				affixSetEntries.Add(new(entry.Weight, entry));
-			var affixSetEntry = affixSetEntries.Next(random);
-
-			var allAffixesProvider = new AllAffixesProvider(this);
-			var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season);
-			var allCombinationsAffixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative);
-			var maxAffixesAffixSetGenerator = new MaxAffixesAffixSetGenerator(allCombinationsAffixSetGenerator, 3);
-			var nonConflictingAffixSetGenerator = new NonConflictingAffixSetGenerator(maxAffixesAffixSetGenerator, AffixConflictProviders);
-			var weightedRandomAffixSetGenerator = new WeightedRandomAffixSetGenerator(nonConflictingAffixSetGenerator, random);
-			//var asLittleAsPossibleAffixSetGenerator = new AsLittleAsPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
-			var avoidingDuplicatesIfPossibleAffixSetGenerator = new AvoidingDuplicatesIfPossibleAffixSetGenerator(weightedRandomAffixSetGenerator);
-
-			var affixSets = avoidingDuplicatesIfPossibleAffixSetGenerator.Generate(season).Take(Config.Choices);
-			return CreateAffixChoiceMenu(affixSets, rerollCount, onAffixChosen);
+			if (Context.IsMainPlayer)
+			{
+				if (e.Type == typeof(NetMessage.AffixSetChoice).GetBestName())
+				{
+					// TODO: update menu state, broadcast
+				}
+				else if (e.Type == typeof(NetMessage.RerollChoice).GetBestName())
+				{
+					// TODO: update menu state, broadcast
+				}
+				else
+				{
+					Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
+				}
+			}
+			else
+			{
+				if (e.Type == typeof(NetMessage.UpdateAffixChoiceMenuConfig).GetBestName())
+				{
+					// TODO: update menu state
+				}
+				else if (e.Type == typeof(NetMessage.Broadcast<NetMessage.AffixSetChoice>).GetBestName())
+				{
+					// TODO: update menu state
+				}
+				else if (e.Type == typeof(NetMessage.Broadcast<NetMessage.RerollChoice>).GetBestName())
+				{
+					// TODO: update menu state
+				}
+				else
+				{
+					Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
+				}
+			}
 		}
 
-		private IClickableMenu CreateAffixChoiceMenu(IEnumerable<IReadOnlySet<ISeasonAffix>> choices, int rerollCount, Action<ISeasonAffix> onAffixChosen)
+		internal string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
 		{
-			return new AffixChoiceMenu(choices.Select(affixes => affixes.ToList()).ToList());
+			StringBuilder sb = new();
+			for (int i = 0; i < affixes.Count; i++)
+			{
+				if (i != 0)
+					sb.Append(Helper.Translation.Get(i == affixes.Count - 1 ? "season.separator.last" : "season.separator.other"));
+				sb.Append(affixes[i].LocalizedName);
+			}
+			return sb.ToString();
 		}
 
 		private static void Game1_showEndOfNightStuff_Prefix()
 		{
-			var tomorrow = Game1.Date.GetByAddingDays(1);
-			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
-			//	return;
+			if (Instance.IsOvernightAffixChoiceQueued)
+				Instance.IsOvernightAffixChoiceQueued = false;
+			else
+				return;
 
 			if (Game1.endOfNightMenus.Count == 0)
 				Game1.endOfNightMenus.Push(new SaveGameMenu());
 
-			Game1.endOfNightMenus.Push(Instance.CreateAffixChoiceMenu(
-				season: new(tomorrow.Year, tomorrow.GetSeason()),
-				rerollCount: Instance.Config.RerollsPerSeason,
-				onAffixChosen: affix =>
-				{
-					if (!Instance.Config.Incremental)
-						Instance.DeactivateAllAffixes();
-					Instance.ActivateAffix(affix);
-				}
-			));
+			var tomorrow = Game1.Date.GetByAddingDays(1);
+			OrdinalSeason season = new(tomorrow.Year, tomorrow.GetSeason());
+
+			IReadOnlyList<IReadOnlySet<ISeasonAffix>>? choices = null;
+			if (Context.IsMainPlayer)
+			{
+				int seed = 0;
+				seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
+				seed = 31 * seed + (int)season.Season;
+				seed = 31 * seed + season.Year;
+				Random random = new(seed);
+
+				WeightedRandom<ModConfig.AffixSetEntry> affixSetEntries = new();
+				foreach (var entry in Instance.Config.AffixSetEntries)
+					affixSetEntries.Add(new(entry.Weight, entry));
+				var affixSetEntry = affixSetEntries.Next(random);
+
+				var allAffixesProvider = new AllAffixesProvider(Instance);
+				var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season);
+
+				var affixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
+					.MaxAffixes(3)
+					.NonConflicting(Instance.AffixConflictProviders)
+					.WeightedRandom(random)
+					.AvoidingChoiceHistoryDuplicates()
+					.AvoidingSetChoiceHistoryDuplicates()
+					.AsLittleAsPossible()
+					.AvoidingDuplicatesBetweenChoices();
+
+				choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
+				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
+				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
+
+				// TODO: broadcast
+			}
+
+			AffixChoiceMenuConfig menuConfig = new(season, Instance.Config.Incremental, choices, Instance.Config.RerollsPerSeason);
+			AffixChoiceMenu menu = new(menuConfig);
+			Game1.endOfNightMenus.Push(menu);
 		}
 
 		#region API
@@ -166,7 +235,7 @@ namespace Shockah.SeasonAffixes
 		public void RegisterAffix(ISeasonAffix affix)
 			=> AllAffixesStorage[affix.UniqueID] = affix;
 
-		public void RegisterAffixConflictProvider(Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool> handler)
+		public void RegisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> handler)
 			=> AffixConflictProviders.Add(handler);
 
 		public void UnregisterAffix(ISeasonAffix affix)
@@ -186,6 +255,11 @@ namespace Shockah.SeasonAffixes
 
 		public void DeactivateAllAffixes()
 			=> ActiveAffixesStorage.Clear();
+
+		public void QueueOvernightAffixChoice()
+		{
+			IsOvernightAffixChoiceQueued = true;
+		}
 
 		public IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season)
 			=> AllAffixesStorage.Values

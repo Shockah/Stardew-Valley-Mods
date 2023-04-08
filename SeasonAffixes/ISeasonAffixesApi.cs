@@ -14,11 +14,13 @@ namespace Shockah.SeasonAffixes
 
 		void RegisterAffix(ISeasonAffix affix);
 		void UnregisterAffix(ISeasonAffix affix);
-		void RegisterAffixConflictProvider(Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool> provider);
+		void RegisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> provider);
 
 		void ActivateAffix(ISeasonAffix affix);
 		void DeactivateAffix(ISeasonAffix affix);
 		void DeactivateAllAffixes();
+
+		void QueueOvernightAffixChoice();
 
 		IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season);
 	}

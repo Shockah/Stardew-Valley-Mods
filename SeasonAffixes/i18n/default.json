@@ -3,6 +3,7 @@
 	"season.title": "New season",
 	"season.replacement.description": "Choose the theme of the season.",
 	"season.incremental.description": "Choose additional affixes for the season.",
+	"season.awaiting.description": "Awaiting information...",
 
 	// season name
 	"season.separator.last": " and ",

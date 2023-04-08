@@ -1,12 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Shockah.SeasonAffixes
 {
@@ -22,22 +22,54 @@ namespace Shockah.SeasonAffixes
 		private const int AffixHeight = 40;
 		private const int AffixMargin = 8;
 
-		private readonly IReadOnlyList<IReadOnlyList<ISeasonAffix>> Choices;
+		private AffixChoiceMenuConfig ConfigStorage;
 
-		private int TimerBeforeStart = 250;
-		private int SelectedChoice = -1;
-
-		public AffixChoiceMenu(IReadOnlyList<IReadOnlyList<ISeasonAffix>> choices)
-			: base(Game1.uiViewport.Width / 2 - Math.Max(BaseWidth, ChoiceWidth * choices.Count + borderWidth * (1 + choices.Count)) / 2, Game1.uiViewport.Height / 2 - BaseHeight / 2, Math.Max(BaseWidth, ChoiceWidth * choices.Count + borderWidth * (1 + choices.Count)), BaseHeight)
+		internal AffixChoiceMenuConfig Config
 		{
-			this.Choices = choices;
+			get => ConfigStorage;
+			set
+			{
+				ConfigStorage = value;
+				UpdateBounds();
+			}
 		}
 
-		public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+		private readonly Dictionary<long, PlayerChoice> PlayerChoices = new();
+
+		private int? SelectedChoice = null;
+
+		public AffixChoiceMenu(AffixChoiceMenuConfig config) : base(0, 0, 600, 400)
 		{
+			this.ConfigStorage = config;
+			UpdateBounds();
+		}
+
+		private void UpdateBounds()
+		{
+			width = Math.Max(BaseWidth, ChoiceWidth * (Config.Choices?.Count ?? 2) + borderWidth * (1 + (Config.Choices?.Count ?? 2)));
+			height = BaseHeight;
+
 			xPositionOnScreen = Game1.uiViewport.Width / 2 - width / 2;
 			yPositionOnScreen = Game1.uiViewport.Height / 2 - height / 2;
 		}
+
+		public void RegisterChoice(long playerID, PlayerChoice choice)
+		{
+			PlayerChoices[playerID] = choice;
+			// TODO: check if all choices done -> apply
+
+			if (!Context.IsMainPlayer)
+				return;
+
+			// TODO: check if reroll won
+
+			if (!Config.Incremental)
+				SeasonAffixes.Instance.DeactivateAllAffixes();
+			// TODO: activate chosen affixes;
+		}
+
+		public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
+			=> UpdateBounds();
 
 		public override void receiveKeyPress(Keys key)
 		{
@@ -47,16 +79,12 @@ namespace Shockah.SeasonAffixes
 
 		public override void update(GameTime time)
 		{
-			//if (!isActive)
-			//{
-			//	exitThisMenu();
-			//	return;
-			//}
-
-			SelectedChoice = -1;
+			SelectedChoice = null;
+			if (Config.Choices is null)
+				return;
 
 			int choiceHeight = height - 192;
-			for (int i = 0; i < Choices.Count; i++)
+			for (int i = 0; i < Config.Choices.Count; i++)
 			{
 				int left = xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i;
 				int top = yPositionOnScreen + 192;
@@ -66,19 +94,27 @@ namespace Shockah.SeasonAffixes
 					break;
 				}
 			}
+
+			if (Game1.oldMouseState.LeftButton == ButtonState.Pressed && SelectedChoice is not null)
+			{
+			}
 		}
 
 		public override void draw(SpriteBatch b)
 		{
-			//if (TimerBeforeStart > 0)
-			//	return;
-
 			b.Draw(Game1.fadeToBlackRect, new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height), Color.Black * 0.5f);
 			Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, speaker: false, drawOnlyBox: true);
 
 			{
 				var text = SeasonAffixes.Instance.Helper.Translation.Get("season.title");
 				Utility.drawTextWithShadow(b, text, Game1.dialogueFont, new Vector2(xPositionOnScreen + width / 2f - Game1.dialogueFont.MeasureString(text).X / 2f, yPositionOnScreen + 116), Color.Black);
+			}
+
+			if (Config.Choices is null)
+			{
+				var text = SeasonAffixes.Instance.Helper.Translation.Get("season.awaiting.description");
+				Utility.drawTextWithShadow(b, text, Game1.smallFont, new Vector2(xPositionOnScreen + width / 2f - Game1.smallFont.MeasureString(text).X / 2f, yPositionOnScreen + 164), Color.Black);
+				return;
 			}
 
 			{
@@ -88,21 +124,29 @@ namespace Shockah.SeasonAffixes
 
 			drawHorizontalPartition(b, yPositionOnScreen + 192);
 
+			var orderedChoices = Config.Choices.Select(choice =>
+			{
+				return choice
+					.OrderBy(a => a.GetPositivity(Config.Season) - a.GetNegativity(Config.Season))
+					.ThenBy(a => a.UniqueID)
+					.ToList();
+			}).ToList();
+
 			int choiceHeight = height - 192;
-			for (int i = 0; i < Choices.Count; i++)
+			for (int i = 0; i < Config.Choices.Count; i++)
 			{
 				if (i != 0)
 					drawVerticalIntersectingPartition(b, xPositionOnScreen + (ChoiceWidth + borderWidth) * i, yPositionOnScreen + 192);
 
-				int totalAffixesHeight = Choices[i].Count * AffixHeight + (Choices[i].Count - 1) * AffixSpacing;
+				int totalAffixesHeight = orderedChoices[i].Count * AffixHeight + (orderedChoices[i].Count - 1) * AffixSpacing;
 				int topAffixPosition = yPositionOnScreen + 196 + choiceHeight / 2 - totalAffixesHeight / 2;
 
-				for (int j = 0; j < Choices[i].Count; j++)
-					DrawAffix(b, new(xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i + AffixMargin, topAffixPosition + j * (AffixHeight + AffixSpacing), ChoiceWidth - AffixMargin * 2, AffixHeight), Choices[i][j], SelectedChoice == i);
+				for (int j = 0; j < orderedChoices[i].Count; j++)
+					DrawAffix(b, new(xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i + AffixMargin, topAffixPosition + j * (AffixHeight + AffixSpacing), ChoiceWidth - AffixMargin * 2, AffixHeight), orderedChoices[i][j], SelectedChoice == i);
 			}
 
-			if (SelectedChoice >= 0)
-				drawToolTip(b, GetSeasonDescription(Choices[SelectedChoice]), GetSeasonName(Choices[SelectedChoice]), null);
+			if (SelectedChoice is not null)
+				drawToolTip(b, GetSeasonDescription(orderedChoices[SelectedChoice.Value]), SeasonAffixes.Instance.GetSeasonName(orderedChoices[SelectedChoice.Value]), null);
 
 			if (!Game1.options.SnappyMenus)
 			{
@@ -129,18 +173,6 @@ namespace Shockah.SeasonAffixes
 			b.Draw(icon.Texture, iconPosition, icon.Rectangle, Color.White, 0f, new Vector2(icon.Rectangle.Width / 2f, icon.Rectangle.Height / 2f), iconScale, SpriteEffects.None, 4f);
 
 			Utility.drawTextWithShadow(b, affix.LocalizedName, Game1.dialogueFont, new Vector2(bounds.X + IconWidth + IconToTextSpacing, bounds.Y - 4), selected ? Color.Green : Game1.textColor);
-		}
-
-		private static string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
-		{
-			StringBuilder sb = new();
-			for (int i = 0; i < affixes.Count; i++)
-			{
-				if (i != 0)
-					sb.Append(SeasonAffixes.Instance.Helper.Translation.Get(i == affixes.Count - 1 ? "season.separator.last" : "season.separator.other"));
-				sb.Append(affixes[i].LocalizedName);
-			}
-			return sb.ToString();
 		}
 
 		private static string GetSeasonDescription(IReadOnlyList<ISeasonAffix> affixes)

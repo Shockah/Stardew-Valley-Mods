@@ -10,6 +10,30 @@ namespace Shockah.SeasonAffixes
 		IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season);
 	}
 
+	internal static class IAffixSetGeneratorExt
+	{
+		public static IAffixSetGenerator NonConflicting(this IAffixSetGenerator affixSetGenerator, List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> affixConflictProviders)
+			=> new NonConflictingAffixSetGenerator(affixSetGenerator, affixConflictProviders);
+
+		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random)
+			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random);
+
+		public static IAffixSetGenerator MaxAffixes(this IAffixSetGenerator affixSetGenerator, int max)
+			=> new MaxAffixesAffixSetGenerator(affixSetGenerator, max);
+
+		public static IAffixSetGenerator AsLittleAsPossible(this IAffixSetGenerator affixSetGenerator)
+			=> new AsLittleAsPossibleAffixSetGenerator(affixSetGenerator);
+
+		public static IAffixSetGenerator AvoidingDuplicatesBetweenChoices(this IAffixSetGenerator affixSetGenerator)
+			=> new AvoidingDuplicatesBetweenChoicesAffixSetGenerator(affixSetGenerator);
+
+		public static IAffixSetGenerator AvoidingChoiceHistoryDuplicates(this IAffixSetGenerator affixSetGenerator)
+			=> new AvoidingChoiceHistoryDuplicatesAffixSetGenerator(affixSetGenerator);
+
+		public static IAffixSetGenerator AvoidingSetChoiceHistoryDuplicates(this IAffixSetGenerator affixSetGenerator)
+			=> new AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator(affixSetGenerator);
+	}
+
 	internal sealed class AllCombinationsAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixesProvider AffixesProvider { get; init; }
@@ -60,9 +84,9 @@ namespace Shockah.SeasonAffixes
 	internal sealed class NonConflictingAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
-		private List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> AffixConflictProviders { get; init; }
+		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; }
 
-		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> affixConflictProviders)
+		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> affixConflictProviders)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
 			this.AffixConflictProviders = affixConflictProviders;
@@ -71,22 +95,7 @@ namespace Shockah.SeasonAffixes
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
 			var test = AffixSetGenerator.Generate(season).ToList();
-			return test
-				.Where(c =>
-				{
-					var list = c.ToList();
-					for (int i = 1; i < list.Count; i++)
-					{
-						for (int j = 0; j < i; j++)
-						{
-							if (AffixConflictProviders.Any(h => h(list[i], list[j], season)))
-								return false;
-							if (AffixConflictProviders.Any(h => h(list[j], list[i], season)))
-								return false;
-						}
-					}
-					return true;
-				});
+			return test.Where(c => !AffixConflictProviders.Any(provider => provider(c, season)));
 		}
 	}
 
@@ -154,11 +163,11 @@ namespace Shockah.SeasonAffixes
 		}
 	}
 
-	internal sealed class AvoidingDuplicatesIfPossibleAffixSetGenerator : IAffixSetGenerator
+	internal sealed class AvoidingDuplicatesBetweenChoicesAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
 
-		public AvoidingDuplicatesIfPossibleAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		public AvoidingDuplicatesBetweenChoicesAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
 		}
@@ -188,6 +197,72 @@ namespace Shockah.SeasonAffixes
 
 				allowedDuplicates++;
 			}
+		}
+	}
+
+	internal sealed class AvoidingChoiceHistoryDuplicatesAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+
+		public AvoidingChoiceHistoryDuplicatesAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+		{
+			var remainingResults = new LinkedList<IReadOnlySet<ISeasonAffix>>(AffixSetGenerator.Generate(season));
+
+			var node = remainingResults.First;
+			while (node is not null)
+			{
+				foreach (var choiceAffix in node.Value)
+					foreach (var step in SeasonAffixes.Instance.SaveData.AffixChoiceHistory)
+						if (step.Any(saveAffix => saveAffix.UniqueID == choiceAffix.UniqueID))
+							goto nodeLoopContinue;
+
+				yield return node.Value;
+				remainingResults.Remove(node);
+
+				nodeLoopContinue:;
+				node = node.Next;
+			}
+
+			foreach (var choice in remainingResults)
+				yield return choice;
+		}
+	}
+
+	internal sealed class AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+
+		public AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+		{
+			var remainingResults = new LinkedList<IReadOnlySet<ISeasonAffix>>(AffixSetGenerator.Generate(season));
+
+			var node = remainingResults.First;
+			while (node is not null)
+			{
+				var nodeIds = node.Value.Select(choiceAffix => choiceAffix.UniqueID).ToHashSet();
+				foreach (var step in SeasonAffixes.Instance.SaveData.AffixSetChoiceHistory)
+					if (step.Select(saveChoice => saveChoice.Select(saveAffix => saveAffix.UniqueID).ToHashSet()).Any(saveChoice => saveChoice.SetEquals(nodeIds)))
+						goto nodeLoopContinue;
+
+				yield return node.Value;
+				remainingResults.Remove(node);
+
+				nodeLoopContinue:;
+				node = node.Next;
+			}
+
+			foreach (var choice in remainingResults)
+				yield return choice;
 		}
 	}
 }

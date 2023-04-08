@@ -1,4 +1,5 @@
-﻿using StardewModdingAPI;
+﻿using Shockah.Kokoro;
+using StardewModdingAPI;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -44,9 +45,9 @@ namespace Shockah.SeasonAffixes
 				if (TryGetOrLog(id, "active affixes", LogLevel.Warn, out var affix))
 					result.ActiveAffixes.Add(affix);
 			foreach (var step in data.AffixChoiceHistory)
-				result.AffixChoiceHistory.Add(step.Select(id => GetOrLog(id, "affix choice history", LogLevel.Info)).Where(a => a is not null).Select(a => a!).ToHashSet());
+				result.AffixChoiceHistory.Add(step.Select(id => GetOrLog(id, "affix choice history", LogLevel.Info)).WhereNotNull().ToHashSet());
 			foreach (var step in data.AffixSetChoiceHistory)
-				result.AffixSetChoiceHistory.Add(step.Select(set => (ISet<ISeasonAffix>)set.Select(id => GetOrLog(id, "affix set choice history", LogLevel.Info)).Where(a => a is not null).Select(a => a!).ToHashSet()).ToHashSet());
+				result.AffixSetChoiceHistory.Add(step.Select(set => (ISet<ISeasonAffix>)set.Select(id => GetOrLog(id, "affix set choice history", LogLevel.Info)).WhereNotNull().ToHashSet()).ToHashSet());
 			return result;
 		}
 	}
