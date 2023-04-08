@@ -10,6 +10,8 @@ using Shockah.Kokoro.Stardew;
 using Shockah.SeasonAffixes.Affixes.Positive;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
+using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 
 namespace Shockah.SeasonAffixes
 {
@@ -21,9 +23,19 @@ namespace Shockah.SeasonAffixes
 		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new();
 		private List<Func<ISeasonAffix, ISeasonAffix, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
+		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
+
+		internal SaveData SaveData
+		{
+			get => PerScreenSaveData.Value;
+			set => PerScreenSaveData.Value = value;
+		}
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
+			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+			helper.Events.GameLoop.Saving += OnSaving;
 
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
@@ -72,6 +84,23 @@ namespace Shockah.SeasonAffixes
 				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
 			);
+		}
+
+		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+		{
+			if (!Context.IsMainPlayer)
+				return;
+
+			var serializedData = Helper.Data.ReadSaveData<SerializedSaveData>($"{ModManifest.UniqueID}.SaveData");
+			SaveData = serializedData is null ? new() : new SaveDataSerializer().Deserialize(serializedData);
+		}
+
+		private void OnSaving(object? sender, SavingEventArgs e)
+		{
+			if (!Context.IsMainPlayer)
+				return;
+
+			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", SaveData);
 		}
 
 		private IClickableMenu CreateAffixChoiceMenu(OrdinalSeason season, int rerollCount, Action<ISeasonAffix> onAffixChosen)
