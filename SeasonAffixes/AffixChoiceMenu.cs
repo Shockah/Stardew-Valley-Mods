@@ -34,7 +34,7 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
-		private readonly Dictionary<long, PlayerChoice> PlayerChoices = new();
+		private readonly Dictionary<Farmer, PlayerChoice> PlayerChoices = new();
 
 		private int? SelectedChoice = null;
 
@@ -53,9 +53,9 @@ namespace Shockah.SeasonAffixes
 			yPositionOnScreen = Game1.uiViewport.Height / 2 - height / 2;
 		}
 
-		public void RegisterChoice(long playerID, PlayerChoice choice)
+		public void RegisterChoice(Farmer player, PlayerChoice choice)
 		{
-			PlayerChoices[playerID] = choice;
+			PlayerChoices[player] = choice;
 			// TODO: check if all choices done -> apply
 
 			if (!Context.IsMainPlayer)

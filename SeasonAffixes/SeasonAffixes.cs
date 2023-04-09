@@ -25,7 +25,8 @@ namespace Shockah.SeasonAffixes
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
-		private readonly PerScreen<bool> PerScreenIsOvernightAffixChoiceQueued = new(() => false);
+		private readonly PerScreen<AffixChoiceMenuConfig?> PerScreenAffixChoiceMenuConfig = new(() => null);
+		private readonly PerScreen<Dictionary<Farmer, PlayerChoice>> PerScreenPlayerChoices = new(() => new());
 
 		internal SaveData SaveData
 		{
@@ -33,10 +34,16 @@ namespace Shockah.SeasonAffixes
 			set => PerScreenSaveData.Value = value;
 		}
 
-		internal bool IsOvernightAffixChoiceQueued
+		internal AffixChoiceMenuConfig? AffixChoiceMenuConfig
 		{
-			get => PerScreenIsOvernightAffixChoiceQueued.Value;
-			set => PerScreenIsOvernightAffixChoiceQueued.Value = value;
+			get => PerScreenAffixChoiceMenuConfig.Value;
+			set => PerScreenAffixChoiceMenuConfig.Value = value;
+		}
+
+		internal Dictionary<Farmer, PlayerChoice> PlayerChoices
+		{
+			get => PerScreenPlayerChoices.Value;
+			set => PerScreenPlayerChoices.Value = value;
 		}
 
 		public override void OnEntry(IModHelper helper)
@@ -45,7 +52,10 @@ namespace Shockah.SeasonAffixes
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
-			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
+
+			RegisterModMessageHandler<NetMessage.UpdateAffixChoiceMenuConfig>(OnUpdateAffixChoiceMenuConfigMessageReceived);
+			RegisterModMessageHandler<NetMessage.AffixSetChoice>(OnAffixSetChoiceMessageReceived);
+			RegisterModMessageHandler<NetMessage.RerollChoice>(OnRerollChoiceMessageReceived);
 
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
@@ -100,7 +110,7 @@ namespace Shockah.SeasonAffixes
 			var tomorrow = Game1.Date.GetByAddingDays(1);
 			if (tomorrow.GetSeason() == Game1.Date.GetSeason())
 				return;
-			IsOvernightAffixChoiceQueued = true;
+			QueueOvernightAffixChoice();
 		}
 
 		private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
@@ -120,45 +130,62 @@ namespace Shockah.SeasonAffixes
 			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", SaveData);
 		}
 
-		private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)
+		private void OnUpdateAffixChoiceMenuConfigMessageReceived(NetMessage.UpdateAffixChoiceMenuConfig message)
 		{
-			if (e.FromModID != ModManifest.UniqueID)
-				return;
-
 			if (Context.IsMainPlayer)
 			{
-				if (e.Type == typeof(NetMessage.AffixSetChoice).GetBestName())
-				{
-					// TODO: update menu state, broadcast
-				}
-				else if (e.Type == typeof(NetMessage.RerollChoice).GetBestName())
-				{
-					// TODO: update menu state, broadcast
-				}
-				else
-				{
-					Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
-				}
+				Monitor.Log("Received affix choice menu config, but we did not expect to receive it as the host.", LogLevel.Error);
+				return;
+			}
+
+			AffixChoiceMenuConfig newConfig = new(
+				message.Season,
+				message.Incremental,
+				message.Choices.Select(choice => choice.Select(id => GetAffix(id)).WhereNotNull().ToHashSet()).ToList(),
+				message.RerollsLeft
+			);
+
+			if ((newConfig.Choices?.Sum(choice => choice.Count) ?? 0) != message.Choices.Sum(choice => choice.Count))
+			{
+				Monitor.Log("Received affix choice menu config, but it seems we are running a different set of mods.", LogLevel.Error);
+				return;
+			}
+			AffixChoiceMenuConfig = newConfig;
+		}
+
+		private void OnAffixSetChoiceMessageReceived(Farmer sender, NetMessage.AffixSetChoice message)
+		{
+			var choice = new PlayerChoice.Choice(message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToHashSet());
+			if (choice.Affixes.Count != message.Affixes.Count)
+			{
+				Monitor.Log($"Player {sender.displayName} voted, but seems to be running a different set of mods, making the vote invalid.", LogLevel.Error);
+				RegisterChoice(sender, new PlayerChoice.Invalid());
 			}
 			else
 			{
-				if (e.Type == typeof(NetMessage.UpdateAffixChoiceMenuConfig).GetBestName())
-				{
-					// TODO: update menu state
-				}
-				else if (e.Type == typeof(NetMessage.Broadcast<NetMessage.AffixSetChoice>).GetBestName())
-				{
-					// TODO: update menu state
-				}
-				else if (e.Type == typeof(NetMessage.Broadcast<NetMessage.RerollChoice>).GetBestName())
-				{
-					// TODO: update menu state
-				}
-				else
-				{
-					Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
-				}
+				RegisterChoice(sender, choice);
 			}
+		}
+
+		private void OnRerollChoiceMessageReceived(Farmer sender, NetMessage.RerollChoice _)
+		{
+			RegisterChoice(sender, new PlayerChoice.Reroll());
+		}
+
+		private void RegisterChoice(Farmer player, PlayerChoice anyChoice)
+		{
+			PlayerChoices[player] = anyChoice;
+			if (player != Game1.player)
+				return;
+
+			if (anyChoice is PlayerChoice.Choice choice)
+				SendModMessageToEveryone(new NetMessage.AffixSetChoice(choice.Affixes.Select(a => a.UniqueID).ToHashSet()));
+			else if (anyChoice is PlayerChoice.Reroll)
+				SendModMessageToEveryone(new NetMessage.RerollChoice());
+			else if (anyChoice is PlayerChoice.Invalid)
+			{ } // do nothing
+			else
+				throw new NotImplementedException($"Unimplemented player choice {anyChoice}.");
 		}
 
 		internal string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
@@ -175,9 +202,8 @@ namespace Shockah.SeasonAffixes
 
 		private static void Game1_showEndOfNightStuff_Prefix()
 		{
-			if (Instance.IsOvernightAffixChoiceQueued)
-				Instance.IsOvernightAffixChoiceQueued = false;
-			else
+			var menuConfig = Instance.AffixChoiceMenuConfig;
+			if (menuConfig is null)
 				return;
 
 			if (Game1.endOfNightMenus.Count == 0)
@@ -216,12 +242,20 @@ namespace Shockah.SeasonAffixes
 				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
 				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
 
-				// TODO: broadcast
+				Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
+					season,
+					Instance.Config.Incremental,
+					choices.Select(choice => choice.Select(a => a.UniqueID).ToHashSet()).ToList(),
+					Instance.Config.RerollsPerSeason
+				));
 			}
 
-			AffixChoiceMenuConfig menuConfig = new(season, Instance.Config.Incremental, choices, Instance.Config.RerollsPerSeason);
+			menuConfig = menuConfig.WithChoices(choices);
+			Instance.AffixChoiceMenuConfig = menuConfig;
+
 			AffixChoiceMenu menu = new(menuConfig);
 			Game1.endOfNightMenus.Push(menu);
+			Instance.PlayerChoices.Clear();
 		}
 
 		#region API
@@ -258,7 +292,8 @@ namespace Shockah.SeasonAffixes
 
 		public void QueueOvernightAffixChoice()
 		{
-			IsOvernightAffixChoiceQueued = true;
+			var tomorrow = Game1.Date.GetByAddingDays(1);
+			AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, null, Instance.Config.RerollsPerSeason);
 		}
 
 		public IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season)

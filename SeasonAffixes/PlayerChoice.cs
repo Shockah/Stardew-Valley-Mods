@@ -5,10 +5,12 @@ namespace Shockah.SeasonAffixes
 	internal record PlayerChoice
 	{
 		public record Choice(
-			IReadOnlyList<ISeasonAffix> Affixes
+			IReadOnlySet<ISeasonAffix> Affixes
 		) : PlayerChoice;
 
-		public record Reroll() : PlayerChoice;
+		public record Reroll : PlayerChoice;
+
+		public record Invalid : PlayerChoice;
 
 		private PlayerChoice() { }
 	}

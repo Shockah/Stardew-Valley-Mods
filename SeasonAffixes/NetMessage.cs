@@ -11,11 +11,6 @@ namespace Shockah.SeasonAffixes
 			int RerollsLeft = 0
 		);
 
-		public record Broadcast<T>(
-			long PlayerID,
-			T Message
-		);
-
 		public record AffixSetChoice(
 			IReadOnlySet<string> Affixes
 		);
