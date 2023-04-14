@@ -1,12 +1,17 @@
-﻿using Shockah.Kokoro.Stardew;
+﻿using HarmonyLib;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
 	{
+		private static bool IsHarmonySetup = false;
 		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "HardWater";
@@ -32,6 +37,27 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		// TODO: Hard Water implementation
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
+		private void Apply(Harmony harmony)
+		{
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(HardWaterAffix), nameof(SObject_IsSprinkler_Postfix)))
+			);
+		}
+
+		private static void SObject_IsSprinkler_Postfix(ref bool __result)
+		{
+			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is HardWaterAffix))
+				return;
+			__result = false;
+		}
 	}
 }
