@@ -58,7 +58,7 @@ namespace Shockah.SeasonAffixes
 			}
 			if (ConfirmedChoice is null)
 				return;
-			// TODO: make sound
+			Game1.playSound("select");
 		}
 
 		private void UpdateBounds()
@@ -142,7 +142,10 @@ namespace Shockah.SeasonAffixes
 				return;
 
 			if (SelectedChoice is not null)
-                SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices[SelectedChoice.Value]));
+			{
+				SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices[SelectedChoice.Value]));
+				Game1.playSound("smallSelect");
+			}
         }
 
 		public override void draw(SpriteBatch b)
