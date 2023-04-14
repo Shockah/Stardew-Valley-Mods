@@ -73,7 +73,6 @@ namespace Shockah.Kokoro
 	{
 		ISemanticVersion? Version { get; }
 
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Nested interface")]
 		public interface Modifiable : IVersioned
 		{
 			new ISemanticVersion? Version { get; set; }
