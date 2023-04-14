@@ -17,7 +17,6 @@ using System.Reflection.Emit;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.GMCM;
-using Shockah.Kokoro.SMAPI;
 
 namespace Shockah.PleaseGiftMeInPerson
 {
@@ -27,7 +26,6 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		internal static readonly string OverrideAssetPath = "Data/PleaseGiftMeInPerson";
 		private static readonly string GiftEntriesSaveDataKey = "GiftEntries";
-		private static readonly string GiftEntriesMessageType = "GiftEntries";
 
 		private static readonly Rectangle CursorsMailSourceRect = new(189, 423, 16, 13);
 		private static readonly Rectangle EmojisLoveSourceRect = new(9, 27, 9, 9);
@@ -49,7 +47,7 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private Lazy<IReadOnlyList<(string Name, string DisplayName)>> Characters = null!;
 
-		private IDictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
+		private Dictionary<long, IDictionary<string, IList<GiftEntry>>> GiftEntries = new();
 		private readonly IDictionary<long, IList<Item>> ItemsToReturn = new Dictionary<long, IList<Item>>();
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
@@ -99,7 +97,9 @@ namespace Shockah.PleaseGiftMeInPerson
 			helper.Events.GameLoop.Saving += OnSaving;
 			helper.Events.Content.AssetRequested += OnAssetRequested;
 			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
-			helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
+
+			RegisterModMessageHandler<Dictionary<long, IDictionary<string, IList<GiftEntry>>>>(OnGiftEntriesMessageReceived);
+			RegisterModMessageHandler<NetMessage.RecordGift>(OnRecordGiftMessageReceived);
 		}
 
 		/// <inheritdoc cref="IGameLoopEvents.GameLaunched" />
@@ -163,7 +163,7 @@ namespace Shockah.PleaseGiftMeInPerson
 		{
 			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
 			{
-				GiftEntries = Helper.Data.ReadSaveData<IDictionary<long, IDictionary<string, IList<GiftEntry>>>>(GiftEntriesSaveDataKey)
+				GiftEntries = Helper.Data.ReadSaveData<Dictionary<long, IDictionary<string, IList<GiftEntry>>>>(GiftEntriesSaveDataKey)
 					?? new Dictionary<long, IDictionary<string, IList<GiftEntry>>>();
 			}
 		}
@@ -205,39 +205,18 @@ namespace Shockah.PleaseGiftMeInPerson
 
 		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
 		{
-			if (GameExt.GetMultiplayerMode() != MultiplayerMode.Server)
-				return;
-			if (e.Peer.GetMod(ModManifest.UniqueID) is null)
-				return;
-
-			Helper.Multiplayer.SendMessage(
-				GiftEntries,
-				GiftEntriesMessageType,
-				new[] { ModManifest.UniqueID },
-				new[] { e.Peer.PlayerID }
-			);
+			SendModMessage(GiftEntries, e.Peer);
 		}
 
-		private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)
+		private void OnGiftEntriesMessageReceived(Dictionary<long, IDictionary<string, IList<GiftEntry>>> message)
 		{
-			if (e.FromModID != ModManifest.UniqueID)
-				return;
+			GiftEntries = message;
+		}
 
-			if (e.Type == GiftEntriesMessageType)
-			{
-				var message = e.ReadAs<Dictionary<long, IDictionary<string, IList<GiftEntry>>>>();
-				GiftEntries = message;
-			}
-			else if (e.Type == typeof(NetMessage.RecordGift).FullName)
-			{
-				var message = e.ReadAs<NetMessage.RecordGift>();
-				var player = Game1.getAllFarmers().First(p => p.UniqueMultiplayerID == message.PlayerID);
-				RecordGiftEntryForNPC(player, message.NpcName, message.GiftEntry);
-			}
-			else
-			{
-				Monitor.Log($"Received unknown message of type {e.Type}.", LogLevel.Warn);
-			}
+		private void OnRecordGiftMessageReceived(NetMessage.RecordGift message)
+		{
+			var player = Game1.getAllFarmers().First(p => p.UniqueMultiplayerID == message.PlayerID);
+			RecordGiftEntryForNPC(player, message.NpcName, message.GiftEntry);
 		}
 
 		private void PopulateConfig(ModConfig config)
@@ -366,17 +345,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			}
 
 			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
-			{
-				Helper.Multiplayer.SendMessage(
-				GiftEntries,
-				GiftEntriesMessageType,
-				new[] { ModManifest.UniqueID },
-				Game1.getOnlineFarmers()
-					.Where(p => p.UniqueMultiplayerID != GameExt.GetHostPlayer().UniqueMultiplayerID)
-					.Select(p => p.UniqueMultiplayerID)
-					.ToArray()
-				);
-			}
+				SendModMessageToEveryone(GiftEntries);
 		}
 
 		private IEnumerable<GiftEntry> GetGiftEntriesForNPC(Farmer player, string npcName)
@@ -404,23 +373,17 @@ namespace Shockah.PleaseGiftMeInPerson
 
 			if (GameExt.GetMultiplayerMode() != MultiplayerMode.SinglePlayer)
 			{
-				long[] playerIDsToSendTo;
+				Farmer[] playersToSendTo;
+
 				if (GameExt.GetMultiplayerMode() == MultiplayerMode.Server)
-					playerIDsToSendTo = Game1.getOnlineFarmers()
+					playersToSendTo = Game1.getOnlineFarmers()
 						.Where(p => p != player && p.UniqueMultiplayerID != GameExt.GetHostPlayer().UniqueMultiplayerID)
-						.Select(p => p.UniqueMultiplayerID)
 						.ToArray();
 				else
-					playerIDsToSendTo = GameExt.GetHostPlayer() == player ? Array.Empty<long>() : new[] { GameExt.GetHostPlayer().UniqueMultiplayerID };
+					playersToSendTo = GameExt.GetHostPlayer() == player ? Array.Empty<Farmer>() : new[] { GameExt.GetHostPlayer() };
 
-				if (playerIDsToSendTo.Length != 0)
-				{
-					Instance.Helper.Multiplayer.SendMessage(
-						new NetMessage.RecordGift(player.UniqueMultiplayerID, npcName, giftEntry),
-						new[] { Instance.ModManifest.UniqueID },
-						playerIDsToSendTo
-					);
-				}
+				if (playersToSendTo.Length != 0)
+					SendModMessage(new NetMessage.RecordGift(player.UniqueMultiplayerID, npcName, giftEntry), playersToSendTo);
 			}
 		}
 
