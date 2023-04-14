@@ -1,12 +1,16 @@
-﻿using Shockah.Kokoro.Stardew;
+﻿using HarmonyLib;
+using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
 	{
+		private static bool IsHarmonySetup = false;
 		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Drought";
@@ -32,6 +36,28 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		// TODO: Drought implementation
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
+		private void Apply(Harmony harmony)
+		{
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.getWeatherModificationsForDate)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(DroughtAffix), nameof(Game1_getWeatherModificationsForDate_Postfix)))
+			);
+		}
+
+		private static void Game1_getWeatherModificationsForDate_Postfix(ref int __result)
+		{
+			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is DroughtAffix))
+				return;
+			if (__result is Game1.weather_rain or Game1.weather_lightning)
+				__result = Game1.weather_sunny;
+		}
 	}
 }
