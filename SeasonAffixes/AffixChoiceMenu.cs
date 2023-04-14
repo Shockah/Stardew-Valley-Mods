@@ -69,7 +69,35 @@ namespace Shockah.SeasonAffixes
 
 			xPositionOnScreen = Game1.uiViewport.Width / 2 - width / 2;
 			yPositionOnScreen = Game1.uiViewport.Height / 2 - height / 2;
+
+			allClickableComponents = new();
+			if (Config is null)
+				return;
+
+            int choiceHeight = height - 192;
+            for (int i = 0; i < Config.Choices.Count; i++)
+            {
+                int left = xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i;
+                int top = yPositionOnScreen;
+				allClickableComponents.Add(new ClickableComponent(new(left, top, ChoiceWidth, choiceHeight), "") { myID = 100 + i });
+				if (i != 0)
+				{
+					allClickableComponents[^2].rightNeighborID = allClickableComponents[^1].myID;
+					allClickableComponents[^1].leftNeighborID = allClickableComponents[^2].myID;
+				}
+            }
 		}
+
+		public override void snapToDefaultClickableComponent()
+		{
+			UpdateBounds();
+			var component = getComponentWithID(100);
+			if (component is null)
+				return;
+
+            currentlySnappedComponent = component;
+            Game1.setMousePosition(component.bounds.Center.X, component.bounds.Center.Y);
+        }
 
 		public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
 			=> UpdateBounds();
@@ -105,11 +133,18 @@ namespace Shockah.SeasonAffixes
 						break;
 					}
 				}
-
-				if (Game1.oldMouseState.LeftButton == ButtonState.Pressed && SelectedChoice is not null)
-					SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices![SelectedChoice.Value]));
 			}
 		}
+
+		public override void receiveLeftClick(int x, int y, bool playSound = true)
+		{
+			base.receiveLeftClick(x, y, playSound);
+			if (Config is null)
+				return;
+
+			if (SelectedChoice is not null)
+                SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices[SelectedChoice.Value]));
+        }
 
 		public override void draw(SpriteBatch b)
 		{
@@ -155,9 +190,9 @@ namespace Shockah.SeasonAffixes
 				if (Game1.getOnlineFarmers().Count > 1)
 				{
 					var chosenBy = SeasonAffixes.Instance.PlayerChoices
-					.Where(kvp => kvp.Value.Equals(new PlayerChoice.Choice(Config.Choices[i])))
-					.Select(kvp => kvp.Key)
-					.ToList();
+						.Where(kvp => kvp.Value.Equals(new PlayerChoice.Choice(Config.Choices[i])))
+						.Select(kvp => kvp.Key)
+						.ToList();
 
 					int chosenByWidth = chosenBy.Count * PlayerPortraitSpacing;
 					for (int j = 0; j < chosenBy.Count; j++)
