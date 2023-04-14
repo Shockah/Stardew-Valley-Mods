@@ -9,6 +9,11 @@ namespace Shockah.SeasonAffixes
 		string LocalizedDescription { get; }
 		TextureRectangle Icon { get; }
 
+		void OnRegister() { }
+		void OnUnregister() { }
+		void OnActivate() { }
+		void OnDeactivate() { }
+
 		int GetPositivity(OrdinalSeason season);
 		int GetNegativity(OrdinalSeason season);
 
@@ -22,6 +27,11 @@ namespace Shockah.SeasonAffixes
 		public abstract string LocalizedName { get; }
 		public abstract string LocalizedDescription { get; }
 		public abstract TextureRectangle Icon { get; }
+
+		public virtual void OnRegister() { }
+		public virtual void OnUnregister() { }
+		public virtual void OnActivate() { }
+		public virtual void OnDeactivate() { }
 
 		public abstract int GetNegativity(OrdinalSeason season);
 		public abstract int GetPositivity(OrdinalSeason season);

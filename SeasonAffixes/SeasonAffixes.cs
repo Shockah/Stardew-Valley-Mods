@@ -228,9 +228,20 @@ namespace Shockah.SeasonAffixes
 
 		private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
 		{
-			SaveData.ActiveAffixes.Clear();
-			foreach (var affix in message.Affixes.Select(id => GetAffix(id)).WhereNotNull())
+			var affixes = message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToList();
+			var toDeactivate = SaveData.ActiveAffixes.Where(a => !affixes.Contains(a)).ToList();
+			var toActivate = affixes.Where(a => !SaveData.ActiveAffixes.Contains(a)).ToList();
+
+			foreach (var affix in toDeactivate)
+			{
+				affix.OnDeactivate();
+				SaveData.ActiveAffixes.Remove(affix);
+			}
+			foreach (var affix in toActivate)
+			{
 				SaveData.ActiveAffixes.Add(affix);
+				affix.OnActivate();
+			}
 		}
 
 		internal void RegisterChoice(Farmer player, PlayerChoice anyChoice)
@@ -353,16 +364,23 @@ namespace Shockah.SeasonAffixes
 			=> AllAffixesStorage.TryGetValue(uniqueID, out var affix) ? affix : null;
 
 		public void RegisterAffix(ISeasonAffix affix)
-			=> AllAffixesStorage[affix.UniqueID] = affix;
+		{
+			if (AllAffixesStorage.ContainsKey(affix.UniqueID))
+				throw new ArgumentException($"An affix with ID `{affix.UniqueID}` is already registered.");
+			AllAffixesStorage[affix.UniqueID] = affix;
+			affix.OnRegister();
+		}
 
 		public void RegisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> handler)
 			=> AffixConflictProviders.Add(handler);
 
 		public void UnregisterAffix(ISeasonAffix affix)
 		{
+			if (!AllAffixesStorage.ContainsKey(affix.UniqueID))
+				return;
 			DeactivateAffix(affix);
+			affix.OnUnregister();
 			AllAffixesStorage.Remove(affix.UniqueID);
-			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void ActivateAffix(ISeasonAffix affix)
@@ -370,6 +388,7 @@ namespace Shockah.SeasonAffixes
 			if (SaveData.ActiveAffixes.Contains(affix))
 				return;
 			SaveData.ActiveAffixes.Add(affix);
+			affix.OnActivate();
             SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
@@ -377,12 +396,15 @@ namespace Shockah.SeasonAffixes
 		{
 			if (!SaveData.ActiveAffixes.Contains(affix))
 				return;
+			affix.OnDeactivate();
             SaveData.ActiveAffixes.Remove(affix);
             SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void DeactivateAllAffixes()
 		{
+			foreach (var affix in SaveData.ActiveAffixes)
+				affix.OnDeactivate();
 			SaveData.ActiveAffixes.Clear();
 			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
