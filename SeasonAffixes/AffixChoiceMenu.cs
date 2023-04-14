@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -34,8 +33,6 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
-		private readonly Dictionary<Farmer, PlayerChoice> PlayerChoices = new();
-
 		private int? SelectedChoice = null;
 
 		public AffixChoiceMenu(AffixChoiceMenuConfig config) : base(0, 0, 600, 400)
@@ -53,21 +50,6 @@ namespace Shockah.SeasonAffixes
 			yPositionOnScreen = Game1.uiViewport.Height / 2 - height / 2;
 		}
 
-		public void RegisterChoice(Farmer player, PlayerChoice choice)
-		{
-			PlayerChoices[player] = choice;
-			// TODO: check if all choices done -> apply
-
-			if (!Context.IsMainPlayer)
-				return;
-
-			// TODO: check if reroll won
-
-			if (!Config.Incremental)
-				SeasonAffixes.Instance.DeactivateAllAffixes();
-			// TODO: activate chosen affixes;
-		}
-
 		public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
 			=> UpdateBounds();
 
@@ -81,6 +63,8 @@ namespace Shockah.SeasonAffixes
 		{
 			SelectedChoice = null;
 			if (Config.Choices is null)
+				return;
+			if (SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
 				return;
 
 			int choiceHeight = height - 192;
@@ -96,8 +80,7 @@ namespace Shockah.SeasonAffixes
 			}
 
 			if (Game1.oldMouseState.LeftButton == ButtonState.Pressed && SelectedChoice is not null)
-			{
-			}
+				SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices![SelectedChoice.Value]));
 		}
 
 		public override void draw(SpriteBatch b)

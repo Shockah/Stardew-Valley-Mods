@@ -52,10 +52,12 @@ namespace Shockah.SeasonAffixes
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
+			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
 
 			RegisterModMessageHandler<NetMessage.UpdateAffixChoiceMenuConfig>(OnUpdateAffixChoiceMenuConfigMessageReceived);
 			RegisterModMessageHandler<NetMessage.AffixSetChoice>(OnAffixSetChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.RerollChoice>(OnRerollChoiceMessageReceived);
+			RegisterModMessageHandler<NetMessage.UpdateActiveAffixes>(OnUpdateActiveAffixesMessageReceived);
 
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
@@ -130,6 +132,11 @@ namespace Shockah.SeasonAffixes
 			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", SaveData);
 		}
 
+		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
+		{
+			SendModMessage(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()), e.Peer);
+		}
+
 		private void OnUpdateAffixChoiceMenuConfigMessageReceived(NetMessage.UpdateAffixChoiceMenuConfig message)
 		{
 			if (Context.IsMainPlayer)
@@ -172,20 +179,38 @@ namespace Shockah.SeasonAffixes
 			RegisterChoice(sender, new PlayerChoice.Reroll());
 		}
 
-		private void RegisterChoice(Farmer player, PlayerChoice anyChoice)
+		private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
+		{
+			ActiveAffixesStorage.Clear();
+			ActiveAffixesStorage.AddRange(message.Affixes.Select(id => GetAffix(id)).WhereNotNull());
+		}
+
+		internal void RegisterChoice(Farmer player, PlayerChoice anyChoice)
 		{
 			PlayerChoices[player] = anyChoice;
-			if (player != Game1.player)
-				return;
 
-			if (anyChoice is PlayerChoice.Choice choice)
-				SendModMessageToEveryone(new NetMessage.AffixSetChoice(choice.Affixes.Select(a => a.UniqueID).ToHashSet()));
-			else if (anyChoice is PlayerChoice.Reroll)
-				SendModMessageToEveryone(new NetMessage.RerollChoice());
-			else if (anyChoice is PlayerChoice.Invalid)
-			{ } // do nothing
-			else
-				throw new NotImplementedException($"Unimplemented player choice {anyChoice}.");
+			if (player == Game1.player)
+			{
+				if (anyChoice is PlayerChoice.Choice choice)
+					SendModMessageToEveryone(new NetMessage.AffixSetChoice(choice.Affixes.Select(a => a.UniqueID).ToHashSet()));
+				else if (anyChoice is PlayerChoice.Reroll)
+					SendModMessageToEveryone(new NetMessage.RerollChoice());
+				else if (anyChoice is PlayerChoice.Invalid)
+				{ } // do nothing
+				else
+					throw new NotImplementedException($"Unimplemented player choice {anyChoice}.");
+			}
+
+			if (Context.IsMainPlayer)
+			{
+				// TODO: check if all choices done -> apply
+				// TODO: check if reroll won
+
+				if (!Config.Incremental)
+					ActiveAffixesStorage.Clear();
+				// TODO: activate chosen affixes;
+				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+			}
 		}
 
 		internal string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
@@ -261,7 +286,7 @@ namespace Shockah.SeasonAffixes
 		#region API
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-		public IReadOnlyList<ISeasonAffix> ActiveAffixes => ActiveAffixes.ToList();
+		public IReadOnlyList<ISeasonAffix> ActiveAffixes => ActiveAffixesStorage.ToList();
 
 		public ISeasonAffix? GetAffix(string uniqueID)
 			=> AllAffixesStorage.TryGetValue(uniqueID, out var affix) ? affix : null;
@@ -276,19 +301,32 @@ namespace Shockah.SeasonAffixes
 		{
 			DeactivateAffix(affix);
 			AllAffixesStorage.Remove(affix.UniqueID);
+			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void ActivateAffix(ISeasonAffix affix)
 		{
 			if (!ActiveAffixesStorage.Contains(affix))
+			{
 				ActiveAffixesStorage.Add(affix);
+				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+			}
 		}
 
 		public void DeactivateAffix(ISeasonAffix affix)
-			=> ActiveAffixesStorage.Remove(affix);
+		{
+			if (ActiveAffixesStorage.Contains(affix))
+			{
+				ActiveAffixesStorage.Remove(affix);
+				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+			}
+		}
 
 		public void DeactivateAllAffixes()
-			=> ActiveAffixesStorage.Clear();
+		{
+			ActiveAffixesStorage.Clear();
+			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+		}
 
 		public void QueueOvernightAffixChoice()
 		{
