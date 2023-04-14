@@ -127,6 +127,7 @@ namespace Shockah.Kokoro
 					helper.Events.GameLoop.GameLaunched += MigrateConfigOnGameLaunched;
 			}
 
+			base.Entry(helper);
 			OnEntry(helper);
 
 			if (isMigrationRequired && ConfigMigrationMode == BaseModConfigMigrationMode.AfterOnEntry)
