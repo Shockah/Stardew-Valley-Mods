@@ -37,7 +37,7 @@ namespace Shockah.SeasonAffixes
 			{
 				var value = GetOrLog(id, context, level);
 				affix = value;
-				return value is null;
+				return value is not null;
 			}
 
 			SaveData result = new();

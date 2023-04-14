@@ -8,7 +8,7 @@ namespace Shockah.SeasonAffixes
 		ModConfig Config { get; }
 
 		IReadOnlyDictionary<string, ISeasonAffix> AllAffixes { get; }
-		IReadOnlyList<ISeasonAffix> ActiveAffixes { get; }
+		IReadOnlySet<ISeasonAffix> ActiveAffixes { get; }
 
 		ISeasonAffix? GetAffix(string uniqueID);
 
@@ -20,7 +20,11 @@ namespace Shockah.SeasonAffixes
 		void DeactivateAffix(ISeasonAffix affix);
 		void DeactivateAllAffixes();
 
-		void QueueOvernightAffixChoice();
+		IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes);
+		string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes);
+		string GetSeasonDescription(IReadOnlyList<ISeasonAffix> affixes);
+
+        void QueueOvernightAffixChoice();
 
 		IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season);
 	}

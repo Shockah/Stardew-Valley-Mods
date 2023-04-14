@@ -23,9 +23,9 @@ namespace Shockah.SeasonAffixes
 		private const int AffixMargin = 8;
 		private const int PlayerPortraitSpacing = 24;
 
-		private AffixChoiceMenuConfig ConfigStorage;
+		private AffixChoiceMenuConfig? ConfigStorage;
 
-		internal AffixChoiceMenuConfig Config
+		internal AffixChoiceMenuConfig? Config
 		{
 			get => ConfigStorage;
 			set
@@ -39,15 +39,15 @@ namespace Shockah.SeasonAffixes
 		private int? ConfirmedChoice = null;
 		private int ConfirmationTime = 150;
 
-		public AffixChoiceMenu(AffixChoiceMenuConfig config) : base(0, 0, 600, 400)
+		public AffixChoiceMenu() : base(0, 0, 600, 400)
 		{
-			this.ConfigStorage = config;
+			this.ConfigStorage = SeasonAffixes.Instance.AffixChoiceMenuConfig;
 			UpdateBounds();
 		}
 
 		public void SetConfirmedAffixSetChoice(IReadOnlySet<ISeasonAffix> choice)
 		{
-			if (Config.Choices is null)
+			if (Config is null)
 				return;
 			for (int i = 0; i < Config.Choices.Count; i++)
 			{
@@ -64,7 +64,7 @@ namespace Shockah.SeasonAffixes
 
 		private void UpdateBounds()
 		{
-			width = Math.Max(BaseWidth, ChoiceWidth * (Config.Choices?.Count ?? 2) + borderWidth * (1 + (Config.Choices?.Count ?? 2)));
+			width = Math.Max(BaseWidth, ChoiceWidth * (Config?.Choices?.Count ?? 2) + borderWidth * (1 + (Config?.Choices?.Count ?? 2)));
 			height = BaseHeight;
 
 			xPositionOnScreen = Game1.uiViewport.Width / 2 - width / 2;
@@ -92,7 +92,7 @@ namespace Shockah.SeasonAffixes
 				return;
 			}
 
-			if (Config.Choices is not null && !SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
+			if (Config is not null && !SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
 			{
 				int choiceHeight = height - 192;
 				for (int i = 0; i < Config.Choices.Count; i++)
@@ -121,7 +121,7 @@ namespace Shockah.SeasonAffixes
 				Utility.drawTextWithShadow(b, text, Game1.dialogueFont, new Vector2(xPositionOnScreen + width / 2f - Game1.dialogueFont.MeasureString(text).X / 2f, yPositionOnScreen + 116), Color.Black);
 			}
 
-			if (Config.Choices is null)
+			if (Config is null)
 			{
 				var text = SeasonAffixes.Instance.Helper.Translation.Get("season.awaiting.description");
 				Utility.drawTextWithShadow(b, text, Game1.smallFont, new Vector2(xPositionOnScreen + width / 2f - Game1.smallFont.MeasureString(text).X / 2f, yPositionOnScreen + 164), Color.Black);
@@ -135,13 +135,7 @@ namespace Shockah.SeasonAffixes
 
 			drawHorizontalPartition(b, yPositionOnScreen + 192);
 
-			var orderedChoices = Config.Choices.Select(choice =>
-			{
-				return choice
-					.OrderBy(a => a.GetPositivity(Config.Season) - a.GetNegativity(Config.Season))
-					.ThenBy(a => a.UniqueID)
-					.ToList();
-			}).ToList();
+			var orderedChoices = Config.Choices.Select(choice => SeasonAffixes.Instance.GetUIOrderedAffixes(Config.Season, choice)).ToList();
 
 			int choiceHeight = height - 192;
 			for (int i = 0; i < Config.Choices.Count; i++)
@@ -180,7 +174,7 @@ namespace Shockah.SeasonAffixes
 			}
 
 			if (SelectedChoice is not null)
-				drawToolTip(b, GetSeasonDescription(orderedChoices[SelectedChoice.Value]), SeasonAffixes.Instance.GetSeasonName(orderedChoices[SelectedChoice.Value]), null);
+				drawToolTip(b, SeasonAffixes.Instance.GetSeasonDescription(orderedChoices[SelectedChoice.Value]), SeasonAffixes.Instance.GetSeasonName(orderedChoices[SelectedChoice.Value]), null);
 
 			if (!Game1.options.SnappyMenus)
 			{
@@ -213,8 +207,5 @@ namespace Shockah.SeasonAffixes
 				textColor = selected ? (ConfirmationTime / 10 % 2 == 0 ? Color.Green : Game1.textColor) : (Game1.textColor * 0.5f);
 			Utility.drawTextWithShadow(b, affix.LocalizedName, Game1.dialogueFont, new Vector2(bounds.X + IconWidth + IconToTextSpacing, bounds.Y - 4), textColor);
 		}
-
-		private static string GetSeasonDescription(IReadOnlyList<ISeasonAffix> affixes)
-			=> string.Join("\n", affixes.Select(a => a.LocalizedDescription));
 	}
 }

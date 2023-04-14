@@ -21,10 +21,10 @@ namespace Shockah.SeasonAffixes
 		public static SeasonAffixes Instance { get; private set; } = null!;
 		
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
-		private List<ISeasonAffix> ActiveAffixesStorage { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
+		private readonly PerScreen<bool> PerScreenIsAffixChoiceMenuQueued = new(() => false);
 		private readonly PerScreen<AffixChoiceMenuConfig?> PerScreenAffixChoiceMenuConfig = new(() => null);
 		private readonly PerScreen<Dictionary<Farmer, PlayerChoice>> PerScreenPlayerChoices = new(() => new());
 
@@ -32,9 +32,15 @@ namespace Shockah.SeasonAffixes
 		{
 			get => PerScreenSaveData.Value;
 			set => PerScreenSaveData.Value = value;
-		}
+        }
 
-		internal AffixChoiceMenuConfig? AffixChoiceMenuConfig
+        internal bool IsAffixChoiceMenuQueued
+        {
+            get => PerScreenIsAffixChoiceMenuQueued.Value;
+            set => PerScreenIsAffixChoiceMenuQueued.Value = value;
+        }
+
+        internal AffixChoiceMenuConfig? AffixChoiceMenuConfig
 		{
 			get => PerScreenAffixChoiceMenuConfig.Value;
 			set => PerScreenAffixChoiceMenuConfig.Value = value;
@@ -54,6 +60,7 @@ namespace Shockah.SeasonAffixes
 			helper.Events.GameLoop.Saving += OnSaving;
 			helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
 
+			RegisterModMessageHandler<NetMessage.QueueOvernightAffixChoice>(OnQueueOvernightAffixChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.UpdateAffixChoiceMenuConfig>(OnUpdateAffixChoiceMenuConfigMessageReceived);
 			RegisterModMessageHandler<NetMessage.AffixSetChoice>(OnAffixSetChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.RerollChoice>(OnRerollChoiceMessageReceived);
@@ -110,6 +117,9 @@ namespace Shockah.SeasonAffixes
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
+			if (!Context.IsMainPlayer)
+				return;
+
 			var tomorrow = Game1.Date.GetByAddingDays(1);
 			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
 			//	return;
@@ -139,7 +149,12 @@ namespace Shockah.SeasonAffixes
 			SendModMessage(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()), e.Peer);
 		}
 
-		private void OnUpdateAffixChoiceMenuConfigMessageReceived(NetMessage.UpdateAffixChoiceMenuConfig message)
+		private void OnQueueOvernightAffixChoiceMessageReceived(NetMessage.QueueOvernightAffixChoice _)
+		{
+			IsAffixChoiceMenuQueued = true;
+		}
+
+        private void OnUpdateAffixChoiceMenuConfigMessageReceived(NetMessage.UpdateAffixChoiceMenuConfig message)
 		{
 			if (Context.IsMainPlayer)
 			{
@@ -160,6 +175,8 @@ namespace Shockah.SeasonAffixes
 				return;
 			}
 			AffixChoiceMenuConfig = newConfig;
+			if (Game1.activeClickableMenu is AffixChoiceMenu menu)
+				menu.Config = newConfig;
 		}
 
 		private void OnAffixSetChoiceMessageReceived(Farmer sender, NetMessage.AffixSetChoice message)
@@ -209,8 +226,9 @@ namespace Shockah.SeasonAffixes
 
 		private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
 		{
-			ActiveAffixesStorage.Clear();
-			ActiveAffixesStorage.AddRange(message.Affixes.Select(id => GetAffix(id)).WhereNotNull());
+			SaveData.ActiveAffixes.Clear();
+			foreach (var affix in message.Affixes.Select(id => GetAffix(id)).WhereNotNull())
+				SaveData.ActiveAffixes.Add(affix);
 		}
 
 		internal void RegisterChoice(Farmer player, PlayerChoice anyChoice)
@@ -246,8 +264,9 @@ namespace Shockah.SeasonAffixes
 				if (choice is PlayerChoice.Choice affixChoice)
 				{
 					if (!Config.Incremental)
-						ActiveAffixesStorage.Clear();
-					ActiveAffixesStorage.AddRange(affixChoice.Affixes);
+                        SaveData.ActiveAffixes.Clear();
+                    foreach (var affix in affixChoice.Affixes)
+                        SaveData.ActiveAffixes.Add(affix);
 
 					SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 					SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
@@ -269,34 +288,21 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
-		internal string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
+        private static void Game1_showEndOfNightStuff_Prefix()
 		{
-			StringBuilder sb = new();
-			for (int i = 0; i < affixes.Count; i++)
-			{
-				if (i != 0)
-					sb.Append(Helper.Translation.Get(i == affixes.Count - 1 ? "season.separator.last" : "season.separator.other"));
-				sb.Append(affixes[i].LocalizedName);
-			}
-			return sb.ToString();
-		}
-
-		private static void Game1_showEndOfNightStuff_Prefix()
-		{
-			var menuConfig = Instance.AffixChoiceMenuConfig;
-			if (menuConfig is null)
+			if (!Instance.IsAffixChoiceMenuQueued)
 				return;
+			Instance.IsAffixChoiceMenuQueued = false;
 
 			if (Game1.endOfNightMenus.Count == 0)
 				Game1.endOfNightMenus.Push(new SaveGameMenu());
 
-			var tomorrow = Game1.Date.GetByAddingDays(1);
-			OrdinalSeason season = new(tomorrow.Year, tomorrow.GetSeason());
-
-			IReadOnlyList<IReadOnlySet<ISeasonAffix>>? choices = null;
 			if (Context.IsMainPlayer)
 			{
-				int seed = 0;
+                var tomorrow = Game1.Date.GetByAddingDays(1);
+                OrdinalSeason season = new(tomorrow.Year, tomorrow.GetSeason());
+
+                int seed = 0;
 				seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
 				seed = 31 * seed + (int)season.Season;
 				seed = 31 * seed + season.Year;
@@ -319,11 +325,12 @@ namespace Shockah.SeasonAffixes
 					.AsLittleAsPossible()
 					.AvoidingDuplicatesBetweenChoices();
 
-				choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
+				var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
 				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
 				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
 
-				Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
+                Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, Instance.Config.RerollsPerSeason);
+                Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 					season,
 					Instance.Config.Incremental,
 					choices.Select(choice => choice.Select(a => a.UniqueID).ToHashSet()).ToList(),
@@ -331,18 +338,14 @@ namespace Shockah.SeasonAffixes
 				));
 			}
 
-			menuConfig = menuConfig.WithChoices(choices);
-			Instance.AffixChoiceMenuConfig = menuConfig;
-
-			AffixChoiceMenu menu = new(menuConfig);
-			Game1.endOfNightMenus.Push(menu);
+			Game1.endOfNightMenus.Push(new AffixChoiceMenu());
 			Instance.PlayerChoices.Clear();
 		}
 
 		#region API
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-		public IReadOnlyList<ISeasonAffix> ActiveAffixes => ActiveAffixesStorage.ToList();
+		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.ToHashSet();
 
 		public ISeasonAffix? GetAffix(string uniqueID)
 			=> AllAffixesStorage.TryGetValue(uniqueID, out var affix) ? affix : null;
@@ -362,33 +365,54 @@ namespace Shockah.SeasonAffixes
 
 		public void ActivateAffix(ISeasonAffix affix)
 		{
-			if (!ActiveAffixesStorage.Contains(affix))
-			{
-				ActiveAffixesStorage.Add(affix);
-				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
-			}
+			if (SaveData.ActiveAffixes.Contains(affix))
+				return;
+			SaveData.ActiveAffixes.Add(affix);
+            SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void DeactivateAffix(ISeasonAffix affix)
 		{
-			if (ActiveAffixesStorage.Contains(affix))
-			{
-				ActiveAffixesStorage.Remove(affix);
-				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
-			}
+			if (!SaveData.ActiveAffixes.Contains(affix))
+				return;
+            SaveData.ActiveAffixes.Remove(affix);
+            SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void DeactivateAllAffixes()
 		{
-			ActiveAffixesStorage.Clear();
+			SaveData.ActiveAffixes.Clear();
 			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
-		public void QueueOvernightAffixChoice()
+        public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 		{
-			var tomorrow = Game1.Date.GetByAddingDays(1);
-			AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, null, Instance.Config.RerollsPerSeason);
-		}
+            return affixes
+                .OrderBy(a => a.GetPositivity(season) - a.GetNegativity(season))
+                .ThenBy(a => a.UniqueID)
+                .ToList();
+        }
+
+        public string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)
+        {
+            StringBuilder sb = new();
+            for (int i = 0; i < affixes.Count; i++)
+            {
+                if (i != 0)
+                    sb.Append(Helper.Translation.Get(i == affixes.Count - 1 ? "season.separator.last" : "season.separator.other"));
+                sb.Append(affixes[i].LocalizedName);
+            }
+            return sb.ToString();
+        }
+
+        public string GetSeasonDescription(IReadOnlyList<ISeasonAffix> affixes)
+            => string.Join("\n", affixes.Select(a => a.LocalizedDescription));
+
+        public void QueueOvernightAffixChoice()
+		{
+			IsAffixChoiceMenuQueued = true;
+			SendModMessageToEveryone(new NetMessage.QueueOvernightAffixChoice());
+        }
 
 		public IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season)
 			=> AllAffixesStorage.Values

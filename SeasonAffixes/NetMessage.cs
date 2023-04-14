@@ -4,23 +4,25 @@ namespace Shockah.SeasonAffixes
 {
 	internal static class NetMessage
 	{
-		public record UpdateAffixChoiceMenuConfig(
+		public record QueueOvernightAffixChoice;
+
+        public record UpdateAffixChoiceMenuConfig(
 			OrdinalSeason Season,
 			bool Incremental,
-			IReadOnlyList<IReadOnlySet<string>> Choices,
+			List<HashSet<string>> Choices,
 			int RerollsLeft = 0
 		);
 
 		public record UpdateActiveAffixes(
-			IReadOnlySet<string> Affixes
+            HashSet<string> Affixes
 		);
 
 		public record ConfirmAffixSetChoice(
-			IReadOnlySet<string>? Affixes
+            HashSet<string>? Affixes
 		);
 
 		public record AffixSetChoice(
-			IReadOnlySet<string> Affixes
+            HashSet<string> Affixes
 		);
 
 		public record RerollChoice;
