@@ -6,16 +6,16 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class SkillAffix : ISeasonAffix
+	internal sealed class SkillAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 		public ISkill Skill { get; init; }
 
 		private static string ShortID => "Skill";
-		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}:{Skill.UniqueID}";
-		public string LocalizedName => Skill.Name;
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description.{(VanillaSkill.GetAllSkills().Contains(Skill) ? "Vanilla" : "SpaceCore")}", new { Skill = Skill.Name });
-		public TextureRectangle Icon => Skill.Icon!; // TODO: placeholder icon
+		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}:{Skill.UniqueID}";
+		public override string LocalizedName => Skill.Name;
+		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description.{(VanillaSkill.GetAllSkills().Contains(Skill) ? "Vanilla" : "SpaceCore")}", new { Skill = Skill.Name });
+		public override TextureRectangle Icon => Skill.Icon!; // TODO: placeholder icon
 
 		public SkillAffix(SeasonAffixes mod, ISkill skill)
 		{
@@ -24,11 +24,11 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetPositivity(OrdinalSeason season)
+		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetNegativity(OrdinalSeason season)
+		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]

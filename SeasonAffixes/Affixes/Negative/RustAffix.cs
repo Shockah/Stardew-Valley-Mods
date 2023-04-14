@@ -1,20 +1,18 @@
-﻿using Shockah.Kokoro.Stardew;
-using Shockah.Kokoro.UI;
-using Shockah.SeasonAffixes.Affixes.Positive;
+﻿using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class RustAffix : ISeasonAffix
+	internal sealed class RustAffix : BaseSeasonAffix
 	{
 		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Rust";
-		public string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 64, 16, 16));
+		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
+		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 64, 16, 16));
 
 		public RustAffix(SeasonAffixes mod)
 		{
@@ -22,11 +20,11 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetPositivity(OrdinalSeason season)
+		public override int GetPositivity(OrdinalSeason season)
 			=> 0;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public int GetNegativity(OrdinalSeason season)
+		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
 		// TODO: Rust implementation
