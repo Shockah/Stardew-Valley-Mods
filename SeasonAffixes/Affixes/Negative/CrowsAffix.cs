@@ -1,14 +1,19 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using HarmonyLib;
+using Microsoft.Xna.Framework.Graphics;
+using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 	{
+		private static bool IsHarmonySetup = false;
 		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Crows";
@@ -34,6 +39,27 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		// TODO: Crows implementation
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
+		private void Apply(Harmony harmony)
+		{
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsScarecrow)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(CrowsAffix), nameof(SObject_IsScarecrow_Postfix)))
+			);
+		}
+
+		private static void SObject_IsScarecrow_Postfix(ref bool __result)
+		{
+			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is CrowsAffix))
+				return;
+			__result = false;
+		}
 	}
 }

@@ -19,6 +19,7 @@ namespace Shockah.SeasonAffixes
 	public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	{
 		public static SeasonAffixes Instance { get; private set; } = null!;
+		internal Harmony Harmony { get; private set; } = null!;
 		
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
@@ -107,14 +108,13 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
 
-			var harmony = new Harmony(ModManifest.UniqueID);
-
-			harmony.TryPatch(
+			Harmony = new(ModManifest.UniqueID);
+			Harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
 			);
-			BillboardPatches.Apply(harmony);
+			BillboardPatches.Apply(Harmony);
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
