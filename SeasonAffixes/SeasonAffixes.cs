@@ -108,11 +108,13 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
 
 			var harmony = new Harmony(ModManifest.UniqueID);
+
 			harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
 			);
+			BillboardPatches.Apply(harmony);
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
