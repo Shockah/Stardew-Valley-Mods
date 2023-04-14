@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -11,13 +12,20 @@ namespace Shockah.SeasonAffixes
 {
 	internal static class BillboardPatches
 	{
+		private const int AffixComponentID = 1629701; // {NexusID}01
 		private const int IconWidth = 44;
 		private const int IconHeight = 44;
 		private const int IconSpacing = 12;
 
         private static readonly Lazy<Func<Billboard, bool>> BillboardDailyQuestBoardGetter = new(() => AccessTools.Field(typeof(Billboard), "dailyQuestBoard").EmitInstanceGetter<Billboard, bool>());
         private static readonly Lazy<Action<Billboard, string>> BillboardHoverTextSetter = new(() => AccessTools.Field(typeof(Billboard), "hoverText").EmitInstanceSetter<Billboard, string>());
-        private static bool HoveringOverAffixes = false;
+		private static readonly PerScreen<bool> PerScreenHoveringOverAffixes = new(() => false);
+
+		private static bool HoveringOverAffixes
+		{
+			get => PerScreenHoveringOverAffixes.Value;
+			set => PerScreenHoveringOverAffixes.Value = value;
+		}
 
 		internal static void Apply(Harmony harmony)
 		{
@@ -27,7 +35,13 @@ namespace Shockah.SeasonAffixes
                 postfix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(performHoverAction_Postfix)))
             );
 
-            harmony.TryPatch(
+			harmony.TryPatch(
+				monitor: SeasonAffixes.Instance.Monitor,
+				original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.populateClickableComponentList)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(IClickableMenu_populateClickableComponentList_Postfix)))
+			);
+
+			harmony.TryPatch(
                 monitor: SeasonAffixes.Instance.Monitor,
                 original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(IClickableMenu_draw_Prefix)))
@@ -61,7 +75,32 @@ namespace Shockah.SeasonAffixes
 			}
         }
 
-        private static void IClickableMenu_draw_Prefix(IClickableMenu __instance, SpriteBatch b)
+		private static void IClickableMenu_populateClickableComponentList_Postfix(IClickableMenu __instance)
+		{
+			if (__instance is not Billboard menu)
+				return;
+			if (BillboardDailyQuestBoardGetter.Value(menu))
+				return;
+
+			var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.GetSeason()), SeasonAffixes.Instance.ActiveAffixes);
+			int width = affixes.Count * IconWidth + (affixes.Count - 1) * IconSpacing;
+			Rectangle bounds = new(
+				__instance.xPositionOnScreen + __instance.width - 144 - width - IconWidth / 2,
+				__instance.yPositionOnScreen + 100 - IconHeight / 2,
+				width,
+				IconHeight
+			);
+			__instance.allClickableComponents.Add(new ClickableComponent(bounds, "") { myID = AffixComponentID, downNeighborID = 7 });
+
+			for (int i = 1; i <= 7; i++)
+			{
+				var component = __instance.getComponentWithID(i);
+				if (component is not null)
+					component.upNeighborID = AffixComponentID;
+			}
+		}
+
+		private static void IClickableMenu_draw_Prefix(IClickableMenu __instance, SpriteBatch b)
         {
             if (__instance is not Billboard menu)
                 return;

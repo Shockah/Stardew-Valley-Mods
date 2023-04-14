@@ -187,7 +187,7 @@ namespace Shockah.SeasonAffixes
 			if (choice.Affixes.Count != message.Affixes.Count)
 			{
 				Monitor.Log($"Player {sender.displayName} voted, but seems to be running a different set of mods, making the vote invalid.", LogLevel.Error);
-				RegisterChoice(sender, new PlayerChoice.Invalid());
+				RegisterChoice(sender, PlayerChoice.Invalid.Instance);
 			}
 			else
 			{
@@ -197,7 +197,7 @@ namespace Shockah.SeasonAffixes
 
 		private void OnRerollChoiceMessageReceived(Farmer sender, NetMessage.RerollChoice _)
 		{
-			RegisterChoice(sender, new PlayerChoice.Reroll());
+			RegisterChoice(sender, PlayerChoice.Reroll.Instance);
 		}
 
 		private void OnConfirmAffixSetChoiceMessageReceived(NetMessage.ConfirmAffixSetChoice message)

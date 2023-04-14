@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Shockah.Kokoro.Stardew;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -21,7 +20,7 @@ namespace Shockah.SeasonAffixes
 		private const int AffixSpacing = 4;
 		private const int AffixHeight = 40;
 		private const int AffixMargin = 8;
-		private const int PlayerPortraitSpacing = 24;
+		private const int PlayerPortraitSpacing = 32;
 
 		private AffixChoiceMenuConfig? ConfigStorage;
 
@@ -78,14 +77,14 @@ namespace Shockah.SeasonAffixes
             for (int i = 0; i < Config.Choices.Count; i++)
             {
                 int left = xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i;
-                int top = yPositionOnScreen;
+                int top = yPositionOnScreen + 192;
 				allClickableComponents.Add(new ClickableComponent(new(left, top, ChoiceWidth, choiceHeight), "") { myID = 100 + i });
-				if (i != 0)
-				{
-					allClickableComponents[^2].rightNeighborID = allClickableComponents[^1].myID;
-					allClickableComponents[^1].leftNeighborID = allClickableComponents[^2].myID;
-				}
             }
+			for (int i = 1; i < Config.Choices.Count; i++)
+			{
+				getComponentWithID(100 + i - 1).rightNeighborID = 100 + i;
+				getComponentWithID(100 + i).leftNeighborID = 100 + i - i;
+			}
 		}
 
 		public override void snapToDefaultClickableComponent()
@@ -96,7 +95,7 @@ namespace Shockah.SeasonAffixes
 				return;
 
             currentlySnappedComponent = component;
-            Game1.setMousePosition(component.bounds.Center.X, component.bounds.Center.Y);
+            snapCursorToCurrentSnappedComponent();
         }
 
 		public override void gameWindowSizeChanged(Rectangle oldBounds, Rectangle newBounds)
@@ -200,12 +199,16 @@ namespace Shockah.SeasonAffixes
 				}
 			}
 
-			if (GameExt.GetMultiplayerMode() != MultiplayerMode.SinglePlayer && Game1.getOnlineFarmers().Count > 1)
+			if (Game1.getOnlineFarmers().Count > 1 && SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
 			{
 				int onlinePlayers = Game1.getOnlineFarmers().Count;
 				int readyPlayers = SeasonAffixes.Instance.PlayerChoices.Keys.Count;
 				var message = Game1.content.LoadString("Strings\\UI:ReadyCheck", readyPlayers, onlinePlayers);
-				b.DrawString(Game1.dialogueFont, message, new Vector2(xPositionOnScreen + borderWidth, yPositionOnScreen + spaceToClearTopBorder + borderWidth / 2), Game1.textColor);
+
+				Vector2 txtpos = new(64f, Game1.uiViewport.Height - 64);
+				Vector2 txtsize = new(64f, 64f);
+				txtpos = Utility.makeSafe(txtpos, txtsize);
+				b.DrawString(Game1.dialogueFont, message, txtpos, Color.White);
 			}
 
 			if (SelectedChoice is not null)
