@@ -57,6 +57,7 @@ namespace Shockah.SeasonAffixes
 			RegisterModMessageHandler<NetMessage.UpdateAffixChoiceMenuConfig>(OnUpdateAffixChoiceMenuConfigMessageReceived);
 			RegisterModMessageHandler<NetMessage.AffixSetChoice>(OnAffixSetChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.RerollChoice>(OnRerollChoiceMessageReceived);
+			RegisterModMessageHandler<NetMessage.ConfirmAffixSetChoice>(OnConfirmAffixSetChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.UpdateActiveAffixes>(OnUpdateActiveAffixesMessageReceived);
 
 			// positive affixes
@@ -110,8 +111,8 @@ namespace Shockah.SeasonAffixes
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
 		{
 			var tomorrow = Game1.Date.GetByAddingDays(1);
-			if (tomorrow.GetSeason() == Game1.Date.GetSeason())
-				return;
+			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
+			//	return;
 			QueueOvernightAffixChoice();
 		}
 
@@ -129,7 +130,8 @@ namespace Shockah.SeasonAffixes
 			if (!Context.IsMainPlayer)
 				return;
 
-			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", SaveData);
+			var serializedData = new SaveDataSerializer().Serialize(SaveData);
+			Helper.Data.WriteSaveData($"{ModManifest.UniqueID}.SaveData", serializedData);
 		}
 
 		private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
@@ -179,6 +181,32 @@ namespace Shockah.SeasonAffixes
 			RegisterChoice(sender, new PlayerChoice.Reroll());
 		}
 
+		private void OnConfirmAffixSetChoiceMessageReceived(NetMessage.ConfirmAffixSetChoice message)
+		{
+			if (Game1.activeClickableMenu is AffixChoiceMenu menu)
+			{
+				if (message.Affixes is null)
+				{
+					menu.exitThisMenu(playSound: false);
+					return;
+				}
+
+				var affixes = message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToHashSet();
+				if (affixes.Count != message.Affixes.Count)
+				{
+					Monitor.Log("Due to mod mismatch, the players chose an invalid set of affixes. Closing the menu.", LogLevel.Error);
+					menu.exitThisMenu(playSound: false);
+					return;
+				}
+				
+				menu.SetConfirmedAffixSetChoice(affixes);
+			}
+			else
+			{
+				Monitor.Log("Tried to confirm affix set choice, but our menu is gone???", LogLevel.Error);
+			}
+		}
+
 		private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
 		{
 			ActiveAffixesStorage.Clear();
@@ -203,13 +231,41 @@ namespace Shockah.SeasonAffixes
 
 			if (Context.IsMainPlayer)
 			{
-				// TODO: check if all choices done -> apply
-				// TODO: check if reroll won
+				if (PlayerChoices.Count != Game1.getOnlineFarmers().Count)
+					return;
 
-				if (!Config.Incremental)
-					ActiveAffixesStorage.Clear();
-				// TODO: activate chosen affixes;
-				SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+				var groupedChoices = PlayerChoices
+					.GroupBy(kvp => kvp.Value)
+					.Select(group => (Choice: group.Key, Players: group.Select(kvp => kvp.Key).ToList()))
+					.OrderByDescending(group => group.Players.Count)
+					.ToList();
+				int mostVotes = groupedChoices[0].Players.Count;
+				var topChoices = groupedChoices.TakeWhile(group => group.Players.Count == mostVotes).Select(group => group.Choice).ToList();
+				var choice = Game1.random.NextElement(topChoices);
+
+				if (choice is PlayerChoice.Choice affixChoice)
+				{
+					if (!Config.Incremental)
+						ActiveAffixesStorage.Clear();
+					ActiveAffixesStorage.AddRange(affixChoice.Affixes);
+
+					SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+					SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+
+					if (Game1.activeClickableMenu is AffixChoiceMenu menu)
+						menu.SetConfirmedAffixSetChoice(affixChoice.Affixes);
+					else
+						Monitor.Log("Tried to confirm affix set choice, but our menu is gone???", LogLevel.Error);
+				}
+				else if (choice is PlayerChoice.Reroll)
+				{
+					// TODO: handle reroll
+				}
+				else if (choice is PlayerChoice.Invalid)
+				{
+					Monitor.Log("Due to mod mismatch, the players chose an invalid set of affixes. Closing the menu.", LogLevel.Error);
+					SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(null));
+				}
 			}
 		}
 

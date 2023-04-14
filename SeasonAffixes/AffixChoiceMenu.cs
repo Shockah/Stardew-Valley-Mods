@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Shockah.Kokoro.Stardew;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -20,6 +21,7 @@ namespace Shockah.SeasonAffixes
 		private const int AffixSpacing = 4;
 		private const int AffixHeight = 40;
 		private const int AffixMargin = 8;
+		private const int PlayerPortraitSpacing = 24;
 
 		private AffixChoiceMenuConfig ConfigStorage;
 
@@ -34,11 +36,30 @@ namespace Shockah.SeasonAffixes
 		}
 
 		private int? SelectedChoice = null;
+		private int? ConfirmedChoice = null;
+		private int ConfirmationTime = 150;
 
 		public AffixChoiceMenu(AffixChoiceMenuConfig config) : base(0, 0, 600, 400)
 		{
 			this.ConfigStorage = config;
 			UpdateBounds();
+		}
+
+		public void SetConfirmedAffixSetChoice(IReadOnlySet<ISeasonAffix> choice)
+		{
+			if (Config.Choices is null)
+				return;
+			for (int i = 0; i < Config.Choices.Count; i++)
+			{
+				if (Config.Choices[i].SetEquals(choice))
+				{
+					ConfirmedChoice = i;
+					break;
+				}
+			}
+			if (ConfirmedChoice is null)
+				return;
+			// TODO: make sound
 		}
 
 		private void UpdateBounds()
@@ -62,25 +83,32 @@ namespace Shockah.SeasonAffixes
 		public override void update(GameTime time)
 		{
 			SelectedChoice = null;
-			if (Config.Choices is null)
-				return;
-			if (SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
-				return;
 
-			int choiceHeight = height - 192;
-			for (int i = 0; i < Config.Choices.Count; i++)
+			if (ConfirmedChoice is not null)
 			{
-				int left = xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i;
-				int top = yPositionOnScreen + 192;
-				if (Game1.getMouseX() >= left && Game1.getMouseY() >= top && Game1.getMouseX() < left + ChoiceWidth && Game1.getMouseY() < top + choiceHeight)
-				{
-					SelectedChoice = i;
-					break;
-				}
+				ConfirmationTime--;
+				if (ConfirmationTime <= 0)
+					exitThisMenu(playSound: false);
+				return;
 			}
 
-			if (Game1.oldMouseState.LeftButton == ButtonState.Pressed && SelectedChoice is not null)
-				SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices![SelectedChoice.Value]));
+			if (Config.Choices is not null && !SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
+			{
+				int choiceHeight = height - 192;
+				for (int i = 0; i < Config.Choices.Count; i++)
+				{
+					int left = xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i;
+					int top = yPositionOnScreen + 192;
+					if (Game1.getMouseX() >= left && Game1.getMouseY() >= top && Game1.getMouseX() < left + ChoiceWidth && Game1.getMouseY() < top + choiceHeight)
+					{
+						SelectedChoice = i;
+						break;
+					}
+				}
+
+				if (Game1.oldMouseState.LeftButton == ButtonState.Pressed && SelectedChoice is not null)
+					SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices![SelectedChoice.Value]));
+			}
 		}
 
 		public override void draw(SpriteBatch b)
@@ -124,8 +152,31 @@ namespace Shockah.SeasonAffixes
 				int totalAffixesHeight = orderedChoices[i].Count * AffixHeight + (orderedChoices[i].Count - 1) * AffixSpacing;
 				int topAffixPosition = yPositionOnScreen + 196 + choiceHeight / 2 - totalAffixesHeight / 2;
 
+				bool isSelected = ConfirmedChoice is null
+					? SelectedChoice == i
+					: ConfirmedChoice == i;
 				for (int j = 0; j < orderedChoices[i].Count; j++)
-					DrawAffix(b, new(xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i + AffixMargin, topAffixPosition + j * (AffixHeight + AffixSpacing), ChoiceWidth - AffixMargin * 2, AffixHeight), orderedChoices[i][j], SelectedChoice == i);
+					DrawAffix(b, new(xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i + AffixMargin, topAffixPosition + j * (AffixHeight + AffixSpacing), ChoiceWidth - AffixMargin * 2, AffixHeight), orderedChoices[i][j], isSelected);
+
+				if (Game1.getOnlineFarmers().Count > 1)
+				{
+					var chosenBy = SeasonAffixes.Instance.PlayerChoices
+					.Where(kvp => kvp.Value.Equals(new PlayerChoice.Choice(Config.Choices[i])))
+					.Select(kvp => kvp.Key)
+					.ToList();
+
+					int chosenByWidth = chosenBy.Count * PlayerPortraitSpacing;
+					for (int j = 0; j < chosenBy.Count; j++)
+						chosenBy[j].FarmerRenderer.drawMiniPortrat(b, new Vector2(xPositionOnScreen + borderWidth + (ChoiceWidth + borderWidth) * i + ChoiceWidth / 2f - chosenByWidth / 2f + j * PlayerPortraitSpacing, yPositionOnScreen + 140 + choiceHeight), 1f, 3f, 2, chosenBy[j]);
+				}
+			}
+
+			if (GameExt.GetMultiplayerMode() != MultiplayerMode.SinglePlayer && Game1.getOnlineFarmers().Count > 1)
+			{
+				int onlinePlayers = Game1.getOnlineFarmers().Count;
+				int readyPlayers = SeasonAffixes.Instance.PlayerChoices.Keys.Count;
+				var message = Game1.content.LoadString("Strings\\UI:ReadyCheck", readyPlayers, onlinePlayers);
+				b.DrawString(Game1.dialogueFont, message, new Vector2(xPositionOnScreen + borderWidth, yPositionOnScreen + spaceToClearTopBorder + borderWidth / 2), Game1.textColor);
 			}
 
 			if (SelectedChoice is not null)
@@ -138,7 +189,7 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
-		private static void DrawAffix(SpriteBatch b, Rectangle bounds, ISeasonAffix affix, bool selected)
+		private void DrawAffix(SpriteBatch b, Rectangle bounds, ISeasonAffix affix, bool selected)
 		{
 			var icon = affix.Icon;
 			float iconScale = 1f;
@@ -155,7 +206,12 @@ namespace Shockah.SeasonAffixes
 			b.Draw(icon.Texture, iconPosition + new Vector2(-iconScale, iconScale), icon.Rectangle, Color.Black * 0.3f, 0f, new Vector2(icon.Rectangle.Width / 2f, icon.Rectangle.Height / 2f), iconScale, SpriteEffects.None, 4f);
 			b.Draw(icon.Texture, iconPosition, icon.Rectangle, Color.White, 0f, new Vector2(icon.Rectangle.Width / 2f, icon.Rectangle.Height / 2f), iconScale, SpriteEffects.None, 4f);
 
-			Utility.drawTextWithShadow(b, affix.LocalizedName, Game1.dialogueFont, new Vector2(bounds.X + IconWidth + IconToTextSpacing, bounds.Y - 4), selected ? Color.Green : Game1.textColor);
+			Color textColor;
+			if (ConfirmedChoice is null)
+				textColor = selected ? Color.Green : Game1.textColor;
+			else
+				textColor = selected ? (ConfirmationTime / 10 % 2 == 0 ? Color.Green : Game1.textColor) : (Game1.textColor * 0.5f);
+			Utility.drawTextWithShadow(b, affix.LocalizedName, Game1.dialogueFont, new Vector2(bounds.X + IconWidth + IconToTextSpacing, bounds.Y - 4), textColor);
 		}
 
 		private static string GetSeasonDescription(IReadOnlyList<ISeasonAffix> affixes)

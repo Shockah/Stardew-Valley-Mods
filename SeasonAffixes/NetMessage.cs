@@ -15,6 +15,10 @@ namespace Shockah.SeasonAffixes
 			IReadOnlySet<string> Affixes
 		);
 
+		public record ConfirmAffixSetChoice(
+			IReadOnlySet<string>? Affixes
+		);
+
 		public record AffixSetChoice(
 			IReadOnlySet<string> Affixes
 		);
