@@ -1,11 +1,17 @@
-﻿using Shockah.Kokoro.UI;
+﻿using HarmonyLib;
+using Shockah.Kokoro;
+using Shockah.Kokoro.UI;
+using StardewModdingAPI.Events;
 using StardewValley;
+using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class HurricaneAffix : BaseSeasonAffix
 	{
+		private static bool IsHarmonySetup = false;
 		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Hurricane";
@@ -27,6 +33,60 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		// TODO: Hurricane implementation
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
+		public override void OnActivate()
+		{
+			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
+			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
+		}
+
+		public override void OnDeactivate()
+		{
+			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
+			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
+		}
+
+		private void Apply(Harmony harmony)
+		{
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			if (!Mod.Helper.ModRegistry.IsLoaded("Esca.FarmTypeManager"))
+				return;
+
+			Type ftmModEntryType = AccessTools.TypeByName("FarmTypeManager.ModEntry, FarmTypeManager");
+			Type ftmGenerationType = AccessTools.Inner(ftmModEntryType, "Generation");
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(ftmGenerationType, "ForageGeneration"),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
+			);
+		}
+
+		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+		{
+			if (!e.Name.IsEquivalentTo("Data\\Locations"))
+				return;
+			e.Edit(asset =>
+			{
+				var data = asset.AsDictionary<string, string>();
+				foreach (var kvp in data.Data)
+				{
+					string[] split = kvp.Value.Split('/');
+					for (int i = 0; i < 4; i++)
+						split[i] = "-1";
+					data.Data[kvp.Key] = string.Join("/", split);
+				}
+			});
+		}
+
+		private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
+		{
+			return !SeasonAffixes.Instance.ActiveAffixes.Any(a => a is HurricaneAffix);
+		}
 	}
 }

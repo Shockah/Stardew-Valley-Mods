@@ -68,6 +68,14 @@ namespace Shockah.SeasonAffixes
 			RegisterModMessageHandler<NetMessage.ConfirmAffixSetChoice>(OnConfirmAffixSetChoiceMessageReceived);
 			RegisterModMessageHandler<NetMessage.UpdateActiveAffixes>(OnUpdateActiveAffixesMessageReceived);
 
+			Harmony = new(ModManifest.UniqueID);
+			Harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
+			);
+			BillboardPatches.Apply(Harmony);
+
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
 			{
@@ -107,14 +115,6 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
-
-			Harmony = new(ModManifest.UniqueID);
-			Harmony.TryPatch(
-				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
-			);
-			BillboardPatches.Apply(Harmony);
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
