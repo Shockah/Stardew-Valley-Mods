@@ -12,18 +12,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
-		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "HardWater";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 384, 16, 16));
-
-		public HardWaterAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
@@ -55,7 +49,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void SObject_IsSprinkler_Postfix(ref bool __result)
 		{
-			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is HardWaterAffix))
+			if (!Mod.ActiveAffixes.Any(a => a is HardWaterAffix))
 				return;
 			__result = false;
 		}

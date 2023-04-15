@@ -7,18 +7,11 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class PoorYieldsAffix : BaseSeasonAffix, ISeasonAffix
 	{
-		private SeasonAffixes Mod { get; init; }
-
 		private static string ShortID => "PoorYields";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(0, 0, 16, 16));
-
-		public PoorYieldsAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)

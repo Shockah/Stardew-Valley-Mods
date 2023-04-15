@@ -6,18 +6,11 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 {
 	internal sealed class InnovationAffix : BaseSeasonAffix
 	{
-		private SeasonAffixes Mod { get; init; }
-
 		private static string ShortID => "Innovation";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 80, 16, 16));
-
-		public InnovationAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)

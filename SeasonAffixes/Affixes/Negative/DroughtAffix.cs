@@ -11,18 +11,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
-		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Drought";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.mouseCursors, new(413, 333, 13, 13));
-
-		public DroughtAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
@@ -54,7 +48,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void Game1_getWeatherModificationsForDate_Postfix(ref int __result)
 		{
-			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is DroughtAffix))
+			if (!Mod.ActiveAffixes.Any(a => a is DroughtAffix))
 				return;
 			if (__result is Game1.weather_rain or Game1.weather_lightning)
 				__result = Game1.weather_sunny;

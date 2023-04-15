@@ -12,18 +12,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class HurricaneAffix : BaseSeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
-		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Hurricane";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 224, 16, 16));
-
-		public HurricaneAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
@@ -86,7 +80,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
 		{
-			return !SeasonAffixes.Instance.ActiveAffixes.Any(a => a is HurricaneAffix);
+			return !Mod.ActiveAffixes.Any(a => a is HurricaneAffix);
 		}
 	}
 }

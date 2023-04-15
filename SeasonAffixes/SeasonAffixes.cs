@@ -80,34 +80,34 @@ namespace Shockah.SeasonAffixes
 			foreach (var affix in new List<ISeasonAffix>()
 			{
 				// positive affixes
-				new AgricultureAffix(this),
-				new ArtifactsAffix(this),
-				new DescentAffix(this),
-				new FairyTalesAffix(this),
-				new FortuneAffix(this),
-				new InnovationAffix(this),
-				new LoveAffix(this),
-				new RanchingAffix(this),
+				new AgricultureAffix(),
+				new ArtifactsAffix(),
+				new DescentAffix(),
+				new FairyTalesAffix(),
+				new FortuneAffix(),
+				new InnovationAffix(),
+				new LoveAffix(),
+				new RanchingAffix(),
 
 				// negative affixes
-				new CrowsAffix(this),
-				new DroughtAffix(this),
-				new HardWaterAffix(this),
-				new HurricaneAffix(this),
-				new PoorYieldsAffix(this),
-				new RustAffix(this),
-				new SilenceAffix(this),
+				new CrowsAffix(),
+				new DroughtAffix(),
+				new HardWaterAffix(),
+				new HurricaneAffix(),
+				new PoorYieldsAffix(),
+				new RustAffix(),
+				new SilenceAffix(),
 
 				// neutral affixes
-				new InflationAffix(this),
-				new ThunderAffix(this),
-				new TidesAffix(this),
+				new InflationAffix(),
+				new ThunderAffix(),
+				new TidesAffix(),
 			})
 				RegisterAffix(affix);
 
 			// special affixes
 			foreach (var skill in SkillExt.GetAllSkills())
-				RegisterAffix(new SkillAffix(this, skill));
+				RegisterAffix(new SkillAffix(skill));
 
 			// conflicts
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix));

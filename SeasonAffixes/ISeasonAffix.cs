@@ -23,6 +23,9 @@ namespace Shockah.SeasonAffixes
 
 	internal abstract class BaseSeasonAffix : ISeasonAffix
 	{
+		protected static SeasonAffixes Mod
+			=> SeasonAffixes.Instance;
+
 		public abstract string UniqueID { get; }
 		public abstract string LocalizedName { get; }
 		public abstract string LocalizedDescription { get; }

@@ -14,18 +14,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
-		private SeasonAffixes Mod { get; init; }
 
 		private static string ShortID => "Crows";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.content.Load<Texture2D>(Critter.critterTexture), new(134, 46, 21, 17));
-
-		public CrowsAffix(SeasonAffixes mod)
-		{
-			this.Mod = mod;
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
@@ -57,7 +51,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void SObject_IsScarecrow_Postfix(ref bool __result)
 		{
-			if (!SeasonAffixes.Instance.ActiveAffixes.Any(a => a is CrowsAffix))
+			if (!Mod.ActiveAffixes.Any(a => a is CrowsAffix))
 				return;
 			__result = false;
 		}
