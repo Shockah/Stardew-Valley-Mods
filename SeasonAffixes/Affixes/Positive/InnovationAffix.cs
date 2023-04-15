@@ -1,6 +1,10 @@
-﻿using Shockah.Kokoro.UI;
+﻿using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.UI;
+using StardewModdingAPI;
 using StardewValley;
+using System;
 using System.Runtime.CompilerServices;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -20,6 +24,24 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		// TODO: Innovation implementation
+		public override void OnRegister()
+		{
+			MachineTracker.MachineChangedEvent += OnMachineChanged;
+		}
+
+		public override void OnUnregister()
+		{
+			MachineTracker.MachineChangedEvent -= OnMachineChanged;
+		}
+
+		private void OnMachineChanged(GameLocation location, SObject machine, MachineProcessingState? oldState, MachineProcessingState? newState)
+		{
+			if (!Context.IsMainPlayer)
+				return;
+			if (oldState is null || newState is null)
+				return;
+			if (!newState.Value.ReadyForHarvest && newState.Value.MinutesUntilReady > 0 && (oldState.Value.ReadyForHarvest || oldState.Value.MinutesUntilReady < newState.Value.MinutesUntilReady))
+				machine.MinutesUntilReady = (int)Math.Floor(machine.MinutesUntilReady * 0.75);
+		}
 	}
 }
