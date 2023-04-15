@@ -4,6 +4,8 @@ using StardewValley.Menus;
 using StardewValley;
 using System.Collections.Generic;
 using StardewModdingAPI.Events;
+using Shockah.Kokoro.Stardew;
+using HarmonyLib;
 
 namespace Shockah.Kokoro
 {
@@ -18,6 +20,7 @@ namespace Shockah.Kokoro
 			Instance = this;
 
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+			MachineTracker.Setup(Monitor, helper, new Harmony(ModManifest.UniqueID));
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
