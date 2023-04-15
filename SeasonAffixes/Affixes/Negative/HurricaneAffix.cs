@@ -75,7 +75,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 						split[i] = "-1";
 					data.Data[kvp.Key] = string.Join("/", split);
 				}
-			});
+			}, priority: AssetEditPriority.Late);
 		}
 
 		private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
