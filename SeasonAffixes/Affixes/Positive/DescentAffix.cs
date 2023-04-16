@@ -51,15 +51,15 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			);
 		}
 
-		private static void MineShaft_monsterDrop_Postfix(MineShaft location, int x, int y)
+		private static void MineShaft_monsterDrop_Postfix(MineShaft __instance, int x, int y)
 		{
 			if (!Mod.ActiveAffixes.Any(a => a is DescentAffix))
 				return;
-			if (location.mustKillAllMonstersToAdvance())
+			if (__instance.mustKillAllMonstersToAdvance())
 				return;
-			if (location.EnemyCount > 1)
+			if (__instance.EnemyCount > 1)
 				return;
-			location.recursiveTryToCreateLadderDown(new Vector2((int)(x / 64f), (int)(y / 64f)), "newArtifact", 200);
+			__instance.recursiveTryToCreateLadderDown(new Vector2((int)(x / 64f), (int)(y / 64f)), "newArtifact", 200);
 		}
 	}
 }

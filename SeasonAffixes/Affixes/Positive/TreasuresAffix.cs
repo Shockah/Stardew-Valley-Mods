@@ -45,7 +45,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.digUpArtifactSpot)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(TreasuresAffix), nameof(GameLocation_digUpArtifactSpot_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(TreasuresAffix), nameof(GameLocation_digUpArtifactSpot_Transpiler)))
 			);
 		}
 
