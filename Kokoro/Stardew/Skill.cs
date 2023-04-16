@@ -21,6 +21,8 @@ namespace Shockah.Kokoro.Stardew
 		int GetXP(Farmer player);
 
 		int GetLevelXP(int level);
+
+		void GrantXP(Farmer player, int xp);
 	}
 
 	public static class SkillExt
@@ -150,6 +152,9 @@ namespace Shockah.Kokoro.Stardew
 		public int GetXP(Farmer player)
 			=> player.experiencePoints[SkillIndex];
 
+		public void GrantXP(Farmer player, int xp)
+			=> player.gainExperience(SkillIndex, xp);
+
 		private static void UpdateXPValuesIfNeeded()
 		{
 			static void UpdateXPValues()
@@ -220,6 +225,7 @@ namespace Shockah.Kokoro.Stardew
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillLevelDelegate = null!;
 		private static Func<object /* Skill */, int[]> ExperienceCurveDelegate = null!;
 		private static Func<Farmer, object /* Skill */, int> GetCustomSkillExperienceDelegate = null!;
+		private static Action<Farmer, string, int> AddExperienceDelegate = null!;
 		private static Func<object /* Skill */, string> GetNameDelegate = null!;
 		private static Func<object /* Skill */, Texture2D?> GetSkillsPageIconDelegate = null!;
 
@@ -300,6 +306,12 @@ namespace Shockah.Kokoro.Stardew
 			return GetCustomSkillExperienceDelegate(Game1.player, skill);
 		}
 
+		public void GrantXP(Farmer player, int xp)
+		{
+			SetupReflectionIfNeeded();
+			AddExperienceDelegate(player, SkillName, xp);
+		}
+
 		private static void SetupReflectionIfNeeded()
 		{
 			if (IsReflectionSetup)
@@ -323,6 +335,9 @@ namespace Shockah.Kokoro.Stardew
 
 			MethodInfo getCustomSkillExperienceMethod = AccessTools.Method(skillExtensionsType, "GetCustomSkillExperience", new Type[] { typeof(Farmer), skillType });
 			GetCustomSkillExperienceDelegate = (farmer, skill) => (int)getCustomSkillExperienceMethod.Invoke(null, new object[] { farmer, skill })!;
+
+			MethodInfo addExperienceMethod = AccessTools.Method(skillsType, "AddExperience", new Type[] { typeof(Farmer), typeof(string), typeof(int) });
+			AddExperienceDelegate = (farmer, skill, xp) => addExperienceMethod.Invoke(null, new object[] { farmer, skill, xp });
 
 			MethodInfo getNameMethod = AccessTools.Method(skillType, "GetName");
 			GetNameDelegate = (skill) => (string)getNameMethod.Invoke(skill, null)!;
