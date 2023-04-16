@@ -50,7 +50,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 				return;
 			e.Edit(asset =>
 			{
-				var data = asset.AsDictionary<string, string>();
+				var data = asset.AsDictionary<int, string>();
 				foreach (var kvp in data.Data)
 				{
 					string[] split = kvp.Value.Split('/');
