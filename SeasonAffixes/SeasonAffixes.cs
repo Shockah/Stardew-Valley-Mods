@@ -57,6 +57,7 @@ namespace Shockah.SeasonAffixes
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
+			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.DayEnding += OnDayEnding;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 			helper.Events.GameLoop.Saving += OnSaving;
@@ -140,13 +141,16 @@ namespace Shockah.SeasonAffixes
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
 			);
 			BillboardPatches.Apply(Harmony);
+		}
 
+		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+		{
 			// positive affixes
 			foreach (var affix in new List<ISeasonAffix>()
 			{
 				// positive affixes
 				new AgricultureAffix(),
-				new ArtifactsAffix(),
+				new TreasuresAffix(),
 				new DescentAffix(),
 				new FairyTalesAffix(),
 				new FortuneAffix(),

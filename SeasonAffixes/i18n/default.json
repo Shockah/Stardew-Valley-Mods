@@ -12,8 +12,6 @@
 	// positive affixes
 	"affix.positive.Agriculture.name": "Agriculture",
 	"affix.positive.Agriculture.description": "Unprocessed crops are worth 200%.",
-	"affix.positive.Artifacts.name": "Artifacts",
-	"affix.positive.Artifacts.description": "Artifact spots have a high chance of containing Artifact Troves.",
 	"affix.positive.Descent.name": "Descent",
 	"affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
 	"affix.positive.FairyTales.name": "Fairy Tales",
@@ -26,6 +24,8 @@
 	"affix.positive.Love.description": "Double friendship gain with romanceable characters.",
 	"affix.positive.Ranching.name": "Ranching",
 	"affix.positive.Ranching.description": "Unprocessed animal products are worth 200%.",
+	"affix.positive.Treasures.name": "Treasures",
+	"affix.positive.Treasures.description": "Artifact spots have a fair chance of containing Artifact Troves.",
 
 	// negative affixes
 	"affix.negative.Crows.name": "Crows",
