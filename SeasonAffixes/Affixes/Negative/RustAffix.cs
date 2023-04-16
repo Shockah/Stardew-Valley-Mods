@@ -44,15 +44,16 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 				return;
 			if (oldState is null || newState is null)
 				return;
+
+			var existingIndex = AffixApplied.FirstIndex((weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && ReferenceEquals(machine, appliedMachine)));
+			if (existingIndex is not null)
+			{
+				AffixApplied.RemoveAt(existingIndex.Value);
+				return;
+			}
+
 			if (!newState.Value.ReadyForHarvest && newState.Value.MinutesUntilReady > 0 && (oldState.Value.ReadyForHarvest || oldState.Value.MinutesUntilReady < newState.Value.MinutesUntilReady))
 			{
-				var existingIndex = AffixApplied.FirstIndex((weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && ReferenceEquals(machine, appliedMachine)));
-				if (existingIndex is not null)
-				{
-					AffixApplied.RemoveAt(existingIndex.Value);
-					return;
-				}
-
 				AffixApplied.Add(new(machine));
 				machine.MinutesUntilReady = (int)Math.Ceiling(machine.MinutesUntilReady * 1.5);
 			}
