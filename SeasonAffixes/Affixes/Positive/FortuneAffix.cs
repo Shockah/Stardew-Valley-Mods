@@ -1,4 +1,6 @@
 ﻿using Shockah.Kokoro.UI;
+using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 using System.Runtime.CompilerServices;
 
@@ -20,6 +22,27 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		// TODO: Fortune implementation
+		public override void OnActivate()
+		{
+			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+
+			if (!Context.IsMainPlayer)
+				return;
+			Game1.player.team.sharedDailyLuck.Value += 0.05;
+		}
+
+		public override void OnDeactivate()
+		{
+			if (!Context.IsMainPlayer)
+				return;
+			Game1.player.team.sharedDailyLuck.Value -= 0.05;
+		}
+
+		private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		{
+			if (!Context.IsMainPlayer)
+				return;
+			Game1.player.team.sharedDailyLuck.Value += 0.05;
+		}
 	}
 }
