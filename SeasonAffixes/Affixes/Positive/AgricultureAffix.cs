@@ -1,11 +1,19 @@
-﻿using Shockah.Kokoro.UI;
+﻿using HarmonyLib;
+using Shockah.Kokoro;
+using Shockah.Kokoro.UI;
+using Shockah.SeasonAffixes.Affixes.Negative;
 using StardewValley;
+using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
 	internal sealed class AgricultureAffix : BaseSeasonAffix
 	{
+		private static bool IsHarmonySetup = false;
+
 		private static string ShortID => "Agriculture";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
@@ -20,6 +28,28 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		// TODO: Agriculture implementation
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
+		private void Apply(Harmony harmony)
+		{
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(CrowsAffix), nameof(SObject_sellToStorePrice_Postfix)))
+			);
+		}
+
+		private static void SObject_sellToStorePrice_Postfix(SObject __instance, ref int __result)
+		{
+			if (!Mod.ActiveAffixes.Any(a => a is AgricultureAffix))
+				return;
+			if (__instance.Category is SObject.FruitsCategory or SObject.VegetableCategory)
+				__result = (int)Math.Ceiling(__result * 2.0);
+		}
 	}
 }
