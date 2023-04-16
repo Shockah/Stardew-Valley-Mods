@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using Shockah.Kokoro;
 using Shockah.Kokoro.UI;
-using Shockah.SeasonAffixes.Affixes.Negative;
 using StardewValley;
 using System.Linq;
 using System;
@@ -40,7 +39,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CrowsAffix), nameof(SObject_sellToStorePrice_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(RanchingAffix), nameof(SObject_sellToStorePrice_Postfix)))
 			);
 		}
 
