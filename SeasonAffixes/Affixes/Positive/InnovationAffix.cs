@@ -45,7 +45,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			if (oldState is null || newState is null)
 				return;
 
-			var existingIndex = AffixApplied.FirstIndex((weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && ReferenceEquals(machine, appliedMachine)));
+			var existingIndex = AffixApplied.FirstIndex(weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && ReferenceEquals(machine, appliedMachine));
 			if (existingIndex is not null)
 			{
 				AffixApplied.RemoveAt(existingIndex.Value);
