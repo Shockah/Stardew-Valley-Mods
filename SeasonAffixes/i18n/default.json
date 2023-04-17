@@ -50,6 +50,8 @@
 	"affix.neutral.Thunder.description": "Storms are twice as likely as usual.",
 	"affix.neutral.Tides.name": "Tides",
 	"affix.neutral.Tides.description": "Common fish become uncommon.",
+	"affix.neutral.WildGrowth.name": "Wild Growth",
+	"affix.neutral.WildGrowth.description": "Trees on the farm grow rapidly.",
 
 	// special affixes
 	"affix.positive.Skill.description.Vanilla": "Increased {{Skill}} level by 3. {{Skill}} experience gain increased by 20%.",

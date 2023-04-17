@@ -171,6 +171,7 @@ namespace Shockah.SeasonAffixes
 				new InflationAffix(),
 				new ThunderAffix(),
 				new TidesAffix(),
+				new WildGrowthAffix(),
 			})
 				RegisterAffix(affix);
 
@@ -188,9 +189,8 @@ namespace Shockah.SeasonAffixes
 				return;
 
 			var tomorrow = Game1.Date.GetByAddingDays(1);
-			// TODO: uncomment
-			//if (tomorrow.GetSeason() == Game1.Date.GetSeason())
-			//	return;
+			if (tomorrow.GetSeason() == Game1.Date.GetSeason())
+				return;
 			QueueOvernightAffixChoice();
 		}
 

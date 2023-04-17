@@ -2,9 +2,11 @@
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using SObject = StardewValley.Object;
 
@@ -18,7 +20,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 64, 16, 16));
 
-		private readonly List<WeakReference<SObject>> AffixApplied = new();
+		private List<WeakReference<SObject>> AffixApplied = new();
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
@@ -28,14 +30,24 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override void OnRegister()
+		public override void OnActivate()
 		{
+			AffixApplied.Clear();
+			Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
 			MachineTracker.MachineChangedEvent += OnMachineChanged;
 		}
 
-		public override void OnUnregister()
+		public override void OnDeactivate()
 		{
+			Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
 			MachineTracker.MachineChangedEvent -= OnMachineChanged;
+		}
+
+		private void OnDayEnding(object? sender, DayEndingEventArgs e)
+		{
+			AffixApplied = AffixApplied
+				.Where(r => r.TryGetTarget(out _))
+				.ToList();
 		}
 
 		private void OnMachineChanged(GameLocation location, SObject machine, MachineProcessingState? oldState, MachineProcessingState? newState)
