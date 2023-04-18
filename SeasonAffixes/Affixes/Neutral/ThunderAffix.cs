@@ -11,7 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
+using Shockah.CommonModCode.GMCM;
+using Shockah.Kokoro.GMCM;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
@@ -22,19 +23,16 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static string ShortID => "Thunder";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
 		public override TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
+		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch
 			{
 				Season.Spring or Season.Fall => 0.5,
@@ -45,6 +43,13 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);
+
+		public override void SetupConfig(IManifest manifest)
+		{
+			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+			helper.AddNumberOption($"affix.neutral.{ShortID}.config.chance", () => Mod.Config.ThunderChance, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+		}
 
 		private void Apply(Harmony harmony)
 		{
@@ -95,7 +100,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			if (!Mod.ActiveAffixes.Any(a => a is ThunderAffix))
 				return;
-			Game1.chanceToRainTomorrow *= 2;
+			Game1.chanceToRainTomorrow *= Mod.Config.ThunderChance;
 		}
 	}
 }

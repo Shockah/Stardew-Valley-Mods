@@ -3,7 +3,6 @@ using Shockah.Kokoro;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using StardewValley.Locations;
 using Microsoft.Xna.Framework;
 
@@ -19,16 +18,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.bigCraftableSpriteSheet, new(112, 272, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
+		public override double GetProbabilityWeight(OrdinalSeason season)
 		{
 			bool finishedMine = MineShaft.lowestLevelReached >= 120;
 			bool busUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));

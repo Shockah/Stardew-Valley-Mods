@@ -1,4 +1,5 @@
 ﻿using Shockah.Kokoro.UI;
+using StardewModdingAPI;
 
 namespace Shockah.SeasonAffixes
 {
@@ -13,6 +14,9 @@ namespace Shockah.SeasonAffixes
 		void OnUnregister() { }
 		void OnActivate() { }
 		void OnDeactivate() { }
+
+		void SetupConfig(IManifest manifest) { }
+		void OnSaveConfig() { }
 
 		int GetPositivity(OrdinalSeason season);
 		int GetNegativity(OrdinalSeason season);
@@ -36,8 +40,14 @@ namespace Shockah.SeasonAffixes
 		public virtual void OnActivate() { }
 		public virtual void OnDeactivate() { }
 
+		public virtual void SetupConfig(IManifest manifest) { }
+		public virtual void OnSaveConfig() { }
+
 		public abstract int GetNegativity(OrdinalSeason season);
 		public abstract int GetPositivity(OrdinalSeason season);
+
+		public virtual double GetProbabilityWeight(OrdinalSeason season)
+			=> 1;
 
 		public override bool Equals(object? obj)
 			=> obj is ISeasonAffix affix && UniqueID == affix.UniqueID;

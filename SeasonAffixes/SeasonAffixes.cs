@@ -15,12 +15,15 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using Shockah.Kokoro.UI;
 using Shockah.SeasonAffixes.Affixes;
+using Shockah.CommonModCode.GMCM;
+using Shockah.Kokoro.GMCM;
 
 namespace Shockah.SeasonAffixes
 {
 	public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	{
 		public static SeasonAffixes Instance { get; private set; } = null!;
+		private bool IsConfigRegistered { get; set; } = false;
 		internal Harmony Harmony { get; private set; } = null!;
 
 		private bool DidRegisterSkillAffixes = false;
@@ -187,6 +190,8 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
+
+			SetupConfig();
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
@@ -348,6 +353,59 @@ namespace Shockah.SeasonAffixes
 			Monitor.Log($"Received affix update. Changed affixes:\n{outputToDeactivate}\n{outputToActivate}", LogLevel.Info);
 		}
 
+		private void SetupConfig()
+		{
+			var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (api is null)
+				return;
+			GMCMI18nHelper helper = new(api, ModManifest, Helper.Translation);
+
+			if (IsConfigRegistered)
+				api.Unregister(ModManifest);
+
+			api.Register(
+				ModManifest,
+				reset: () => Config = new(),
+				save: () =>
+				{
+					foreach (var affix in AllAffixesStorage.Values)
+						affix.OnSaveConfig();
+					WriteConfig();
+					LogConfig();
+					SetupConfig();
+				}
+			);
+
+			helper.AddBoolOption("config.incremental", () => Config.Incremental);
+			helper.AddNumberOption("config.choices", () => Config.Choices, min: 1, max: 4, interval: 1);
+			helper.AddNumberOption("config.affixRepeatPeriod", () => Config.AffixRepeatPeriod, min: 0);
+			helper.AddNumberOption("config.affixSetRepeatPeriod", () => Config.AffixSetRepeatPeriod, min: 0);
+
+			foreach (var affix in AllAffixesStorage.Values.OrderBy(a => a.LocalizedName).ThenBy(a => a.UniqueID))
+			{
+				api.AddSectionTitle(ModManifest, () => affix.LocalizedName, () => affix.LocalizedDescription);
+
+				api.AddNumberOption(
+					ModManifest,
+					getValue: () => Config.AffixWeights.TryGetValue(affix.UniqueID, out var weight) ? (float)weight : 1f,
+					setValue: value =>
+					{
+						if (value >= 0.999f && value <= 1.001f)
+							Config.AffixWeights.Remove(affix.UniqueID);
+						else
+							Config.AffixWeights[affix.UniqueID] = value;
+					},
+					name: () => Helper.Translation.Get("config.affix.weight.name"),
+					tooltip: () => Helper.Translation.Get("config.affix.weight.tooltip"),
+					min: 0f, max: 10f, interval: 0.025f
+				);
+
+				affix.SetupConfig(ModManifest);
+			}
+
+			IsConfigRegistered = true;
+		}
+
 		internal void RegisterChoice(Farmer player, PlayerChoice anyChoice)
 		{
 			PlayerChoices[player] = anyChoice;
@@ -458,15 +516,15 @@ namespace Shockah.SeasonAffixes
 				var affixSetEntry = affixSetEntries.Next(random);
 
 				var affixesProvider = new CompoundAffixesProvider(
-					new AffixesProvider(Instance.AllAffixesStorage.Values),
-					new AffixesProvider(Instance.AffixCombinationsStorage)
+					new AffixesProvider(Instance.AllAffixesStorage.Values.Where(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0)),
+					new AffixesProvider(Instance.AffixCombinationsStorage.Where(combinedAffix => combinedAffix.Affixes.All(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0)))
 				).ApplicableToSeason(season);
 
 				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(3)
 					.NonConflicting(Instance.AffixConflictProviders)
 					.NonConflictingWithCombinations()
-					.WeightedRandom(random)
+					.WeightedRandom(random, a => Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) ? weight : 1.0)
 					.Decombined()
 					.AvoidingChoiceHistoryDuplicates()
 					.AvoidingSetChoiceHistoryDuplicates()
@@ -477,12 +535,12 @@ namespace Shockah.SeasonAffixes
 				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
 				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
 
-                Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, Instance.Config.RerollsPerSeason);
+                Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, 0);
                 Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 					season,
 					Instance.Config.Incremental,
 					choices.Select(choice => choice.Select(a => a.UniqueID).ToHashSet()).ToList(),
-					Instance.Config.RerollsPerSeason
+					0
 				));
 			}
 
@@ -505,6 +563,21 @@ namespace Shockah.SeasonAffixes
 				throw new ArgumentException($"An affix with ID `{affix.UniqueID}` is already registered.");
 			AllAffixesStorage[affix.UniqueID] = affix;
 			affix.OnRegister();
+
+			if (IsConfigRegistered)
+				SetupConfig();
+		}
+
+		public void UnregisterAffix(ISeasonAffix affix)
+		{
+			if (!AllAffixesStorage.ContainsKey(affix.UniqueID))
+				return;
+			DeactivateAffix(affix);
+			affix.OnUnregister();
+			AllAffixesStorage.Remove(affix.UniqueID);
+
+			if (IsConfigRegistered)
+				SetupConfig();
 		}
 
 		public void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon)
@@ -528,15 +601,6 @@ namespace Shockah.SeasonAffixes
 
 		public void UnregisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> handler)
 			=> AffixConflictProviders.Remove(handler);
-
-		public void UnregisterAffix(ISeasonAffix affix)
-		{
-			if (!AllAffixesStorage.ContainsKey(affix.UniqueID))
-				return;
-			DeactivateAffix(affix);
-			affix.OnUnregister();
-			AllAffixesStorage.Remove(affix.UniqueID);
-		}
 
 		public void ActivateAffix(ISeasonAffix affix)
 		{

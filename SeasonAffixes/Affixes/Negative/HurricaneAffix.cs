@@ -5,7 +5,6 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
@@ -19,11 +18,9 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 224, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 

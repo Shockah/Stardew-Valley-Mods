@@ -6,11 +6,10 @@ using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class PoorYieldsAffix : BaseSeasonAffix, ISeasonAffix
+	internal sealed class PoorYieldsAffix : BaseSeasonAffix
 	{
 		private static string ShortID => "PoorYields";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
@@ -18,16 +17,13 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(0, 0, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
+		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
 		public override void OnActivate()

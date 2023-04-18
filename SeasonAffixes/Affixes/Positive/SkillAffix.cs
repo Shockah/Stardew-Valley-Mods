@@ -1,8 +1,11 @@
-﻿using Shockah.Kokoro.Stardew;
+﻿using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -10,13 +13,47 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 {
 	internal sealed class SkillAffix : BaseSeasonAffix, ISeasonAffix
 	{
+		private static readonly int DefaultLevelIncrease = 3;
+		private static readonly float DefaultVanillaXPIncrease = 0.2f;
+		private static readonly float DefaultCustomXPIncrease = 0.25f;
+
 		public ISkill Skill { get; init; }
 
 		private static string ShortID => "Skill";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}:{Skill.UniqueID}";
 		public override string LocalizedName => Skill.Name;
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description.{(Skill is VanillaSkill ? "Vanilla" : "SpaceCore")}", new { Skill = Skill.Name });
 		public override TextureRectangle Icon => Skill.Icon!; // TODO: placeholder icon
+
+		public override string LocalizedDescription
+		{
+			get
+			{
+				var parts = new List<string>();
+				if (Skill is VanillaSkill && LevelIncreaseConfig > 0)
+					parts.Add(Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description.level", new { Skill = Skill.Name, LevelIncrease = LevelIncreaseConfig }));
+				if (XPIncreaseConfig > 0f || parts.Count == 0)
+					parts.Add(Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description.xp", new { Skill = Skill.Name, XPIncrease = $"{(int)(XPIncreaseConfig * 100):0.##}%" }));
+				return string.Join(" ", parts);
+			}
+		}
+
+		private int LevelIncreaseConfig
+		{
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			get => Mod.Config.SkillLevelIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultLevelIncrease;
+		}
+
+		private float DefaultXPIncrease
+		{
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			get => Skill is VanillaSkill ? DefaultVanillaXPIncrease : DefaultCustomXPIncrease;
+		}
+
+		private float XPIncreaseConfig
+		{
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			get => Mod.Config.SkillXPIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultXPIncrease;
+		}
 
 		private int? LastXP = null;
 
@@ -25,17 +62,18 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			this.Skill = skill;
 		}
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
-			=> Math.Min(2.0 / Mod.AllAffixes.Values.Count(affix => affix is SkillAffix), 1.0);
+		public override double GetProbabilityWeight(OrdinalSeason season)
+		{
+			if (XPIncreaseConfig == 0f && (Skill is not VanillaSkill || LevelIncreaseConfig == 0f))
+				return 0; // invalid config, skipping affix
+			return Math.Min(2.0 / Mod.AllAffixes.Values.Count(affix => affix is SkillAffix), 1.0);
+		}
 
 		public override void OnActivate()
 		{
@@ -44,23 +82,62 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
 			if (Skill is VanillaSkill skill)
-				ModifySkillLevel(Game1.player, skill, 3);
+				ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
 		}
 
 		public override void OnDeactivate()
 		{
 			if (Skill is VanillaSkill skill)
-				ModifySkillLevel(Game1.player, skill, -3);
+				ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
 
 			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 			LastXP = null;
+		}
+
+		public override void SetupConfig(IManifest manifest)
+		{
+			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+
+			if (Skill is VanillaSkill)
+			{
+				api.AddNumberOption(
+					Mod.ModManifest,
+					getValue: () => Mod.Config.SkillLevelIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultLevelIncrease,
+					setValue: value =>
+					{
+						if (value == DefaultLevelIncrease)
+							Mod.Config.SkillLevelIncrease.Remove(Skill.UniqueID);
+						else
+							Mod.Config.SkillLevelIncrease[Skill.UniqueID] = value;
+					},
+					name: () => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.config.levelIncrease.name"),
+					tooltip: () => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.config.levelIncrease.tooltip"),
+					min: 0, max: 5, interval: 1
+				);
+			}
+
+			api.AddNumberOption(
+				Mod.ModManifest,
+				getValue: () => Mod.Config.SkillXPIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultXPIncrease,
+				setValue: value =>
+				{
+					if (value == DefaultXPIncrease)
+						Mod.Config.SkillXPIncrease.Remove(Skill.UniqueID);
+					else
+						Mod.Config.SkillXPIncrease[Skill.UniqueID] = value;
+				},
+				name: () => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.config.xpIncrease.name"),
+				tooltip: () => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.config.xpIncrease.tooltip"),
+				min: 0f, max: 2f, interval: 0.01f,
+				formatValue: value => $"{(int)(value * 100):0.##}%"
+			);
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			if (Skill is not VanillaSkill skill)
 				return;
-			ModifySkillLevel(Game1.player, skill, 3);
+			ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -109,7 +186,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			int extraXP = newXP - LastXP.Value;
 			if (extraXP > 0)
 			{
-				int bonusXP = (int)Math.Ceiling(extraXP * (Skill is VanillaSkill ? 0.2 : 0.25));
+				int bonusXP = (int)Math.Ceiling(extraXP * XPIncreaseConfig);
 				Skill.GrantXP(Game1.player, bonusXP);
 				LastXP += extraXP;
 			}

@@ -9,7 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System;
-using System.Runtime.CompilerServices;
+using Shockah.CommonModCode.GMCM;
+using Shockah.Kokoro.GMCM;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
@@ -23,16 +24,21 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 144, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);
+
+		public override void SetupConfig(IManifest manifest)
+		{
+			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+			helper.AddNumberOption($"affix.negative.{ShortID}.config.friendshipGain", () => Mod.Config.SilenceFriendshipGain, min: 0, max: 250, interval: 10);
+		}
 
 		private void Apply(Harmony harmony)
 		{
@@ -94,7 +100,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			if (!Mod.ActiveAffixes.Any(a => a is SilenceAffix))
 				return true;
 
-			npc.grantConversationFriendship(player, 0);
+			npc.grantConversationFriendship(player, Mod.Config.SilenceFriendshipGain);
 			if (!player.isEmoting)
 				player.doEmote(40);
 			if (!npc.isEmoting)

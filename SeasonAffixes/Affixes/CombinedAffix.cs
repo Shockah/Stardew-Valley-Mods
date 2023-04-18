@@ -2,11 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes
 {
-	internal sealed class CombinedAffix : BaseSeasonAffix, ISeasonAffix
+	internal sealed class CombinedAffix : BaseSeasonAffix
 	{
 		public override string UniqueID => $"CombinedAffix{{{string.Join(", ", Affixes.Select(a => a.UniqueID).OrderBy(id => id))}}}";
 		public override string LocalizedName => LocalizedNameProvider();
@@ -28,16 +27,13 @@ namespace Shockah.SeasonAffixes.Affixes
 			this.ProbabilityWeightProvider = probabilityWeightProvider ?? (_ => 1);
 		}
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> Affixes.Sum(a => a.GetPositivity(season));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> Affixes.Sum(a => a.GetNegativity(season));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
+		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> ProbabilityWeightProvider(season);
 
 		public override void OnRegister()

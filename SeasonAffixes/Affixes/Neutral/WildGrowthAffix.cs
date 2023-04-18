@@ -1,7 +1,9 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Netcode;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -10,7 +12,6 @@ using StardewValley.Network;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
@@ -24,11 +25,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(336, 192, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
 
@@ -42,6 +41,14 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 		}
 
+		public override void SetupConfig(IManifest manifest)
+		{
+			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+			helper.AddNumberOption($"affix.neutral.{ShortID}.config.advanceChance", () => Mod.Config.WildGrowthAdvanceChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"affix.neutral.{ShortID}.config.newSeedChance", () => Mod.Config.WildGrowthNewSeedChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+		}
+
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		{
 			if (!Context.IsMainPlayer)
@@ -50,12 +57,14 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			var farm = Game1.getFarm();
 			foreach (var tree in farm.terrainFeatures.Values.OfType<Tree>().ToList())
 			{
-				bool wasFertilized = tree.fertilized.Value;
-				tree.fertilized.Value = true;
-				tree.dayUpdate(new FakeLocation(farm), tree.currentTileLocation);
-				tree.fertilized.Value = wasFertilized;
-
-				if (Game1.random.NextBool())
+				if (Game1.random.Next() < Mod.Config.WildGrowthAdvanceChance)
+				{
+					bool wasFertilized = tree.fertilized.Value;
+					tree.fertilized.Value = true;
+					tree.dayUpdate(new FakeLocation(farm), tree.currentTileLocation);
+					tree.fertilized.Value = wasFertilized;
+				}
+				if (tree.growthStage.Value >= 5 && Game1.random.Next() < Mod.Config.WildGrowthNewSeedChance)
 				{
 					int xCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.X;
 					int yCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.Y;

@@ -1,10 +1,12 @@
-﻿using Shockah.Kokoro.UI;
+﻿using Shockah.CommonModCode.GMCM;
+using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.UI;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -13,16 +15,14 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static string ShortID => "Love";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{Mod.Config.LoveValue:0.##}x" });
 		public override TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
 
 		private readonly Dictionary<string, int> OldFriendship = new();
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
@@ -37,6 +37,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 			Mod.Helper.Events.Content.AssetsInvalidated -= OnAssetsInvalidated;
+		}
+
+		public override void SetupConfig(IManifest manifest)
+		{
+			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+			helper.AddNumberOption($"affix.positive.{ShortID}.config.value", () => Mod.Config.LoveValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
@@ -74,7 +81,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				int extraFriendship = newFriendship - oldFriendship;
 				if (extraFriendship > 0)
 				{
-					int bonusFriendship = -extraFriendship + extraFriendship * 2; // i know this is just `extraFriendship`, but this is for future configurability sake
+					int bonusFriendship = (int)Math.Round(-extraFriendship + extraFriendship * Mod.Config.LoveValue);
 					Game1.player.friendshipData[npcName].Points += bonusFriendship;
 					OldFriendship[npcName] += bonusFriendship;
 				}

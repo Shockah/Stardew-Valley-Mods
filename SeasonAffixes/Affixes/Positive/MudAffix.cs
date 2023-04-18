@@ -5,7 +5,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.Locations;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -19,16 +18,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(288, 208, 16, 16));
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public double GetProbabilityWeight(OrdinalSeason season)
+		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter || Game1.whichFarm != 6 ? 0 : 1;
 
 		public override void OnRegister()
