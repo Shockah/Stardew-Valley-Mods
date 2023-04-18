@@ -13,6 +13,8 @@ using Shockah.SeasonAffixes.Affixes.Neutral;
 using System.Text;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
+using Shockah.Kokoro.UI;
+using Shockah.SeasonAffixes.Affixes;
 
 namespace Shockah.SeasonAffixes
 {
@@ -23,6 +25,7 @@ namespace Shockah.SeasonAffixes
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
+		private List<CombinedAffix> AffixCombinationsStorage { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
@@ -133,6 +136,7 @@ namespace Shockah.SeasonAffixes
 				DeactivateAffix(affix);
 			});
 			helper.ConsoleCommands.Add("affixes_deactivate_all", "Deactivates all seasonal affixes.", (_, _) => DeactivateAllAffixes());
+			helper.ConsoleCommands.Add("affixes_queue_choice", "Queues an overnight affix choice menu.", (_, _) => QueueOvernightAffixChoice());
 
 			Harmony = new(ModManifest.UniqueID);
 			Harmony.TryPatch(
@@ -451,16 +455,20 @@ namespace Shockah.SeasonAffixes
 					affixSetEntries.Add(new(entry.Weight, entry));
 				var affixSetEntry = affixSetEntries.Next(random);
 
-				var allAffixesProvider = new AllAffixesProvider(Instance);
-				var applicableToSeasonAffixesProvider = new ApplicableToSeasonAffixesProvider(allAffixesProvider, season);
+				var affixesProvider = new CompoundAffixesProvider(
+					new AffixesProvider(Instance.AllAffixesStorage.Values),
+					new AffixesProvider(Instance.AffixCombinationsStorage)
+				).ApplicableToSeason(season);
 
-				var affixSetGenerator = new AllCombinationsAffixSetGenerator(applicableToSeasonAffixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
+				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(3)
 					.NonConflicting(Instance.AffixConflictProviders)
+					.NonConflictingWithCombinations()
 					.WeightedRandom(random)
+					.Decombined()
 					.AvoidingChoiceHistoryDuplicates()
 					.AvoidingSetChoiceHistoryDuplicates()
-					.AsLittleAsPossible()
+					//.AsLittleAsPossible()
 					.AvoidingDuplicatesBetweenChoices();
 
 				var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
@@ -483,6 +491,7 @@ namespace Shockah.SeasonAffixes
 		#region API
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+		public IEnumerable<(ISeasonAffix Combined, IReadOnlySet<ISeasonAffix> Affixes)> AffixCombinations => AffixCombinationsStorage.Select(a => (Combined: (ISeasonAffix)a, Affixes: a.Affixes));
 		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.ToHashSet();
 
 		public ISeasonAffix? GetAffix(string uniqueID)
@@ -496,8 +505,27 @@ namespace Shockah.SeasonAffixes
 			affix.OnRegister();
 		}
 
+		public void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon)
+			=> RegisterAffixCombination(affixes, localizedName, localizedDescription, icon, _ => 0);
+
+		public void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
+		{
+			UnregisterAffixCombination(affixes);
+			AffixCombinationsStorage.Add(new(affixes, localizedName, localizedDescription, icon, probabilityWeightProvider));
+		}
+
+		public void UnregisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes)
+		{
+			int? index = AffixCombinationsStorage.FirstIndex(a => a.Affixes.SetEquals(affixes));
+			if (index is not null)
+				AffixCombinationsStorage.RemoveAt(index.Value);
+		}
+
 		public void RegisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> handler)
 			=> AffixConflictProviders.Add(handler);
+
+		public void UnregisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> handler)
+			=> AffixConflictProviders.Remove(handler);
 
 		public void UnregisterAffix(ISeasonAffix affix)
 		{
@@ -539,8 +567,19 @@ namespace Shockah.SeasonAffixes
 
         public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 		{
-            return affixes
-                .OrderByDescending(a => a.GetPositivity(season) - a.GetNegativity(season))
+			var affixesLeft = affixes.ToList();
+			foreach (var combination in AffixCombinationsStorage)
+			{
+				if (combination.Affixes.All(a => affixesLeft.Contains(a)))
+				{
+					foreach (var affix in combination.Affixes)
+						affixesLeft.Remove(affix);
+					affixesLeft.Add(combination);
+				}
+			}
+
+            return affixesLeft
+				.OrderByDescending(a => a.GetPositivity(season) - a.GetNegativity(season))
                 .ThenBy(a => a.UniqueID)
                 .ToList();
         }

@@ -8,16 +8,41 @@ namespace Shockah.SeasonAffixes
 		IEnumerable<ISeasonAffix> Affixes { get; }
 	}
 
-	internal sealed class AllAffixesProvider : IAffixesProvider
+	internal static class IAffixesProviderExt
 	{
-		private ISeasonAffixesApi Api { get; init; }
+		public static IAffixesProvider ApplicableToSeason(this IAffixesProvider provider, OrdinalSeason season)
+			=> new ApplicableToSeasonAffixesProvider(provider, season);
+	}
 
-		public IEnumerable<ISeasonAffix> Affixes =>
-			Api.AllAffixes.Values;
+	internal sealed class AffixesProvider : IAffixesProvider
+	{
+		public IEnumerable<ISeasonAffix> Affixes { get; init; }
 
-		public AllAffixesProvider(ISeasonAffixesApi api)
+		public AffixesProvider(IEnumerable<ISeasonAffix> affixes)
 		{
-			this.Api = api;
+			this.Affixes = affixes;
+		}
+	}
+
+	internal sealed class CompoundAffixesProvider : IAffixesProvider
+	{
+		private IEnumerable<IAffixesProvider> Providers { get; init; }
+
+		public IEnumerable<ISeasonAffix> Affixes
+		{
+			get
+			{
+				foreach (var provider in Providers)
+					foreach (var affix in provider.Affixes)
+						yield return affix;
+			}
+		}
+
+		public CompoundAffixesProvider(params IAffixesProvider[] providers) : this((IEnumerable<IAffixesProvider>)providers) { }
+
+		public CompoundAffixesProvider(IEnumerable<IAffixesProvider> providers)
+		{
+			this.Providers = providers;
 		}
 	}
 

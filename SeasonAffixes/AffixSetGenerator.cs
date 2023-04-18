@@ -1,4 +1,5 @@
 ﻿using Shockah.Kokoro;
+using Shockah.SeasonAffixes.Affixes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,12 @@ namespace Shockah.SeasonAffixes
 	{
 		public static IAffixSetGenerator NonConflicting(this IAffixSetGenerator affixSetGenerator, List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> affixConflictProviders)
 			=> new NonConflictingAffixSetGenerator(affixSetGenerator, affixConflictProviders);
+
+		public static IAffixSetGenerator NonConflictingWithCombinations(this IAffixSetGenerator affixSetGenerator)
+			=> new NonConflictingWithCombinationsAffixSetGenerator(affixSetGenerator);
+
+		public static IAffixSetGenerator Decombined(this IAffixSetGenerator affixSetGenerator)
+			=> new DecombinedAffixSetGenerator(affixSetGenerator);
 
 		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random)
 			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random);
@@ -96,6 +103,78 @@ namespace Shockah.SeasonAffixes
 		{
 			var test = AffixSetGenerator.Generate(season).ToList();
 			return test.Where(c => !AffixConflictProviders.Any(provider => provider(c, season)));
+		}
+	}
+
+	internal sealed class NonConflictingWithCombinationsAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+
+		public NonConflictingWithCombinationsAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+		{
+			return AffixSetGenerator.Generate(season).Where(combination =>
+			{
+				Dictionary<string, int> occurences = new();
+
+				void Record(ISeasonAffix affix)
+				{
+					if (affix is CombinedAffix combinedAffix)
+					{
+						foreach (var childAffix in combinedAffix.Affixes)
+							Record(affix);
+					}
+					else
+					{
+						if (!occurences.ContainsKey(affix.UniqueID))
+							occurences[affix.UniqueID] = 0;
+						occurences[affix.UniqueID]++;
+					}
+				}
+
+				foreach (var affix in combination)
+					Record(affix);
+				return !occurences.Values.Any(count => count > 1);
+			});
+		}
+	}
+
+	internal sealed class DecombinedAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+
+		public DecombinedAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+		{
+			return AffixSetGenerator.Generate(season).Select(combination =>
+			{
+				HashSet<ISeasonAffix> affixes = new();
+
+				void Record(ISeasonAffix affix)
+				{
+					if (affix is CombinedAffix combinedAffix)
+					{
+						foreach (var childAffix in combinedAffix.Affixes)
+							Record(affix);
+					}
+					else
+					{
+						affixes.Add(affix);
+					}
+				}
+
+				foreach (var affix in combination)
+					Record(affix);
+				return affixes;
+			});
 		}
 	}
 
