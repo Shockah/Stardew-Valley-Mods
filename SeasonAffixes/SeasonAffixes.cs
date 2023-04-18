@@ -160,6 +160,7 @@ namespace Shockah.SeasonAffixes
 				new FortuneAffix(),
 				new InnovationAffix(),
 				new LoveAffix(),
+				new MudAffix(),
 				new RanchingAffix(),
 
 				// negative affixes
@@ -183,6 +184,7 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix));
+			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)));
 			RegisterAffixConflictProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)));
 		}
