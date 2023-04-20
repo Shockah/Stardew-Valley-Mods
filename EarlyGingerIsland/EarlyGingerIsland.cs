@@ -47,17 +47,17 @@ namespace Shockah.EarlyGingerIsland
 			harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_checkAction_Transpiler)), priority: Priority.VeryHigh)
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_checkAction_Transpiler)), priority: Priority.VeryLow)
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_answerDialogue_Transpiler)), priority: Priority.VeryHigh)
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_answerDialogue_Transpiler)), priority: Priority.VeryLow)
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_GetTicketPrice_Postfix)), priority: Priority.VeryHigh)
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_GetTicketPrice_Postfix)), priority: Priority.VeryLow)
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
