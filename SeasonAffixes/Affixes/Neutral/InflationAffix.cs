@@ -84,6 +84,16 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
 				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BoatTunnel_answerDialogue_Transpiler)))
 			);
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(GameLocation), "houseUpgradeAccept"),
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(GameLocation_houseUpgradeAccept_Transpiler)))
+			);
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(GameLocation), "communityUpgradeAccept"),
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(GameLocation_communityUpgradeAccept_Transpiler)))
+			);
 		}
 
 		public static int GetModifiedPrice(int originalPrice)
@@ -132,7 +142,6 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
 					.ForEach(
 						SequenceMatcherRelativeBounds.WholeSequence,
 						new IElementMatch<CodeInstruction>[]
@@ -164,7 +173,6 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
 					.ForEach(
 						SequenceMatcherRelativeBounds.WholeSequence,
 						new IElementMatch<CodeInstruction>[]
@@ -196,11 +204,123 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
 					.Find(ILMatches.Call("GetTicketPrice"))
 					.Insert(
 						SequenceMatcherPastBoundsDirection.After, true,
 						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+					)
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
+		}
+
+		private static IEnumerable<CodeInstruction> GameLocation_houseUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.LdcI4(10000)
+						},
+						matcher =>
+						{
+							return matcher
+								.Insert(
+									SequenceMatcherPastBoundsDirection.After, true,
+									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								);
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
+					)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.LdcI4(50000)
+						},
+						matcher =>
+						{
+							return matcher
+								.Insert(
+									SequenceMatcherPastBoundsDirection.After, true,
+									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								);
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
+					)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.LdcI4(100000)
+						},
+						matcher =>
+						{
+							return matcher
+								.Insert(
+									SequenceMatcherPastBoundsDirection.After, true,
+									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								);
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
+					)
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
+		}
+
+		private static IEnumerable<CodeInstruction> GameLocation_communityUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.LdcI4(500000)
+						},
+						matcher =>
+						{
+							return matcher
+								.Insert(
+									SequenceMatcherPastBoundsDirection.After, true,
+									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								);
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
+					)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.LdcI4(300000)
+						},
+						matcher =>
+						{
+							return matcher
+								.Insert(
+									SequenceMatcherPastBoundsDirection.After, true,
+									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								);
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
 					)
 					.AllElements();
 			}
