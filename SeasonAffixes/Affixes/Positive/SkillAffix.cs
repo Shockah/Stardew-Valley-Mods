@@ -1,4 +1,6 @@
-﻿using Shockah.Kokoro.GMCM;
+﻿using HarmonyLib;
+using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
@@ -16,6 +18,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly int DefaultLevelIncrease = 3;
 		private static readonly float DefaultVanillaXPIncrease = 0.2f;
 		private static readonly float DefaultCustomXPIncrease = 0.25f;
+		
+		private static bool IsHarmonySetup = false;
 
 		public ISkill Skill { get; init; }
 
@@ -55,8 +59,6 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			get => Mod.Config.SkillXPIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultXPIncrease;
 		}
 
-		private int? LastXP = null;
-
 		public SkillAffix(ISkill skill)
 		{
 			this.Skill = skill;
@@ -75,11 +77,12 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			return Math.Min(2.0 / Mod.AllAffixes.Values.Count(affix => affix is SkillAffix), 1.0);
 		}
 
+		public override void OnRegister()
+			=> Apply(Mod.Harmony);
+
 		public override void OnActivate()
 		{
-			UpdateXP();
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
-			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 
 			if (Skill is VanillaSkill skill)
 				ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
@@ -89,9 +92,6 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (Skill is VanillaSkill skill)
 				ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
-
-			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-			LastXP = null;
 		}
 
 		public override void SetupConfig(IManifest manifest)
@@ -140,9 +140,26 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
 		}
 
-		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+		private void Apply(Harmony harmony)
 		{
-			UpdateXP();
+			if (IsHarmonySetup)
+				return;
+			IsHarmonySetup = true;
+
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(SkillAffix), nameof(Farmer_gainExperience_Prefix)))
+			);
+
+			if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
+			{
+				harmony.TryPatch(
+					monitor: Mod.Monitor,
+					original: () => AccessTools.Method(AccessTools.TypeByName("SpaceCore.Skills, SpaceCore"), "AddExperience"),
+					prefix: new HarmonyMethod(AccessTools.Method(typeof(SkillAffix), nameof(SpaceCore_Skills_AddExperience_Prefix)))
+				);
+			}
 		}
 
 		private static void ModifySkillLevel(Farmer player, VanillaSkill skill, int levels)
@@ -172,24 +189,20 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			}
 		}
 
-		private void UpdateXP()
+		private static void Farmer_gainExperience_Prefix(int which, ref int howMuch)
 		{
-			// TODO: Skill Rings compatibility - i'm assuming right now they will trigger off each other
-
-			int newXP = Skill.GetXP(Game1.player);
-			if (LastXP is null)
-			{
-				LastXP = newXP;
+			SkillAffix affix = null!;
+			if (!Mod.ActiveAffixes.Any(a => a is SkillAffix skillAffix && (affix = skillAffix) != null && skillAffix.Skill is VanillaSkill skill && skill.SkillIndex == which))
 				return;
-			}
+			howMuch = (int)Math.Ceiling(howMuch * (1f + affix.XPIncreaseConfig));
+		}
 
-			int extraXP = newXP - LastXP.Value;
-			if (extraXP > 0)
-			{
-				int bonusXP = (int)Math.Ceiling(extraXP * XPIncreaseConfig);
-				Skill.GrantXP(Game1.player, bonusXP);
-				LastXP += extraXP;
-			}
+		private static void SpaceCore_Skills_AddExperience_Prefix(string skillName, ref int amt)
+		{
+			SkillAffix affix = null!;
+			if (!Mod.ActiveAffixes.Any(a => a is SkillAffix skillAffix && (affix = skillAffix) != null && skillAffix.Skill is SpaceCoreSkill skill && skill.SkillName == skillName))
+				return;
+			amt = (int)Math.Ceiling(amt * (1f + affix.XPIncreaseConfig));
 		}
 	}
 }
