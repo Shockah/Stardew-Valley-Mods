@@ -4,10 +4,10 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Linq;
 using System;
-using SObject = StardewValley.Object;
 using Shockah.CommonModCode.GMCM;
 using StardewModdingAPI;
 using Shockah.Kokoro.GMCM;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -52,10 +52,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void SObject_sellToStorePrice_Postfix(SObject __instance, ref int __result)
 		{
+			if (__result <= 0)
+				return;
 			if (!Mod.ActiveAffixes.Any(a => a is RanchingAffix))
 				return;
-			if (__instance.Category is SObject.EggCategory or SObject.MilkCategory or SObject.meatCategory or SObject.sellAtPierresAndMarnies)
-				__result = (int)Math.Round(__result * Mod.Config.RanchingValue);
+			if (!(__instance.Category is SObject.EggCategory or SObject.MilkCategory or SObject.meatCategory or SObject.sellAtPierresAndMarnies))
+				return;
+			__result = (int)Math.Round(__result * Mod.Config.RanchingValue);
 		}
 	}
 }

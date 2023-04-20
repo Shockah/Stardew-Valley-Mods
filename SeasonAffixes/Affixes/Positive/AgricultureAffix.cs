@@ -52,10 +52,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void SObject_sellToStorePrice_Postfix(SObject __instance, ref int __result)
 		{
+			if (__result <= 0)
+				return;
 			if (!Mod.ActiveAffixes.Any(a => a is AgricultureAffix))
 				return;
-			if (__instance.Category is SObject.FruitsCategory or SObject.VegetableCategory)
-				__result = (int)Math.Round(__result * Mod.Config.AgricultureValue);
+			if (!(__instance.Category is SObject.FruitsCategory or SObject.VegetableCategory))
+				return;
+			__result = (int)Math.Round(__result * Mod.Config.AgricultureValue);
 		}
 	}
 }

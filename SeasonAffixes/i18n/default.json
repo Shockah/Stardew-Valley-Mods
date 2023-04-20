@@ -73,7 +73,9 @@
 
 	// neutral affixes
 	"affix.neutral.Inflation.name": "Inflation",
-	"affix.neutral.Inflation.description": "All prices are increased by 20%.",
+	"affix.neutral.Inflation.description": "All gold prices are increased by {{Increase}}.",
+	"affix.neutral.Inflation.config.increase.name": "Increase",
+	"affix.neutral.Inflation.config.increase.tooltip": "The price increase.",
 	"affix.neutral.Thunder.name": "Thunder",
 	"affix.neutral.Thunder.description": "Storms are {{Chance}} as likely as usual.",
 	"affix.neutral.Thunder.config.chance.name": "Chance",

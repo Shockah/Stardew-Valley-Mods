@@ -25,6 +25,7 @@ namespace Shockah.SeasonAffixes
 		void ActivateAffix(ISeasonAffix affix);
 		void DeactivateAffix(ISeasonAffix affix);
 		void DeactivateAllAffixes();
+		void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes);
 
 		IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes);
 		string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes);

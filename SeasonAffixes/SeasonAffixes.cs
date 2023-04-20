@@ -328,29 +328,7 @@ namespace Shockah.SeasonAffixes
 		private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
 		{
 			var affixes = message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToList();
-			var toDeactivate = SaveData.ActiveAffixes.Where(a => !affixes.Contains(a)).ToList();
-			var toActivate = affixes.Where(a => !SaveData.ActiveAffixes.Contains(a)).ToList();
-
-			foreach (var affix in toDeactivate)
-			{
-				affix.OnDeactivate();
-				SaveData.ActiveAffixes.Remove(affix);
-			}
-			foreach (var affix in toActivate)
-			{
-				SaveData.ActiveAffixes.Add(affix);
-				affix.OnActivate();
-			}
-
-			if (toDeactivate.Count == 0 && toActivate.Count == 0)
-			{
-				Monitor.Log("Received affix update. No changes.", LogLevel.Info);
-				return;
-			}
-
-			var outputToDeactivate = string.Join("\n", toDeactivate.Select(a => $"- {a.UniqueID}"));
-			var outputToActivate = string.Join("\n", toActivate.Select(a => $"+ {a.UniqueID}"));
-			Monitor.Log($"Received affix update. Changed affixes:\n{outputToDeactivate}\n{outputToActivate}", LogLevel.Info);
+			LocalChangeActiveAffixes(affixes);
 		}
 
 		private void SetupConfig()
@@ -445,32 +423,7 @@ namespace Shockah.SeasonAffixes
 					foreach (var affix in affixChoice.Affixes)
 						newAffixes.Add(affix);
 
-					var toDeactivate = SaveData.ActiveAffixes.Where(a => !newAffixes.Contains(a)).ToList();
-					var toActivate = newAffixes.Where(a => !SaveData.ActiveAffixes.Contains(a)).ToList();
-
-					foreach (var affix in toDeactivate)
-					{
-						affix.OnDeactivate();
-						SaveData.ActiveAffixes.Remove(affix);
-					}
-					foreach (var affix in toActivate)
-					{
-						SaveData.ActiveAffixes.Add(affix);
-						affix.OnActivate();
-					}
-
-					if (toDeactivate.Count == 0 && toActivate.Count == 0)
-					{
-						Monitor.Log("Updating affixes. No changes.", LogLevel.Info);
-					}
-					else
-					{
-						var outputToDeactivate = string.Join("\n", toDeactivate.Select(a => $"- {a.UniqueID}"));
-						var outputToActivate = string.Join("\n", toActivate.Select(a => $"+ {a.UniqueID}"));
-						Monitor.Log($"Updating affixes. Changed affixes:\n{outputToDeactivate}\n{outputToActivate}", LogLevel.Info);
-					}
-
-					SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(SaveData.ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+					ChangeActiveAffixes(newAffixes);
 					SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(SaveData.ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 
 					if (Game1.activeClickableMenu is AffixChoiceMenu menu)
@@ -490,7 +443,37 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
-        private static void Game1_showEndOfNightStuff_Prefix()
+		private void LocalActivateAffix(ISeasonAffix affix)
+		{
+			if (SaveData.ActiveAffixes.Contains(affix))
+				return;
+			SaveData.ActiveAffixes.Add(affix);
+			affix.OnActivate();
+			Monitor.Log($"Activated affix `{affix.UniqueID}`.", LogLevel.Info);
+		}
+
+		private void LocalDeactivateAffix(ISeasonAffix affix)
+		{
+			if (!SaveData.ActiveAffixes.Contains(affix))
+				return;
+			affix.OnDeactivate();
+			SaveData.ActiveAffixes.Remove(affix);
+			Monitor.Log($"Deactivated affix `{affix.UniqueID}`.", LogLevel.Info);
+		}
+
+		private void LocalChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes)
+		{
+			var affixSet = affixes.ToHashSet();
+			var toDeactivate = SaveData.ActiveAffixes.Where(a => !affixSet.Contains(a)).ToList();
+			var toActivate = affixSet.Where(a => !SaveData.ActiveAffixes.Contains(a)).ToList();
+
+			foreach (var affix in toDeactivate)
+				LocalDeactivateAffix(affix);
+			foreach (var affix in toActivate)
+				LocalActivateAffix(affix);
+		}
+
+		private static void Game1_showEndOfNightStuff_Prefix()
 		{
 			if (!Instance.IsAffixChoiceMenuQueued)
 				return;
@@ -606,9 +589,7 @@ namespace Shockah.SeasonAffixes
 		{
 			if (SaveData.ActiveAffixes.Contains(affix))
 				return;
-			SaveData.ActiveAffixes.Add(affix);
-			affix.OnActivate();
-			Monitor.Log($"Activated affix `{affix.UniqueID}`.", LogLevel.Info);
+			LocalActivateAffix(affix);
             SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
@@ -616,22 +597,24 @@ namespace Shockah.SeasonAffixes
 		{
 			if (!SaveData.ActiveAffixes.Contains(affix))
 				return;
-			affix.OnDeactivate();
-            SaveData.ActiveAffixes.Remove(affix);
-			Monitor.Log($"Deactivated affix `{affix.UniqueID}`.", LogLevel.Info);
+			LocalDeactivateAffix(affix);
 			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
 		public void DeactivateAllAffixes()
 		{
-			foreach (var affix in SaveData.ActiveAffixes)
-				affix.OnDeactivate();
-			SaveData.ActiveAffixes.Clear();
-			Monitor.Log("Deactivated all affixes.", LogLevel.Info);
+			foreach (var affix in SaveData.ActiveAffixes.ToList())
+				LocalDeactivateAffix(affix);
 			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 		}
 
-        public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
+		public void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes)
+		{
+			LocalChangeActiveAffixes(affixes);
+			SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+		}
+
+		public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 		{
 			var affixesLeft = affixes.ToList();
 			foreach (var combination in AffixCombinationsStorage)
