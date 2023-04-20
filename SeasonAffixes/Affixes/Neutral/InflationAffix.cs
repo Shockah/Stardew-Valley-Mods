@@ -24,7 +24,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static string ShortID => "Inflation";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Value = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
+		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
 		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
 		public override int GetPositivity(OrdinalSeason season)
