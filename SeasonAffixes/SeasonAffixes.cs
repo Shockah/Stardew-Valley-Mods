@@ -151,6 +151,11 @@ namespace Shockah.SeasonAffixes
 			BillboardPatches.Apply(Harmony);
 		}
 
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// no migration required, for now
+		}
+
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
 			// positive affixes
