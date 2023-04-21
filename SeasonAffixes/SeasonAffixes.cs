@@ -25,6 +25,7 @@ namespace Shockah.SeasonAffixes
 		public static SeasonAffixes Instance { get; private set; } = null!;
 		private bool IsConfigRegistered { get; set; } = false;
 		internal Harmony Harmony { get; private set; } = null!;
+		private ModConfig.AffixSetEntry NewAffixSetEntry = new();
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
@@ -346,6 +347,15 @@ namespace Shockah.SeasonAffixes
 				reset: () => Config = new(),
 				save: () =>
 				{
+					Config.AffixSetEntries = Config.AffixSetEntries
+						.Where(entry => entry.IsValid())
+						.ToList();
+					if (NewAffixSetEntry.IsValid())
+					{
+						Config.AffixSetEntries.Add(NewAffixSetEntry);
+						NewAffixSetEntry = new();
+					}
+
 					foreach (var affix in AllAffixesStorage.Values)
 						affix.OnSaveConfig();
 					WriteConfig();
@@ -358,6 +368,44 @@ namespace Shockah.SeasonAffixes
 			helper.AddNumberOption("config.choices", () => Config.Choices, min: 1, max: 4, interval: 1);
 			helper.AddNumberOption("config.affixRepeatPeriod", () => Config.AffixRepeatPeriod, min: 0);
 			helper.AddNumberOption("config.affixSetRepeatPeriod", () => Config.AffixSetRepeatPeriod, min: 0);
+
+			void RegisterAffixSetEntrySection(int? index)
+			{
+				ModConfig.AffixSetEntry GetEntry()
+					=> index is null ? NewAffixSetEntry : Config.AffixSetEntries[index.Value];
+
+				void SetEntry(ModConfig.AffixSetEntry value)
+				{
+					if (index is null)
+						NewAffixSetEntry = value;
+					else
+						Config.AffixSetEntries[index.Value] = value;
+				}
+
+				helper.AddSectionTitle("config.affixSetEntries.section", new { Number = index is null ? Config.AffixSetEntries.Count + 1 : index.Value + 1 });
+				helper.AddNumberOption(
+					keyPrefix: "config.affixSetEntries.positive",
+					getValue: () => GetEntry().Positive,
+					setValue: value => SetEntry(new(value, GetEntry().Negative, GetEntry().Weight)),
+					min: 0, max: 5, interval: 1
+				);
+				helper.AddNumberOption(
+					keyPrefix: "config.affixSetEntries.negative",
+					getValue: () => GetEntry().Negative,
+					setValue: value => SetEntry(new(GetEntry().Positive, value, GetEntry().Weight)),
+					min: 0, max: 5, interval: 1
+				);
+				helper.AddNumberOption(
+					keyPrefix: "config.affixSetEntries.weight",
+					getValue: () => (float)GetEntry().Weight,
+					setValue: value => SetEntry(new(GetEntry().Positive, GetEntry().Negative, value)),
+					min: 0f, max: 10f, interval: 0.1f
+				);
+			}
+
+			for (int i = 0; i < Config.AffixSetEntries.Count; i++)
+				RegisterAffixSetEntrySection(i);
+			RegisterAffixSetEntrySection(null);
 
 			foreach (var affix in AllAffixesStorage.Values.OrderBy(a => a.LocalizedName).ThenBy(a => a.UniqueID))
 			{

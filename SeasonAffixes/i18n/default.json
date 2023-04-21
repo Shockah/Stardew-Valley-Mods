@@ -99,5 +99,13 @@
 	"config.affixSetRepeatPeriod.name": "Affix set repeat period",
 	"config.affixSetRepeatPeriod.tooltip": "How many seasons before a set of affixes can repeat, if possible.",
 	"config.affix.weight.name": "Weight",
-	"config.affix.weight.tooltip": "The \"weight\" of the affix. An affix with a weight of 2 will be twice as likely to be chosen as an affix with a weight of 1."
+	"config.affix.weight.tooltip": "The \"weight\" of the affix. An affix with a weight of 2 will be twice as likely to be chosen as an affix with a weight of 1.",
+	"config.affixSetEntries.section.name": "Affix set entry #{{Number}}",
+	"config.affixSetEntries.section.tooltip": "An entry describing a possible affix choice.",
+	"config.affixSetEntries.positive.name": "Positivity",
+	"config.affixSetEntries.positive.tooltip": "How positive the affix choice should be.\nNeutral affixes count as +1 Positivity, +1 Negativity.",
+	"config.affixSetEntries.negative.name": "Negativity",
+	"config.affixSetEntries.negative.tooltip": "How negative the affix choice should be.\nNeutral affixes count as +1 Positivity, +1 Negativity.",
+	"config.affixSetEntries.weight.name": "Weight",
+	"config.affixSetEntries.weight.tooltip": "The \"weight\" of the affix set entry. An entry with a weight of 2 will be twice as likely to be chosen as an entry with a weight of 1."
 }
