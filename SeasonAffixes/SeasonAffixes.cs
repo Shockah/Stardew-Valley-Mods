@@ -537,8 +537,8 @@ namespace Shockah.SeasonAffixes
 
 			if (Context.IsMainPlayer)
 			{
-                var tomorrow = Game1.Date.GetByAddingDays(1);
-                OrdinalSeason season = new(tomorrow.Year, tomorrow.GetSeason());
+				var date = Game1.Date; // it's already "tomorrow" by now
+                OrdinalSeason season = new(date.Year, date.GetSeason());
 
                 int seed = 0;
 				seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
@@ -576,7 +576,7 @@ namespace Shockah.SeasonAffixes
 				while (Instance.SaveData.AffixSetChoiceHistory.Count > Instance.Config.AffixSetRepeatPeriod)
 					Instance.SaveData.AffixSetChoiceHistory.RemoveAt(0);
 
-				Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, 0);
+				Instance.AffixChoiceMenuConfig = new(new(date.Year, date.GetSeason()), Instance.Config.Incremental, choices, 0);
                 Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 					season,
 					Instance.Config.Incremental,
