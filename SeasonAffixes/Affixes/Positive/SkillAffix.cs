@@ -191,16 +191,16 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void Farmer_gainExperience_Prefix(int which, ref int howMuch)
 		{
-			SkillAffix affix = null!;
-			if (!Mod.ActiveAffixes.Any(a => a is SkillAffix skillAffix && (affix = skillAffix) != null && skillAffix.Skill is VanillaSkill skill && skill.SkillIndex == which))
+			var affix = Mod.ActiveAffixes.OfType<SkillAffix>().FirstOrDefault(affix => affix.Skill is VanillaSkill skill && skill.SkillIndex == which);
+			if (affix is null)
 				return;
 			howMuch = (int)Math.Ceiling(howMuch * (1f + affix.XPIncreaseConfig));
 		}
 
 		private static void SpaceCore_Skills_AddExperience_Prefix(string skillName, ref int amt)
 		{
-			SkillAffix affix = null!;
-			if (!Mod.ActiveAffixes.Any(a => a is SkillAffix skillAffix && (affix = skillAffix) != null && skillAffix.Skill is SpaceCoreSkill skill && skill.SkillName == skillName))
+			var affix = Mod.ActiveAffixes.OfType<SkillAffix>().FirstOrDefault(affix => affix.Skill is SpaceCoreSkill skill && skill.SkillName == skillName);
+			if (affix is null)
 				return;
 			amt = (int)Math.Ceiling(amt * (1f + affix.XPIncreaseConfig));
 		}
