@@ -62,35 +62,31 @@ namespace Shockah.Kokoro.Stardew
 				return;
 
 			foreach (var (location, machine) in QueuedMachineUpdates.Value)
-				UpdateMachine(location, machine);
+				UpsertMachine(location, machine);
 			QueuedMachineUpdates.Value.Clear();
 		}
 
 		private static void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
 		{
 			foreach (var @object in e.Removed)
+			{
 				if (MachineProcessingStateCache.Value.TryGetValue(@object.Value, out var oldState))
+				{
 					MachineChangedEvent?.Invoke(e.Location, @object.Value, oldState, null);
+					MachineProcessingStateCache.Value.Remove(@object.Value);
+				}
+			}
 			foreach (var @object in e.Added)
 				StartTrackingMachine(e.Location, @object.Value);
-		}
-
-		private static void UpdateMachine(GameLocation location, SObject machine)
-		{
-			if (!IsMachine(machine))
-				return;
-			UpsertMachine(location, machine);
 		}
 
 		[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
 		private static void StartTrackingMachine(GameLocation location, SObject machine)
 		{
-			if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
-				return;
 			if (!IsMachine(machine))
 				return;
 
-			UpdateMachine(location, machine);
+			UpsertMachine(location, machine);
 			foreach (var refToRemove in TrackedMachines.Value.Where(r => !r.TryGetTarget(out _)).ToList())
 				TrackedMachines.Value.Remove(refToRemove);
 			if (TrackedMachines.Value.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
@@ -139,6 +135,7 @@ namespace Shockah.Kokoro.Stardew
 			{
 				MachineChangedEvent?.Invoke(location, machine, null, newState);
 			}
+			MachineProcessingStateCache.Value.AddOrUpdate(machine, newState);
 		}
 
 		private static bool IsMachine(SObject @object)
