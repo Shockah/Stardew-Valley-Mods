@@ -14,6 +14,7 @@ using Nanoray.Shrike;
 using StardewValley.Locations;
 using System.Reflection.Emit;
 using System.Reflection;
+using StardewModdingAPI.Events;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
@@ -37,11 +38,39 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);
 
+		public override void OnActivate()
+		{
+			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
+			Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
+		}
+
+		public override void OnDeactivate()
+		{
+			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
+			Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
+		}
+
 		public override void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
 			helper.AddNumberOption($"affix.neutral.{ShortID}.config.increase", () => Mod.Config.InflationIncrease, min: 0.05f, max: 4f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+		}
+
+		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+		{
+			if (!e.Name.IsEquivalentTo("Strings\\Locations"))
+				return;
+			e.Edit(rawAsset =>
+			{
+				var asset = rawAsset.AsDictionary<string, string>();
+				asset.Data["BusStop_BuyTicketToDesert"] = asset.Data["BusStop_BuyTicketToDesert"].Replace("500", $"{GetModifiedPrice(500)}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"].Replace("10,000", $"{GetModifiedPrice(10000):#,##0}").Replace("10.000", $"{GetModifiedPrice(10000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"].Replace("50,000", $"{GetModifiedPrice(50000):#,##0}").Replace("50.000", $"{GetModifiedPrice(50000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"].Replace("100,000", $"{GetModifiedPrice(100000):#,##0}").Replace("100.000", $"{GetModifiedPrice(100000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"].Replace("500,000", $"{GetModifiedPrice(500000):#,##0}").Replace("500.000", $"{GetModifiedPrice(500000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"].Replace("300,000", $"{GetModifiedPrice(300000):#,##0}").Replace("300.000", $"{GetModifiedPrice(300000):#.##0}");
+			});
 		}
 
 		private void Apply(Harmony harmony)
@@ -159,7 +188,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
 				return;
-			ModifyPrice(ref __instance.GoldRequired);
+			ModifyPrice(ref __instance.moneyRequired);
 		}
 
 		private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions)
