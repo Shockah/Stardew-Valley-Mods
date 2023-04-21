@@ -79,6 +79,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			{
 				int newFriendship = Game1.player.getFriendshipLevelForNPC(npcName);
 				int extraFriendship = newFriendship - oldFriendship;
+				OldFriendship[npcName] += extraFriendship;
 				if (extraFriendship > 0)
 				{
 					int bonusFriendship = (int)Math.Round(-extraFriendship + extraFriendship * Mod.Config.LoveValue);
