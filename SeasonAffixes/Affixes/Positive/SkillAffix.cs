@@ -26,7 +26,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static string ShortID => "Skill";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}:{Skill.UniqueID}";
 		public override string LocalizedName => Skill.Name;
-		public override TextureRectangle Icon => Skill.Icon!; // TODO: placeholder icon
+		public override TextureRectangle Icon => Skill.Icon ?? new(Game1.objectSpriteSheet, new(0, 64, 16, 16));
 
 		public override string LocalizedDescription
 		{
