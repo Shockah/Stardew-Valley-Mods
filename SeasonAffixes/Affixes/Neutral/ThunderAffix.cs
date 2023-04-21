@@ -30,7 +30,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			=> 1;
 
 		public override int GetNegativity(OrdinalSeason season)
-			=> 1;
+			=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch
