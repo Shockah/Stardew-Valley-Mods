@@ -25,7 +25,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			=> 1;
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
-			=> season.Season == Season.Winter ? 0 : 1;
+		{
+			bool greenhouseUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));
+			bool gingerIslandUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("willyBackRoomInvitation"));
+			bool isWinter = season.Season == Season.Winter;
+			return isWinter && !greenhouseUnlocked && !gingerIslandUnlocked ? 0 : 1;
+		}
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);
