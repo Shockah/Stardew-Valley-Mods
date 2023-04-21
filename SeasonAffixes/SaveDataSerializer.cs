@@ -16,11 +16,11 @@ namespace Shockah.SeasonAffixes
 	{
 		public SerializedSaveData Serialize(SaveData data)
 		{
-			return new(
-				data.ActiveAffixes.Select(a => a.UniqueID).ToList(),
-				data.AffixChoiceHistory.Select(step => step.Select(a => a.UniqueID).ToList()).ToList(),
-				data.AffixSetChoiceHistory.Select(step => step.Select(set => set.Select(a => a.UniqueID).ToList()).ToList()).ToList()
-			);
+			SerializedSaveData result = new(SeasonAffixes.Instance.ModManifest.Version);
+			result.ActiveAffixes.AddRange(data.ActiveAffixes.Select(a => a.UniqueID));
+			result.AffixChoiceHistory.AddRange(data.AffixChoiceHistory.Select(step => step.Select(a => a.UniqueID).ToList()));
+			result.AffixSetChoiceHistory.AddRange(data.AffixSetChoiceHistory.Select(step => step.Select(set => set.Select(a => a.UniqueID).ToList()).ToList()));
+			return result;
 		}
 
 		public SaveData Deserialize(SerializedSaveData data)

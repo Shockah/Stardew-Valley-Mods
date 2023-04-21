@@ -1,12 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using StardewModdingAPI;
+using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes
 {
-	internal record SerializedSaveData(
-		IReadOnlyList<string> ActiveAffixes,
-		IReadOnlyList<IReadOnlyList<string>> AffixChoiceHistory,
-		IReadOnlyList<IReadOnlyList<IReadOnlyList<string>>> AffixSetChoiceHistory
-	);
+	internal sealed class SerializedSaveData
+	{
+		public ISemanticVersion Version { get; set; }
+		public List<string> ActiveAffixes { get; set; } = new();
+		public List<List<string>> AffixChoiceHistory { get; set; } = new();
+		public List<List<List<string>>> AffixSetChoiceHistory { get; set; } = new();
+
+		public SerializedSaveData(ISemanticVersion version)
+		{
+			this.Version = version;
+		}
+	}
 
 	internal sealed class SaveData
 	{
