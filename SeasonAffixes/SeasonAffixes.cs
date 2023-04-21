@@ -513,12 +513,17 @@ namespace Shockah.SeasonAffixes
 					.AvoidingSetChoiceHistoryDuplicates()
 					//.AsLittleAsPossible()
 					.AvoidingDuplicatesBetweenChoices();
-
 				var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
-				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
-				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
 
-                Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, 0);
+				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
+				while (Instance.SaveData.AffixChoiceHistory.Count > Instance.Config.AffixRepeatPeriod)
+					Instance.SaveData.AffixChoiceHistory.RemoveAt(0);
+
+				Instance.SaveData.AffixSetChoiceHistory.Add(choices.Select(set => (ISet<ISeasonAffix>)set.ToHashSet()).ToHashSet());
+				while (Instance.SaveData.AffixSetChoiceHistory.Count > Instance.Config.AffixSetRepeatPeriod)
+					Instance.SaveData.AffixSetChoiceHistory.RemoveAt(0);
+
+				Instance.AffixChoiceMenuConfig = new(new(tomorrow.Year, tomorrow.GetSeason()), Instance.Config.Incremental, choices, 0);
                 Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 					season,
 					Instance.Config.Incremental,
