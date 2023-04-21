@@ -195,7 +195,11 @@ namespace Shockah.SeasonAffixes
 		{
 			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
 			foreach (var choice in AffixSetGenerator.Generate(season))
-				weightedRandom.Add(new(choice.Average(a => a.GetProbabilityWeight(season) * WeightProvider(a)), choice));
+			{
+				var weight = choice.Average(a => a.GetProbabilityWeight(season) * WeightProvider(a));
+				if (weight > 0)
+					weightedRandom.Add(new(weight, choice));
+			}
 			while (weightedRandom.Items.Count != 0)
 				yield return weightedRandom.Next(Random, consume: true);
 		}

@@ -13,6 +13,7 @@ using Nanoray.Shrike.Harmony;
 using Nanoray.Shrike;
 using StardewValley.Locations;
 using System.Reflection.Emit;
+using System.Reflection;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
@@ -94,6 +95,29 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				original: () => AccessTools.Method(typeof(GameLocation), "communityUpgradeAccept"),
 				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(GameLocation_communityUpgradeAccept_Transpiler)))
 			);
+
+			if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.JsonAssets"))
+			{
+				harmony.TryPatch(
+					monitor: Mod.Monitor,
+					original: () => AccessTools.Method(AccessTools.TypeByName("JsonAssets.Mod, JsonAssets"), "OnMenuChanged"),
+					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(JsonAssets_Mod_OnMenuChanged_Transpiler)))
+				);
+			}
+
+			if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.DynamicGameAssets"))
+			{
+				harmony.TryPatch(
+					monitor: Mod.Monitor,
+					original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShop"),
+					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+				);
+				harmony.TryPatch(
+					monitor: Mod.Monitor,
+					original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShopStock"),
+					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+				);
+			}
 		}
 
 		public static int GetModifiedPrice(int originalPrice)
@@ -127,7 +151,8 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
 				return;
 			foreach (var kvp in __instance.itemPriceAndStock)
-				ModifyPrice(ref kvp.Value[0]);
+				if (kvp.Value.Length == 2)
+					ModifyPrice(ref kvp.Value[0]);
 		}
 
 		private static void BluePrint_ctor_Postfix(BluePrint __instance)
@@ -329,6 +354,57 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
+		}
+
+		private static IEnumerable<CodeInstruction> JsonAssets_Mod_OnMenuChanged_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.Find(ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) })))
+					.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))))
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
+		}
+
+		private static IEnumerable<CodeInstruction> DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.ForEach(
+						SequenceMatcherRelativeBounds.WholeSequence,
+						new IElementMatch<CodeInstruction>[]
+						{
+							ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) }))
+						},
+						matcher =>
+						{
+							return matcher
+								.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))));
+						},
+						minExpectedOccurences: 3,
+						maxExpectedOccurences: 3
+					)
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
+		}
+
+		public static void JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues(Dictionary<ISalable, int[]> stock, ISalable item, int[] values)
+		{
+			if (Mod.ActiveAffixes.Any(a => a is InflationAffix) && values.Length == 2)
+				ModifyPrice(ref values[0]);
+			stock.Add(item, values);
 		}
 	}
 }
