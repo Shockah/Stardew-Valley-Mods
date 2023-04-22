@@ -1,16 +1,19 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Shockah.Kokoro;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Linq;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
 	internal sealed class HurricaneAffix : BaseSeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
+		private static readonly WeakCounter<GameLocation> DayUpdateCallCounter = new();
 
 		private static string ShortID => "Hurricane";
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
@@ -45,17 +48,26 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 				return;
 			IsHarmonySetup = true;
 
-			if (!Mod.Helper.ModRegistry.IsLoaded("Esca.FarmTypeManager"))
-				return;
-
-			Type ftmModEntryType = AccessTools.TypeByName("FarmTypeManager.ModEntry, FarmTypeManager");
-			Type ftmGenerationType = AccessTools.Inner(ftmModEntryType, "Generation");
-
+			harmony.TryPatchVirtual(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.DayUpdate)),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_DayUpdate_Prefix)), priority: Priority.First),
+				finalizer: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_DayUpdate_Finalizer)), priority: Priority.Last)
+			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
-				original: () => AccessTools.Method(ftmGenerationType, "ForageGeneration"),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
+				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.dropObject), new Type[] { typeof(SObject), typeof(Vector2), typeof(xTile.Dimensions.Rectangle), typeof(bool), typeof(Farmer) }),
+				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_dropObject_Prefix)))
 			);
+
+			if (Mod.Helper.ModRegistry.IsLoaded("Esca.FarmTypeManager"))
+			{
+				harmony.TryPatch(
+					monitor: Mod.Monitor,
+					original: () => AccessTools.Method(AccessTools.Inner(AccessTools.TypeByName("FarmTypeManager.ModEntry, FarmTypeManager"), "Generation"), "ForageGeneration"),
+					prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
+				);
+			}
 		}
 
 		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
@@ -73,6 +85,23 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 					data.Data[kvp.Key] = string.Join("/", split);
 				}
 			}, priority: AssetEditPriority.Late);
+		}
+
+		private static void GameLocation_DayUpdate_Prefix(GameLocation __instance)
+			=> DayUpdateCallCounter.Push(__instance);
+
+		private static void GameLocation_DayUpdate_Finalizer(GameLocation __instance)
+			=> DayUpdateCallCounter.Pop(__instance);
+
+		private static bool GameLocation_dropObject_Prefix(GameLocation __instance, SObject obj, bool initialPlacement)
+		{
+			if (!initialPlacement)
+				return true;
+			if (!(obj.Category is SObject.FruitsCategory or SObject.VegetableCategory or SObject.GreensCategory or SObject.sellAtFishShopCategory or SObject.FishCategory))
+				return true;
+			if (DayUpdateCallCounter.Get(__instance) == 0)
+				return true;
+			return false;
 		}
 
 		private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
