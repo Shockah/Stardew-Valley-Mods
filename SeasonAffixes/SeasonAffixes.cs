@@ -162,7 +162,7 @@ namespace Shockah.SeasonAffixes
 				new AgricultureAffix(),
 				new DescentAffix(),
 				new FairyTalesAffix(),
-				new FortuneAffix(),
+				//new FortuneAffix(),
 				new InnovationAffix(),
 				new LootAffix(),
 				new LoveAffix(),

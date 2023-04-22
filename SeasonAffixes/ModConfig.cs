@@ -30,7 +30,7 @@ namespace Shockah.SeasonAffixes
 
 		[JsonProperty] public float AgricultureValue { get; internal set; } = 2f;
 		[JsonProperty] public float FairyTalesChance { get; internal set; } = 0.15f;
-		[JsonProperty] public float FortuneValue { get; internal set; } = 0.05f;
+		[JsonIgnore] public float FortuneValue { get; internal set; } = 0.05f;
 		[JsonProperty] public float InflationIncrease { get; internal set; } = 0.2f;
 		[JsonProperty] public float InnovationDecrease { get; internal set; } = 0.25f;
 		[JsonProperty] public float LoveValue { get; internal set; } = 2f;
