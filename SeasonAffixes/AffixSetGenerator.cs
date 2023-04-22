@@ -13,17 +13,14 @@ namespace Shockah.SeasonAffixes
 
 	internal static class IAffixSetGeneratorExt
 	{
-		public static IAffixSetGenerator NonConflicting(this IAffixSetGenerator affixSetGenerator, List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> affixConflictProviders)
-			=> new NonConflictingAffixSetGenerator(affixSetGenerator, affixConflictProviders);
-
 		public static IAffixSetGenerator NonConflictingWithCombinations(this IAffixSetGenerator affixSetGenerator)
 			=> new NonConflictingWithCombinationsAffixSetGenerator(affixSetGenerator);
 
 		public static IAffixSetGenerator Decombined(this IAffixSetGenerator affixSetGenerator)
 			=> new DecombinedAffixSetGenerator(affixSetGenerator);
 
-		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider)
-			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider);
+		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider, Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> combinationWeightProvider)
+			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider, combinationWeightProvider);
 
 		public static IAffixSetGenerator MaxAffixes(this IAffixSetGenerator affixSetGenerator, int max)
 			=> new MaxAffixesAffixSetGenerator(affixSetGenerator, max);
@@ -85,24 +82,6 @@ namespace Shockah.SeasonAffixes
 				yield return result;
 			foreach (var result in GetAllCombinations(affixPositivity, affixNegativity, newRemainingAffixes, new HashSet<string>(current) { affixID }, currentPositivity + affixPositivity[affixID], currentNegativity + affixNegativity[affixID]))
 				yield return result;
-		}
-	}
-
-	internal sealed class NonConflictingAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> AffixConflictProviders { get; init; }
-
-		public NonConflictingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool>> affixConflictProviders)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-			this.AffixConflictProviders = affixConflictProviders;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			var test = AffixSetGenerator.Generate(season).ToList();
-			return test.Where(c => !AffixConflictProviders.Any(provider => provider(c, season)));
 		}
 	}
 
@@ -183,12 +162,14 @@ namespace Shockah.SeasonAffixes
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
 		private Random Random { get; init; }
 		private Func<ISeasonAffix, double> WeightProvider { get; init; }
+		private Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> CombinationWeightProvider { get; init; }
 
-		public WeightedRandomAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider)
+		public WeightedRandomAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider, Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> combinationWeightProvider)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
 			this.Random = random;
 			this.WeightProvider = weightProvider;
+			this.CombinationWeightProvider = combinationWeightProvider;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
@@ -196,7 +177,7 @@ namespace Shockah.SeasonAffixes
 			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
 			foreach (var choice in AffixSetGenerator.Generate(season))
 			{
-				var weight = choice.Average(a => a.GetProbabilityWeight(season) * WeightProvider(a));
+				var weight = choice.Average(a => a.GetProbabilityWeight(season) * WeightProvider(a)) * CombinationWeightProvider(choice, season);
 				if (weight > 0)
 					weightedRandom.Add(new(weight, choice));
 			}

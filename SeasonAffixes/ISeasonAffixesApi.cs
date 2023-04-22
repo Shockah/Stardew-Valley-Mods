@@ -19,8 +19,8 @@ namespace Shockah.SeasonAffixes
 		void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null);
 		void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null, Func<OrdinalSeason, double>? probabilityWeightProvider = null);
 		void UnregisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes);
-		void RegisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> provider);
-		void UnregisterAffixConflictProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool> provider);
+		void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
+		void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 
 		void ActivateAffix(ISeasonAffix affix);
 		void DeactivateAffix(ISeasonAffix affix);
