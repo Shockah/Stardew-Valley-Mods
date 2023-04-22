@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using Shockah.Kokoro;
 using Shockah.Kokoro.UI;
-using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 using System.Linq;
@@ -32,13 +31,11 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		public override void OnActivate()
 		{
-			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
 		}
 
 		public override void OnDeactivate()
 		{
-			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
 		}
 
@@ -68,23 +65,6 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 					prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
 				);
 			}
-		}
-
-		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
-		{
-			if (!e.Name.IsEquivalentTo("Data\\Locations"))
-				return;
-			e.Edit(asset =>
-			{
-				var data = asset.AsDictionary<string, string>();
-				foreach (var kvp in data.Data)
-				{
-					string[] split = kvp.Value.Split('/');
-					for (int i = 0; i < 4; i++)
-						split[i] = "-1";
-					data.Data[kvp.Key] = string.Join("/", split);
-				}
-			}, priority: AssetEditPriority.Late);
 		}
 
 		private static void GameLocation_DayUpdate_Prefix(GameLocation __instance)

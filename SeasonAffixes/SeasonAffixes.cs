@@ -167,6 +167,7 @@ namespace Shockah.SeasonAffixes
 				new FairyTalesAffix(),
 				new FortuneAffix(),
 				new InnovationAffix(),
+				new LootAffix(),
 				new LoveAffix(),
 				new MudAffix(),
 				new RanchingAffix(),
@@ -621,13 +622,13 @@ namespace Shockah.SeasonAffixes
 				SetupConfig();
 		}
 
-		public void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon)
-			=> RegisterAffixCombination(affixes, localizedName, localizedDescription, icon, _ => 0);
+		public void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null)
+			=> RegisterAffixCombination(affixes, icon, localizedName, localizedDescription, _ => 0);
 
-		public void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
+		public void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
 		{
 			UnregisterAffixCombination(affixes);
-			AffixCombinationsStorage.Add(new(affixes, localizedName, localizedDescription, icon, probabilityWeightProvider));
+			AffixCombinationsStorage.Add(new(affixes, icon, localizedName, localizedDescription, probabilityWeightProvider));
 		}
 
 		public void UnregisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes)

@@ -13,17 +13,17 @@ namespace Shockah.SeasonAffixes.Affixes
 		public override TextureRectangle Icon => IconProvider();
 
 		internal readonly IReadOnlySet<ISeasonAffix> Affixes;
+		private readonly Func<TextureRectangle> IconProvider;
 		private readonly Func<string> LocalizedNameProvider;
 		private readonly Func<string> LocalizedDescriptionProvider;
-		private readonly Func<TextureRectangle> IconProvider;
 		private readonly Func<OrdinalSeason, double> ProbabilityWeightProvider;
 
-		public CombinedAffix(IReadOnlySet<ISeasonAffix> affixes, Func<string> localizedName, Func<string> localizedDescription, Func<TextureRectangle> icon, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
+		public CombinedAffix(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
 		{
 			this.Affixes = affixes;
-			this.LocalizedNameProvider = localizedName;
-			this.LocalizedDescriptionProvider = localizedDescription;
 			this.IconProvider = icon;
+			this.LocalizedNameProvider = localizedName;
+			this.LocalizedDescriptionProvider = localizedDescription ?? (() => string.Join(" ", affixes.Select(a => a.LocalizedDescription)));
 			this.ProbabilityWeightProvider = probabilityWeightProvider ?? (_ => 1);
 		}
 
