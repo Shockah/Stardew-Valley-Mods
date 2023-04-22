@@ -13,8 +13,6 @@ using Shockah.SeasonAffixes.Affixes.Neutral;
 using System.Text;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
-using Shockah.Kokoro.UI;
-using Shockah.SeasonAffixes.Affixes;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 
@@ -29,7 +27,6 @@ namespace Shockah.SeasonAffixes
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
-		private List<CombinedAffix> AffixCombinationsStorage { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>> AffixCombinationWeightProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
@@ -552,10 +549,8 @@ namespace Shockah.SeasonAffixes
 					affixSetEntries.Add(new(entry.Weight, entry));
 				var affixSetEntry = affixSetEntries.Next(random);
 
-				var affixesProvider = new CompoundAffixesProvider(
-					new AffixesProvider(Instance.AllAffixesStorage.Values.Where(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0)),
-					new AffixesProvider(Instance.AffixCombinationsStorage.Where(combinedAffix => combinedAffix.Affixes.All(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0)))
-				).ApplicableToSeason(season);
+				var affixesProvider = new AffixesProvider(Instance.AllAffixesStorage.Values.Where(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0))
+					.ApplicableToSeason(season);
 
 				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(4)
@@ -570,7 +565,6 @@ namespace Shockah.SeasonAffixes
 						}
 						return 1.0;
 					})
-					.Decombined()
 					.AvoidingChoiceHistoryDuplicates()
 					.AvoidingSetChoiceHistoryDuplicates()
 					//.AsLittleAsPossible()
@@ -601,7 +595,6 @@ namespace Shockah.SeasonAffixes
 		#region API
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-		public IEnumerable<(ISeasonAffix Combined, IReadOnlySet<ISeasonAffix> Affixes)> AffixCombinations => AffixCombinationsStorage.Select(a => (Combined: (ISeasonAffix)a, Affixes: a.Affixes));
 		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.ToHashSet();
 
 		public ISeasonAffix? GetAffix(string uniqueID)
@@ -628,22 +621,6 @@ namespace Shockah.SeasonAffixes
 
 			if (IsConfigRegistered)
 				SetupConfig();
-		}
-
-		public void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null)
-			=> RegisterAffixCombination(affixes, icon, localizedName, localizedDescription, _ => 0);
-
-		public void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null, Func<OrdinalSeason, double>? probabilityWeightProvider = null)
-		{
-			UnregisterAffixCombination(affixes);
-			AffixCombinationsStorage.Add(new(affixes, icon, localizedName, localizedDescription, probabilityWeightProvider));
-		}
-
-		public void UnregisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes)
-		{
-			int? index = AffixCombinationsStorage.FirstIndex(a => a.Affixes.SetEquals(affixes));
-			if (index is not null)
-				AffixCombinationsStorage.RemoveAt(index.Value);
 		}
 
 		public void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider)
@@ -683,18 +660,7 @@ namespace Shockah.SeasonAffixes
 
 		public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 		{
-			var affixesLeft = affixes.ToList();
-			foreach (var combination in AffixCombinationsStorage)
-			{
-				if (combination.Affixes.All(a => affixesLeft.Contains(a)))
-				{
-					foreach (var affix in combination.Affixes)
-						affixesLeft.Remove(affix);
-					affixesLeft.Add(combination);
-				}
-			}
-
-            return affixesLeft
+			return affixes
 				.OrderByDescending(a => a.GetPositivity(season) - a.GetNegativity(season))
                 .ThenBy(a => a.UniqueID)
                 .ToList();

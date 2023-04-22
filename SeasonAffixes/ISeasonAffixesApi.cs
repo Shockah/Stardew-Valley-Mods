@@ -9,16 +9,12 @@ namespace Shockah.SeasonAffixes
 		ModConfig Config { get; }
 
 		IReadOnlyDictionary<string, ISeasonAffix> AllAffixes { get; }
-		IEnumerable<(ISeasonAffix Combined, IReadOnlySet<ISeasonAffix> Affixes)> AffixCombinations { get; }
 		IReadOnlySet<ISeasonAffix> ActiveAffixes { get; }
 
 		ISeasonAffix? GetAffix(string uniqueID);
 
 		void RegisterAffix(ISeasonAffix affix);
 		void UnregisterAffix(ISeasonAffix affix);
-		void RegisterVisualAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null);
-		void RegisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes, Func<TextureRectangle> icon, Func<string> localizedName, Func<string>? localizedDescription = null, Func<OrdinalSeason, double>? probabilityWeightProvider = null);
-		void UnregisterAffixCombination(IReadOnlySet<ISeasonAffix> affixes);
 		void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 		void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 

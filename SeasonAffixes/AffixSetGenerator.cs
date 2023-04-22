@@ -1,5 +1,4 @@
 ﻿using Shockah.Kokoro;
-using Shockah.SeasonAffixes.Affixes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +14,6 @@ namespace Shockah.SeasonAffixes
 	{
 		public static IAffixSetGenerator NonConflictingWithCombinations(this IAffixSetGenerator affixSetGenerator)
 			=> new NonConflictingWithCombinationsAffixSetGenerator(affixSetGenerator);
-
-		public static IAffixSetGenerator Decombined(this IAffixSetGenerator affixSetGenerator)
-			=> new DecombinedAffixSetGenerator(affixSetGenerator);
 
 		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider, Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> combinationWeightProvider)
 			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider, combinationWeightProvider);
@@ -99,60 +95,13 @@ namespace Shockah.SeasonAffixes
 			return AffixSetGenerator.Generate(season).Where(combination =>
 			{
 				Dictionary<string, int> occurences = new();
-
-				void Record(ISeasonAffix affix)
-				{
-					if (affix is CombinedAffix combinedAffix)
-					{
-						foreach (var childAffix in combinedAffix.Affixes)
-							Record(affix);
-					}
-					else
-					{
-						if (!occurences.ContainsKey(affix.UniqueID))
-							occurences[affix.UniqueID] = 0;
-						occurences[affix.UniqueID]++;
-					}
-				}
-
 				foreach (var affix in combination)
-					Record(affix);
+				{
+					if (!occurences.ContainsKey(affix.UniqueID))
+						occurences[affix.UniqueID] = 0;
+					occurences[affix.UniqueID]++;
+				}
 				return !occurences.Values.Any(count => count > 1);
-			});
-		}
-	}
-
-	internal sealed class DecombinedAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-
-		public DecombinedAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			return AffixSetGenerator.Generate(season).Select(combination =>
-			{
-				HashSet<ISeasonAffix> affixes = new();
-
-				void Record(ISeasonAffix affix)
-				{
-					if (affix is CombinedAffix combinedAffix)
-					{
-						foreach (var childAffix in combinedAffix.Affixes)
-							Record(affix);
-					}
-					else
-					{
-						affixes.Add(affix);
-					}
-				}
-
-				foreach (var affix in combination)
-					Record(affix);
-				return affixes;
 			});
 		}
 	}
