@@ -56,7 +56,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				return;
 			if (!Mod.ActiveAffixes.Any(a => a is RanchingAffix))
 				return;
-			if (!(__instance.Category is SObject.EggCategory or SObject.MilkCategory or SObject.meatCategory or SObject.sellAtPierresAndMarnies))
+			if (!__instance.isAnimalProduct())
 				return;
 			__result = (int)Math.Round(__result * Mod.Config.RanchingValue);
 		}
