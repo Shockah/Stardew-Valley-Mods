@@ -1,8 +1,10 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
@@ -19,6 +21,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Fishing.UniqueID };
 
 		public override void OnActivate()
 		{

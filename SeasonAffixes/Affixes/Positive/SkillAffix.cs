@@ -62,7 +62,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public SkillAffix(ISkill skill)
 		{
 			this.Skill = skill;
-		}
+        }
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { Skill.UniqueID };
 
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;

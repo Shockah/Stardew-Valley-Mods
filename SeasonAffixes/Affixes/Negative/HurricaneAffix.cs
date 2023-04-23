@@ -1,9 +1,11 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SObject = StardewValley.Object;
 
@@ -25,6 +27,9 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Foraging.UniqueID };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

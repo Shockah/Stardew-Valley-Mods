@@ -1,9 +1,11 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.Locations;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -23,6 +25,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Mining.UniqueID, VanillaSkill.Combat.UniqueID };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 		{

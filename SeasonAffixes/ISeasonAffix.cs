@@ -1,5 +1,8 @@
 ﻿using Shockah.Kokoro.UI;
 using StardewModdingAPI;
+using System.Collections.Generic;
+
+#nullable enable
 
 namespace Shockah.SeasonAffixes
 {
@@ -20,6 +23,9 @@ namespace Shockah.SeasonAffixes
 
 		int GetPositivity(OrdinalSeason season);
 		int GetNegativity(OrdinalSeason season);
+
+		IReadOnlySet<string> Tags
+			=> new HashSet<string>();
 
 		double GetProbabilityWeight(OrdinalSeason season)
 			=> 1;
@@ -45,6 +51,9 @@ namespace Shockah.SeasonAffixes
 
 		public abstract int GetNegativity(OrdinalSeason season);
 		public abstract int GetPositivity(OrdinalSeason season);
+
+        public virtual IReadOnlySet<string> Tags
+			=> new HashSet<string>();
 
 		public virtual double GetProbabilityWeight(OrdinalSeason season)
 			=> 1;

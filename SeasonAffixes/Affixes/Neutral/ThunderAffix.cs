@@ -32,6 +32,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public override int GetNegativity(OrdinalSeason season)
 			=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
+
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch
 			{

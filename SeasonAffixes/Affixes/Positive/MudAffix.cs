@@ -4,6 +4,7 @@ using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.Locations;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -23,6 +24,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter || Game1.whichFarm != 6 ? 0 : 1;

@@ -2,10 +2,12 @@
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SObject = StardewValley.Object;
 
@@ -26,6 +28,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.RanchingValue < 1f ? 1 : 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

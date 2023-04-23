@@ -1,8 +1,10 @@
 ﻿using HarmonyLib;
 using Shockah.Kokoro;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -24,6 +26,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Combat.UniqueID };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

@@ -189,14 +189,35 @@ namespace Shockah.SeasonAffixes
 				RegisterAffix(affix);
 
 			// conflicts
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, season) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? 0.0 : null);
 
-			SetupConfig();
+            // pairing up tags
+            RegisterAffixCombinationWeightProvider((affixes, season) =>
+			{
+				var weight = 1.0;
+				var relatedAffixDictionary = affixes.ToDictionary(a => a, a => affixes.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToHashSet());
+				foreach (var (affix, relatedAffixes) in relatedAffixDictionary)
+				{
+					if (relatedAffixes.Count == 1)
+					{
+						if (affix.Tags.Count > 0 && !AllAffixesStorage.Values.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Skip(3).Any())
+							weight *= 0.1;
+					}
+					else
+					{
+						if (relatedAffixes.Sum(a => a.GetPositivity(season)) == 0 || relatedAffixes.Sum(a => a.GetNegativity(season)) == 0)
+							weight *= 0.5;
+					}
+				}
+				return weight;
+			});
+
+            SetupConfig();
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)
@@ -566,13 +587,14 @@ namespace Shockah.SeasonAffixes
 					.NonConflictingWithCombinations()
 					.WeightedRandom(random, a => Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) ? weight : 1.0, (choice, season) =>
 					{
-						foreach (var provider in ((IEnumerable<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>>)Instance.AffixCombinationWeightProviders).Reverse())
+						var totalWeight = 1.0;
+						foreach (var provider in Instance.AffixCombinationWeightProviders)
 						{
 							var weight = provider(choice, season);
 							if (weight is not null)
-								return weight.Value;
+								totalWeight *= weight.Value;
 						}
-						return 1.0;
+						return totalWeight;
 					})
 					.AvoidingChoiceHistoryDuplicates()
 					.AvoidingSetChoiceHistoryDuplicates()

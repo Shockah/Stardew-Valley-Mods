@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using System;
+using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
@@ -23,6 +24,9 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.ResilienceValue > 1 ? 1 : 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.Combat.UniqueID };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
