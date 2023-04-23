@@ -1,16 +1,16 @@
 ﻿using HarmonyLib;
-using Nanoray.Shrike.Harmony;
 using Nanoray.Shrike;
+using Nanoray.Shrike.Harmony;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System;
-using Shockah.CommonModCode.GMCM;
-using Shockah.Kokoro.GMCM;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {

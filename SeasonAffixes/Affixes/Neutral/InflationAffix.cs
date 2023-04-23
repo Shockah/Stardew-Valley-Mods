@@ -1,20 +1,20 @@
 ﻿using HarmonyLib;
+using Nanoray.Shrike;
+using Nanoray.Shrike.Harmony;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
-using StardewValley;
-using System.Linq;
-using System;
-using StardewValley.Menus;
-using System.Collections.Generic;
-using Nanoray.Shrike.Harmony;
-using Nanoray.Shrike;
-using StardewValley.Locations;
-using System.Reflection.Emit;
-using System.Reflection;
 using StardewModdingAPI.Events;
+using StardewValley;
+using StardewValley.Locations;
+using StardewValley.Menus;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral

@@ -1,10 +1,10 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Shockah.Kokoro;
 using Shockah.Kokoro.UI;
 using StardewValley;
-using System.Linq;
 using StardewValley.Locations;
-using Microsoft.Xna.Framework;
+using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {

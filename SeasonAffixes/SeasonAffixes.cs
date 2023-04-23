@@ -1,20 +1,20 @@
 ﻿using HarmonyLib;
-using StardewModdingAPI;
-using StardewValley;
-using System.Collections.Generic;
-using System;
-using StardewValley.Menus;
-using System.Linq;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
-using Shockah.SeasonAffixes.Affixes.Positive;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
-using System.Text;
+using Shockah.SeasonAffixes.Affixes.Positive;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
-using Shockah.CommonModCode.GMCM;
-using Shockah.Kokoro.GMCM;
+using StardewValley;
+using StardewValley.Menus;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace Shockah.SeasonAffixes
 {

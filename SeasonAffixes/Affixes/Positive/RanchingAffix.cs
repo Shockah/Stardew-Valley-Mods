@@ -1,12 +1,12 @@
 ﻿using HarmonyLib;
-using Shockah.Kokoro;
-using Shockah.Kokoro.UI;
-using StardewValley;
-using System.Linq;
-using System;
 using Shockah.CommonModCode.GMCM;
-using StardewModdingAPI;
+using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.UI;
+using StardewModdingAPI;
+using StardewValley;
+using System;
+using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
