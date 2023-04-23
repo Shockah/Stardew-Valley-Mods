@@ -218,7 +218,10 @@ namespace Shockah.SeasonAffixes
 			SaveData = serializedData is null ? new() : new SaveDataSerializer().Deserialize(serializedData);
 
 			foreach (var affix in SaveData.ActiveAffixes)
+			{
 				affix.OnActivate();
+				AffixActivated?.Invoke(affix);
+			}
 			Monitor.Log($"Loaded save file. Active affixes:\n{string.Join("\n", SaveData.ActiveAffixes.Select(a => a.UniqueID))}", LogLevel.Info);
 		}
 
@@ -234,7 +237,10 @@ namespace Shockah.SeasonAffixes
 		private void OnReturnedToTitle(object? sender, ReturnedToTitleEventArgs e)
 		{
 			foreach (var affix in SaveData.ActiveAffixes)
+			{
 				affix.OnDeactivate();
+				AffixDeactivated?.Invoke(affix);
+			}
 			Monitor.Log("Unloaded save file. Deactivating all affixes.", LogLevel.Debug);
 		}
 
@@ -500,6 +506,7 @@ namespace Shockah.SeasonAffixes
 				return;
 			SaveData.ActiveAffixes.Add(affix);
 			affix.OnActivate();
+			AffixActivated?.Invoke(affix);
 			Monitor.Log($"Activated affix `{affix.UniqueID}`.", LogLevel.Info);
 		}
 
@@ -509,6 +516,7 @@ namespace Shockah.SeasonAffixes
 				return;
 			affix.OnDeactivate();
 			SaveData.ActiveAffixes.Remove(affix);
+			AffixDeactivated?.Invoke(affix);
 			Monitor.Log($"Deactivated affix `{affix.UniqueID}`.", LogLevel.Info);
 		}
 
@@ -594,6 +602,11 @@ namespace Shockah.SeasonAffixes
 
 		#region API
 
+		public event Action<ISeasonAffix>? AffixRegistered;
+		public event Action<ISeasonAffix>? AffixUnregistered;
+		public event Action<ISeasonAffix>? AffixActivated;
+		public event Action<ISeasonAffix>? AffixDeactivated;
+
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.ToHashSet();
 
@@ -606,6 +619,7 @@ namespace Shockah.SeasonAffixes
 				throw new ArgumentException($"An affix with ID `{affix.UniqueID}` is already registered.");
 			AllAffixesStorage[affix.UniqueID] = affix;
 			affix.OnRegister();
+			AffixRegistered?.Invoke(affix);
 
 			if (IsConfigRegistered)
 				SetupConfig();
@@ -618,6 +632,7 @@ namespace Shockah.SeasonAffixes
 			DeactivateAffix(affix);
 			affix.OnUnregister();
 			AllAffixesStorage.Remove(affix.UniqueID);
+			AffixUnregistered?.Invoke(affix);
 
 			if (IsConfigRegistered)
 				SetupConfig();

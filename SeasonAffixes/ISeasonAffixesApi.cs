@@ -1,5 +1,4 @@
-﻿using Shockah.Kokoro.UI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes
@@ -7,6 +6,11 @@ namespace Shockah.SeasonAffixes
 	public interface ISeasonAffixesApi
 	{
 		ModConfig Config { get; }
+
+		event Action<ISeasonAffix>? AffixRegistered;
+		event Action<ISeasonAffix>? AffixUnregistered;
+		event Action<ISeasonAffix>? AffixActivated;
+		event Action<ISeasonAffix>? AffixDeactivated;
 
 		IReadOnlyDictionary<string, ISeasonAffix> AllAffixes { get; }
 		IReadOnlySet<ISeasonAffix> ActiveAffixes { get; }
