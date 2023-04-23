@@ -176,6 +176,7 @@ namespace Shockah.SeasonAffixes
 				new HardWaterAffix(),
 				new HurricaneAffix(),
 				new PoorYieldsAffix(),
+				new ResilienceAffix(),
 				new RustAffix(),
 				new SilenceAffix(),
 
