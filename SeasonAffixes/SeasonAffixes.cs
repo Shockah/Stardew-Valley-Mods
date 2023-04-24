@@ -182,6 +182,7 @@ namespace Shockah.SeasonAffixes
 
 				// neutral affixes
 				new InflationAffix(),
+				new MigrationAffix(),
 				new ThunderAffix(),
 				new TidesAffix(),
 				new WildGrowthAffix(),

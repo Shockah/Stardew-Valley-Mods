@@ -82,6 +82,8 @@
 	"affix.neutral.Inflation.description": "Most gold prices are increased by {{Increase}}.",
 	"affix.neutral.Inflation.config.increase.name": "Increase",
 	"affix.neutral.Inflation.config.increase.tooltip": "The price increase.",
+	"affix.neutral.Migration.name": "Migration",
+	"affix.neutral.Migration.description": "Fish from any season can be caught.",
 	"affix.neutral.Thunder.name": "Thunder",
 	"affix.neutral.Thunder.description": "Storms are {{Chance}} as likely as usual.",
 	"affix.neutral.Thunder.config.chance.name": "Chance",
