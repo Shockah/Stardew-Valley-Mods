@@ -101,6 +101,11 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(typeof(Utility), "priceForToolUpgradeLevel"),
+				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(Utility_priceForToolUpgradeLevel_Postfix)))
+			);
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BusStop), nameof(BusStop.answerDialogue)),
 				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BusStop_answerDialogue_Transpiler)))
 			);
@@ -189,6 +194,13 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
 				return;
 			ModifyPrice(ref __instance.moneyRequired);
+		}
+
+		private static void Utility_priceForToolUpgradeLevel_Postfix(ref int __result)
+		{
+			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+				return;
+			ModifyPrice(ref __result);
 		}
 
 		private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions)
