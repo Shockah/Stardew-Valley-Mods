@@ -10,6 +10,9 @@ namespace Shockah.SeasonAffixes
 
 	internal static class IAffixesProviderExt
 	{
+		public static IAffixesProvider Effective(this IAffixesProvider provider, OrdinalSeason season)
+			=> new EffectiveAffixesProvider(provider, season);
+
 		public static IAffixesProvider ApplicableToSeason(this IAffixesProvider provider, OrdinalSeason season)
 			=> new ApplicableToSeasonAffixesProvider(provider, season);
 	}
@@ -43,6 +46,22 @@ namespace Shockah.SeasonAffixes
 		public CompoundAffixesProvider(IEnumerable<IAffixesProvider> providers)
 		{
 			this.Providers = providers;
+		}
+	}
+
+	internal sealed class EffectiveAffixesProvider : IAffixesProvider
+	{
+		private IAffixesProvider Wrapped { get; init; }
+		private OrdinalSeason Season { get; init; }
+
+		public IEnumerable<ISeasonAffix> Affixes =>
+			Wrapped.Affixes
+				.Where(affix => affix.GetPositivity(Season) > 0 || affix.GetNegativity(Season) > 0);
+
+		public EffectiveAffixesProvider(IAffixesProvider wrapped, OrdinalSeason season)
+		{
+			this.Wrapped = wrapped;
+			this.Season = season;
 		}
 	}
 

@@ -179,6 +179,7 @@ namespace Shockah.SeasonAffixes
 				new ResilienceAffix(),
 				new RustAffix(),
 				new SilenceAffix(),
+				new TenacityAffix(),
 
 				// neutral affixes
 				new InflationAffix(),
@@ -581,7 +582,8 @@ namespace Shockah.SeasonAffixes
 				var affixSetEntry = affixSetEntries.Next(random);
 
 				var affixesProvider = new AffixesProvider(Instance.AllAffixesStorage.Values.Where(a => !Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0))
-					.ApplicableToSeason(season);
+					.ApplicableToSeason(season)
+					.Effective(season);
 
 				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(4)

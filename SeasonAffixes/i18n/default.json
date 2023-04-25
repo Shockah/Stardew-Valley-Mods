@@ -76,6 +76,10 @@
 	"affix.negative.Silence.description": "You cannot speak.",
 	"affix.negative.Silence.config.friendshipGain.name": "Friendship gain",
 	"affix.negative.Silence.config.friendshipGain.tooltip": "How much friendship a player gets for trying to talk to NPCs.\n0 means no friendship.\n20 is the normal talking gain.\n250 is one heart of friendship.",
+	"affix.negative.Tenacity.name": "Tenacity",
+	"affix.negative.Tenacity.description": "Fish are {{Value}} as hard to reel in.",
+	"affix.negative.Tenacity.config.value.name": "Value",
+	"affix.negative.Tenacity.config.value.tooltip": "How hard the fish are to reel in.",
 
 	// neutral affixes
 	"affix.neutral.Inflation.name": "Inflation",

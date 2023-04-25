@@ -40,6 +40,7 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public int SilenceFriendshipGain { get; internal set; } = 0;
 		[JsonProperty] public IDictionary<string, int> SkillLevelIncrease { get; internal set; } = new Dictionary<string, int>();
 		[JsonProperty] public IDictionary<string, float> SkillXPIncrease { get; internal set; } = new Dictionary<string, float>();
+		[JsonProperty] public float TenacityValue { get; internal set; } = 1.5f;
 		[JsonProperty] public float ThunderChance { get; internal set; } = 2f;
 		[JsonProperty] public float TreasuresChance { get; internal set; } = 0.25f;
 		[JsonProperty] public float TreasuresChanceWithEnchantment { get; internal set; } = 0.5f;
