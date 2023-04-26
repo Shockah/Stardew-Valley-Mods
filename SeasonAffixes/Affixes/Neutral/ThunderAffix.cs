@@ -33,7 +33,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.CropsAspect };
+			=> new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch

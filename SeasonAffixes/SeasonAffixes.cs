@@ -201,6 +201,7 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? 0.0 : null);
+			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is PoorYieldsAffix) && affixes.Any(a => a is RegrowthAffix) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? 0.0 : null);
 
