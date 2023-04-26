@@ -65,6 +65,15 @@ namespace Shockah.Kokoro.Stardew
 		public static VanillaSkill Combat { get; private set; } = new(Farmer.combatSkill);
 		public static VanillaSkill Luck { get; private set; } = new(Farmer.luckSkill);
 
+		public static string CropsAspect { get; private set; } = $"{Farming.UniqueID}:Crops";
+		public static string AnimalsAspect { get; private set; } = $"{Farming.UniqueID}:Animals";
+		public static string MetalAspect { get; private set; } = $"{Mining.UniqueID}:Metal";
+		public static string GemAspect { get; private set; } = $"{Mining.UniqueID}:Gem";
+		public static string WoodcuttingAspect { get; private set; } = $"{Foraging.UniqueID}:Woodcutting";
+		public static string GatheringAspect { get; private set; } = $"{Foraging.UniqueID}:Gathering";
+		public static string FishingAspect { get; private set; } = $"{Fishing.UniqueID}:Fishing";
+		public static string TrappingAspect { get; private set; } = $"{Fishing.UniqueID}:Trapping";
+
 		private static int[]? XPValues;
 		private static DateTime? LastUpdateTime;
 		private static WeakReference<IClickableMenu>? LastMenu;
