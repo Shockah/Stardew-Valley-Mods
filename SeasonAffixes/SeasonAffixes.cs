@@ -173,6 +173,7 @@ namespace Shockah.SeasonAffixes
 				new LoveAffix(),
 				new MudAffix(),
 				new RanchingAffix(),
+				new RegrowthAffix(),
 				new TreasuresAffix(),
 
 				// negative affixes
