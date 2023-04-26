@@ -31,7 +31,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			=> 0;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
+			=> new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.AnimalsAspect };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

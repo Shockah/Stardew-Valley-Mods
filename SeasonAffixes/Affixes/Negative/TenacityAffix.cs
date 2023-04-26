@@ -33,7 +33,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			=> Mod.Config.TenacityValue > 1f ? 1 : 0;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Fishing.UniqueID };
+			=> new HashSet<string> { VanillaSkill.FishingAspect };
 
 		public override void OnActivate()
 		{

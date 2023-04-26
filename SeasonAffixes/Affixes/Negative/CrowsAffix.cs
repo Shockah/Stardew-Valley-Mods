@@ -28,7 +28,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			=> 1;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
+			=> new HashSet<string> { VanillaSkill.CropsAspect };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;

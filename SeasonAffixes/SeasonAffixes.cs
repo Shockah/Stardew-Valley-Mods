@@ -138,6 +138,11 @@ namespace Shockah.SeasonAffixes
 			});
 			helper.ConsoleCommands.Add("affixes_deactivate_all", "Deactivates all seasonal affixes.", (_, _) => DeactivateAllAffixes());
 			helper.ConsoleCommands.Add("affixes_queue_choice", "Queues an overnight affix choice menu.", (_, _) => QueueOvernightAffixChoice());
+			helper.ConsoleCommands.Add("affixes_clear_history", "Clears affix choice history.", (_, _) =>
+			{
+				SaveData.AffixChoiceHistory.Clear();
+				SaveData.AffixSetChoiceHistory.Clear();
+			});
 
 			Harmony = new(ModManifest.UniqueID);
 			Harmony.TryPatch(
@@ -197,27 +202,6 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? 0.0 : null);
 			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? 0.0 : null);
-
-            // pairing up tags
-            RegisterAffixCombinationWeightProvider((affixes, season) =>
-			{
-				var weight = 1.0;
-				var relatedAffixDictionary = affixes.ToDictionary(a => a, a => affixes.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToHashSet());
-				foreach (var (affix, relatedAffixes) in relatedAffixDictionary)
-				{
-					if (relatedAffixes.Count == 1)
-					{
-						if (affix.Tags.Count > 0 && !AllAffixesStorage.Values.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Skip(3).Any())
-							weight *= 0.1;
-					}
-					else
-					{
-						if (relatedAffixes.Sum(a => a.GetPositivity(season)) == 0 || relatedAffixes.Sum(a => a.GetNegativity(season)) == 0)
-							weight *= 0.5;
-					}
-				}
-				return weight;
-			});
 
             SetupConfig();
 		}
@@ -585,24 +569,20 @@ namespace Shockah.SeasonAffixes
 					.ApplicableToSeason(season)
 					.Effective(season);
 
+				var affixSetWeightProvider = new DefaultProbabilityAffixSetWeightProvider()
+					.MultiplyingBy(new ConfigAffixSetWeightProvider((IReadOnlyDictionary<string, double>)Instance.Config.AffixWeights))
+					.MultiplyingBy(new CustomAffixSetWeightProvider(Instance.AffixCombinationWeightProviders))
+					.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(Instance.AllAffixesStorage.Values.ToHashSet()))
+					.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0));
+
 				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(4)
 					.NonConflictingWithCombinations()
-					.WeightedRandom(random, a => Instance.Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) ? weight : 1.0, (choice, season) =>
-					{
-						var totalWeight = 1.0;
-						foreach (var provider in Instance.AffixCombinationWeightProviders)
-						{
-							var weight = provider(choice, season);
-							if (weight is not null)
-								totalWeight *= weight.Value;
-						}
-						return totalWeight;
-					})
+					.WeightedRandom(random, affixSetWeightProvider)
 					.AvoidingChoiceHistoryDuplicates()
 					.AvoidingSetChoiceHistoryDuplicates()
-					//.AsLittleAsPossible()
 					.AvoidingDuplicatesBetweenChoices();
+
 				var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
 
 				Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
@@ -701,10 +681,38 @@ namespace Shockah.SeasonAffixes
 
 		public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 		{
-			return affixes
-				.OrderByDescending(a => a.GetPositivity(season) - a.GetNegativity(season))
-                .ThenBy(a => a.UniqueID)
-                .ToList();
+			var affixList = affixes.ToList();
+			var relatedAffixDictionary = affixList.ToDictionary(a => a, a => affixList.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToHashSet());
+
+			var results = new List<ISeasonAffix>();
+
+			while (relatedAffixDictionary.Count != 0)
+			{
+				var (affix, relatedAffixes) = relatedAffixDictionary
+					.OrderByDescending(kvp => kvp.Value.Count)
+					.ThenByDescending(kvp => kvp.Key.GetPositivity(season) - kvp.Key.GetNegativity(season))
+					.ThenBy(kvp => kvp.Key.UniqueID)
+					.First();
+				if (relatedAffixes.Count > 0)
+				{
+					results.AddRange(
+						relatedAffixes
+							.Where(a => relatedAffixDictionary.ContainsKey(a))
+							.OrderBy(a => a.Tags.Count)
+							.ThenByDescending(a => a.GetPositivity(season) - a.GetNegativity(season))
+							.ThenBy(a => a.UniqueID)
+					);
+					foreach (var relatedAffix in relatedAffixes)
+						relatedAffixDictionary.Remove(relatedAffix);
+				}
+				else
+				{
+					results.Add(affix);
+					relatedAffixDictionary.Remove(affix);
+				}
+			}
+
+			return results;
         }
 
         public string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes)

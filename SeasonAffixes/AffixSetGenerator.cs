@@ -15,8 +15,8 @@ namespace Shockah.SeasonAffixes
 		public static IAffixSetGenerator NonConflictingWithCombinations(this IAffixSetGenerator affixSetGenerator)
 			=> new NonConflictingWithCombinationsAffixSetGenerator(affixSetGenerator);
 
-		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider, Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> combinationWeightProvider)
-			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider, combinationWeightProvider);
+		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, IAffixSetWeightProvider weightProvider)
+			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider);
 
 		public static IAffixSetGenerator MaxAffixes(this IAffixSetGenerator affixSetGenerator, int max)
 			=> new MaxAffixesAffixSetGenerator(affixSetGenerator, max);
@@ -110,15 +110,13 @@ namespace Shockah.SeasonAffixes
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
 		private Random Random { get; init; }
-		private Func<ISeasonAffix, double> WeightProvider { get; init; }
-		private Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> CombinationWeightProvider { get; init; }
+		private IAffixSetWeightProvider WeightProvider { get; init; }
 
-		public WeightedRandomAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random, Func<ISeasonAffix, double> weightProvider, Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double> combinationWeightProvider)
+		public WeightedRandomAffixSetGenerator(IAffixSetGenerator affixSetGenerator, Random random, IAffixSetWeightProvider weightProvider)
 		{
 			this.AffixSetGenerator = affixSetGenerator;
 			this.Random = random;
 			this.WeightProvider = weightProvider;
-			this.CombinationWeightProvider = combinationWeightProvider;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
@@ -126,7 +124,7 @@ namespace Shockah.SeasonAffixes
 			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
 			foreach (var choice in AffixSetGenerator.Generate(season))
 			{
-				var weight = choice.Average(a => a.GetProbabilityWeight(season) * WeightProvider(a)) * CombinationWeightProvider(choice, season);
+				var weight = WeightProvider.GetWeight(choice, season);
 				if (weight > 0)
 					weightedRandom.Add(new(weight, choice));
 			}

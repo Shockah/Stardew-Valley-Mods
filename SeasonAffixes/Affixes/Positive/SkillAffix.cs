@@ -65,7 +65,21 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
         }
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { Skill.UniqueID };
+		{
+			get
+			{
+				if (Skill.Equals(VanillaSkill.Farming))
+					return new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.AnimalsAspect };
+				else if (Skill.Equals(VanillaSkill.Mining))
+					return new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect };
+				else if (Skill.Equals(VanillaSkill.Foraging))
+					return new HashSet<string> { VanillaSkill.WoodcuttingAspect, VanillaSkill.GatheringAspect };
+				else if (Skill.Equals(VanillaSkill.Fishing))
+					return new HashSet<string> { VanillaSkill.FishingAspect, VanillaSkill.TrappingAspect };
+				else
+					return new HashSet<string> { Skill.UniqueID };
+			}
+		}
 
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;

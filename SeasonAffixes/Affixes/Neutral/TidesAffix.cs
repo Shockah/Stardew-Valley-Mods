@@ -23,7 +23,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			=> 1;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Fishing.UniqueID };
+			=> new HashSet<string> { VanillaSkill.FishingAspect };
 
 		public override void OnActivate()
 		{

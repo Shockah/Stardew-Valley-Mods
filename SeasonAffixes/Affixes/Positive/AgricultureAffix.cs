@@ -30,7 +30,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			=> Mod.Config.AgricultureValue < 1f ? 1 : 0;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Farming.UniqueID };
+			=> new HashSet<string> { VanillaSkill.CropsAspect };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

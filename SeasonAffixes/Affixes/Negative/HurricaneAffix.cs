@@ -29,7 +29,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			=> 1;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Foraging.UniqueID };
+			=> new HashSet<string> { VanillaSkill.GatheringAspect };
 
 		public override void OnRegister()
 			=> Apply(Mod.Harmony);

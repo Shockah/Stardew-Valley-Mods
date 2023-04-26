@@ -27,7 +27,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			=> 0;
 
 		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Mining.UniqueID, VanillaSkill.Combat.UniqueID };
+			=> new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect, VanillaSkill.Combat.UniqueID };
 
 		public override double GetProbabilityWeight(OrdinalSeason season)
 		{
