@@ -189,6 +189,7 @@ namespace Shockah.SeasonAffixes
 				new TenacityAffix(),
 
 				// neutral affixes
+				new BurstingAffix(),
 				new InflationAffix(),
 				new MigrationAffix(),
 				new ThunderAffix(),

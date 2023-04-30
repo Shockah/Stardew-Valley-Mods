@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
@@ -22,7 +21,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
 		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
 		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.content.Load<Texture2D>("TerrainFeatures\\tree2_spring"), new(0, 96, 16, 32));
+		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 0, 16, 16));
 
 		public override int GetPositivity(OrdinalSeason season)
 			=> 1;
