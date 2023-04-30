@@ -107,6 +107,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override void OnDeactivate()
 		{
+			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+
 			if (Skill is VanillaSkill skill)
 				ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
 		}
