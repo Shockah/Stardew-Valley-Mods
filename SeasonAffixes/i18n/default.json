@@ -14,6 +14,8 @@
 	"affix.positive.Agriculture.description": "Unprocessed crops are worth {{Value}}.",
 	"affix.positive.Agriculture.config.value.name": "Value",
 	"affix.positive.Agriculture.config.value.tooltip": "The value of unprocessed crops.",
+	"affix.positive.Boons.name": "Boons",
+	"affix.positive.Boons.description": "Cutting down trees spawns forage underneath.",
 	"affix.positive.Descent.name": "Descent",
 	"affix.positive.Descent.description": "The last monster on each floor will always drop a ladder.",
 	"affix.positive.FairyTales.name": "Fairy Tales",
