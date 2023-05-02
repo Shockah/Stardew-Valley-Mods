@@ -186,6 +186,7 @@ namespace Shockah.SeasonAffixes
 				new ResilienceAffix(),
 				new RustAffix(),
 				new SilenceAffix(),
+				new SlumberAffix(),
 				new TenacityAffix(),
 
 				// neutral affixes

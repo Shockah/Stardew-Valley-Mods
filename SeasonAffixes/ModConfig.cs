@@ -26,7 +26,7 @@ namespace Shockah.SeasonAffixes
 
 		[JsonProperty] public IList<AffixSetEntry> AffixSetEntries { get; internal set; } = new List<AffixSetEntry>() { new(1, 0, 2.0), new(1, 1, 8.0), new(1, 2, 5.0), new(2, 1, 3.0), new(2, 2, 2.0) };
 		[JsonProperty] public int AffixRepeatPeriod { get; internal set; } = 2;
-		[JsonProperty] public int AffixSetRepeatPeriod { get; internal set; } = 8;
+		[JsonProperty] public int AffixSetRepeatPeriod { get; internal set; } = 4;
 
 		[JsonProperty] public float AgricultureValue { get; internal set; } = 2f;
 		[JsonProperty] public float BurstingNoBombWeight { get; internal set; } = 0f;
@@ -42,6 +42,7 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public float ResilienceValue { get; internal set; } = 2f;
 		[JsonProperty] public float RustIncrease { get; internal set; } = 0.5f;
 		[JsonProperty] public int SilenceFriendshipGain { get; internal set; } = 0;
+		[JsonProperty] public float SlumberHours { get; internal set; } = 4f;
 		[JsonProperty] public IDictionary<string, int> SkillLevelIncrease { get; internal set; } = new Dictionary<string, int>();
 		[JsonProperty] public IDictionary<string, float> SkillXPIncrease { get; internal set; } = new Dictionary<string, float>();
 		[JsonProperty] public float TenacityValue { get; internal set; } = 1.5f;
