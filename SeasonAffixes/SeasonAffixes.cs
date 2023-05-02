@@ -173,6 +173,7 @@ namespace Shockah.SeasonAffixes
 				new InnovationAffix(),
 				new LootAffix(),
 				new LoveAffix(),
+				new MeteoritesAffix(),
 				new MudAffix(),
 				new RanchingAffix(),
 				new RegrowthAffix(),
