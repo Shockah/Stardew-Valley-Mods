@@ -166,6 +166,7 @@ namespace Shockah.SeasonAffixes
 				// positive affixes
 				new AgricultureAffix(),
 				new BoonsAffix(),
+				new CompetitionAffix(),
 				new DescentAffix(),
 				new FairyTalesAffix(),
 				//new FortuneAffix(),

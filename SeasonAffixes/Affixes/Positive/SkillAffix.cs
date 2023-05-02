@@ -102,6 +102,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+			Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
 
 			if (Skill is VanillaSkill skill)
 				ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
@@ -110,6 +111,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+			Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
 
 			if (Skill is VanillaSkill skill)
 				ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
@@ -159,6 +161,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			if (Skill is not VanillaSkill skill)
 				return;
 			ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
+		}
+
+		private void OnDayEnding(object? sender, DayEndingEventArgs e)
+		{
+			if (Skill is not VanillaSkill skill)
+				return;
+			ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
 		}
 
 		private void Apply(Harmony harmony)

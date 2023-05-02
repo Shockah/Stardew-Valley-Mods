@@ -33,6 +33,12 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public float BurstingCherryBombWeight { get; internal set; } = 2f;
 		[JsonProperty] public float BurstingBombWeight { get; internal set; } = 2f;
 		[JsonProperty] public float BurstingMegaBombWeight { get; internal set; } = 1f;
+		[JsonProperty] public float CompetitionQiCoinSellValue { get; internal set; } = 0.5f;
+		[JsonProperty] public float CompetitionQiCoinExchangeCap { get; internal set; } = 5f;
+		[JsonProperty] public float CompetitionPrairieKingMonsterHealthMoney { get; internal set; } = 1f;
+		[JsonProperty] public int CompetitionPrairieKingCoinMoney { get; internal set; } = 20;
+		[JsonProperty] public int CompetitionJunimoKartCoinMoney { get; internal set; } = 5;
+		[JsonProperty] public float CompetitionJunimoKartScoreMoney { get; internal set; } = 0.04f;
 		[JsonProperty] public float FairyTalesChance { get; internal set; } = 0.15f;
 		[JsonIgnore] public float FortuneValue { get; internal set; } = 0.05f;
 		[JsonProperty] public float InflationIncrease { get; internal set; } = 0.2f;
