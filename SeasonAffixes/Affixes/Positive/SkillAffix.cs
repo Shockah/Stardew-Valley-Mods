@@ -90,7 +90,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public override double GetProbabilityWeight(OrdinalSeason season)
 		{
 			if (XPIncreaseConfig == 0f && (Skill is not VanillaSkill || LevelIncreaseConfig == 0f))
-				return 0; // invalid config, skipping affix
+				return 0; // invalid config - skipping affix
+			if (XPIncreaseConfig > 0f && Skill is not VanillaSkill && Game1.getAllFarmers().All(player => Skill.GetBaseLevel(player) >= Skill.MaxLevel))
+				return 0; // the skill only grants XP, but all players are maxed out - skipping affix
 			return Math.Min(2.0 / Mod.AllAffixes.Values.Count(affix => affix is SkillAffix), 1.0);
 		}
 
