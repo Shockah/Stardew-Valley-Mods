@@ -1,4 +1,6 @@
 ﻿using HarmonyLib;
+using Nanoray.Shrike.Harmony;
+using Nanoray.Shrike;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -14,7 +16,9 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes
 {
@@ -145,12 +149,24 @@ namespace Shockah.SeasonAffixes
 			});
 
 			Harmony = new(ModManifest.UniqueID);
+			BillboardPatches.Apply(Harmony);
+
 			Harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.showEndOfNightStuff)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Prefix)))
+				original: () =>
+				{
+					var game1Type = typeof(Game1);
+					var compilerType = AccessTools.Inner(game1Type, "<>c");
+					if (compilerType is null)
+						return null;
+
+					foreach (var method in compilerType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance))
+						if (method.Name.StartsWith("<showEndOfNightStuff>") && method.ReturnType == typeof(void) && method.GetParameters().Select(p => p.ParameterType).SequenceEqual(Array.Empty<Type>()))
+							return method;
+					return null;
+				},
+				transpiler: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Transpiler)))
 			);
-			BillboardPatches.Apply(Harmony);
 		}
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
@@ -547,7 +563,31 @@ namespace Shockah.SeasonAffixes
 				LocalActivateAffix(affix);
 		}
 
-		private static void Game1_showEndOfNightStuff_Prefix()
+		private static IEnumerable<CodeInstruction> Game1_showEndOfNightStuff_Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			try
+			{
+				return new SequenceBlockMatcher<CodeInstruction>(instructions)
+					.Find(
+						ILMatches.Ldstr("newRecord"),
+						ILMatches.Call("playSound")
+					)
+					.PointerMatcher(SequenceMatcherRelativeElement.AfterLast)
+					.ExtractLabels(out var labels)
+					.Insert(
+						SequenceMatcherPastBoundsDirection.Before, true,
+						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Transpiler_Event))).WithLabels(labels)
+					)
+					.AllElements();
+			}
+			catch (Exception ex)
+			{
+				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				return instructions;
+			}
+		}
+
+		public static void Game1_showEndOfNightStuff_Transpiler_Event()
 		{
 			if (!Instance.IsAffixChoiceMenuQueued)
 				return;
@@ -609,7 +649,12 @@ namespace Shockah.SeasonAffixes
 				));
 			}
 
-			Game1.endOfNightMenus.Push(new AffixChoiceMenu());
+			List<IClickableMenu> newMenus = new();
+			newMenus.AddRange(Game1.endOfNightMenus.Where(m => m is SaveGameMenu or ShippingMenu));
+			newMenus.Add(new AffixChoiceMenu());
+			newMenus.AddRange(Game1.endOfNightMenus.Where(m => !newMenus.Contains(m)));
+			Game1.endOfNightMenus = new Stack<IClickableMenu>(newMenus);
+
 			Instance.PlayerChoices.Clear();
 		}
 
