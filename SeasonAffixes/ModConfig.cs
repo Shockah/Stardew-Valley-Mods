@@ -28,6 +28,7 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public int AffixRepeatPeriod { get; internal set; } = 2;
 		[JsonProperty] public int AffixSetRepeatPeriod { get; internal set; } = 4;
 
+		[JsonProperty] public float AccumulationChance { get; internal set; } = 0.3f;
 		[JsonProperty] public float AgricultureValue { get; internal set; } = 2f;
 		[JsonProperty] public float BurstingNoBombWeight { get; internal set; } = 0f;
 		[JsonProperty] public float BurstingCherryBombWeight { get; internal set; } = 2f;

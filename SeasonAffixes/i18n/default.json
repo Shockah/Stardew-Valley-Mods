@@ -10,6 +10,10 @@
 	"season.separator.other": ", ",
 
 	// positive affixes
+	"affix.positive.Accumulation.name": "Accumulation",
+	"affix.positive.Accumulation.description": "Cutting trees has a {{Chance}} chance of dropping their Tapper product.",
+	"affix.positive.Accumulation.config.chance.name": "Chance",
+	"affix.positive.Accumulation.config.chance.tooltip": "The chance to drop the Tapper product.",
 	"affix.positive.Agriculture.name": "Agriculture",
 	"affix.positive.Agriculture.description": "Unprocessed crops are worth {{Value}}.",
 	"affix.positive.Agriculture.config.value.name": "Value",

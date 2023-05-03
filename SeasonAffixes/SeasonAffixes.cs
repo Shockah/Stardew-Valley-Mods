@@ -180,6 +180,7 @@ namespace Shockah.SeasonAffixes
 			foreach (var affix in new List<ISeasonAffix>()
 			{
 				// positive affixes
+				new AccumulationAffix(),
 				new AgricultureAffix(),
 				new BoonsAffix(),
 				new CompetitionAffix(),
