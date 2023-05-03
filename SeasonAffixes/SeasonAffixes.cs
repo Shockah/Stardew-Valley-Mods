@@ -620,15 +620,15 @@ namespace Shockah.SeasonAffixes
 				var affixSetWeightProvider = new DefaultProbabilityAffixSetWeightProvider()
 					.MultiplyingBy(new ConfigAffixSetWeightProvider((IReadOnlyDictionary<string, double>)Instance.Config.AffixWeights))
 					.MultiplyingBy(new CustomAffixSetWeightProvider(Instance.AffixCombinationWeightProviders))
-					.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(Instance.AllAffixesStorage.Values.ToHashSet()))
-					.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0));
+					.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(Instance.AllAffixesStorage.Values.ToHashSet(), 3, 0.25, 0.25, 3, 0.5))
+					.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0))
+					.MultiplyingBy(new AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider(0.5))
+					.MultiplyingBy(new AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(0.1));
 
 				var affixSetGenerator = new AllCombinationsAffixSetGenerator(affixesProvider, affixSetEntry.Positive, affixSetEntry.Negative)
 					.MaxAffixes(4)
 					.NonConflictingWithCombinations()
 					.WeightedRandom(random, affixSetWeightProvider)
-					.AvoidingChoiceHistoryDuplicates()
-					.AvoidingSetChoiceHistoryDuplicates()
 					.AvoidingDuplicatesBetweenChoices();
 
 				var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();

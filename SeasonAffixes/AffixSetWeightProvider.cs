@@ -96,10 +96,27 @@ namespace Shockah.SeasonAffixes
 	internal sealed class PairingUpTagsAffixSetWeightProvider : IAffixSetWeightProvider
 	{
 		private IReadOnlySet<ISeasonAffix> AllAffixes { get; init; }
+		private int UnpairedAffixMinPossibleAffixes { get; init; }
+		private double UnpairedAffixMultiplier { get; init; }
+		private double OneSidedPairedAffixesMultiplier { get; init; }
+		private int PairedAffixLimit { get; init; }
+		private double TooManyPairedAffixesMultiplier { get; init; }
 
-		public PairingUpTagsAffixSetWeightProvider(IReadOnlySet<ISeasonAffix> allAffixes)
+		public PairingUpTagsAffixSetWeightProvider(
+			IReadOnlySet<ISeasonAffix> allAffixes,
+			int unpairedAffixMinPossibleAffixes,
+			double unpairedAffixMultiplier,
+			double oneSidedPairedAffixesMultiplier,
+			int pairedAffixLimit,
+			double tooManyPairedAffixesMultiplier
+		)
 		{
 			this.AllAffixes = allAffixes;
+			this.UnpairedAffixMinPossibleAffixes = unpairedAffixMinPossibleAffixes;
+			this.UnpairedAffixMultiplier = unpairedAffixMultiplier;
+			this.OneSidedPairedAffixesMultiplier = oneSidedPairedAffixesMultiplier;
+			this.PairedAffixLimit = pairedAffixLimit;
+			this.TooManyPairedAffixesMultiplier = tooManyPairedAffixesMultiplier;
 		}
 
 		public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
@@ -110,18 +127,56 @@ namespace Shockah.SeasonAffixes
 			{
 				if (relatedAffixes.Count == 1)
 				{
-					if (affix.Tags.Count > 0 && AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Skip(2).Any())
-						weight *= 0.25;
+					if (affix.Tags.Count > 0 && AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Count() >= UnpairedAffixMinPossibleAffixes)
+						weight *= UnpairedAffixMultiplier;
 				}
 				else
 				{
 					if (relatedAffixes.Sum(a => a.GetPositivity(season)) == 0 || relatedAffixes.Sum(a => a.GetNegativity(season)) == 0)
-						weight *= 0.25;
-					if (relatedAffixes.Count >= 3)
-						weight *= 0.5;
+						weight *= OneSidedPairedAffixesMultiplier;
+					if (relatedAffixes.Count >= PairedAffixLimit)
+						weight *= TooManyPairedAffixesMultiplier;
 				}
 			}
 			return weight;
+		}
+	}
+
+	internal sealed class AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider : IAffixSetWeightProvider
+	{
+		private double RepeatedWeight { get; init; }
+
+		public AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider(double repeatedWeight)
+		{
+			this.RepeatedWeight = repeatedWeight;
+		}
+
+		public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
+		{
+			foreach (var affix in combination)
+				foreach (var step in SeasonAffixes.Instance.SaveData.AffixChoiceHistory)
+					if (step.Contains(affix))
+						return RepeatedWeight;
+			return 1;
+		}
+	}
+
+	internal sealed class AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider : IAffixSetWeightProvider
+	{
+		private double RepeatedWeight { get; init; }
+
+		public AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(double repeatedWeight)
+		{
+			this.RepeatedWeight = repeatedWeight;
+		}
+
+		public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
+		{
+			foreach (var step in SeasonAffixes.Instance.SaveData.AffixSetChoiceHistory)
+				foreach (var stepCombination in step)
+					if (stepCombination.SetEquals(combination))
+						return RepeatedWeight;
+			return 1;
 		}
 	}
 }

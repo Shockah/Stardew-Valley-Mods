@@ -26,12 +26,6 @@ namespace Shockah.SeasonAffixes
 
 		public static IAffixSetGenerator AvoidingDuplicatesBetweenChoices(this IAffixSetGenerator affixSetGenerator)
 			=> new AvoidingDuplicatesBetweenChoicesAffixSetGenerator(affixSetGenerator);
-
-		public static IAffixSetGenerator AvoidingChoiceHistoryDuplicates(this IAffixSetGenerator affixSetGenerator)
-			=> new AvoidingChoiceHistoryDuplicatesAffixSetGenerator(affixSetGenerator);
-
-		public static IAffixSetGenerator AvoidingSetChoiceHistoryDuplicates(this IAffixSetGenerator affixSetGenerator)
-			=> new AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator(affixSetGenerator);
 	}
 
 	internal sealed class AllCombinationsAffixSetGenerator : IAffixSetGenerator
@@ -121,13 +115,21 @@ namespace Shockah.SeasonAffixes
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
-			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
+			List<WeightedItem<IReadOnlySet<ISeasonAffix>>> weightedItems = new();
+			var maxWeight = 0.0;
 			foreach (var choice in AffixSetGenerator.Generate(season))
 			{
 				var weight = WeightProvider.GetWeight(choice, season);
+				maxWeight = Math.Max(maxWeight, weight);
 				if (weight > 0)
-					weightedRandom.Add(new(weight, choice));
+					weightedItems.Add(new(weight, choice));
 			}
+
+			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
+			foreach (var weightedItem in weightedItems)
+				if (weightedItem.Weight >= maxWeight / 100)
+					weightedRandom.Add(weightedItem);
+
 			while (weightedRandom.Items.Count != 0)
 				yield return weightedRandom.Next(Random, consume: true);
 		}
@@ -210,72 +212,6 @@ namespace Shockah.SeasonAffixes
 
 				allowedDuplicates++;
 			}
-		}
-	}
-
-	internal sealed class AvoidingChoiceHistoryDuplicatesAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-
-		public AvoidingChoiceHistoryDuplicatesAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			var remainingResults = new LinkedList<IReadOnlySet<ISeasonAffix>>(AffixSetGenerator.Generate(season));
-
-			var node = remainingResults.First;
-			while (node is not null)
-			{
-				foreach (var choiceAffix in node.Value)
-					foreach (var step in SeasonAffixes.Instance.SaveData.AffixChoiceHistory)
-						if (step.Any(saveAffix => saveAffix.UniqueID == choiceAffix.UniqueID))
-							goto nodeLoopContinue;
-
-				yield return node.Value;
-				remainingResults.Remove(node);
-
-				nodeLoopContinue:;
-				node = node.Next;
-			}
-
-			foreach (var choice in remainingResults)
-				yield return choice;
-		}
-	}
-
-	internal sealed class AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-
-		public AvoidingSetChoiceHistoryDuplicatesAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			var remainingResults = new LinkedList<IReadOnlySet<ISeasonAffix>>(AffixSetGenerator.Generate(season));
-
-			var node = remainingResults.First;
-			while (node is not null)
-			{
-				var nodeIds = node.Value.Select(choiceAffix => choiceAffix.UniqueID).ToHashSet();
-				foreach (var step in SeasonAffixes.Instance.SaveData.AffixSetChoiceHistory)
-					if (step.Select(saveChoice => saveChoice.Select(saveAffix => saveAffix.UniqueID).ToHashSet()).Any(saveChoice => saveChoice.SetEquals(nodeIds)))
-						goto nodeLoopContinue;
-
-				yield return node.Value;
-				remainingResults.Remove(node);
-
-				nodeLoopContinue:;
-				node = node.Next;
-			}
-
-			foreach (var choice in remainingResults)
-				yield return choice;
 		}
 	}
 }
