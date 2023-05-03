@@ -620,7 +620,7 @@ namespace Shockah.SeasonAffixes
 				var affixSetWeightProvider = new DefaultProbabilityAffixSetWeightProvider()
 					.MultiplyingBy(new ConfigAffixSetWeightProvider((IReadOnlyDictionary<string, double>)Instance.Config.AffixWeights))
 					.MultiplyingBy(new CustomAffixSetWeightProvider(Instance.AffixCombinationWeightProviders))
-					.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(Instance.AllAffixesStorage.Values.ToHashSet(), 3, 0.25, 0.25, 3, 0.5))
+					.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(Instance.AllAffixesStorage.Values.ToHashSet(), c => (c < 3 ? 1 : Math.Pow(0.7, c - 3)), 0.25, 3, 0.5))
 					.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0))
 					.MultiplyingBy(new AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider(0.5))
 					.MultiplyingBy(new AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(0.1));

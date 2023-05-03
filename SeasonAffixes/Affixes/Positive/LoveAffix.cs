@@ -1,5 +1,6 @@
 ﻿using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -25,6 +26,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 0;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
 
 		public override void OnActivate()
 		{

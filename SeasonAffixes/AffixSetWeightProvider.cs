@@ -96,23 +96,20 @@ namespace Shockah.SeasonAffixes
 	internal sealed class PairingUpTagsAffixSetWeightProvider : IAffixSetWeightProvider
 	{
 		private IReadOnlySet<ISeasonAffix> AllAffixes { get; init; }
-		private int UnpairedAffixMinPossibleAffixes { get; init; }
-		private double UnpairedAffixMultiplier { get; init; }
+		private Func<int, double> UnpairedAffixMultiplier { get; init; }
 		private double OneSidedPairedAffixesMultiplier { get; init; }
 		private int PairedAffixLimit { get; init; }
 		private double TooManyPairedAffixesMultiplier { get; init; }
 
 		public PairingUpTagsAffixSetWeightProvider(
 			IReadOnlySet<ISeasonAffix> allAffixes,
-			int unpairedAffixMinPossibleAffixes,
-			double unpairedAffixMultiplier,
+			Func<int, double> unpairedAffixMultiplier,
 			double oneSidedPairedAffixesMultiplier,
 			int pairedAffixLimit,
 			double tooManyPairedAffixesMultiplier
 		)
 		{
 			this.AllAffixes = allAffixes;
-			this.UnpairedAffixMinPossibleAffixes = unpairedAffixMinPossibleAffixes;
 			this.UnpairedAffixMultiplier = unpairedAffixMultiplier;
 			this.OneSidedPairedAffixesMultiplier = oneSidedPairedAffixesMultiplier;
 			this.PairedAffixLimit = pairedAffixLimit;
@@ -127,8 +124,11 @@ namespace Shockah.SeasonAffixes
 			{
 				if (relatedAffixes.Count == 1)
 				{
-					if (affix.Tags.Count > 0 && AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Count() >= UnpairedAffixMinPossibleAffixes)
-						weight *= UnpairedAffixMultiplier;
+					if (affix.Tags.Count > 0)
+					{
+						int possibleTagAffixes = AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Count();
+						weight *= UnpairedAffixMultiplier(possibleTagAffixes);
+					}
 				}
 				else
 				{
