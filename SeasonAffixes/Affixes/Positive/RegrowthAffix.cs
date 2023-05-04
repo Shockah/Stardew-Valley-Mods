@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative
+namespace Shockah.SeasonAffixes.Affixes.Positive
 {
 	internal sealed class RegrowthAffix : BaseSeasonAffix
 	{

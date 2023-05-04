@@ -204,6 +204,7 @@ namespace Shockah.SeasonAffixes
 				new PoorYieldsAffix(),
 				new ResilienceAffix(),
 				new RustAffix(),
+				new SapAffix(),
 				new SilenceAffix(),
 				new SlumberAffix(),
 				new TenacityAffix(),

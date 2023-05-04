@@ -124,7 +124,7 @@ namespace Shockah.SeasonAffixes
 			{
 				if (relatedAffixes.Count == 1)
 				{
-					if (affix.Tags.Count > 0)
+					if (affix.Tags.Count > 0 && affix.GetPositivity(season) == 0 || affix.GetNegativity(season) == 0)
 					{
 						int possibleTagAffixes = AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Count();
 						weight *= UnpairedAffixMultiplier(possibleTagAffixes);

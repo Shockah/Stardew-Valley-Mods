@@ -4,6 +4,7 @@ using Netcode;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -11,6 +12,7 @@ using StardewValley;
 using StardewValley.Network;
 using StardewValley.TerrainFeatures;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using xTile.Dimensions;
 using SObject = StardewValley.Object;
@@ -30,6 +32,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		public override int GetNegativity(OrdinalSeason season)
 			=> 1;
+
+		public override IReadOnlySet<string> Tags
+			=> new HashSet<string> { VanillaSkill.WoodcuttingAspect };
 
 		public override void OnActivate()
 		{

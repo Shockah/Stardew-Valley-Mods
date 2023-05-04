@@ -108,6 +108,8 @@
 	"affix.negative.Rust.description": "All machines take {{Increase}} longer to process items.",
 	"affix.negative.Rust.config.increase.name": "Increase",
 	"affix.negative.Rust.config.increase.tooltip": "How much longer machines take to process items.",
+	"affix.negative.Sap.name": "Sap",
+	"affix.negative.Sap.description": "Tappers only produce Sap.",
 	"affix.negative.Silence.name": "Silence",
 	"affix.negative.Silence.description": "You cannot speak.",
 	"affix.negative.Silence.config.friendshipGain.name": "Friendship gain",
