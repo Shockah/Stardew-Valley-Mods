@@ -66,13 +66,15 @@ namespace Shockah.SeasonAffixes
 
 		private IEnumerable<BigInteger> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, int[] affixPositivities, int[] affixNegativities, BigInteger mask, int bitsSet, int currentPositivity, int currentNegativity)
 		{
-			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes || allAffixesIndex >= allAffixes.Length)
+			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes)
 				yield break;
 			if (currentPositivity == Positivity && currentNegativity == Negativity)
 			{
 				yield return mask;
 				yield break;
 			}
+			if (allAffixesIndex >= allAffixes.Length)
+				yield break;
 
 			for (int i = allAffixesIndex; i < allAffixes.Length; i++)
 				foreach (var result in GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, mask | (BigInteger.One << i), bitsSet + 1, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
@@ -203,12 +205,16 @@ namespace Shockah.SeasonAffixes
 
 			foreach (var result in AffixSetGenerator.Generate(season))
 			{
+#if DEBUG
 				if (index < 10 || (index < 100 && index % 10 == 0) || (index < 1000 && index % 100 == 0) || (index < 10000 && index % 1000 == 0) || (index < 100000 && index % 10000 == 0))
 					Monitor.Log($"> [{Tag}] Generated affix set #{index + 1}, took {stopwatch.ElapsedMilliseconds}ms", LogLevel);
+#endif
 				yield return result;
 				index++;
 			}
+#if DEBUG
 			Monitor.Log($"> [{Tag}] Done generating affix sets after {index} results, took {stopwatch.ElapsedMilliseconds}ms.", LogLevel);
+#endif
 		}
 	}
 }

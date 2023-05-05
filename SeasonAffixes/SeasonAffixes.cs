@@ -595,10 +595,11 @@ namespace Shockah.SeasonAffixes
 
 		private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, ModConfig.AffixSetEntry affixSetEntry, Random random)
 			=> new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, affixSetEntry.Positive, affixSetEntry.Negative, 4)
-			.Benchmarking(Monitor, "Combinations")
+			.Benchmarking(Monitor, "AllCombinations")
 			.WeightedRandom(random, affixSetWeightProvider)
+			.Benchmarking(Monitor, "WeightedRandom")
 			.AvoidingDuplicatesBetweenChoices()
-			.Benchmarking(Monitor, "FULL");
+			.Benchmarking(Monitor, "AvoidingDuplicates");
 
 		private static IEnumerable<CodeInstruction> Game1_showEndOfNightStuff_Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
