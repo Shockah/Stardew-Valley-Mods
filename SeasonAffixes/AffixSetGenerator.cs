@@ -48,15 +48,15 @@ namespace Shockah.SeasonAffixes
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-			=> GetAllCombinations(season, AffixesProvider.Affixes.ToList(), new(), 0, 0).Distinct();
+			=> GetAllCombinations(season, AffixesProvider.Affixes.OrderByDescending(a => ScoreProvider.GetPositivity(a, season) + ScoreProvider.GetNegativity(a, season)).ThenByDescending(a => ScoreProvider.GetPositivity(a, season) - ScoreProvider.GetNegativity(a, season)).ToList(), new(), 0, 0).Distinct();
 
 		private IEnumerable<IReadOnlySet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, List<ISeasonAffix> remainingAffixes, HashSet<ISeasonAffix> current, int currentPositivity, int currentNegativity)
 		{
 			if (remainingAffixes.Count == 0)
 			{
-				if (Positivity is not null && currentPositivity < Positivity.Value)
+				if (Positivity is not null && currentPositivity != Positivity.Value)
 					yield break;
-				if (Negativity is not null && currentNegativity < Negativity.Value)
+				if (Negativity is not null && currentNegativity != Negativity.Value)
 					yield break;
 				if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
 					yield break;
