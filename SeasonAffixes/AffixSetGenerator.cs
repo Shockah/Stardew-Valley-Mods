@@ -53,8 +53,7 @@ namespace Shockah.SeasonAffixes
 				.ToArray();
 			var affixPositivities = allAffixes.Select(a => ScoreProvider.GetPositivity(a, season)).ToArray();
 			var affixNegativities = allAffixes.Select(a => ScoreProvider.GetNegativity(a, season)).ToArray();
-			return GetAllCombinations(season, allAffixes, affixPositivities, affixNegativities, BigInteger.Zero, 0, 0, 0)
-				.Distinct()
+			return GetAllCombinations(season, allAffixes, 0, affixPositivities, affixNegativities, BigInteger.Zero, 0, 0, 0)
 				.Select(mask =>
 				{
 					var combination = new HashSet<ISeasonAffix>(MaxAffixes);
@@ -65,9 +64,9 @@ namespace Shockah.SeasonAffixes
 				});
 		}
 
-		private IEnumerable<BigInteger> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int[] affixPositivities, int[] affixNegativities, BigInteger mask, int bitsSet, int currentPositivity, int currentNegativity)
+		private IEnumerable<BigInteger> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, int[] affixPositivities, int[] affixNegativities, BigInteger mask, int bitsSet, int currentPositivity, int currentNegativity)
 		{
-			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes)
+			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes || allAffixesIndex >= allAffixes.Length)
 				yield break;
 			if (currentPositivity == Positivity && currentNegativity == Negativity)
 			{
@@ -75,10 +74,9 @@ namespace Shockah.SeasonAffixes
 				yield break;
 			}
 
-			for (int i = 0; i < allAffixes.Length; i++)
-				if ((mask & (BigInteger.One << i)) == 0)
-					foreach (var result in GetAllCombinations(season, allAffixes, affixPositivities, affixNegativities, mask | (BigInteger.One << i), bitsSet + 1, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
-						yield return result;
+			for (int i = allAffixesIndex; i < allAffixes.Length; i++)
+				foreach (var result in GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, mask | (BigInteger.One << i), bitsSet + 1, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
+					yield return result;
 		}
 	}
 
