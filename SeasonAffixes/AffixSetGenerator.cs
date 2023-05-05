@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 
 namespace Shockah.SeasonAffixes
 {
@@ -31,11 +32,11 @@ namespace Shockah.SeasonAffixes
 	{
 		private IAffixesProvider AffixesProvider { get; init; }
 		private IAffixScoreProvider ScoreProvider { get; init; }
-		private int? Positivity { get; init; }
-		private int? Negativity { get; init; }
-		private int? MaxAffixes { get; init; }
+		private int Positivity { get; init; }
+		private int Negativity { get; init; }
+		private int MaxAffixes { get; init; }
 
-		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, int? positivity, int? negativity, int? maxAffixes)
+		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, int positivity, int negativity, int maxAffixes)
 		{
 			this.AffixesProvider = affixesProvider;
 			this.ScoreProvider = scoreProvider;
@@ -45,35 +46,37 @@ namespace Shockah.SeasonAffixes
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-			=> GetAllCombinations(season, AffixesProvider.Affixes.OrderByDescending(a => ScoreProvider.GetPositivity(a, season) + ScoreProvider.GetNegativity(a, season)).ThenByDescending(a => ScoreProvider.GetPositivity(a, season) - ScoreProvider.GetNegativity(a, season)).ToArray(), 0, new(), 0, 0).Distinct();
-
-		private IEnumerable<IReadOnlySet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, HashSet<ISeasonAffix> current, int currentPositivity, int currentNegativity)
 		{
-			if (allAffixesIndex >= allAffixes.Length)
+			var allAffixes = AffixesProvider.Affixes
+				.OrderByDescending(a => ScoreProvider.GetPositivity(a, season) + ScoreProvider.GetNegativity(a, season))
+				.ThenByDescending(a => ScoreProvider.GetPositivity(a, season) - ScoreProvider.GetNegativity(a, season))
+				.ToArray();
+			return GetAllCombinations(season, allAffixes, 0, BigInteger.Zero, 0, 0, 0)
+				.Distinct()
+				.Select(mask =>
+				{
+					var combination = new HashSet<ISeasonAffix>(MaxAffixes);
+					for (int i = 0; i < allAffixes.Length; i++)
+						if ((mask & (BigInteger.One << i)) != 0)
+							combination.Add(allAffixes[i]);
+					return combination;
+				});
+		}
+
+		private IEnumerable<BigInteger> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, BigInteger mask, int bitsSet, int currentPositivity, int currentNegativity)
+		{
+			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes || allAffixesIndex >= allAffixes.Length)
+				yield break;
+			if (currentPositivity == Positivity && currentNegativity == Negativity)
 			{
-				if (Positivity is not null && currentPositivity != Positivity.Value)
-					yield break;
-				if (Negativity is not null && currentNegativity != Negativity.Value)
-					yield break;
-				if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
-					yield break;
-				yield return current;
-				yield break;
-			}
-			if (Positivity is not null && currentPositivity > Positivity.Value)
-				yield break;
-			if (Negativity is not null && currentNegativity > Negativity.Value)
-				yield break;
-			if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
-			{
-				yield return current;
+				yield return mask;
 				yield break;
 			}
 
 			var newAffix = allAffixes[allAffixesIndex];
-			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, current, currentPositivity, currentNegativity))
+			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, mask, bitsSet, currentPositivity, currentNegativity))
 				yield return result;
-			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, new HashSet<ISeasonAffix>(current) { newAffix }, currentPositivity + ScoreProvider.GetPositivity(newAffix, season), currentNegativity + ScoreProvider.GetNegativity(newAffix, season)))
+			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, mask | (BigInteger.One << allAffixesIndex), bitsSet + 1, currentPositivity + ScoreProvider.GetPositivity(newAffix, season), currentNegativity + ScoreProvider.GetNegativity(newAffix, season)))
 				yield return result;
 		}
 	}
