@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
 
 namespace Shockah.SeasonAffixes
 {
@@ -71,9 +70,9 @@ namespace Shockah.SeasonAffixes
 
 		private IEnumerable<HashSet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, int[] affixPositivities, int[] affixNegativities, HashSet<ISeasonAffix> combination, int currentPositivity, int currentNegativity)
 		{
-			if (IsConflicting(season, combination))
-				yield break;
 			if (currentPositivity > Positivity || currentNegativity > Negativity || combination.Count > MaxAffixes)
+				yield break;
+			if (IsConflicting(season, combination))
 				yield break;
 			if (currentPositivity == Positivity && currentNegativity == Negativity)
 			{
