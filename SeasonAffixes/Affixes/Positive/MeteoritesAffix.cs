@@ -13,29 +13,29 @@ using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class MeteoritesAffix : BaseSeasonAffix
+	internal sealed class MeteoritesAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Meteorites";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.MeteoritesChance * 100):0.##}%" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 400, 32, 32));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.MeteoritesChance * 100):0.##}%" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 400, 32, 32));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public MeteoritesAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.MetalAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.MetalAspect };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

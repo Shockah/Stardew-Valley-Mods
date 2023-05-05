@@ -16,21 +16,21 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Sap";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(320, 48, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(320, 48, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public SapAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.TappingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.TappingAspect };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

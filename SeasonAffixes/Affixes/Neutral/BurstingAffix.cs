@@ -15,17 +15,18 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
-	internal sealed class BurstingAffix : BaseSeasonAffix
+	internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 		private static readonly WeakCounter<GameLocation> MonsterDropCallCounter = new();
 
 		private static string ShortID => "Bursting";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 176, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 176, 16, 16));
 
-		public override string LocalizedDescription
+		public BurstingAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public string LocalizedDescription
 		{
 			get
 			{
@@ -37,26 +38,25 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 		}
 
-		public override int GetPositivity(OrdinalSeason season)
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
-		=> 1;
+		public int GetNegativity(OrdinalSeason season)
+			=> 1;
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 		{
 			if (Mod.Config.BurstingCherryBombWeight <= 0f && Mod.Config.BurstingBombWeight <= 0f && Mod.Config.BurstingMegaBombWeight <= 0f)
 				return 0; // invalid config, skipping affix
 			return 1;
 		}
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect, VanillaSkill.Combat.UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect, VanillaSkill.Combat.UniqueID };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

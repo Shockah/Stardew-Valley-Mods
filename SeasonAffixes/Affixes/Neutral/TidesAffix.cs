@@ -8,30 +8,30 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
-	internal sealed class TidesAffix : BaseSeasonAffix
+	internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Tides";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Minigames\\MineCart"), new(48, 256, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Minigames\\MineCart"), new(48, 256, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public TidesAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Fish");
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Fish");

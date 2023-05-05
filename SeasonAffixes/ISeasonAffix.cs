@@ -31,32 +31,17 @@ namespace Shockah.SeasonAffixes
 			=> 1;
 	}
 
-	internal abstract class BaseSeasonAffix : ISeasonAffix
+	internal abstract class BaseSeasonAffix
 	{
 		protected static SeasonAffixes Mod
 			=> SeasonAffixes.Instance;
 
-		public abstract string UniqueID { get; }
-		public abstract string LocalizedName { get; }
-		public abstract string LocalizedDescription { get; }
-		public abstract TextureRectangle Icon { get; }
+		public string UniqueID { get; init; }
 
-		public virtual void OnRegister() { }
-		public virtual void OnUnregister() { }
-		public virtual void OnActivate() { }
-		public virtual void OnDeactivate() { }
-
-		public virtual void SetupConfig(IManifest manifest) { }
-		public virtual void OnSaveConfig() { }
-
-		public abstract int GetNegativity(OrdinalSeason season);
-		public abstract int GetPositivity(OrdinalSeason season);
-
-        public virtual IReadOnlySet<string> Tags
-			=> new HashSet<string>();
-
-		public virtual double GetProbabilityWeight(OrdinalSeason season)
-			=> 1;
+		protected BaseSeasonAffix(string uniqueID)
+		{
+			this.UniqueID = uniqueID;
+		}
 
 		public override bool Equals(object? obj)
 			=> obj is ISeasonAffix affix && UniqueID == affix.UniqueID;

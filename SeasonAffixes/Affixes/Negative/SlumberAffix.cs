@@ -8,31 +8,32 @@ using System;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class SlumberAffix : BaseSeasonAffix
+	internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Slumber";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Hours = $"{(int)(Mod.Config.SlumberHours):0.#}" });
-		public override TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 96, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Hours = $"{(int)(Mod.Config.SlumberHours):0.#}" });
+		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 96, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public SlumberAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

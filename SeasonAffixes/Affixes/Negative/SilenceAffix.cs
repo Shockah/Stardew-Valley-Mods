@@ -15,29 +15,29 @@ using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class SilenceAffix : BaseSeasonAffix
+	internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Silence";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 144, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 144, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public SilenceAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

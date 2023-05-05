@@ -10,28 +10,28 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class LootAffix : BaseSeasonAffix
+	internal sealed class LootAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 		private static readonly WeakCounter<GameLocation> MonsterDropCallCounter = new();
 		private static readonly ConditionalWeakTable<GameLocation, Random> MonsterDropRandomCache = new();
 
 		private static string ShortID => "Loot";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 96, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 96, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public LootAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Combat.UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.Combat.UniqueID };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

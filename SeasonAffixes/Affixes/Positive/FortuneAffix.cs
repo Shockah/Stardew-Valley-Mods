@@ -7,21 +7,22 @@ using StardewValley;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class FortuneAffix : BaseSeasonAffix
+	internal sealed class FortuneAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Fortune";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.mouseCursors, new(381, 361, 10, 10));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.mouseCursors, new(381, 361, 10, 10));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public FortuneAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 
@@ -30,14 +31,14 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			Game1.player.team.sharedDailyLuck.Value += Mod.Config.FortuneValue;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			if (!Context.IsMainPlayer)
 				return;
 			Game1.player.team.sharedDailyLuck.Value -= Mod.Config.FortuneValue;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

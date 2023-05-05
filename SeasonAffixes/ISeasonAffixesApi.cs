@@ -34,5 +34,6 @@ namespace Shockah.SeasonAffixes
         void QueueOvernightAffixChoice();
 
 		IReadOnlySet<ISeasonAffix> GetAllPossibleAffixesForSeason(OrdinalSeason season);
+		IReadOnlySet<ISeasonAffix> GetTagPairCandidatesForAffix(ISeasonAffix affix, OrdinalSeason season);
 	}
 }

@@ -17,8 +17,15 @@ namespace Shockah.SeasonAffixes
 
 	internal sealed class DefaultProbabilityAffixSetWeightProvider : IAffixSetWeightProvider
 	{
+		private IAffixProbabilityWeightProvider ProbabilityWeightProvider { get; init; }
+
+		public DefaultProbabilityAffixSetWeightProvider(IAffixProbabilityWeightProvider probabilityWeightProvider)
+		{
+			this.ProbabilityWeightProvider = probabilityWeightProvider;
+		}
+
 		public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
-			=> combination.Average(a => a.GetProbabilityWeight(season));
+			=> combination.Average(a => ProbabilityWeightProvider.GetProbabilityWeight(a, season));
 	}
 
 	internal sealed class MultiplyingAffixSetWeightProvider : IAffixSetWeightProvider
@@ -95,21 +102,27 @@ namespace Shockah.SeasonAffixes
 
 	internal sealed class PairingUpTagsAffixSetWeightProvider : IAffixSetWeightProvider
 	{
-		private IReadOnlySet<ISeasonAffix> AllAffixes { get; init; }
+		private IAffixScoreProvider ScoreProvider { get; init; }
+		private IAffixProbabilityWeightProvider ProbabilityWeightProvider { get; init; }
+		private Func<IAffixProbabilityWeightProvider, ISeasonAffix, OrdinalSeason, IReadOnlySet<ISeasonAffix>> GetTagPairCandidatesForAffixFunction { get; init; }
 		private Func<int, double> UnpairedAffixMultiplier { get; init; }
 		private double OneSidedPairedAffixesMultiplier { get; init; }
 		private int PairedAffixLimit { get; init; }
 		private double TooManyPairedAffixesMultiplier { get; init; }
 
 		public PairingUpTagsAffixSetWeightProvider(
-			IReadOnlySet<ISeasonAffix> allAffixes,
+			IAffixScoreProvider scoreProvider,
+			IAffixProbabilityWeightProvider probabilityWeightProvider,
+			Func<IAffixProbabilityWeightProvider, ISeasonAffix, OrdinalSeason, IReadOnlySet<ISeasonAffix>> getTagPairCandidatesForAffixFunction,
 			Func<int, double> unpairedAffixMultiplier,
 			double oneSidedPairedAffixesMultiplier,
 			int pairedAffixLimit,
 			double tooManyPairedAffixesMultiplier
 		)
 		{
-			this.AllAffixes = allAffixes;
+			this.ScoreProvider = scoreProvider;
+			this.ProbabilityWeightProvider = probabilityWeightProvider;
+			this.GetTagPairCandidatesForAffixFunction = getTagPairCandidatesForAffixFunction;
 			this.UnpairedAffixMultiplier = unpairedAffixMultiplier;
 			this.OneSidedPairedAffixesMultiplier = oneSidedPairedAffixesMultiplier;
 			this.PairedAffixLimit = pairedAffixLimit;
@@ -124,15 +137,15 @@ namespace Shockah.SeasonAffixes
 			{
 				if (relatedAffixes.Count == 1)
 				{
-					if (affix.Tags.Count > 0 && affix.GetPositivity(season) == 0 || affix.GetNegativity(season) == 0)
+					if (affix.Tags.Count > 0 && ScoreProvider.GetPositivity(affix, season) == 0 || ScoreProvider.GetNegativity(affix, season) == 0)
 					{
-						int possibleTagAffixes = AllAffixes.Where(a => a.Tags.Any(t => affix.Tags.Contains(t))).Count();
-						weight *= UnpairedAffixMultiplier(possibleTagAffixes);
+						int possibleTagPairAffixes = GetTagPairCandidatesForAffixFunction(ProbabilityWeightProvider, affix, season).Count;
+						weight *= UnpairedAffixMultiplier(possibleTagPairAffixes);
 					}
 				}
 				else
 				{
-					if (relatedAffixes.Sum(a => a.GetPositivity(season)) == 0 || relatedAffixes.Sum(a => a.GetNegativity(season)) == 0)
+					if (relatedAffixes.Sum(a => ScoreProvider.GetPositivity(a, season)) == 0 || relatedAffixes.Sum(a => ScoreProvider.GetNegativity(a, season)) == 0)
 						weight *= OneSidedPairedAffixesMultiplier;
 					if (relatedAffixes.Count >= PairedAffixLimit)
 						weight *= TooManyPairedAffixesMultiplier;

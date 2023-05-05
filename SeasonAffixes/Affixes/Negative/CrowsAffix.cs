@@ -11,29 +11,29 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class CrowsAffix : BaseSeasonAffix
+	internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Crows";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.content.Load<Texture2D>(Critter.critterTexture), new(134, 46, 21, 17));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>(Critter.critterTexture), new(134, 46, 21, 17));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public CrowsAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.CropsAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

@@ -8,29 +8,29 @@ using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class DroughtAffix : BaseSeasonAffix
+	internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Drought";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.mouseCursors, new(413, 333, 13, 13));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 333, 13, 13));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public DroughtAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

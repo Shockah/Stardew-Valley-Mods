@@ -24,11 +24,12 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public ISkill Skill { get; init; }
 
 		private static string ShortID => "Skill";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}:{Skill.UniqueID}";
-		public override string LocalizedName => Skill.Name;
-		public override TextureRectangle Icon => Skill.Icon ?? new(Game1.objectSpriteSheet, new(0, 64, 16, 16));
+		public string LocalizedName => Skill.Name;
+		public TextureRectangle Icon => Skill.Icon ?? new(Game1.objectSpriteSheet, new(0, 64, 16, 16));
 
-		public override string LocalizedDescription
+		private Lazy<IReadOnlySet<string>> LazyTags { get; init; }
+
+		public string LocalizedDescription
 		{
 			get
 			{
@@ -59,14 +60,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			get => Mod.Config.SkillXPIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultXPIncrease;
 		}
 
-		public SkillAffix(ISkill skill)
+		public SkillAffix(ISkill skill) : base($"{Mod.ModManifest.UniqueID}.{ShortID}:{skill.UniqueID}")
 		{
 			this.Skill = skill;
-        }
-
-		public override IReadOnlySet<string> Tags
-		{
-			get
+			this.LazyTags = new(() =>
 			{
 				if (Skill.Equals(VanillaSkill.Farming))
 					return new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.AnimalsAspect };
@@ -78,16 +75,18 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 					return new HashSet<string> { VanillaSkill.FishingAspect, VanillaSkill.TrappingAspect };
 				else
 					return new HashSet<string> { Skill.UniqueID };
-			}
+			});
 		}
 
-		public override int GetPositivity(OrdinalSeason season)
+		public IReadOnlySet<string> Tags => LazyTags.Value;
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 		{
 			if (XPIncreaseConfig == 0f && (Skill is not VanillaSkill || LevelIncreaseConfig == 0f))
 				return 0; // invalid config - skipping affix
@@ -96,10 +95,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			return Math.Min(2.0 / Mod.AllAffixes.Values.Count(affix => affix is SkillAffix), 1.0);
 		}
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 			Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
@@ -108,7 +107,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 			Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
@@ -117,7 +116,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 

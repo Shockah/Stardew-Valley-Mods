@@ -19,38 +19,39 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
-	internal sealed class InflationAffix : BaseSeasonAffix
+	internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Inflation";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public InflationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

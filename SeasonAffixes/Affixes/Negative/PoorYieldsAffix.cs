@@ -9,34 +9,34 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class PoorYieldsAffix : BaseSeasonAffix
+	internal sealed class PoorYieldsAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "PoorYields";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(0, 0, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(0, 0, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public PoorYieldsAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.CropsAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Crops");
 			UpdateExistingCrops();
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Crops");

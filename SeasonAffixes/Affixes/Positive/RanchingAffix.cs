@@ -13,29 +13,29 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class RanchingAffix : BaseSeasonAffix
+	internal sealed class RanchingAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Ranching";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{(int)(Mod.Config.RanchingValue * 100):0.##}%" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 272, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{(int)(Mod.Config.RanchingValue * 100):0.##}%" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(256, 272, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public RanchingAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.RanchingValue > 1f ? 1 : 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.RanchingValue < 1f ? 1 : 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.AnimalsAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.AnimalsAspect };
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

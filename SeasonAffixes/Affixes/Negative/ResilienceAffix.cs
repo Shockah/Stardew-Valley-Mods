@@ -11,39 +11,39 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class ResilienceAffix : BaseSeasonAffix
+	internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Resilience";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.ResilienceValue:0.##}x" });
-		public override TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Characters\\Monsters\\Metal Head"), new(0, 0, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.ResilienceValue:0.##}x" });
+		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Characters\\Monsters\\Metal Head"), new(0, 0, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public ResilienceAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.ResilienceValue < 1 ? 1 : 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.ResilienceValue > 1 ? 1 : 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.Combat.UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.Combat.UniqueID };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Monsters");
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 			Mod.Helper.GameContent.InvalidateCache("Data\\Monsters");
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

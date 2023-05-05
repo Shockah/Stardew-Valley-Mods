@@ -21,21 +21,21 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Thunder";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
-		public override TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
+		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public ThunderAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch
 			{
 				Season.Spring or Season.Fall => 0.5,
@@ -44,10 +44,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				_ => throw new ArgumentException($"{nameof(Season)} has an invalid value."),
 			};
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

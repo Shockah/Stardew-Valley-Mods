@@ -12,27 +12,27 @@ using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
 {
-	internal sealed class MigrationAffix : BaseSeasonAffix
+	internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 		private static readonly List<WeakReference<GameLocation>> LocationsDuringGetFish = new();
 
 		private static string ShortID => "Migration";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 464, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 464, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public MigrationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
 		
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

@@ -14,28 +14,29 @@ using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class TreasuresAffix : BaseSeasonAffix
+	internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private const int ArtifactTroveID = 275;
 
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Treasures";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.TreasuresChance * 100):0.##}%" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(176, 176, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.TreasuresChance * 100):0.##}%" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(176, 176, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public TreasuresAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

@@ -10,11 +10,11 @@ namespace Shockah.SeasonAffixes
 
 	internal static class IAffixesProviderExt
 	{
-		public static IAffixesProvider Effective(this IAffixesProvider provider, OrdinalSeason season)
-			=> new EffectiveAffixesProvider(provider, season);
+		public static IAffixesProvider Effective(this IAffixesProvider provider, IAffixScoreProvider scoreProvider, OrdinalSeason season)
+			=> new EffectiveAffixesProvider(provider, scoreProvider, season);
 
-		public static IAffixesProvider ApplicableToSeason(this IAffixesProvider provider, OrdinalSeason season)
-			=> new ApplicableToSeasonAffixesProvider(provider, season);
+		public static IAffixesProvider ApplicableToSeason(this IAffixesProvider provider, IAffixProbabilityWeightProvider probabilityWeightProvider, OrdinalSeason season)
+			=> new ApplicableToSeasonAffixesProvider(provider, probabilityWeightProvider, season);
 	}
 
 	internal sealed class AffixesProvider : IAffixesProvider
@@ -52,15 +52,17 @@ namespace Shockah.SeasonAffixes
 	internal sealed class EffectiveAffixesProvider : IAffixesProvider
 	{
 		private IAffixesProvider Wrapped { get; init; }
+		private IAffixScoreProvider ScoreProvider { get; init; }
 		private OrdinalSeason Season { get; init; }
 
 		public IEnumerable<ISeasonAffix> Affixes =>
 			Wrapped.Affixes
-				.Where(affix => affix.GetPositivity(Season) > 0 || affix.GetNegativity(Season) > 0);
+				.Where(affix => ScoreProvider.GetPositivity(affix, Season) > 0 || ScoreProvider.GetNegativity(affix, Season) > 0);
 
-		public EffectiveAffixesProvider(IAffixesProvider wrapped, OrdinalSeason season)
+		public EffectiveAffixesProvider(IAffixesProvider wrapped, IAffixScoreProvider scoreProvider, OrdinalSeason season)
 		{
 			this.Wrapped = wrapped;
+			this.ScoreProvider = scoreProvider;
 			this.Season = season;
 		}
 	}
@@ -68,15 +70,17 @@ namespace Shockah.SeasonAffixes
 	internal sealed class ApplicableToSeasonAffixesProvider : IAffixesProvider
 	{
 		private IAffixesProvider Wrapped { get; init; }
+		private IAffixProbabilityWeightProvider ProbabilityWeightProvider { get; init; }
 		private OrdinalSeason Season { get; init; }
 
 		public IEnumerable<ISeasonAffix> Affixes =>
 			Wrapped.Affixes
-				.Where(affix => affix.GetProbabilityWeight(Season) > 0);
+				.Where(affix => ProbabilityWeightProvider.GetProbabilityWeight(affix, Season) > 0);
 
-		public ApplicableToSeasonAffixesProvider(IAffixesProvider wrapped, OrdinalSeason season)
+		public ApplicableToSeasonAffixesProvider(IAffixesProvider wrapped, IAffixProbabilityWeightProvider probabilityWeightProvider, OrdinalSeason season)
 		{
 			this.Wrapped = wrapped;
+			this.ProbabilityWeightProvider = probabilityWeightProvider;
 			this.Season = season;
 		}
 	}

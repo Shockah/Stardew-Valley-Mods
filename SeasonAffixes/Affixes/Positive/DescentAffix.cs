@@ -15,28 +15,28 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Descent";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.bigCraftableSpriteSheet, new(112, 272, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.bigCraftableSpriteSheet, new(112, 272, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public DescentAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect, VanillaSkill.Combat.UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect, VanillaSkill.Combat.UniqueID };
 
-		public override double GetProbabilityWeight(OrdinalSeason season)
+		public double GetProbabilityWeight(OrdinalSeason season)
 		{
 			bool finishedMine = MineShaft.lowestLevelReached >= 120;
 			bool busUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));
 			return busUnlocked || !finishedMine ? 1 : 0;
 		}
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
 		private void Apply(Harmony harmony)

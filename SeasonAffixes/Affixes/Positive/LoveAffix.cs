@@ -11,39 +11,39 @@ using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class LoveAffix : BaseSeasonAffix
+	internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Love";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
-		public override TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
+		public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
 
 		private readonly Dictionary<string, int> OldFriendship = new();
 
-		public override int GetPositivity(OrdinalSeason season)
+		public LoveAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			UpdateDispositions();
 			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			Mod.Helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 			Mod.Helper.Events.Content.AssetsInvalidated -= OnAssetsInvalidated;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

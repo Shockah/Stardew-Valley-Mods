@@ -13,36 +13,37 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class InnovationAffix : BaseSeasonAffix
+	internal sealed class InnovationAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Innovation";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Decrease = $"{(int)(Mod.Config.InnovationDecrease * 100):0.##}%" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 80, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Decrease = $"{(int)(Mod.Config.InnovationDecrease * 100):0.##}%" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 80, 16, 16));
 
 		private List<WeakReference<SObject>> AffixApplied = new();
 
-		public override int GetPositivity(OrdinalSeason season)
+		public InnovationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			AffixApplied.Clear();
 			Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
 			MachineTracker.MachineChangedEvent += OnMachineChanged;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
 			MachineTracker.MachineChangedEvent -= OnMachineChanged;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

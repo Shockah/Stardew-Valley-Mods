@@ -15,7 +15,7 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class CompetitionAffix : BaseSeasonAffix
+	internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
 
@@ -23,38 +23,39 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly Lazy<Func<MineCart, int>> MineCartScoreGetter = new(() => AccessTools.Field(typeof(MineCart), "score").EmitInstanceGetter<MineCart, int>());
 
 		private static string ShortID => "Competition";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public override TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 208, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 208, 16, 16));
 
 		private static readonly PerScreen<bool> RunOriginalBuyQiCoins = new(() => false);
 		private static readonly PerScreen<int> QiCoinsLeftToSell = new(() => 0);
 		private static readonly ConditionalWeakTable<AbigailGame.CowboyMonster, StructRef<int>> PrairieKingMonsterMaxHealth = new();
 		private static readonly PerScreen<float> ArcadeMoneyToReceive = new(() => 0);
 
-		public override int GetPositivity(OrdinalSeason season)
+		public CompetitionAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> 1;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public override void OnRegister()
+		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
@@ -173,7 +174,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static int GetMinimumQiCoinsToSell()
 			=> InfiniteEnumerable(1).First(qiCoins => GetMoneyForQiCoins(qiCoins) > 0);
 
-		private static bool GameLocation_performAction_Prefix(GameLocation __instance, string action, Farmer who)
+		private static bool GameLocation_performAction_Prefix(GameLocation __instance, string action)
 		{
 			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
 				return true;

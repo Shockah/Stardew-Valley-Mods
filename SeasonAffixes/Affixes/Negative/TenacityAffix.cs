@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
-	internal sealed class TenacityAffix : BaseSeasonAffix
+	internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static readonly Lazy<Func<BobberBar, bool>> BobberBarBobberInBarGetter = new(() => AccessTools.Field(typeof(BobberBar), "bobberInBar").EmitInstanceGetter<BobberBar, bool>());
 		private static readonly Lazy<Func<BobberBar, bool>> BobberBarHandledFishResultGetter = new(() => AccessTools.Field(typeof(BobberBar), "handledFishResult").EmitInstanceGetter<BobberBar, bool>());
@@ -21,31 +21,31 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static readonly Lazy<Action<BobberBar, float>> BobberBarDistanceFromCatchingSetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceSetter<BobberBar, float>());
 
 		private static string ShortID => "Tenacity";
-		public override string UniqueID => $"{Mod.ModManifest.UniqueID}.{ShortID}";
-		public override string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public override string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
-		public override TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 80, 16, 16));
+		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
+		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 80, 16, 16));
 
-		public override int GetPositivity(OrdinalSeason season)
+		public TenacityAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+
+		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.TenacityValue < 1f ? 1 : 0;
 
-		public override int GetNegativity(OrdinalSeason season)
+		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.TenacityValue > 1f ? 1 : 0;
 
-		public override IReadOnlySet<string> Tags
-			=> new HashSet<string> { VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
 
-		public override void OnActivate()
+		public void OnActivate()
 		{
 			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 		}
 
-		public override void OnDeactivate()
+		public void OnDeactivate()
 		{
 			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 		}
 
-		public override void SetupConfig(IManifest manifest)
+		public void SetupConfig(IManifest manifest)
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);

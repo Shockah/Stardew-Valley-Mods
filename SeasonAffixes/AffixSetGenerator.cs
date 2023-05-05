@@ -1,6 +1,8 @@
 ﻿using Shockah.Kokoro;
+using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Shockah.SeasonAffixes
@@ -18,44 +20,45 @@ namespace Shockah.SeasonAffixes
 		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, IAffixSetWeightProvider weightProvider)
 			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider);
 
-		public static IAffixSetGenerator MaxAffixes(this IAffixSetGenerator affixSetGenerator, int max)
-			=> new MaxAffixesAffixSetGenerator(affixSetGenerator, max);
-
 		public static IAffixSetGenerator AsLittleAsPossible(this IAffixSetGenerator affixSetGenerator)
 			=> new AsLittleAsPossibleAffixSetGenerator(affixSetGenerator);
 
 		public static IAffixSetGenerator AvoidingDuplicatesBetweenChoices(this IAffixSetGenerator affixSetGenerator)
 			=> new AvoidingDuplicatesBetweenChoicesAffixSetGenerator(affixSetGenerator);
+
+		public static IAffixSetGenerator Benchmarking(this IAffixSetGenerator affixSetGenerator, IMonitor monitor, string tag, LogLevel logLevel = LogLevel.Debug)
+			=> new BenchmarkingAffixSetGenerator(affixSetGenerator, monitor, tag, logLevel);
 	}
 
 	internal sealed class AllCombinationsAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixesProvider AffixesProvider { get; init; }
+		private IAffixScoreProvider ScoreProvider { get; init; }
 		private int? Positivity { get; init; }
 		private int? Negativity { get; init; }
+		private int? MaxAffixes { get; init; }
 
-		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, int? positivity, int? negativity)
+		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, int? positivity, int? negativity, int? maxAffixes)
 		{
 			this.AffixesProvider = affixesProvider;
+			this.ScoreProvider = scoreProvider;
 			this.Positivity = positivity;
 			this.Negativity = negativity;
+			this.MaxAffixes = maxAffixes;
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			var affixes = AffixesProvider.Affixes.ToList();
-			return GetAllCombinations(affixes.ToDictionary(a => a.UniqueID, a => a.GetPositivity(season)), affixes.ToDictionary(a => a.UniqueID, a => a.GetNegativity(season)), affixes.Select(a => a.UniqueID).ToList(), new(), 0, 0)
-				.ToHashSet()
-				.Select(affixIds => affixIds.Select(id => SeasonAffixes.Instance.GetAffix(id)!).ToHashSet());
-		}
+			=> GetAllCombinations(season, AffixesProvider.Affixes.ToList(), new(), 0, 0).Distinct();
 
-		private IEnumerable<IReadOnlySet<string>> GetAllCombinations(Dictionary<string, int> affixPositivity, Dictionary<string, int> affixNegativity, List<string> remainingAffixes, HashSet<string> current, int currentPositivity, int currentNegativity)
+		private IEnumerable<IReadOnlySet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, List<ISeasonAffix> remainingAffixes, HashSet<ISeasonAffix> current, int currentPositivity, int currentNegativity)
 		{
 			if (remainingAffixes.Count == 0)
 			{
 				if (Positivity is not null && currentPositivity < Positivity.Value)
 					yield break;
 				if (Negativity is not null && currentNegativity < Negativity.Value)
+					yield break;
+				if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
 					yield break;
 				yield return current;
 				yield break;
@@ -64,13 +67,15 @@ namespace Shockah.SeasonAffixes
 				yield break;
 			if (Negativity is not null && currentNegativity > Negativity.Value)
 				yield break;
+			if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
+				yield return current;
 
-			var affixID = remainingAffixes[0];
+			var newAffix = remainingAffixes[0];
 			var newRemainingAffixes = remainingAffixes.Skip(1).ToList();
 
-			foreach (var result in GetAllCombinations(affixPositivity, affixNegativity, newRemainingAffixes, current, currentPositivity, currentNegativity))
+			foreach (var result in GetAllCombinations(season, newRemainingAffixes, current, currentPositivity, currentNegativity))
 				yield return result;
-			foreach (var result in GetAllCombinations(affixPositivity, affixNegativity, newRemainingAffixes, new HashSet<string>(current) { affixID }, currentPositivity + affixPositivity[affixID], currentNegativity + affixNegativity[affixID]))
+			foreach (var result in GetAllCombinations(season, newRemainingAffixes, new HashSet<ISeasonAffix>(current) { newAffix }, currentPositivity + ScoreProvider.GetPositivity(newAffix, season), currentNegativity + ScoreProvider.GetNegativity(newAffix, season)))
 				yield return result;
 		}
 	}
@@ -135,21 +140,6 @@ namespace Shockah.SeasonAffixes
 		}
 	}
 
-	internal sealed class MaxAffixesAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-		private int Max { get; init; }
-
-		public MaxAffixesAffixSetGenerator(IAffixSetGenerator affixSetGenerator, int max)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-			this.Max = max;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-			=> AffixSetGenerator.Generate(season).Where(affixes => affixes.Count <= Max);
-	}
-
 	internal sealed class AsLittleAsPossibleAffixSetGenerator : IAffixSetGenerator
 	{
 		private IAffixSetGenerator AffixSetGenerator { get; init; }
@@ -212,6 +202,38 @@ namespace Shockah.SeasonAffixes
 
 				allowedDuplicates++;
 			}
+		}
+	}
+
+	internal sealed class BenchmarkingAffixSetGenerator : IAffixSetGenerator
+	{
+		private IAffixSetGenerator AffixSetGenerator { get; init; }
+		private IMonitor Monitor { get; init; }
+		private string Tag { get; init; }
+		private LogLevel LogLevel { get; init; }
+
+		public BenchmarkingAffixSetGenerator(IAffixSetGenerator affixSetGenerator, IMonitor monitor, string tag, LogLevel logLevel = LogLevel.Debug)
+		{
+			this.AffixSetGenerator = affixSetGenerator;
+			this.Monitor = monitor;
+			this.Tag = tag;
+			this.LogLevel = logLevel;
+		}
+
+		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
+		{
+			Monitor.Log($"[{Tag}] Generating affix sets...", LogLevel);
+			Stopwatch stopwatch = Stopwatch.StartNew();
+			int index = 0;
+
+			foreach (var result in AffixSetGenerator.Generate(season))
+			{
+				if (index < 10 || (index < 100 && index % 10 == 0) || (index < 1000 && index % 100 == 0) || (index < 10000 && index % 1000 == 0) || (index < 100000 && index % 10000 == 0))
+					Monitor.Log($"> [{Tag}] Generated affix set #{index + 1}, took {stopwatch.ElapsedMilliseconds}ms", LogLevel);
+				yield return result;
+				index++;
+			}
+			Monitor.Log($"> [{Tag}] Done generating affix sets after {index} results, took {stopwatch.ElapsedMilliseconds}ms.", LogLevel);
 		}
 	}
 }
