@@ -596,7 +596,6 @@ namespace Shockah.SeasonAffixes
 		private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, ModConfig.AffixSetEntry affixSetEntry, Random random)
 			=> new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, affixSetEntry.Positive, affixSetEntry.Negative, 4)
 			.Benchmarking(Monitor, "Combinations")
-			.NonConflictingWithCombinations()
 			.WeightedRandom(random, affixSetWeightProvider)
 			.AvoidingDuplicatesBetweenChoices()
 			.Benchmarking(Monitor, "FULL");

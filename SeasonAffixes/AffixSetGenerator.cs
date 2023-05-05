@@ -14,9 +14,6 @@ namespace Shockah.SeasonAffixes
 
 	internal static class IAffixSetGeneratorExt
 	{
-		public static IAffixSetGenerator NonConflictingWithCombinations(this IAffixSetGenerator affixSetGenerator)
-			=> new NonConflictingWithCombinationsAffixSetGenerator(affixSetGenerator);
-
 		public static IAffixSetGenerator WeightedRandom(this IAffixSetGenerator affixSetGenerator, Random random, IAffixSetWeightProvider weightProvider)
 			=> new WeightedRandomAffixSetGenerator(affixSetGenerator, random, weightProvider);
 
@@ -48,11 +45,11 @@ namespace Shockah.SeasonAffixes
 		}
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-			=> GetAllCombinations(season, AffixesProvider.Affixes.OrderByDescending(a => ScoreProvider.GetPositivity(a, season) + ScoreProvider.GetNegativity(a, season)).ThenByDescending(a => ScoreProvider.GetPositivity(a, season) - ScoreProvider.GetNegativity(a, season)).ToList(), new(), 0, 0).Distinct();
+			=> GetAllCombinations(season, AffixesProvider.Affixes.OrderByDescending(a => ScoreProvider.GetPositivity(a, season) + ScoreProvider.GetNegativity(a, season)).ThenByDescending(a => ScoreProvider.GetPositivity(a, season) - ScoreProvider.GetNegativity(a, season)).ToArray(), 0, new(), 0, 0).Distinct();
 
-		private IEnumerable<IReadOnlySet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, List<ISeasonAffix> remainingAffixes, HashSet<ISeasonAffix> current, int currentPositivity, int currentNegativity)
+		private IEnumerable<IReadOnlySet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, HashSet<ISeasonAffix> current, int currentPositivity, int currentNegativity)
 		{
-			if (remainingAffixes.Count == 0)
+			if (allAffixesIndex >= allAffixes.Length)
 			{
 				if (Positivity is not null && currentPositivity != Positivity.Value)
 					yield break;
@@ -68,40 +65,16 @@ namespace Shockah.SeasonAffixes
 			if (Negativity is not null && currentNegativity > Negativity.Value)
 				yield break;
 			if (MaxAffixes is not null && current.Count >= MaxAffixes.Value)
-				yield return current;
-
-			var newAffix = remainingAffixes[0];
-			var newRemainingAffixes = remainingAffixes.Skip(1).ToList();
-
-			foreach (var result in GetAllCombinations(season, newRemainingAffixes, current, currentPositivity, currentNegativity))
-				yield return result;
-			foreach (var result in GetAllCombinations(season, newRemainingAffixes, new HashSet<ISeasonAffix>(current) { newAffix }, currentPositivity + ScoreProvider.GetPositivity(newAffix, season), currentNegativity + ScoreProvider.GetNegativity(newAffix, season)))
-				yield return result;
-		}
-	}
-
-	internal sealed class NonConflictingWithCombinationsAffixSetGenerator : IAffixSetGenerator
-	{
-		private IAffixSetGenerator AffixSetGenerator { get; init; }
-
-		public NonConflictingWithCombinationsAffixSetGenerator(IAffixSetGenerator affixSetGenerator)
-		{
-			this.AffixSetGenerator = affixSetGenerator;
-		}
-
-		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
-		{
-			return AffixSetGenerator.Generate(season).Where(combination =>
 			{
-				Dictionary<string, int> occurences = new();
-				foreach (var affix in combination)
-				{
-					if (!occurences.ContainsKey(affix.UniqueID))
-						occurences[affix.UniqueID] = 0;
-					occurences[affix.UniqueID]++;
-				}
-				return !occurences.Values.Any(count => count > 1);
-			});
+				yield return current;
+				yield break;
+			}
+
+			var newAffix = allAffixes[allAffixesIndex];
+			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, current, currentPositivity, currentNegativity))
+				yield return result;
+			foreach (var result in GetAllCombinations(season, allAffixes, allAffixesIndex + 1, new HashSet<ISeasonAffix>(current) { newAffix }, currentPositivity + ScoreProvider.GetPositivity(newAffix, season), currentNegativity + ScoreProvider.GetNegativity(newAffix, season)))
+				yield return result;
 		}
 	}
 
