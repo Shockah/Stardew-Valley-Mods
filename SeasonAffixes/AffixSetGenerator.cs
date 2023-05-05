@@ -32,14 +32,16 @@ namespace Shockah.SeasonAffixes
 	{
 		private IAffixesProvider AffixesProvider { get; init; }
 		private IAffixScoreProvider ScoreProvider { get; init; }
+		private IReadOnlyList<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> ConflictInfoProviders { get; init; }
 		private int Positivity { get; init; }
 		private int Negativity { get; init; }
 		private int MaxAffixes { get; init; }
 
-		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, int positivity, int negativity, int maxAffixes)
+		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IReadOnlyList<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> conflictInfoProviders, int positivity, int negativity, int maxAffixes)
 		{
 			this.AffixesProvider = affixesProvider;
 			this.ScoreProvider = scoreProvider;
+			this.ConflictInfoProviders = conflictInfoProviders;
 			this.Positivity = positivity;
 			this.Negativity = negativity;
 			this.MaxAffixes = maxAffixes;
@@ -53,31 +55,36 @@ namespace Shockah.SeasonAffixes
 				.ToArray();
 			var affixPositivities = allAffixes.Select(a => ScoreProvider.GetPositivity(a, season)).ToArray();
 			var affixNegativities = allAffixes.Select(a => ScoreProvider.GetNegativity(a, season)).ToArray();
-			return GetAllCombinations(season, allAffixes, 0, affixPositivities, affixNegativities, BigInteger.Zero, 0, 0, 0)
-				.Select(mask =>
-				{
-					var combination = new HashSet<ISeasonAffix>(MaxAffixes);
-					for (int i = 0; i < allAffixes.Length; i++)
-						if ((mask & (BigInteger.One << i)) != 0)
-							combination.Add(allAffixes[i]);
-					return combination;
-				});
+			return GetAllCombinations(season, allAffixes, 0, affixPositivities, affixNegativities, new(0), 0, 0);
 		}
 
-		private IEnumerable<BigInteger> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, int[] affixPositivities, int[] affixNegativities, BigInteger mask, int bitsSet, int currentPositivity, int currentNegativity)
+		private bool IsConflicting(OrdinalSeason season, HashSet<ISeasonAffix> combination)
 		{
-			if (currentPositivity > Positivity || currentNegativity > Negativity || bitsSet > MaxAffixes)
+			foreach (var provider in ConflictInfoProviders)
+			{
+				var result = provider(combination, season);
+				if (result is not null)
+					return result.Value;
+			}
+			return false;
+		}
+
+		private IEnumerable<HashSet<ISeasonAffix>> GetAllCombinations(OrdinalSeason season, ISeasonAffix[] allAffixes, int allAffixesIndex, int[] affixPositivities, int[] affixNegativities, HashSet<ISeasonAffix> combination, int currentPositivity, int currentNegativity)
+		{
+			if (IsConflicting(season, combination))
+				yield break;
+			if (currentPositivity > Positivity || currentNegativity > Negativity || combination.Count > MaxAffixes)
 				yield break;
 			if (currentPositivity == Positivity && currentNegativity == Negativity)
 			{
-				yield return mask;
+				yield return combination;
 				yield break;
 			}
 			if (allAffixesIndex >= allAffixes.Length)
 				yield break;
 
 			for (int i = allAffixesIndex; i < allAffixes.Length; i++)
-				foreach (var result in GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, mask | (BigInteger.One << i), bitsSet + 1, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
+				foreach (var result in GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, new HashSet<ISeasonAffix>(combination) { allAffixes[i] }, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
 					yield return result;
 		}
 	}

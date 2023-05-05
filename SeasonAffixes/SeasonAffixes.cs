@@ -31,6 +31,7 @@ namespace Shockah.SeasonAffixes
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
+		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> AffixConflictInfoProviders { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>> AffixCombinationWeightProviders { get; init; } = new();
 
 		private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
@@ -220,13 +221,13 @@ namespace Shockah.SeasonAffixes
 				RegisterAffix(affix);
 
 			// conflicts
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is PoorYieldsAffix) && affixes.Any(a => a is RegrowthAffix) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? 0.0 : null);
-			RegisterAffixCombinationWeightProvider((affixes, _) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? 0.0 : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is PoorYieldsAffix) && affixes.Any(a => a is RegrowthAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is CrowsAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Farming)) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is HurricaneAffix) && affixes.Any(a => a is SkillAffix skillAffix && skillAffix.Skill.Equals(VanillaSkill.Foraging)) ? true : null);
 
             SetupConfig();
 		}
@@ -594,7 +595,7 @@ namespace Shockah.SeasonAffixes
 			.MultiplyingBy(new AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(0.1));
 
 		private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, ModConfig.AffixSetEntry affixSetEntry, Random random)
-			=> new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, affixSetEntry.Positive, affixSetEntry.Negative, 4)
+			=> new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, AffixConflictInfoProviders, affixSetEntry.Positive, affixSetEntry.Negative, 4)
 			.Benchmarking(Monitor, "AllCombinations")
 			.WeightedRandom(random, affixSetWeightProvider)
 			.Benchmarking(Monitor, "WeightedRandom")
@@ -734,8 +735,14 @@ namespace Shockah.SeasonAffixes
 				SetupConfig();
 		}
 
+		public void RegisterAffixConflictInfoProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?> provider)
+			=> AffixConflictInfoProviders.Insert(0, provider);
+
+		public void UnregisterAffixConflictInfoProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?> provider)
+			=> AffixConflictInfoProviders.Remove(provider);
+
 		public void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider)
-			=> AffixCombinationWeightProviders.Add(provider);
+			=> AffixCombinationWeightProviders.Insert(0, provider);
 
 		public void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider)
 			=> AffixCombinationWeightProviders.Remove(provider);

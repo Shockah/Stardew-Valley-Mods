@@ -19,6 +19,8 @@ namespace Shockah.SeasonAffixes
 
 		void RegisterAffix(ISeasonAffix affix);
 		void UnregisterAffix(ISeasonAffix affix);
+		void RegisterAffixConflictInfoProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?> provider);
+		void UnregisterAffixConflictInfoProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?> provider);
 		void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 		void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 
