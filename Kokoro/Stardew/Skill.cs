@@ -74,6 +74,7 @@ namespace Shockah.Kokoro.Stardew
 		public static string TappingAspect { get; private set; } = $"{Foraging.UniqueID}:Tapping";
 		public static string FishingAspect { get; private set; } = $"{Fishing.UniqueID}:Fishing";
 		public static string TrappingAspect { get; private set; } = $"{Fishing.UniqueID}:Trapping";
+		public static string PondsAspect { get; private set; } = $"{Fishing.UniqueID}:Ponds";
 
 		private static int[]? XPValues;
 		private static DateTime? LastUpdateTime;
