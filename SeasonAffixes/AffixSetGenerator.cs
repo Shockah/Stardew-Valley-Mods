@@ -106,23 +106,17 @@ namespace Shockah.SeasonAffixes
 
 		public IEnumerable<IReadOnlySet<ISeasonAffix>> Generate(OrdinalSeason season)
 		{
-			List<WeightedItem<IReadOnlySet<ISeasonAffix>>> weightedItems = new();
-			var maxWeight = 0.0;
-			foreach (var choice in AffixSetGenerator.Generate(season))
-			{
-				var weight = WeightProvider.GetWeight(choice, season);
-				maxWeight = Math.Max(maxWeight, weight);
-				if (weight > 0)
-					weightedItems.Add(new(weight, choice));
-			}
+			var weightedItems = AffixSetGenerator.Generate(season)
+				.Select(combination => new WeightedItem<IReadOnlySet<ISeasonAffix>>(WeightProvider.GetWeight(combination, season), combination))
+				.ToList();
 
-			var weightedRandom = new WeightedRandom<IReadOnlySet<ISeasonAffix>>();
-			foreach (var weightedItem in weightedItems)
-				if (weightedItem.Weight >= maxWeight / 100)
-					weightedRandom.Add(weightedItem);
+			if (weightedItems.Count == 0)
+				yield break;
+			double maxWeight = weightedItems.Max(item => item.Weight);
 
-			while (weightedRandom.Items.Count != 0)
-				yield return weightedRandom.Next(Random, consume: true);
+			WeightedRandom<IReadOnlySet<ISeasonAffix>> weightedRandom = new(weightedItems.Where(item => item.Weight >= maxWeight / 100));
+			foreach (var result in weightedRandom.GetConsumingEnumerable(Random))
+				yield return result;
 		}
 	}
 
