@@ -195,6 +195,7 @@ namespace Shockah.SeasonAffixes
 				new LoveAffix(),
 				new MeteoritesAffix(),
 				new MudAffix(),
+				new SeafoodAffix(),
 				new RanchingAffix(),
 				new RegrowthAffix(),
 				new TreasuresAffix(),
@@ -592,7 +593,7 @@ namespace Shockah.SeasonAffixes
 
 		private IAffixSetWeightProvider CreateAffixSetWeightProvider(IAffixScoreProvider scoreProvider, IAffixProbabilityWeightProvider probabilityWeightProvider)
 			=> CreateNonPairingUpAffixSetWeightProvider(probabilityWeightProvider)
-			.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(scoreProvider, CreateAffixTagPairCandidateProvider(), c => c < 3 ? 1 : Math.Pow(0.7, c - 3 + 1), 0.25, 3, 0.5))
+			.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(scoreProvider, CreateAffixTagPairCandidateProvider(), c => c < 3 ? 1 : Math.Pow(0.5, c - 3 + 1), 0.25, 3, 0.5))
 			.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0));
 
 		private IAffixSetWeightProvider CreateSaveSpecificAffixSetWeightProvider(IAffixScoreProvider scoreProvider, IAffixProbabilityWeightProvider probabilityWeightProvider)
