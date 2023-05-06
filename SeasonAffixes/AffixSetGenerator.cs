@@ -82,9 +82,12 @@ namespace Shockah.SeasonAffixes
 			if (allAffixesIndex >= allAffixes.Length)
 				yield break;
 
-			for (int i = allAffixesIndex; i < allAffixes.Length; i++)
-				foreach (var result in GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, new HashSet<ISeasonAffix>(combination) { allAffixes[i] }, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]))
-					yield return result;
+			IEnumerable<int> baseEnumerable = Enumerable.Range(allAffixesIndex, allAffixes.Length - allAffixesIndex);
+			if (combination.Count == 0 && Positivity + Negativity >= 3)
+				baseEnumerable = baseEnumerable.AsParallel().AsOrdered();
+			var enumerable = baseEnumerable.SelectMany(i => GetAllCombinations(season, allAffixes, i + 1, affixPositivities, affixNegativities, new HashSet<ISeasonAffix>(combination) { allAffixes[i] }, currentPositivity + affixPositivities[i], currentNegativity + affixNegativities[i]));
+			foreach (var result in enumerable)
+				yield return result;
 		}
 	}
 

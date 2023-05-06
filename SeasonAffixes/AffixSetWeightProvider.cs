@@ -142,7 +142,7 @@ namespace Shockah.SeasonAffixes
 				}
 				else
 				{
-					if (relatedAffixes.Sum(a => ScoreProvider.GetPositivity(a, season)) == 0 || relatedAffixes.Sum(a => ScoreProvider.GetNegativity(a, season)) == 0)
+					if (relatedAffixes.All(a => ScoreProvider.GetPositivity(a, season) == 0) || relatedAffixes.All(a => ScoreProvider.GetNegativity(a, season) == 0))
 						weight *= OneSidedPairedAffixesMultiplier;
 					if (relatedAffixes.Count >= PairedAffixLimit)
 						weight *= TooManyPairedAffixesMultiplier;
