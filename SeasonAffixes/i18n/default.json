@@ -110,6 +110,8 @@
 	"affix.negative.HardWater.description": "Sprinklers do not work.",
 	"affix.negative.Hurricane.name": "Hurricane",
 	"affix.negative.Hurricane.description": "Natural forage items do not spawn.",
+	"affix.negative.Mediocrity.name": "Mediocrity",
+	"affix.negative.Mediocrity.description": "Machines always produce regular quality items.",
 	"affix.negative.PoorYields.name": "Poor Yields",
 	"affix.negative.PoorYields.description": "Crops do not regrow.",
 	"affix.negative.Resilience.name": "Resilience",

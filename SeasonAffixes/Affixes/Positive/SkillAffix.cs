@@ -70,9 +70,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				else if (Skill.Equals(VanillaSkill.Mining))
 					return new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect };
 				else if (Skill.Equals(VanillaSkill.Foraging))
-					return new HashSet<string> { VanillaSkill.WoodcuttingAspect, VanillaSkill.GatheringAspect };
+					return new HashSet<string> { VanillaSkill.WoodcuttingAspect, VanillaSkill.GatheringAspect, VanillaSkill.TappingAspect };
 				else if (Skill.Equals(VanillaSkill.Fishing))
-					return new HashSet<string> { VanillaSkill.FishingAspect, VanillaSkill.TrappingAspect };
+					return new HashSet<string> { VanillaSkill.FishingAspect, VanillaSkill.TrappingAspect, VanillaSkill.PondsAspect };
 				else
 					return new HashSet<string> { Skill.UniqueID };
 			});

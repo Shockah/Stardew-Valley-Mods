@@ -204,6 +204,7 @@ namespace Shockah.SeasonAffixes
 				new DroughtAffix(),
 				new HardWaterAffix(),
 				new HurricaneAffix(),
+				new MediocrityAffix(),
 				new PoorYieldsAffix(),
 				new ResilienceAffix(),
 				new RustAffix(),
@@ -228,6 +229,7 @@ namespace Shockah.SeasonAffixes
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? true : null);
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? true : null);
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is PoorYieldsAffix) && affixes.Any(a => a is RegrowthAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SapAffix) && affixes.Any(a => a is AccumulationAffix) ? true : null);
 
             SetupConfig();
 		}

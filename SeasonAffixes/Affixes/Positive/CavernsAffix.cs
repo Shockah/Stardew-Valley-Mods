@@ -19,8 +19,6 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
-		private static readonly int PoofDelay = 2000;
-		private static readonly int SpawnDelay = 2250;
 
 		private static string ShortID => "Caverns";
 		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
