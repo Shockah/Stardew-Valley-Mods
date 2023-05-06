@@ -31,6 +31,7 @@ namespace Shockah.SeasonAffixes
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
+		private Dictionary<string, HashSet<ISeasonAffix>> AffixTagDictionary { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> AffixConflictInfoProviders { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>> AffixCombinationWeightProviders { get; init; } = new();
 
@@ -578,6 +579,10 @@ namespace Shockah.SeasonAffixes
 			.ApplicableToSeason(probabilityWeightProvider, season)
 			.Effective(scoreProvider, season);
 
+		private IAffixTagPairCandidateProvider CreateAffixTagPairCandidateProvider()
+			=> new FunctionAffixTagPairCandidateProvider(GetTagPairCandidatesForAffix)
+			.Caching();
+
 		private IAffixSetWeightProvider CreateNonPairingUpAffixSetWeightProvider(IAffixProbabilityWeightProvider probabilityWeightProvider)
 			=> new DefaultProbabilityAffixSetWeightProvider(probabilityWeightProvider)
 			.MultiplyingBy(new ConfigAffixSetWeightProvider((IReadOnlyDictionary<string, double>)Config.AffixWeights))
@@ -585,7 +590,7 @@ namespace Shockah.SeasonAffixes
 
 		private IAffixSetWeightProvider CreateAffixSetWeightProvider(IAffixScoreProvider scoreProvider, IAffixProbabilityWeightProvider probabilityWeightProvider)
 			=> CreateNonPairingUpAffixSetWeightProvider(probabilityWeightProvider)
-			.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(scoreProvider, probabilityWeightProvider, GetTagPairCandidatesForAffix, c => c < 3 ? 1 : Math.Pow(0.7, c - 3 + 1), 0.25, 3, 0.5))
+			.MultiplyingBy(new PairingUpTagsAffixSetWeightProvider(scoreProvider, CreateAffixTagPairCandidateProvider(), c => c < 3 ? 1 : Math.Pow(0.7, c - 3 + 1), 0.25, 3, 0.5))
 			.MultiplyingBy(new DelegateAffixSetWeightProvider((affixes, _) => affixes.Count >= 4 ? 0.5 : 1.0));
 
 		private IAffixSetWeightProvider CreateSaveSpecificAffixSetWeightProvider(IAffixScoreProvider scoreProvider, IAffixProbabilityWeightProvider probabilityWeightProvider)
@@ -684,18 +689,6 @@ namespace Shockah.SeasonAffixes
 			Instance.PlayerChoices.Clear();
 		}
 
-		internal IReadOnlySet<ISeasonAffix> GetTagPairCandidatesForAffix(IAffixProbabilityWeightProvider probabilityWeightProvider, ISeasonAffix affix, OrdinalSeason season)
-		{
-			if (affix.Tags.Count == 0)
-				return new HashSet<ISeasonAffix>();
-			var affixSetWeightProvider = CreateNonPairingUpAffixSetWeightProvider(probabilityWeightProvider);
-			return AllAffixesStorage.Values
-				.Where(a => a != affix)
-				.Where(a => a.Tags.Any(tag => affix.Tags.Contains(tag)))
-				.Where(a => affixSetWeightProvider.GetWeight(new HashSet<ISeasonAffix> { affix, a }, season) > 0)
-				.ToHashSet();
-		}
-
 		#region API
 
 		public event Action<ISeasonAffix>? AffixRegistered;
@@ -713,10 +706,21 @@ namespace Shockah.SeasonAffixes
 		{
 			if (AllAffixesStorage.ContainsKey(affix.UniqueID))
 				throw new ArgumentException($"An affix with ID `{affix.UniqueID}` is already registered.");
-			AllAffixesStorage[affix.UniqueID] = affix;
-			affix.OnRegister();
-			AffixRegistered?.Invoke(affix);
 
+			AllAffixesStorage[affix.UniqueID] = affix;
+			foreach (var tag in affix.Tags)
+			{
+				if (!AffixTagDictionary.TryGetValue(tag, out var tagAffixes))
+				{
+					tagAffixes = new();
+					AffixTagDictionary[tag] = tagAffixes;
+				}
+				tagAffixes.Add(affix);
+			}
+
+			affix.OnRegister();
+
+			AffixRegistered?.Invoke(affix);
 			if (IsConfigRegistered)
 				SetupConfig();
 		}
@@ -726,10 +730,14 @@ namespace Shockah.SeasonAffixes
 			if (!AllAffixesStorage.ContainsKey(affix.UniqueID))
 				return;
 			DeactivateAffix(affix);
-			affix.OnUnregister();
-			AllAffixesStorage.Remove(affix.UniqueID);
-			AffixUnregistered?.Invoke(affix);
 
+			affix.OnUnregister();
+
+			foreach (var (_, tagAffixes) in AffixTagDictionary)
+				tagAffixes.Remove(affix);
+			AllAffixesStorage.Remove(affix.UniqueID);
+
+			AffixUnregistered?.Invoke(affix);
 			if (IsConfigRegistered)
 				SetupConfig();
 		}
@@ -842,7 +850,30 @@ namespace Shockah.SeasonAffixes
 		}
 
 		public IReadOnlySet<ISeasonAffix> GetTagPairCandidatesForAffix(ISeasonAffix affix, OrdinalSeason season)
-			=> GetTagPairCandidatesForAffix(CreateAffixProbabilityWeightProvider(), affix, season);
+		{
+			if (affix.Tags.Count == 0)
+				return new HashSet<ISeasonAffix>();
+			HashSet<ISeasonAffix> workingSet = new() { affix };
+			return affix.Tags
+				.SelectMany(tag => AffixTagDictionary.TryGetValue(tag, out var tagAffixes) ? (IEnumerable<ISeasonAffix>)tagAffixes : Array.Empty<ISeasonAffix>())
+				.Distinct()
+				.Where(a =>
+				{
+					workingSet.Add(a);
+					foreach (var provider in AffixConflictInfoProviders)
+					{
+						var result = provider(workingSet, season);
+						if (result is not null)
+						{
+							workingSet.Remove(a);
+							return !result.Value;
+						}
+					}
+					workingSet.Remove(a);
+					return true;
+				})
+				.ToHashSet();
+		}
 
 		#endregion
 	}

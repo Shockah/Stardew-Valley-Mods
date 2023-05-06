@@ -103,8 +103,7 @@ namespace Shockah.SeasonAffixes
 	internal sealed class PairingUpTagsAffixSetWeightProvider : IAffixSetWeightProvider
 	{
 		private IAffixScoreProvider ScoreProvider { get; init; }
-		private IAffixProbabilityWeightProvider ProbabilityWeightProvider { get; init; }
-		private Func<IAffixProbabilityWeightProvider, ISeasonAffix, OrdinalSeason, IReadOnlySet<ISeasonAffix>> GetTagPairCandidatesForAffixFunction { get; init; }
+		private IAffixTagPairCandidateProvider TagPairCandidateProvider { get; init; }
 		private Func<int, double> UnpairedAffixMultiplier { get; init; }
 		private double OneSidedPairedAffixesMultiplier { get; init; }
 		private int PairedAffixLimit { get; init; }
@@ -112,8 +111,7 @@ namespace Shockah.SeasonAffixes
 
 		public PairingUpTagsAffixSetWeightProvider(
 			IAffixScoreProvider scoreProvider,
-			IAffixProbabilityWeightProvider probabilityWeightProvider,
-			Func<IAffixProbabilityWeightProvider, ISeasonAffix, OrdinalSeason, IReadOnlySet<ISeasonAffix>> getTagPairCandidatesForAffixFunction,
+			IAffixTagPairCandidateProvider tagPairCandidateProvider,
 			Func<int, double> unpairedAffixMultiplier,
 			double oneSidedPairedAffixesMultiplier,
 			int pairedAffixLimit,
@@ -121,8 +119,7 @@ namespace Shockah.SeasonAffixes
 		)
 		{
 			this.ScoreProvider = scoreProvider;
-			this.ProbabilityWeightProvider = probabilityWeightProvider;
-			this.GetTagPairCandidatesForAffixFunction = getTagPairCandidatesForAffixFunction;
+			this.TagPairCandidateProvider = tagPairCandidateProvider;
 			this.UnpairedAffixMultiplier = unpairedAffixMultiplier;
 			this.OneSidedPairedAffixesMultiplier = oneSidedPairedAffixesMultiplier;
 			this.PairedAffixLimit = pairedAffixLimit;
@@ -132,14 +129,14 @@ namespace Shockah.SeasonAffixes
 		public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
 		{
 			var weight = 1.0;
-			var relatedAffixDictionary = combination.ToDictionary(a => a, a => combination.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToHashSet());
+			var relatedAffixDictionary = combination.ToDictionary(a => a, a => combination.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToList());
 			foreach (var (affix, relatedAffixes) in relatedAffixDictionary)
 			{
 				if (relatedAffixes.Count == 1)
 				{
 					if (affix.Tags.Count > 0 && ScoreProvider.GetPositivity(affix, season) == 0 || ScoreProvider.GetNegativity(affix, season) == 0)
 					{
-						int possibleTagPairAffixes = GetTagPairCandidatesForAffixFunction(ProbabilityWeightProvider, affix, season).Count;
+						int possibleTagPairAffixes = TagPairCandidateProvider.GetTagPairCandidatesForAffix(affix, season).Count;
 						weight *= UnpairedAffixMultiplier(possibleTagPairAffixes);
 					}
 				}
