@@ -3,10 +3,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
+using Shockah.Kokoro.UI;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes
 {
@@ -20,6 +23,7 @@ namespace Shockah.SeasonAffixes
         private static readonly Lazy<Func<Billboard, bool>> BillboardDailyQuestBoardGetter = new(() => AccessTools.Field(typeof(Billboard), "dailyQuestBoard").EmitInstanceGetter<Billboard, bool>());
         private static readonly Lazy<Action<Billboard, string>> BillboardHoverTextSetter = new(() => AccessTools.Field(typeof(Billboard), "hoverText").EmitInstanceSetter<Billboard, string>());
 		private static readonly PerScreen<bool> PerScreenHoveringOverAffixes = new(() => false);
+		private static readonly ConditionalWeakTable<Billboard, Dictionary<ISeasonAffix, TextureRectangle>> AffixIconCache = new();
 
 		private static bool HoveringOverAffixes
 		{
@@ -106,13 +110,23 @@ namespace Shockah.SeasonAffixes
                 return;
             if (BillboardDailyQuestBoardGetter.Value(menu))
                 return;
+			if (!AffixIconCache.TryGetValue(menu, out var affixIconCache))
+			{
+				affixIconCache = new();
+				AffixIconCache.AddOrUpdate(menu, affixIconCache);
+			}
 
             var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.GetSeason()), SeasonAffixes.Instance.ActiveAffixes);
             int width = affixes.Count * IconWidth + (affixes.Count - 1) * IconSpacing;
             for (int i = 0; i < affixes.Count; i++)
             {
                 var affix = affixes[i];
-                var icon = affix.Icon;
+				if (!affixIconCache.TryGetValue(affix, out var icon))
+				{
+					icon = affix.Icon;
+					affixIconCache[affix] = icon;
+				}
+
                 float iconScale = 1f;
                 if (icon.Rectangle.Width * iconScale < IconWidth)
                     iconScale = 1f * IconWidth / icon.Rectangle.Width;

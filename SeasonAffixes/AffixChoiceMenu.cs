@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.Menus;
 using System;
@@ -37,6 +38,8 @@ namespace Shockah.SeasonAffixes
 		private int? SelectedChoice = null;
 		private int? ConfirmedChoice = null;
 		private int ConfirmationTime = 150;
+
+		private readonly Dictionary<ISeasonAffix, TextureRectangle> AffixIconCache = new();
 
 		public AffixChoiceMenu() : base(0, 0, 600, 400)
 		{
@@ -226,7 +229,12 @@ namespace Shockah.SeasonAffixes
 
 		private void DrawAffix(SpriteBatch b, Rectangle bounds, ISeasonAffix affix, bool selected)
 		{
-			var icon = affix.Icon;
+			if (!AffixIconCache.TryGetValue(affix, out var icon))
+			{
+				icon = affix.Icon;
+				AffixIconCache[affix] = icon;
+			}
+
 			float iconScale = 1f;
 			if (icon.Rectangle.Width * iconScale < IconWidth)
 				iconScale = 1f * IconWidth / icon.Rectangle.Width;
