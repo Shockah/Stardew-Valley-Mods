@@ -25,7 +25,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public int GetNegativity(OrdinalSeason season)
 			=> 1;
 
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.FishingAspect };
 
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season == Season.Winter ? 0 : 1;

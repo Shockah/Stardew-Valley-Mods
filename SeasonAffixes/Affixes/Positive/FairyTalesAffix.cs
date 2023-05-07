@@ -31,7 +31,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public int GetNegativity(OrdinalSeason season)
 			=> 0;
 
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.AnimalsAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.AnimalsAspect };
 
 		public void OnRegister()
 			=> Apply(Mod.Harmony);

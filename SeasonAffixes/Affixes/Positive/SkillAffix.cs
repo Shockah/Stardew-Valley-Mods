@@ -66,7 +66,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			this.LazyTags = new(() =>
 			{
 				if (Skill.Equals(VanillaSkill.Farming))
-					return new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.AnimalsAspect };
+					return new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.AnimalsAspect };
 				else if (Skill.Equals(VanillaSkill.Mining))
 					return new HashSet<string> { VanillaSkill.MetalAspect, VanillaSkill.GemAspect };
 				else if (Skill.Equals(VanillaSkill.Foraging))

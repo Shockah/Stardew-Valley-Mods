@@ -33,7 +33,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FishingAspect };
+		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.FishingAspect };
 
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> season.Season switch
