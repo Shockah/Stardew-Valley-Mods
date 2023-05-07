@@ -66,8 +66,11 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				return;
 
 			var date = Game1.Date;
-			int seasonsPlayed = date.Year * 4 + date.SeasonIndex;
-			Random random = new(seasonsPlayed + (int)Game1.uniqueIDForThisGame);
+			int seed = 0;
+			seed = 31 * seed + date.Year * 4 + date.SeasonIndex;
+			seed = 31 * seed + (int)machine.TileLocation.X;
+			seed = 31 * seed + (int)machine.TileLocation.Y;
+			Random random = new(seed);
 
 			int flowersLeft = flowersAround;
 			int dayDecrease = 0;
