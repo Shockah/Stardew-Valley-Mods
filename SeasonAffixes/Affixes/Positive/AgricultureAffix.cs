@@ -30,6 +30,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		public int GetNegativity(OrdinalSeason season)
 			=> Mod.Config.AgricultureValue < 1f ? 1 : 0;
 
+		public double GetProbabilityWeight(OrdinalSeason season)
+			=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0.5;
+
 		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect };
 
 		public void OnRegister()

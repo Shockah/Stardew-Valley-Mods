@@ -190,5 +190,7 @@
 	"config.affixSetEntries.negative.name": "Negativity",
 	"config.affixSetEntries.negative.tooltip": "How negative the affix choice should be.\nNeutral affixes count as +1 Positivity, +1 Negativity.",
 	"config.affixSetEntries.weight.name": "Weight",
-	"config.affixSetEntries.weight.tooltip": "The \"weight\" of the affix set entry. An entry with a weight of 2 will be twice as likely to be chosen as an entry with a weight of 1."
+	"config.affixSetEntries.weight.tooltip": "The \"weight\" of the affix set entry. An entry with a weight of 2 will be twice as likely to be chosen as an entry with a weight of 1.",
+	"config.winterCrops.name": "Winter crops",
+	"config.winterCrops.tooltip": "Enable if you have any Winter crop mods installed.\nEnables normally unavailable in Winter affixes."
 }

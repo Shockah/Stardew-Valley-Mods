@@ -31,7 +31,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect };
 
 		public double GetProbabilityWeight(OrdinalSeason season)
-			=> season.Season == Season.Winter ? 0 : 1;
+			=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0;
 
 		public void OnRegister()
 			=> Apply(Mod.Harmony);

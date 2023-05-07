@@ -414,6 +414,7 @@ namespace Shockah.SeasonAffixes
 			helper.AddNumberOption("config.choices", () => Config.Choices, min: 1, max: 4, interval: 1);
 			helper.AddNumberOption("config.affixRepeatPeriod", () => Config.AffixRepeatPeriod, min: 0);
 			helper.AddNumberOption("config.affixSetRepeatPeriod", () => Config.AffixSetRepeatPeriod, min: 0);
+			helper.AddBoolOption("config.winterCrops", () => Config.WinterCrops);
 
 			void RegisterAffixSetEntrySection(int? index)
 			{
