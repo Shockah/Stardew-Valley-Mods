@@ -54,7 +54,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			if (oldState is null || newState is null)
 				return;
 			if (!newState.Value.ReadyForHarvest || newState.Value.HeldObject is null)
+			{
+				AffixApplied.RemoveAll(weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && appliedMachine == machine);
 				return;
+			}
 			if (AffixApplied.Any(weakMachine => weakMachine.TryGetTarget(out var appliedMachine) && ReferenceEquals(machine, appliedMachine)))
 				return;
 
