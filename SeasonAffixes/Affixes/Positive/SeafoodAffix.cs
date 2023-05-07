@@ -53,7 +53,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(SeafoodAffix), nameof(SObject_sellToStorePrice_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_sellToStorePrice_Postfix)))
 			);
 		}
 

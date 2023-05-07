@@ -45,7 +45,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsScarecrow)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CrowsAffix), nameof(SObject_IsScarecrow_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_IsScarecrow_Postfix)))
 			);
 		}
 

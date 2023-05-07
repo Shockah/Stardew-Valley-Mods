@@ -44,7 +44,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Tree), "performTreeFall"),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(BoonsAffix), nameof(Tree_performTreeFall_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Tree_performTreeFall_Postfix)))
 			);
 		}
 

@@ -42,7 +42,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.getWeatherModificationsForDate)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(DroughtAffix), nameof(Game1_getWeatherModificationsForDate_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_getWeatherModificationsForDate_Postfix)))
 			);
 		}
 

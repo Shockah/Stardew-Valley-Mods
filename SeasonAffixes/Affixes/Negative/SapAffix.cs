@@ -42,7 +42,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Tree), nameof(Tree.UpdateTapperProduct)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(SapAffix), nameof(Tree_UpdateTapperProduct_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Tree_UpdateTapperProduct_Postfix)))
 			);
 		}
 

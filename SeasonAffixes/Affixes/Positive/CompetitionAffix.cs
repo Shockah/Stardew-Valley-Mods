@@ -82,60 +82,60 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.performAction)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(GameLocation_performAction_Prefix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_performAction_Prefix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.answerDialogueAction)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(GameLocation_answerDialogueAction_NonPassthroughPrefix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_answerDialogueAction_NonPassthroughPrefix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.answerDialogueAction)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(GameLocation_answerDialogueAction_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(GameLocation_answerDialogueAction_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_answerDialogueAction_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_answerDialogueAction_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(AbigailGame.CowboyMonster), nameof(AbigailGame.CowboyMonster.takeDamage)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_CowbowMonster_takeDamage_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_CowbowMonster_takeDamage_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_CowbowMonster_takeDamage_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_CowbowMonster_takeDamage_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(AbigailGame.CowboyMonster), nameof(AbigailGame.CowboyMonster.spikeyEndBehavior)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_CowbowMonster_spikeyEndBehavior_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_CowbowMonster_spikeyEndBehavior_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(AbigailGame), nameof(AbigailGame.getPowerUp)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_getPowerUp_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_getPowerUp_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_getPowerUp_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_getPowerUp_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(AbigailGame), nameof(AbigailGame.usePowerup)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_usePowerup_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(AbigailGame_usePowerup_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_usePowerup_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(AbigailGame_usePowerup_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(MineCart), nameof(MineCart.CollectCoin)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(MineCart_CollectCoin_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(MineCart_CollectCoin_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(MineCart), nameof(MineCart.tick)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(MineCart_tick_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CompetitionAffix), nameof(MineCart_tick_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(MineCart_tick_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(MineCart_tick_Postfix)))
 			);
 		}
 

@@ -44,20 +44,20 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.getFish)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_getFish_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_getFish_Transpiler)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Beach), nameof(Beach.getFish)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(MigrationAffix), nameof(GameLocationSubclass_getFish_Prefix)), priority: Priority.First),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(MigrationAffix), nameof(GameLocationSubclass_getFish_Finalizer)), priority: Priority.Last)
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocationSubclass_getFish_Prefix)), priority: Priority.First),
+				finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocationSubclass_getFish_Finalizer)), priority: Priority.Last)
 			);
 
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.IsUsingMagicBait)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_IsUsingMagicBait_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_IsUsingMagicBait_Postfix)))
 			);
 		}
 

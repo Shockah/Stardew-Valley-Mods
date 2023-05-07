@@ -178,7 +178,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(SkillAffix), nameof(Farmer_gainExperience_Prefix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Farmer_gainExperience_Prefix)))
 			);
 
 			if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
@@ -186,7 +186,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				harmony.TryPatch(
 					monitor: Mod.Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName("SpaceCore.Skills, SpaceCore"), "AddExperience"),
-					prefix: new HarmonyMethod(AccessTools.Method(typeof(SkillAffix), nameof(SpaceCore_Skills_AddExperience_Prefix)))
+					prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SpaceCore_Skills_AddExperience_Prefix)))
 				);
 			}
 		}

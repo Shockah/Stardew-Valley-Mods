@@ -74,7 +74,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(MineShaft), "populateLevel"),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(CavernsAffix), nameof(MineShaft_populateLevel_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(MineShaft_populateLevel_Postfix)))
 			);
 		}
 

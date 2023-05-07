@@ -67,7 +67,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(newDayAfterFadeEnumeratorType, "MoveNext"),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(ThunderAffix), nameof(Game1_newDayAfterFade_MoveNext_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_newDayAfterFade_MoveNext_Transpiler)))
 			);
 		}
 

@@ -83,52 +83,52 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Item), nameof(Item.salePrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(Item_salePrice_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Item_salePrice_Postfix)))
 			);
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(SObject_sellToStorePrice_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_sellToStorePrice_Postfix)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Constructor(typeof(ShopMenu), new Type[] { typeof(Dictionary<ISalable, int[]>), typeof(int), typeof(string), typeof(Func<ISalable, Farmer, int, bool>), typeof(Func<ISalable, bool>), typeof(string) }),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(ShopMenu_ctor_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(ShopMenu_ctor_Postfix)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Constructor(typeof(BluePrint), new Type[] { typeof(string) }),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BluePrint_ctor_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BluePrint_ctor_Postfix)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Utility), "priceForToolUpgradeLevel"),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(Utility_priceForToolUpgradeLevel_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Utility_priceForToolUpgradeLevel_Postfix)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BusStop), nameof(BusStop.answerDialogue)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BusStop_answerDialogue_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BusStop_answerDialogue_Transpiler)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BoatTunnel_checkAction_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BoatTunnel_checkAction_Transpiler)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(BoatTunnel_answerDialogue_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BoatTunnel_answerDialogue_Transpiler)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), "houseUpgradeAccept"),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(GameLocation_houseUpgradeAccept_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_houseUpgradeAccept_Transpiler)))
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), "communityUpgradeAccept"),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(GameLocation_communityUpgradeAccept_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_communityUpgradeAccept_Transpiler)))
 			);
 
 			if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.JsonAssets"))
@@ -136,7 +136,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				harmony.TryPatch(
 					monitor: Mod.Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName("JsonAssets.Mod, JsonAssets"), "OnMenuChanged"),
-					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(JsonAssets_Mod_OnMenuChanged_Transpiler)))
+					transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(JsonAssets_Mod_OnMenuChanged_Transpiler)))
 				);
 			}
 
@@ -145,12 +145,12 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				harmony.TryPatch(
 					monitor: Mod.Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShop"),
-					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+					transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
 				);
 				harmony.TryPatch(
 					monitor: Mod.Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShopStock"),
-					transpiler: new HarmonyMethod(AccessTools.Method(typeof(InflationAffix), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+					transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
 				);
 			}
 		}

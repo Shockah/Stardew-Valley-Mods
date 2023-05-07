@@ -51,7 +51,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Utility), nameof(Utility.pickFarmEvent)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(MeteoritesAffix), nameof(Utility_pickFarmEvent_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Utility_pickFarmEvent_Postfix)))
 			);
 		}
 

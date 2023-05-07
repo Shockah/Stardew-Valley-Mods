@@ -43,8 +43,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.monsterDrop)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(LootAffix), nameof(GameLocation_monsterDrop_Prefix)), priority: Priority.First),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(LootAffix), nameof(GameLocation_monsterDrop_Finalizer)), priority: Priority.Last)
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_monsterDrop_Prefix)), priority: Priority.First),
+				finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_monsterDrop_Finalizer)), priority: Priority.Last)
 			);
 		}
 

@@ -48,7 +48,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(MineShaft), nameof(MineShaft.monsterDrop)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(DescentAffix), nameof(MineShaft_monsterDrop_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(MineShaft_monsterDrop_Postfix)))
 			);
 		}
 

@@ -53,7 +53,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(NPC), nameof(NPC.checkAction)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(SilenceAffix), nameof(NPC_checkAction_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(NPC_checkAction_Transpiler)))
 			);
 		}
 

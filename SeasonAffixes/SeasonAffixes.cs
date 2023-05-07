@@ -167,7 +167,7 @@ namespace Shockah.SeasonAffixes
 							return method;
 					return null;
 				},
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Transpiler)))
+				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_showEndOfNightStuff_Transpiler)))
 			);
 		}
 

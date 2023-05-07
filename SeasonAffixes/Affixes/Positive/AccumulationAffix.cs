@@ -58,8 +58,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(Tree), nameof(Tree.tickUpdate)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(AccumulationAffix), nameof(Tree_tickUpdate_Prefix))),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(AccumulationAffix), nameof(Tree_tickUpdate_Postfix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Tree_tickUpdate_Prefix))),
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Tree_tickUpdate_Postfix)))
 			);
 		}
 

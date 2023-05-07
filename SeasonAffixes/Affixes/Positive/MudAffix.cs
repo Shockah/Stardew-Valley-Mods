@@ -43,13 +43,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BuildableGameLocation), nameof(BuildableGameLocation.doesTileHaveProperty)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(MudAffix), nameof(BuildableGameLocation_doesTileHaveProperty_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BuildableGameLocation_doesTileHaveProperty_Postfix)))
 			);
 
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(BuildableGameLocation), nameof(BuildableGameLocation.doesTileHavePropertyNoNull)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(MudAffix), nameof(BuildableGameLocation_doesTileHavePropertyNoNull_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BuildableGameLocation_doesTileHavePropertyNoNull_Postfix)))
 			);
 		}
 

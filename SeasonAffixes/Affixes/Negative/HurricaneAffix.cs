@@ -53,13 +53,13 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatchVirtual(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.DayUpdate)),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_DayUpdate_Prefix)), priority: Priority.First),
-				finalizer: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_DayUpdate_Finalizer)), priority: Priority.Last)
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_DayUpdate_Prefix)), priority: Priority.First),
+				finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_DayUpdate_Finalizer)), priority: Priority.Last)
 			);
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.dropObject), new Type[] { typeof(SObject), typeof(Vector2), typeof(xTile.Dimensions.Rectangle), typeof(bool), typeof(Farmer) }),
-				prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(GameLocation_dropObject_Prefix)))
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_dropObject_Prefix)))
 			);
 
 			if (Mod.Helper.ModRegistry.IsLoaded("Esca.FarmTypeManager"))
@@ -67,7 +67,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 				harmony.TryPatch(
 					monitor: Mod.Monitor,
 					original: () => AccessTools.Method(AccessTools.Inner(AccessTools.TypeByName("FarmTypeManager.ModEntry, FarmTypeManager"), "Generation"), "ForageGeneration"),
-					prefix: new HarmonyMethod(AccessTools.Method(typeof(HurricaneAffix), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
+					prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix)))
 				);
 			}
 		}

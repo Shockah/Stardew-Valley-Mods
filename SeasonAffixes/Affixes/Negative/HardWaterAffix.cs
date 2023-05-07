@@ -48,7 +48,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(HardWaterAffix), nameof(SObject_IsSprinkler_Postfix)))
+				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_IsSprinkler_Postfix)))
 			);
 		}
 
