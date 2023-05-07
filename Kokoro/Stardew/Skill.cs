@@ -67,6 +67,7 @@ namespace Shockah.Kokoro.Stardew
 
 		public static string CropsAspect { get; private set; } = $"{Farming.UniqueID}:Crops";
 		public static string AnimalsAspect { get; private set; } = $"{Farming.UniqueID}:Animals";
+		public static string FlowersAspect { get; private set; } = $"{Farming.UniqueID}:Flowers";
 		public static string MetalAspect { get; private set; } = $"{Mining.UniqueID}:Metal";
 		public static string GemAspect { get; private set; } = $"{Mining.UniqueID}:Gem";
 		public static string WoodcuttingAspect { get; private set; } = $"{Foraging.UniqueID}:Woodcutting";
