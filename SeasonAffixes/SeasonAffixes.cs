@@ -190,6 +190,7 @@ namespace Shockah.SeasonAffixes
 				new DescentAffix(),
 				new FairyTalesAffix(),
 				//new FortuneAffix(),
+				new HivemindAffix(),
 				new InnovationAffix(),
 				new LootAffix(),
 				new LoveAffix(),
