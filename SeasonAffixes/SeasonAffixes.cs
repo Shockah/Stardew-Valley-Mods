@@ -623,7 +623,7 @@ namespace Shockah.SeasonAffixes
 					.PointerMatcher(SequenceMatcherRelativeElement.AfterLast)
 					.ExtractLabels(out var labels)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
 						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Transpiler_Event))).WithLabels(labels)
 					)
 					.AllElements();

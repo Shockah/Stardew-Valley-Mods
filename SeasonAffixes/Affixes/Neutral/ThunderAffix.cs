@@ -87,7 +87,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 					.PointerMatcher(SequenceMatcherRelativeElement.First)
 					.ExtractLabels(out var labels)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
 						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ThunderAffix), nameof(Game1_newDayAfterFade_MoveNext_Transpiler_ModifyChanceToRainTomorrow))).WithLabels(labels)
 					)
 					.AllElements();

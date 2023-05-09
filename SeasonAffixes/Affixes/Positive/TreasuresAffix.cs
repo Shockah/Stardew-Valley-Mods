@@ -65,7 +65,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 					.PointerMatcher(SequenceMatcherRelativeElement.First)
 					.CreateLabel(il, out var label)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0),
 						new CodeInstruction(OpCodes.Ldarg_1),

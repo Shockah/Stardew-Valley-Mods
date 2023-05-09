@@ -64,7 +64,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 				var newLabel = il.DefineLabel();
 
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.AsGuidAnchorable()
 					.Find(
 						ILMatches.Ldarg(1),
 						ILMatches.Call("get_CanMove"),
@@ -72,7 +72,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 						ILMatches.LdcI4(0),
 						ILMatches.Instruction(OpCodes.Ret)
 					)
-					.MoveToPointerAnchor(branchAnchor)
+					.PointerMatcher(branchAnchor)
 					.ExtractBranchTarget(out var branchTarget)
 					.Replace(new CodeInstruction(OpCodes.Brtrue, newLabel))
 					.Find(
@@ -81,7 +81,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 					)
 					.PointerMatcher(SequenceMatcherRelativeElement.First)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0).WithLabels(newLabel),
 						new CodeInstruction(OpCodes.Ldarg_1),

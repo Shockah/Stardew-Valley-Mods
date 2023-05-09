@@ -219,7 +219,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -250,7 +250,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -273,7 +273,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
 					.Find(ILMatches.Call("GetTicketPrice"))
 					.Insert(
-						SequenceMatcherPastBoundsDirection.After, true,
+						SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 					)
 					.AllElements();
@@ -300,7 +300,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -317,7 +317,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -334,7 +334,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -365,7 +365,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
@@ -382,7 +382,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 						{
 							return matcher
 								.Insert(
-									SequenceMatcherPastBoundsDirection.After, true,
+									SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 									new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
 								);
 						},
