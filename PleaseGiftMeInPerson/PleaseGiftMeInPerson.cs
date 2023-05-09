@@ -538,7 +538,7 @@ namespace Shockah.PleaseGiftMeInPerson
 					.ExtractLabels(out var findHeadLabels)
 					.CreateLabel(il, out var receiveGiftLabel)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0),
 						new CodeInstruction(OpCodes.Ldarg_1),
@@ -648,13 +648,13 @@ namespace Shockah.PleaseGiftMeInPerson
 						ILMatches.Instruction(OpCodes.Add)
 					)
 					.AnchorBlock(out Guid findBlock)
-					.MoveToPointerAnchor(responseYLocalInstruction)
+					.PointerMatcher(responseYLocalInstruction)
 					.CreateLdlocInstruction(out var responseYLoadInstruction)
-					.MoveToPointerAnchor(iLocalInstruction)
+					.PointerMatcher(iLocalInstruction)
 					.CreateLdlocInstruction(out var iLoadInstruction)
-					.MoveToBlockAnchor(findBlock)
+					.BlockMatcher(findBlock)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.After, true,
+						SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_1),
 						new CodeInstruction(OpCodes.Ldarg_0),

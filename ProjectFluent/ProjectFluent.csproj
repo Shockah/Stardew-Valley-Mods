@@ -8,7 +8,7 @@
 		<WarningsAsErrors>Nullable</WarningsAsErrors>
 		<EnableHarmony>true</EnableHarmony>
 		<BundleExtraAssemblies>ThirdParty</BundleExtraAssemblies>
-		<IgnoreModFilePaths>Mono.Cecil.Rocks.dll</IgnoreModFilePaths>
+		<IgnoreModFilePaths>Mono.Cecil.Rocks.dll,Shrike.dll,Shrike.Harmony.dll</IgnoreModFilePaths>
 		<EnableModZip Condition="$(Configuration) != 'Release'">False</EnableModZip>
 	</PropertyGroup>
 	<ItemGroup>
@@ -17,8 +17,6 @@
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
 		<PackageReference Include="Linguini.Bundle" Version="0.3.0" />
-		<PackageReference Include="Shrike" Version="1.1.0" />
-		<PackageReference Include="Shrike.Harmony" Version="1.1.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Kokoro\Kokoro.csproj">

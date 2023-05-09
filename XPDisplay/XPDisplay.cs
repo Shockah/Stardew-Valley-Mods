@@ -510,7 +510,7 @@ namespace Shockah.XPDisplay
 							.PointerMatcher(SequenceMatcherRelativeElement.First)
 							.ExtractLabels(out var labels)
 							.Insert(
-								SequenceMatcherPastBoundsDirection.Before, true,
+								SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 
 								new CodeInstruction(OpCodes.Ldarg_1).WithLabels(labels), // `SpriteBatch`
 
@@ -541,7 +541,7 @@ namespace Shockah.XPDisplay
 							.PointerMatcher(SequenceMatcherRelativeElement.First)
 							.ExtractLabels(out var labels)
 							.Insert(
-								SequenceMatcherPastBoundsDirection.Before, true,
+								SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
 							);
 					})
@@ -578,7 +578,7 @@ namespace Shockah.XPDisplay
 									.PointerMatcher(SequenceMatcherRelativeElement.First)
 									.ExtractLabels(out var labels)
 									.Insert(
-										SequenceMatcherPastBoundsDirection.Before, true,
+										SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 
 										new CodeInstruction(OpCodes.Ldarg_1).WithLabels(labels), // `SpriteBatch`
 
@@ -604,7 +604,7 @@ namespace Shockah.XPDisplay
 									.PointerMatcher(SequenceMatcherRelativeElement.First)
 									.ExtractLabels(out var labels)
 									.Insert(
-										SequenceMatcherPastBoundsDirection.Before, true,
+										SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 
 										new CodeInstruction(OpCodes.Ldarg_1).WithLabels(labels), // `SpriteBatch`
 
@@ -636,7 +636,7 @@ namespace Shockah.XPDisplay
 							.PointerMatcher(SequenceMatcherRelativeElement.First)
 							.ExtractLabels(out var labels)
 							.Insert(
-								SequenceMatcherPastBoundsDirection.Before, true,
+								SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
 							);
 					})

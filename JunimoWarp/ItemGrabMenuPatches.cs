@@ -79,15 +79,15 @@ namespace Shockah.JunimoWarp
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.AsGuidAnchorable()
 					.Find(
 						ILMatches.Newobj(AccessTools.DeclaredConstructor(typeof(List<ClickableComponent>), Array.Empty<Type>())),
 						ILMatches.Stloc<List<ClickableComponent>>(originalMethod.GetMethodBody()!.LocalVariables).WithAutoAnchor(out Guid sideButtonsStlocPointer)
 					)
-					.MoveToPointerAnchor(sideButtonsStlocPointer)
+					.PointerMatcher(sideButtonsStlocPointer)
 					.CreateLdlocInstruction(out var ldlocSideButtons)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.After, true,
+						SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0),
 						ldlocSideButtons,
@@ -124,7 +124,7 @@ namespace Shockah.JunimoWarp
 					.PointerMatcher(SequenceMatcherRelativeElement.First)
 					.ExtractLabels(out var labels)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.Before, true,
+						SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0).WithLabels(labels),
 						new CodeInstruction(OpCodes.Ldarg_1),
@@ -160,7 +160,7 @@ namespace Shockah.JunimoWarp
 						ILMatches.Call("performHoverAction")
 					)
 					.Insert(
-						SequenceMatcherPastBoundsDirection.After, true,
+						SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
 						new CodeInstruction(OpCodes.Ldarg_0),
 						new CodeInstruction(OpCodes.Ldarg_1),
