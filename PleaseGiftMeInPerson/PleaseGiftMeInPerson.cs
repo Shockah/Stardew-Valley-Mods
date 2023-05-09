@@ -623,7 +623,7 @@ namespace Shockah.PleaseGiftMeInPerson
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.AsGuidAnchorable()
 					.Find(
 						ILMatches.Ldarg(0),
 						ILMatches.Ldfld(AccessTools.Field(typeof(DialogueBox), nameof(DialogueBox.x))),

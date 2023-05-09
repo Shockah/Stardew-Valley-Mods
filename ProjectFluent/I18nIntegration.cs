@@ -163,7 +163,7 @@ namespace Shockah.ProjectFluent
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.AsGuidAnchorable()
 					.Find(
 						ILMatches.Call("get_Current"),
 						ILMatches.AnyStloc.WithAutoAnchor(out Guid modInfoLocalInstruction),

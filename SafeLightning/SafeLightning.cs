@@ -81,7 +81,7 @@ namespace Shockah.SafeLightning
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsAnchorable<CodeInstruction, Guid, Guid, SequencePointerMatcher<CodeInstruction>, SequenceBlockMatcher<CodeInstruction>>()
+					.AsGuidAnchorable()
 
 					.Find(
 						ILMatches.Isinst<FruitTree>(),
