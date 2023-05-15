@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Varianted
+namespace Shockah.SeasonAffixes.Affixes.Varying
 {
 	internal sealed class InnovationAffix : BaseVariantedSeasonAffix, ISeasonAffix
 	{

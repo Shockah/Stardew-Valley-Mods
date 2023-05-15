@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shockah.SeasonAffixes.Affixes.Varianted
+namespace Shockah.SeasonAffixes.Affixes.Varying
 {
 	internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 	{

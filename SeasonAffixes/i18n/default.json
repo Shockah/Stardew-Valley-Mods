@@ -205,5 +205,5 @@
 	"config.affixSetEntries.weight.name": "Weight",
 	"config.affixSetEntries.weight.tooltip": "The \"weight\" of the affix set entry. An entry with a weight of 2 will be twice as likely to be chosen as an entry with a weight of 1.",
 	"config.winterCrops.name": "Winter crops",
-	"config.winterCrops.tooltip": "Enable if you have any Winter crop mods installed.\nEnables normally unavailable in Winter affixes."
+	"config.winterCrops.tooltip": "Enable if you have any Winter crop mods installed.\nEnables affixes normally unavailable in Winter."
 }

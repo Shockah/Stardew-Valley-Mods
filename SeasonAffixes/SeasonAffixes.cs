@@ -9,7 +9,7 @@ using Shockah.SeasonAffixes.Affixes;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
 using Shockah.SeasonAffixes.Affixes.Positive;
-using Shockah.SeasonAffixes.Affixes.Varianted;
+using Shockah.SeasonAffixes.Affixes.Varying;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -21,7 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using System.Xml;
+using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes
 {
@@ -211,7 +211,6 @@ namespace Shockah.SeasonAffixes
 			{
 				// positive affixes
 				new AccumulationAffix(),
-				new AgricultureAffix(),
 				new BoonsAffix(),
 				new CavernsAffix(),
 				new CompetitionAffix(),
@@ -223,8 +222,6 @@ namespace Shockah.SeasonAffixes
 				new LoveAffix(),
 				new MeteoritesAffix(),
 				new MudAffix(),
-				new SeafoodAffix(),
-				new RanchingAffix(),
 				new TreasuresAffix(),
 
 				// negative affixes
@@ -249,7 +246,34 @@ namespace Shockah.SeasonAffixes
 
 				// variantable affixes
 				new InnovationAffix(AffixVariant.Positive), new InnovationAffix(AffixVariant.Negative),
-				new RegrowthAffix(AffixVariant.Positive), new RegrowthAffix(AffixVariant.Negative)
+				new RegrowthAffix(AffixVariant.Positive), new RegrowthAffix(AffixVariant.Negative),
+
+				// other varying affixes
+				new ItemValueAffix(
+					"Agriculture",
+					new HashSet<string> { VanillaSkill.CropsAspect },
+					() => new(Game1.objectSpriteSheet, new(96, 176, 16, 16)),
+					i => i.Category is SObject.FruitsCategory or SObject.VegetableCategory,
+					() => Config.AgricultureValue,
+					value => Config.AgricultureValue = value,
+					season => Config.WinterCrops || season.Season != Season.Winter ? 1 : 0.5
+				),
+				new ItemValueAffix(
+					"Ranching",
+					new HashSet<string> { VanillaSkill.AnimalsAspect },
+					() => new(Game1.objectSpriteSheet, new(256, 272, 16, 16)),
+					i => i.isAnimalProduct(),
+					() => Config.RanchingValue,
+					value => Config.RanchingValue = value
+				),
+				new ItemValueAffix(
+					"Seafood",
+					new HashSet<string> { VanillaSkill.FishingAspect, VanillaSkill.TrappingAspect, VanillaSkill.PondsAspect },
+					() => new(Game1.objectSpriteSheet, new(96, 128, 16, 16)),
+					i => i.Category == SObject.FishCategory || (!i.bigCraftable.Value && i.ParentSheetIndex == 812), // Roe
+					() => Config.SeafoodValue,
+					value => Config.SeafoodValue = value
+				)
 			})
 				RegisterAffix(affix);
 
