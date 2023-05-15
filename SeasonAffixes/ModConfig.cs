@@ -23,6 +23,7 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public int Choices { get; internal set; } = 2;
 		//[JsonProperty] public int RerollsPerSeason { get; internal set; } = 1;
 		[JsonProperty] public IDictionary<string, double> AffixWeights { get; internal set; } = new Dictionary<string, double>();
+		[JsonProperty] public ISet<string> PermanentAffixes { get; internal set; } = new HashSet<string>();
 
 		[JsonProperty] public IList<AffixSetEntry> AffixSetEntries { get; internal set; } = new List<AffixSetEntry>() { new(1, 0, 2.0), new(1, 1, 8.0), new(1, 2, 5.0), new(2, 1, 3.0), new(2, 2, 2.0) };
 		[JsonProperty] public int AffixRepeatPeriod { get; internal set; } = 2;

@@ -89,7 +89,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		}
 
 		public static bool GameLocation_getFish_Transpiler_ShouldCountAsMagicBait(bool isUsingMagicBait)
-			=> isUsingMagicBait || Mod.ActiveAffixes.Any(a => a is MigrationAffix);
+			=> isUsingMagicBait || Mod.IsAffixActive(a => a is MigrationAffix);
 
 		private static void GameLocationSubclass_getFish_Prefix(GameLocation __instance)
 		{
@@ -105,7 +105,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		private static void GameLocation_IsUsingMagicBait_Postfix(GameLocation __instance, ref bool __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is MigrationAffix))
+			if (!Mod.IsAffixActive(a => a is MigrationAffix))
 				return;
 			if (!LocationsDuringGetFish.Any(r => r.TryGetTarget(out var location) && location == __instance))
 				return;

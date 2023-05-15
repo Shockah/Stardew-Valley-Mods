@@ -53,7 +53,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void MineShaft_monsterDrop_Postfix(MineShaft __instance, int x, int y)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is DescentAffix))
+			if (!Mod.IsAffixActive(a => a is DescentAffix))
 				return;
 			if (__instance.mustKillAllMonstersToAdvance())
 				return;

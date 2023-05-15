@@ -100,7 +100,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		public static void Game1_newDayAfterFade_MoveNext_Transpiler_ModifyChanceToRainTomorrow()
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is ThunderAffix))
+			if (!Mod.IsAffixActive(a => a is ThunderAffix))
 				return;
 			Game1.chanceToRainTomorrow *= Mod.Config.ThunderChance;
 		}

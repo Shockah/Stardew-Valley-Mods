@@ -6,7 +6,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -50,7 +49,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void SObject_IsScarecrow_Postfix(ref bool __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CrowsAffix))
+			if (!Mod.IsAffixActive(a => a is CrowsAffix))
 				return;
 			__result = false;
 		}

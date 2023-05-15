@@ -179,7 +179,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static bool GameLocation_performAction_Prefix(GameLocation __instance, string action)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return true;
 
 			if (action == "BuyQiCoins")
@@ -201,7 +201,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static bool GameLocation_answerDialogueAction_NonPassthroughPrefix(GameLocation __instance, string questionAndAnswer)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return true;
 
 			if (questionAndAnswer == $"{Instance.UniqueID}.BuySellQiCoins_BuyQiCoins")
@@ -246,7 +246,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (questionAndAnswer != "BuyQiCoins_Yes")
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			__state = Game1.player.clubCoins;
 		}
@@ -255,7 +255,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (questionAndAnswer != "BuyQiCoins_Yes")
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 
 			int coinsBought = Game1.player.clubCoins - __state;
@@ -267,7 +267,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (!PrairieKingMonsterMaxHealth.TryGetValue(__instance, out _))
 				PrairieKingMonsterMaxHealth.AddOrUpdate(__instance, new(__instance.health));
@@ -277,7 +277,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (__instance.health > 0)
 				return;
@@ -290,7 +290,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (__instance.health > 0)
 				return;
@@ -302,7 +302,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			__state = __instance.coins;
 		}
@@ -311,7 +311,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 
 			int coinsGained = __instance.coins - __state;
@@ -325,7 +325,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			__state = __instance.coins;
 		}
@@ -334,7 +334,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (AbigailGame.playingWithAbigail)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 
 			int coinsGained = __instance.coins - __state;
@@ -346,7 +346,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void MineCart_CollectCoin_Postfix(MineCart __instance, int amount)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (MineCartGameModeGetter.Value(__instance) != MineCart.progressMode)
 				return;
@@ -356,7 +356,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void MineCart_tick_Prefix(MineCart __instance, ref int __state)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (MineCartGameModeGetter.Value(__instance) != MineCart.infiniteMode)
 				return;
@@ -365,7 +365,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void MineCart_tick_Postfix(MineCart __instance, ref int __state)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
+			if (!Mod.IsAffixActive(a => a is CompetitionAffix))
 				return;
 			if (MineCartGameModeGetter.Value(__instance) != MineCart.infiniteMode)
 				return;

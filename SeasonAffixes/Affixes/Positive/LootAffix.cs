@@ -5,7 +5,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -49,7 +48,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void GameLocation_monsterDrop_Prefix(GameLocation __instance)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is LootAffix))
+			if (!Mod.IsAffixActive(a => a is LootAffix))
 				return;
 
 			uint counter = MonsterDropCallCounter.Push(__instance);
@@ -62,7 +61,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void GameLocation_monsterDrop_Finalizer(GameLocation __instance)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is LootAffix))
+			if (!Mod.IsAffixActive(a => a is LootAffix))
 				return;
 
 			uint counter = MonsterDropCallCounter.Pop(__instance);

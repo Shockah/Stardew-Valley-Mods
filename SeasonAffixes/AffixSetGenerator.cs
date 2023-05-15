@@ -32,15 +32,17 @@ namespace Shockah.SeasonAffixes
 		private IAffixesProvider AffixesProvider { get; init; }
 		private IAffixScoreProvider ScoreProvider { get; init; }
 		private IReadOnlyList<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> ConflictInfoProviders { get; init; }
+		private IReadOnlySet<ISeasonAffix> OtherAffixes { get; init; }
 		private int Positivity { get; init; }
 		private int Negativity { get; init; }
 		private int MaxAffixes { get; init; }
 
-		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IReadOnlyList<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> conflictInfoProviders, int positivity, int negativity, int maxAffixes)
+		public AllCombinationsAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IReadOnlyList<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> conflictInfoProviders, IReadOnlySet<ISeasonAffix> otherAffixes, int positivity, int negativity, int maxAffixes)
 		{
 			this.AffixesProvider = affixesProvider;
 			this.ScoreProvider = scoreProvider;
 			this.ConflictInfoProviders = conflictInfoProviders;
+			this.OtherAffixes = otherAffixes;
 			this.Positivity = positivity;
 			this.Negativity = negativity;
 			this.MaxAffixes = maxAffixes;
@@ -59,9 +61,13 @@ namespace Shockah.SeasonAffixes
 
 		private bool IsConflicting(OrdinalSeason season, HashSet<ISeasonAffix> combination)
 		{
+			var toCheck = combination;
+			if (OtherAffixes.Count != 0)
+				toCheck = toCheck.Union(OtherAffixes).ToHashSet();
+
 			foreach (var provider in ConflictInfoProviders)
 			{
-				var result = provider(combination, season);
+				var result = provider(toCheck, season);
 				if (result is not null)
 					return result.Value;
 			}

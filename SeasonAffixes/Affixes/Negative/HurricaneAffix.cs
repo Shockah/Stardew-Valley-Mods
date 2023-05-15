@@ -6,7 +6,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -90,7 +89,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
 		{
-			return !Mod.ActiveAffixes.Any(a => a is HurricaneAffix);
+			return !Mod.IsAffixActive(a => a is HurricaneAffix);
 		}
 	}
 }

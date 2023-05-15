@@ -11,7 +11,6 @@ using StardewValley;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -73,7 +72,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				return;
 			if (TreeFallingGetter.Value(__instance) || !__state)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is AccumulationAffix))
+			if (!Mod.IsAffixActive(a => a is AccumulationAffix))
 				return;
 
 			var playerToDropFor = Game1.getFarmer(TreeLastPlayerToHitGetter.Value(__instance).Value) ?? GameExt.GetHostPlayer();

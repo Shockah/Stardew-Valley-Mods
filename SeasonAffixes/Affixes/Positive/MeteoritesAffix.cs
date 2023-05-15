@@ -9,7 +9,6 @@ using StardewValley;
 using StardewValley.Events;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -56,7 +55,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void Utility_pickFarmEvent_Postfix(ref FarmEvent? __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is MeteoritesAffix))
+			if (!Mod.IsAffixActive(a => a is MeteoritesAffix))
 				return;
 			if (__result is not null)
 				return;

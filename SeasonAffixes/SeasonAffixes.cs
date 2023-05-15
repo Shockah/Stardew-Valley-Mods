@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using System.Xml;
 
 namespace Shockah.SeasonAffixes
 {
@@ -33,6 +34,7 @@ namespace Shockah.SeasonAffixes
 
 		private bool DidRegisterSkillAffixes = false;
 		private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
+		private HashSet<ISeasonAffix> ActivePermanentAffixesStorage { get; init; } = new();
 		private Dictionary<string, HashSet<ISeasonAffix>> AffixTagDictionary { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> AffixConflictInfoProviders { get; init; } = new();
 		private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>> AffixCombinationWeightProviders { get; init; } = new();
@@ -96,12 +98,36 @@ namespace Shockah.SeasonAffixes
 				var output = string.Join("\n\n", affixes.Select(a => $"ID: {a.UniqueID}\nName: {a.LocalizedName}\nDescription: {a.LocalizedDescription}"));
 				Monitor.Log(output, LogLevel.Info);
 			});
-			helper.ConsoleCommands.Add("affixes_list_active", "Lists all active seasonal affixes.", (_, _) =>
+			helper.ConsoleCommands.Add("affixes_list_active", "Lists all active affixes.", (_, _) =>
 			{
 				var affixes = ActiveAffixes;
 				if (affixes.Count == 0)
 				{
 					Monitor.Log("There are no active affixes.", LogLevel.Info);
+					return;
+				}
+
+				var output = string.Join("\n\n", affixes.Select(a => $"ID: {a.UniqueID}\nName: {a.LocalizedName}\nDescription: {a.LocalizedDescription}"));
+				Monitor.Log(output, LogLevel.Info);
+			});
+			helper.ConsoleCommands.Add("affixes_list_seasonal", "Lists all active seasonal affixes.", (_, _) =>
+			{
+				var affixes = ActiveSeasonalAffixes;
+				if (affixes.Count == 0)
+				{
+					Monitor.Log("There are no active seasonal affixes.", LogLevel.Info);
+					return;
+				}
+
+				var output = string.Join("\n\n", affixes.Select(a => $"ID: {a.UniqueID}\nName: {a.LocalizedName}\nDescription: {a.LocalizedDescription}"));
+				Monitor.Log(output, LogLevel.Info);
+			});
+			helper.ConsoleCommands.Add("affixes_list_permanent", "Lists all active seasonal affixes.", (_, _) =>
+			{
+				var affixes = ActivePermanentAffixes;
+				if (affixes.Count == 0)
+				{
+					Monitor.Log("There are no active permanent affixes.", LogLevel.Info);
 					return;
 				}
 
@@ -267,6 +293,8 @@ namespace Shockah.SeasonAffixes
 				AffixActivated?.Invoke(affix);
 			}
 			Monitor.Log($"Loaded save file. Active affixes:\n{string.Join("\n", SaveData.ActiveAffixes.Select(a => a.UniqueID))}", LogLevel.Info);
+
+			UpdatePermanentlyActiveAffixes();
 		}
 
 		private void OnSaving(object? sender, SavingEventArgs e)
@@ -411,6 +439,8 @@ namespace Shockah.SeasonAffixes
 
 					foreach (var affix in AllAffixesStorage.Values)
 						affix.OnSaveConfig();
+
+					UpdatePermanentlyActiveAffixes();
 					WriteConfig();
 					LogConfig();
 					SetupConfig();
@@ -464,6 +494,20 @@ namespace Shockah.SeasonAffixes
 			foreach (var affix in AllAffixesStorage.Values.OrderBy(a => a.LocalizedName).ThenBy(a => a.UniqueID))
 			{
 				api.AddSectionTitle(ModManifest, () => affix.LocalizedName, () => affix.LocalizedDescription);
+
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => Config.PermanentAffixes.Contains(affix.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.PermanentAffixes.Add(affix.UniqueID);
+						else
+							Config.PermanentAffixes.Remove(affix.UniqueID);
+					},
+					name: () => Helper.Translation.Get("config.affix.permanent.name"),
+					tooltip: () => Helper.Translation.Get("config.affix.permanent.tooltip")
+				);
 
 				api.AddNumberOption(
 					ModManifest,
@@ -545,6 +589,28 @@ namespace Shockah.SeasonAffixes
 			}
 		}
 
+		private void UpdatePermanentlyActiveAffixes()
+		{
+			var newAffixes = AllAffixesStorage.Where(kvp => Config.PermanentAffixes.Contains(kvp.Key)).Select(kvp => kvp.Value).ToHashSet();
+			var toDeactivate = ActivePermanentAffixesStorage.Where(a => !newAffixes.Contains(a)).ToList();
+			var toActivate = newAffixes.Where(a => !ActivePermanentAffixesStorage.Contains(a)).ToList();
+
+			foreach (var affix in toDeactivate)
+			{
+				affix.OnDeactivate();
+				ActivePermanentAffixesStorage.Remove(affix);
+				AffixDeactivated?.Invoke(affix);
+				Monitor.Log($"Activated (permanent) affix `{affix.UniqueID}`.", LogLevel.Info);
+			}
+			foreach (var affix in toActivate)
+			{
+				ActivePermanentAffixesStorage.Add(affix);
+				affix.OnActivate();
+				AffixActivated?.Invoke(affix);
+				Monitor.Log($"Deactivated (permanent) affix `{affix.UniqueID}`.", LogLevel.Info);
+			}
+		}
+
 		private void LocalActivateAffix(ISeasonAffix affix)
 		{
 			if (SaveData.ActiveAffixes.Contains(affix))
@@ -587,6 +653,7 @@ namespace Shockah.SeasonAffixes
 
 		private IAffixesProvider CreateAffixesProvider(IAffixScoreProvider scoreProvider, IAffixProbabilityWeightProvider probabilityWeightProvider, OrdinalSeason season)
 			=> new AffixesProvider(AllAffixesStorage.Values.Where(a => !Config.AffixWeights.TryGetValue(a.UniqueID, out var weight) || weight > 0))
+			.Excluding(ActivePermanentAffixesStorage)
 			.ApplicableToSeason(probabilityWeightProvider, season)
 			.Effective(scoreProvider, season);
 
@@ -610,12 +677,18 @@ namespace Shockah.SeasonAffixes
 			.MultiplyingBy(new AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(0.1));
 
 		private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, ModConfig.AffixSetEntry affixSetEntry, Random random)
-			=> new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, AffixConflictInfoProviders, affixSetEntry.Positive, affixSetEntry.Negative, 4)
-			.Benchmarking(Monitor, "AllCombinations")
-			.WeightedRandom(random, affixSetWeightProvider)
-			.Benchmarking(Monitor, "WeightedRandom")
-			.AvoidingDuplicatesBetweenChoices()
-			.Benchmarking(Monitor, "AvoidingDuplicates");
+		{
+			var otherAffixes = ActivePermanentAffixesStorage;
+			if (Config.Incremental)
+				otherAffixes = otherAffixes.Union(SaveData.ActiveAffixes).ToHashSet();
+
+			return new AllCombinationsAffixSetGenerator(affixesProvider, scoreProvider, AffixConflictInfoProviders, otherAffixes, affixSetEntry.Positive, affixSetEntry.Negative, 4)
+				.Benchmarking(Monitor, "AllCombinations")
+				.WeightedRandom(random, affixSetWeightProvider)
+				.Benchmarking(Monitor, "WeightedRandom")
+				.AvoidingDuplicatesBetweenChoices()
+				.Benchmarking(Monitor, "AvoidingDuplicates");
+		}
 
 		private static IEnumerable<CodeInstruction> Game1_showEndOfNightStuff_Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
@@ -708,10 +781,18 @@ namespace Shockah.SeasonAffixes
 		public event Action<ISeasonAffix>? AffixDeactivated;
 
 		public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.ToHashSet();
+		public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.Union(ActivePermanentAffixesStorage).ToHashSet();
+		public IReadOnlySet<ISeasonAffix> ActiveSeasonalAffixes => SaveData.ActiveAffixes.ToHashSet();
+		public IReadOnlySet<ISeasonAffix> ActivePermanentAffixes => SaveData.ActiveAffixes.ToHashSet();
 
 		public ISeasonAffix? GetAffix(string uniqueID)
 			=> AllAffixesStorage.TryGetValue(uniqueID, out var affix) ? affix : null;
+
+		public bool IsAffixActive(string uniqueID)
+			=> SaveData.ActiveAffixes.Any(a => a.UniqueID == uniqueID) || ActivePermanentAffixesStorage.Any(a => a.UniqueID == uniqueID);
+
+		public bool IsAffixActive(Func<ISeasonAffix, bool> predicate)
+			=> SaveData.ActiveAffixes.Any(predicate) || ActivePermanentAffixesStorage.Any(predicate);
 
 		public void RegisterAffix(ISeasonAffix affix)
 		{

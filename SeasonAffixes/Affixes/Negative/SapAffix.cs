@@ -6,7 +6,6 @@ using StardewValley;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -47,7 +46,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void Tree_UpdateTapperProduct_Postfix(SObject tapper_instance)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is SapAffix))
+			if (!Mod.IsAffixActive(a => a is SapAffix))
 				return;
 
 			float timeMultiplier = tapper_instance.ParentSheetIndex == 264 ? 0.5f : 1f;

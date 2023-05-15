@@ -9,7 +9,6 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -85,7 +84,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		public static bool GameLocation_digUpArtifactSpot_Transpiler_DropArtifactTroveOrContinue(GameLocation location, int x, int y, Farmer? player)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is TreasuresAffix))
+			if (!Mod.IsAffixActive(a => a is TreasuresAffix))
 				return true;
 
 			bool archaeologyEnchant = player is not null && player.CurrentTool is not null && player.CurrentTool.hasEnchantmentOfType<ArchaeologistEnchantment>();

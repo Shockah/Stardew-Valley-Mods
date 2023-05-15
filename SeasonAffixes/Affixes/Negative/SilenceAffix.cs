@@ -10,7 +10,6 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -100,7 +99,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		public static bool NPC_checkAction_Transpiler_SilenceOrContinue(NPC npc, Farmer player)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is SilenceAffix))
+			if (!Mod.IsAffixActive(a => a is SilenceAffix))
 				return true;
 
 			npc.grantConversationFriendship(player, Mod.Config.SilenceFriendshipGain);

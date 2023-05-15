@@ -185,7 +185,7 @@
 
 	// config
 	"config.incremental.name": "Incremental",
-	"config.incremental.tooltip": "When enabled, chosen affixes will be *added* to the currently active affixes, instead of replacing them.",
+	"config.incremental.tooltip": "When enabled, chosen affixes will be *added* to the currently active affixes, instead of replacing them.\nIf enabled, consider lowering the affix set entry positivity and negativity sums.",
 	"config.choices.name": "Choices",
 	"config.choices.tooltip": "How many different choices the players have each season.",
 	"config.affixRepeatPeriod.name": "Affix repeat period",
@@ -194,6 +194,8 @@
 	"config.affixSetRepeatPeriod.tooltip": "How many seasons before a set of affixes can repeat, if possible.",
 	"config.affix.weight.name": "Weight",
 	"config.affix.weight.tooltip": "The \"weight\" of the affix. An affix with a weight of 2 will be twice as likely to be chosen as an affix with a weight of 1.",
+	"config.affix.permanent.name": "Permanent",
+	"config.affix.permanent.tooltip": "The affix is enabled permanently. Its effects will always be active, and it will not be presented as a choice each season.",
 	"config.affixSetEntries.section.name": "Affix set entry #{{Number}}",
 	"config.affixSetEntries.section.tooltip": "An entry describing a possible affix choice.",
 	"config.affixSetEntries.positive.name": "Positivity",

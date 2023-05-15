@@ -14,8 +14,12 @@ namespace Shockah.SeasonAffixes
 
 		IReadOnlyDictionary<string, ISeasonAffix> AllAffixes { get; }
 		IReadOnlySet<ISeasonAffix> ActiveAffixes { get; }
+		IReadOnlySet<ISeasonAffix> ActiveSeasonalAffixes { get; }
+		IReadOnlySet<ISeasonAffix> ActivePermanentAffixes { get; }
 
 		ISeasonAffix? GetAffix(string uniqueID);
+		bool IsAffixActive(string uniqueID);
+		bool IsAffixActive(Func<ISeasonAffix, bool> predicate);
 
 		void RegisterAffix(ISeasonAffix affix);
 		void UnregisterAffix(ISeasonAffix affix);

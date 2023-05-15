@@ -4,7 +4,6 @@ using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
 {
@@ -47,7 +46,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void Game1_getWeatherModificationsForDate_Postfix(ref int __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is DroughtAffix))
+			if (!Mod.IsAffixActive(a => a is DroughtAffix))
 				return;
 			if (__result is Game1.weather_rain or Game1.weather_lightning)
 				__result = Game1.weather_sunny;

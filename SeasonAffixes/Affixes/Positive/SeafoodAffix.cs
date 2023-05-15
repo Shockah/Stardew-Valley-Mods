@@ -8,7 +8,6 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -60,7 +59,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (__result <= 0)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is SeafoodAffix))
+			if (!Mod.IsAffixActive(a => a is SeafoodAffix))
 				return;
 			if (__instance.Category != SObject.FishCategory && !(!__instance.bigCraftable.Value && __instance.ParentSheetIndex == RoeID))
 				return;

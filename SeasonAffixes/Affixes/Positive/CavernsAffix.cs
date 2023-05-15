@@ -123,7 +123,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (!Context.IsMainPlayer)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is CavernsAffix))
+			if (!Mod.IsAffixActive(a => a is CavernsAffix))
 				return;
 			if (!GemCavernFloors.Value.Contains(__instance.mineLevel))
 				return;

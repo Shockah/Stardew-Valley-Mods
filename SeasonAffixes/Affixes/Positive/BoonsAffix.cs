@@ -6,7 +6,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -51,7 +50,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			if (!__instance.stump.Value || __instance.health.Value > 0)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is BoonsAffix))
+			if (!Mod.IsAffixActive(a => a is BoonsAffix))
 				return;
 			SpawnAnyForageAfterDelay(location, tileLocation);
 		}

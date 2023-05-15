@@ -10,7 +10,6 @@ using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Monsters;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
@@ -125,7 +124,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		private static void GameLocation_monsterDrop_Prefix(GameLocation __instance, Monster __0, Farmer __3)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is BurstingAffix))
+			if (!Mod.IsAffixActive(a => a is BurstingAffix))
 				return;
 
 			uint counter = MonsterDropCallCounter.Push(__instance);
@@ -147,7 +146,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		private static void GameLocation_monsterDrop_Finalizer(GameLocation __instance)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is BurstingAffix))
+			if (!Mod.IsAffixActive(a => a is BurstingAffix))
 				return;
 			MonsterDropCallCounter.Pop(__instance);
 		}

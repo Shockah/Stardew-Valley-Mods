@@ -15,6 +15,9 @@ namespace Shockah.SeasonAffixes
 
 		public static IAffixesProvider ApplicableToSeason(this IAffixesProvider provider, IAffixProbabilityWeightProvider probabilityWeightProvider, OrdinalSeason season)
 			=> new ApplicableToSeasonAffixesProvider(provider, probabilityWeightProvider, season);
+
+		public static IAffixesProvider Excluding(this IAffixesProvider provider, IReadOnlySet<ISeasonAffix> excludedAffixes)
+			=> new ExcludingAffixesProvider(provider, excludedAffixes);
 	}
 
 	internal sealed class AffixesProvider : IAffixesProvider
@@ -82,6 +85,22 @@ namespace Shockah.SeasonAffixes
 			this.Wrapped = wrapped;
 			this.ProbabilityWeightProvider = probabilityWeightProvider;
 			this.Season = season;
+		}
+	}
+
+	internal sealed class ExcludingAffixesProvider : IAffixesProvider
+	{
+		private IAffixesProvider Wrapped { get; init; }
+		private IReadOnlySet<ISeasonAffix> ExcludedAffixes { get; init; }
+
+		public IEnumerable<ISeasonAffix> Affixes =>
+			Wrapped.Affixes
+				.Where(affix => !ExcludedAffixes.Contains(affix));
+
+		public ExcludingAffixesProvider(IAffixesProvider wrapped, IReadOnlySet<ISeasonAffix> excludedAffixes)
+		{
+			this.Wrapped = wrapped;
+			this.ExcludedAffixes = excludedAffixes;
 		}
 	}
 }

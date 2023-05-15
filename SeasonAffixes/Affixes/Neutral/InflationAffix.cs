@@ -12,7 +12,6 @@ using StardewValley.Locations;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using SObject = StardewValley.Object;
@@ -164,7 +163,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			if (__result <= 0)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+			if (!Mod.IsAffixActive(a => a is InflationAffix))
 				return;
 			ModifyPrice(ref __result);
 		}
@@ -173,7 +172,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			if (__result <= 0)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+			if (!Mod.IsAffixActive(a => a is InflationAffix))
 				return;
 			ModifyPrice(ref __result);
 		}
@@ -182,7 +181,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			if (currency != 0)
 				return;
-			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+			if (!Mod.IsAffixActive(a => a is InflationAffix))
 				return;
 			foreach (var kvp in __instance.itemPriceAndStock)
 				if (kvp.Value.Length == 2)
@@ -191,14 +190,14 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		private static void BluePrint_ctor_Postfix(BluePrint __instance)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+			if (!Mod.IsAffixActive(a => a is InflationAffix))
 				return;
 			ModifyPrice(ref __instance.moneyRequired);
 		}
 
 		private static void Utility_priceForToolUpgradeLevel_Postfix(ref int __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is InflationAffix))
+			if (!Mod.IsAffixActive(a => a is InflationAffix))
 				return;
 			ModifyPrice(ref __result);
 		}
@@ -443,7 +442,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 
 		public static void JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues(Dictionary<ISalable, int[]> stock, ISalable item, int[] values)
 		{
-			if (Mod.ActiveAffixes.Any(a => a is InflationAffix) && values.Length == 2)
+			if (Mod.IsAffixActive(a => a is InflationAffix) && values.Length == 2)
 				ModifyPrice(ref values[0]);
 			stock.Add(item, values);
 		}

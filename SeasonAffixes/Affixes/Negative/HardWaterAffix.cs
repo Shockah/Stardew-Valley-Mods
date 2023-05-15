@@ -53,7 +53,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 
 		private static void SObject_IsSprinkler_Postfix(ref bool __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is HardWaterAffix))
+			if (!Mod.IsAffixActive(a => a is HardWaterAffix))
 				return;
 			__result = false;
 		}

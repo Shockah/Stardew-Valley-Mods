@@ -5,7 +5,6 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.Locations;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
@@ -54,7 +53,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void BuildableGameLocation_doesTileHaveProperty_Postfix(BuildableGameLocation __instance, string propertyName, ref string? __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is MudAffix))
+			if (!Mod.IsAffixActive(a => a is MudAffix))
 				return;
 			if (__instance is Farm && propertyName == "NoSprinklers")
 				__result = null;
@@ -62,7 +61,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 		private static void BuildableGameLocation_doesTileHavePropertyNoNull_Postfix(BuildableGameLocation __instance, string propertyName, ref string __result)
 		{
-			if (!Mod.ActiveAffixes.Any(a => a is MudAffix))
+			if (!Mod.IsAffixActive(a => a is MudAffix))
 				return;
 			if (__instance is Farm && propertyName == "NoSprinklers")
 				__result = "";
