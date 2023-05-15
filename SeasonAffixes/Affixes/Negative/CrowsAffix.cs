@@ -16,11 +16,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Crows";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>(Critter.critterTexture), new(134, 46, 21, 17));
 
-		public CrowsAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public CrowsAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;

@@ -25,11 +25,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly Lazy<Func<Tree, NetLong>> TreeLastPlayerToHitGetter = new(() => AccessTools.Field(typeof(Tree), "lastPlayerToHit").EmitInstanceGetter<Tree, NetLong>());
 
 		private static string ShortID => "Accumulation";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.AccumulationChance * 100):0.##}%" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{(int)(Mod.Config.AccumulationChance * 100):0.##}%" });
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(64, 480, 16, 16));
 
-		public AccumulationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public AccumulationAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -46,7 +45,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.chance", () => Mod.Config.AccumulationChance, min: 0.01f, max: 1f, interval: 0.01f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.chance", () => Mod.Config.AccumulationChance, min: 0.01f, max: 1f, interval: 0.01f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void Apply(Harmony harmony)

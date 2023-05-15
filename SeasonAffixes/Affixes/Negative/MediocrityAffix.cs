@@ -13,13 +13,12 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class MediocrityAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Mediocrity";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 96, 16, 16));
 
 		private List<WeakReference<SObject>> AffixApplied = new();
 
-		public MediocrityAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public MediocrityAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;

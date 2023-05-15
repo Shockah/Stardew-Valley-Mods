@@ -18,11 +18,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static readonly List<WeakReference<GameLocation>> LocationsDuringGetFish = new();
 
 		private static string ShortID => "Migration";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(32, 464, 16, 16));
 
-		public MigrationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public MigrationAffix() : base(ShortID, "neutral") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;

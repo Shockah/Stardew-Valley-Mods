@@ -13,17 +13,21 @@ using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
 {
-	internal sealed class SkillAffix : BaseSeasonAffix, ISeasonAffix
+	internal sealed class SkillAffix : ISeasonAffix
 	{
 		private static readonly int DefaultLevelIncrease = 3;
 		private static readonly float DefaultVanillaXPIncrease = 0.2f;
 		private static readonly float DefaultCustomXPIncrease = 0.25f;
-		
+
+		private static SeasonAffixes Mod
+			=> SeasonAffixes.Instance;
+
 		private static bool IsHarmonySetup = false;
 
 		public ISkill Skill { get; init; }
 
 		private static string ShortID => "Skill";
+		public string UniqueID { get; init; }
 		public string LocalizedName => Skill.Name;
 		public TextureRectangle Icon => Skill.Icon ?? new(Game1.objectSpriteSheet, new(0, 64, 16, 16));
 
@@ -60,8 +64,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			get => Mod.Config.SkillXPIncrease.TryGetValue(Skill.UniqueID, out var value) ? value : DefaultXPIncrease;
 		}
 
-		public SkillAffix(ISkill skill) : base($"{Mod.ModManifest.UniqueID}.{ShortID}:{skill.UniqueID}")
+		public SkillAffix(ISkill skill)
 		{
+			this.UniqueID = $"{Mod.ModManifest.UniqueID}.{ShortID}:{skill.UniqueID}";
 			this.Skill = skill;
 			this.LazyTags = new(() =>
 			{

@@ -11,11 +11,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Slumber";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Hours = $"{(int)(Mod.Config.SlumberHours):0.#}" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Hours = $"{(int)Mod.Config.SlumberHours:0.#}" });
 		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 96, 16, 16));
 
-		public SlumberAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public SlumberAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;
@@ -37,7 +36,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.negative.{ShortID}.config.hours", () => Mod.Config.SlumberHours, min: 0.5f, max: 12f, interval: 0.5f);
+			helper.AddNumberOption($"{I18nPrefix}.config.hours", () => Mod.Config.SlumberHours, min: 0.5f, max: 12f, interval: 0.5f);
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)

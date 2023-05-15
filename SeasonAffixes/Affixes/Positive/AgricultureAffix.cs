@@ -18,11 +18,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Agriculture";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{(int)(Mod.Config.AgricultureValue * 100):0.##}%" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{(int)(Mod.Config.AgricultureValue * 100):0.##}%" });
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(96, 176, 16, 16));
 
-		public AgricultureAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public AgricultureAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.AgricultureValue > 1f ? 1 : 0;
@@ -42,7 +41,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.value", () => Mod.Config.AgricultureValue, min: 0f, max: 4f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.AgricultureValue, min: 0f, max: 4f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void Apply(Harmony harmony)

@@ -11,11 +11,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 	internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Tides";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Minigames\\MineCart"), new(48, 256, 16, 16));
 
-		public TidesAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public TidesAffix() : base(ShortID, "neutral") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;

@@ -14,11 +14,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Mud";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(288, 208, 16, 16));
 
-		public MudAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public MudAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;

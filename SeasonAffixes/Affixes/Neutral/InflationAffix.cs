@@ -24,11 +24,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Inflation";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
-		public InflationAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public InflationAffix() : base(ShortID, "neutral") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -55,7 +54,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.increase", () => Mod.Config.InflationIncrease, min: 0.05f, max: 4f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.increase", () => Mod.Config.InflationIncrease, min: 0.05f, max: 4f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)

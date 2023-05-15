@@ -22,11 +22,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 	internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "WildGrowth";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(336, 192, 16, 16));
 
-		public WildGrowthAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public WildGrowthAffix() : base(ShortID, "neutral") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -50,8 +49,8 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.advanceChance", () => Mod.Config.WildGrowthAdvanceChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.newSeedChance", () => Mod.Config.WildGrowthNewSeedChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.advanceChance", () => Mod.Config.WildGrowthAdvanceChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.newSeedChance", () => Mod.Config.WildGrowthNewSeedChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)

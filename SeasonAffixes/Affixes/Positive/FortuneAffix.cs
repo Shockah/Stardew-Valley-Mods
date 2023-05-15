@@ -10,11 +10,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class FortuneAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Fortune";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.mouseCursors, new(381, 361, 10, 10));
 
-		public FortuneAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public FortuneAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -42,7 +41,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.value", () => Mod.Config.FortuneValue, min: 0.001f, max: 0.5f, interval: 0.001f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.FortuneValue, min: 0.001f, max: 0.5f, interval: 0.001f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void OnDayStarted(object? sender, DayStartedEventArgs e)

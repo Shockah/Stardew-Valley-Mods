@@ -470,7 +470,7 @@ namespace Shockah.EarlyGingerIsland
 								{
 									return matcher
 										.Insert(
-											SequenceMatcherPastBoundsDirection.After, true,
+											SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 											new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EarlyGingerIsland), nameof(ModifyTicketPrice)))
 										);
 								},
@@ -542,7 +542,7 @@ namespace Shockah.EarlyGingerIsland
 								ILMatches.Call(AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)))
 							)
 							.Insert(
-								SequenceMatcherPastBoundsDirection.After, true,
+								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
 								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EarlyGingerIsland), nameof(ModifyTicketPrice)))
 							);
 					})

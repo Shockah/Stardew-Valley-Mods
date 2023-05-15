@@ -21,8 +21,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Caverns";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(128, 208, 16, 16));
 
 		private static readonly Lazy<Func<MineShaft, bool>> IsDinoAreaGetter = new(() => AccessTools.Property(typeof(MineShaft), "isDinoArea").EmitInstanceGetter<MineShaft, bool>());
@@ -31,7 +30,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly Lazy<Action<MineShaft, int>> StonesLeftOnThisLevelSetter = new(() => AccessTools.Property(typeof(MineShaft), "stonesLeftOnThisLevel").EmitInstanceSetter<MineShaft, int>());
 		private static readonly PerScreen<HashSet<int>> GemCavernFloors = new(() => new());
 
-		public CavernsAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public CavernsAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -58,11 +57,11 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.minFloors", () => Mod.Config.CavernsMinFloors, min: 1, max: 40, interval: 1);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.maxFloors", () => Mod.Config.CavernsMaxFloors, min: 1, max: 40, interval: 1);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.minGems", () => Mod.Config.CavernsMinGems, min: 1, max: 60, interval: 1);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.maxGems", () => Mod.Config.CavernsMaxGems, min: 1, max: 60, interval: 1);
-			helper.AddBoolOption($"affix.positive.{ShortID}.config.allowPrismaticShard", () => Mod.Config.CavernsAllowPrismaticShard);
+			helper.AddNumberOption($"{I18nPrefix}.config.minFloors", () => Mod.Config.CavernsMinFloors, min: 1, max: 40, interval: 1);
+			helper.AddNumberOption($"{I18nPrefix}.config.maxFloors", () => Mod.Config.CavernsMaxFloors, min: 1, max: 40, interval: 1);
+			helper.AddNumberOption($"{I18nPrefix}.config.minGems", () => Mod.Config.CavernsMinGems, min: 1, max: 60, interval: 1);
+			helper.AddNumberOption($"{I18nPrefix}.config.maxGems", () => Mod.Config.CavernsMaxGems, min: 1, max: 60, interval: 1);
+			helper.AddBoolOption($"{I18nPrefix}.config.allowPrismaticShard", () => Mod.Config.CavernsAllowPrismaticShard);
 		}
 
 		private void Apply(Harmony harmony)

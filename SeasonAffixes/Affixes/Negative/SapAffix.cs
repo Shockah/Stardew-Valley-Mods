@@ -16,11 +16,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Sap";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(320, 48, 16, 16));
 
-		public SapAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public SapAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;

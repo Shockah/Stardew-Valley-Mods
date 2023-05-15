@@ -49,10 +49,10 @@ namespace Shockah.SeasonAffixes
 		[JsonProperty] public float CompetitionJunimoKartScoreMoney { get; internal set; } = 0.04f;
 		[JsonProperty] public float FairyTalesChance { get; internal set; } = 0.15f;
 		[JsonIgnore] public float FortuneValue { get; internal set; } = 0.05f;
-		[JsonIgnore] public int HivemindRange { get; internal set; } = 5;
-		[JsonIgnore] public int HivemindFlowersFor1DayDecrease { get; internal set; } = 6;
-		[JsonIgnore] public int HivemindFlowersFor2DayDecrease { get; internal set; } = 20;
-		[JsonIgnore] public int HivemindFlowersFor3DayDecrease { get; internal set; } = 50;
+		[JsonProperty] public int HivemindRange { get; internal set; } = 5;
+		[JsonProperty] public int HivemindFlowersFor1DayDecrease { get; internal set; } = 6;
+		[JsonProperty] public int HivemindFlowersFor2DayDecrease { get; internal set; } = 20;
+		[JsonProperty] public int HivemindFlowersFor3DayDecrease { get; internal set; } = 50;
 		[JsonProperty] public float InflationIncrease { get; internal set; } = 0.2f;
 		[JsonProperty] public float InnovationDecrease { get; internal set; } = 0.25f;
 		[JsonProperty] public float LoveValue { get; internal set; } = 2f;

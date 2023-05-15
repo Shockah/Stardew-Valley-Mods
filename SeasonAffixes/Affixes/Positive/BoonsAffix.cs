@@ -18,11 +18,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly int SpawnDelay = 2250;
 
 		private static string ShortID => "Boons";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 0, 16, 16));
 
-		public BoonsAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public BoonsAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;

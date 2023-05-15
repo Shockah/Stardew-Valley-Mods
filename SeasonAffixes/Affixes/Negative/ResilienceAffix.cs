@@ -14,11 +14,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 	internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Resilience";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.ResilienceValue:0.##}x" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.ResilienceValue:0.##}x" });
 		public TextureRectangle Icon => new(Game1.content.Load<Texture2D>("Characters\\Monsters\\Metal Head"), new(0, 0, 16, 16));
 
-		public ResilienceAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public ResilienceAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.ResilienceValue < 1 ? 1 : 0;
@@ -47,7 +46,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.negative.{ShortID}.config.value", () => Mod.Config.ResilienceValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.ResilienceValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 		}
 
 		private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)

@@ -21,10 +21,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static readonly WeakCounter<GameLocation> MonsterDropCallCounter = new();
 
 		private static string ShortID => "Bursting";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 176, 16, 16));
 
-		public BurstingAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public BurstingAffix() : base(ShortID, "neutral") { }
 
 		public string LocalizedDescription
 		{
@@ -32,9 +31,9 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			{
 				float totalWeight = Mod.Config.BurstingNoBombWeight + Mod.Config.BurstingCherryBombWeight + Mod.Config.BurstingBombWeight + Mod.Config.BurstingMegaBombWeight;
 				if (Mod.Config.BurstingNoBombWeight > 0f)
-					return Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description.chance", new { Chance = $"{(int)((1f - (Mod.Config.BurstingNoBombWeight / totalWeight)) * 100):0.##}%" });
+					return Mod.Helper.Translation.Get($"{I18nPrefix}.description.chance", new { Chance = $"{(int)((1f - (Mod.Config.BurstingNoBombWeight / totalWeight)) * 100):0.##}%" });
 				else
-					return Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description.always");
+					return Mod.Helper.Translation.Get($"{I18nPrefix}.description.always");
 			}
 		}
 
@@ -60,10 +59,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.weight.noBomb", () => Mod.Config.BurstingNoBombWeight, min: 0f, max: 10f, interval: 0.1f);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.weight.cherryBomb", () => Mod.Config.BurstingBombWeight, min: 0f, max: 10f, interval: 0.1f);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.weight.bomb", () => Mod.Config.BurstingCherryBombWeight, min: 0f, max: 10f, interval: 0.1f);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.weight.megaBomb", () => Mod.Config.BurstingMegaBombWeight, min: 0f, max: 10f, interval: 0.1f);
+			helper.AddNumberOption($"{I18nPrefix}.config.weight.noBomb", () => Mod.Config.BurstingNoBombWeight, min: 0f, max: 10f, interval: 0.1f);
+			helper.AddNumberOption($"{I18nPrefix}.config.weight.cherryBomb", () => Mod.Config.BurstingBombWeight, min: 0f, max: 10f, interval: 0.1f);
+			helper.AddNumberOption($"{I18nPrefix}.config.weight.bomb", () => Mod.Config.BurstingCherryBombWeight, min: 0f, max: 10f, interval: 0.1f);
+			helper.AddNumberOption($"{I18nPrefix}.config.weight.megaBomb", () => Mod.Config.BurstingMegaBombWeight, min: 0f, max: 10f, interval: 0.1f);
 		}
 
 		private void Apply(Harmony harmony)

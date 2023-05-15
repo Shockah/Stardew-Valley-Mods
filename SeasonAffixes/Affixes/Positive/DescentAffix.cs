@@ -15,11 +15,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Descent";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.bigCraftableSpriteSheet, new(112, 272, 16, 16));
 
-		public DescentAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public DescentAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;

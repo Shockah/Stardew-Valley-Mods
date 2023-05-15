@@ -1,13 +1,15 @@
 ﻿using HarmonyLib;
-using Nanoray.Shrike.Harmony;
 using Nanoray.Shrike;
+using Nanoray.Shrike.Harmony;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
+using Shockah.SeasonAffixes.Affixes;
 using Shockah.SeasonAffixes.Affixes.Negative;
 using Shockah.SeasonAffixes.Affixes.Neutral;
 using Shockah.SeasonAffixes.Affixes.Positive;
+using Shockah.SeasonAffixes.Affixes.Varianted;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -17,8 +19,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Reflection.Emit;
+using System.Text;
 
 namespace Shockah.SeasonAffixes
 {
@@ -191,14 +193,12 @@ namespace Shockah.SeasonAffixes
 				new FairyTalesAffix(),
 				//new FortuneAffix(),
 				new HivemindAffix(),
-				new InnovationAffix(),
 				new LootAffix(),
 				new LoveAffix(),
 				new MeteoritesAffix(),
 				new MudAffix(),
 				new SeafoodAffix(),
 				new RanchingAffix(),
-				new RegrowthAffix(),
 				new TreasuresAffix(),
 
 				// negative affixes
@@ -207,9 +207,7 @@ namespace Shockah.SeasonAffixes
 				new HardWaterAffix(),
 				new HurricaneAffix(),
 				new MediocrityAffix(),
-				new PoorYieldsAffix(),
 				new ResilienceAffix(),
-				new RustAffix(),
 				new SapAffix(),
 				new SilenceAffix(),
 				new SlumberAffix(),
@@ -222,18 +220,26 @@ namespace Shockah.SeasonAffixes
 				new ThunderAffix(),
 				new TidesAffix(),
 				new WildGrowthAffix(),
+
+				// variantable affixes
+				new InnovationAffix(AffixVariant.Positive), new InnovationAffix(AffixVariant.Negative),
+				new RegrowthAffix(AffixVariant.Positive), new RegrowthAffix(AffixVariant.Negative)
 			})
 				RegisterAffix(affix);
 
 			// conflicts
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? true : null);
-			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is RustAffix) && affixes.Any(a => a is InnovationAffix) ? true : null);
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? true : null);
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is HardWaterAffix) && affixes.Any(a => a is MudAffix) ? true : null);
-			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is PoorYieldsAffix) && affixes.Any(a => a is RegrowthAffix) ? true : null);
 			RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SapAffix) && affixes.Any(a => a is AccumulationAffix) ? true : null);
+			RegisterAffixConflictInfoProvider((affixes, _) =>
+			{
+				var varianted = affixes.OfType<BaseVariantedSeasonAffix>().ToList();
+				var variantedTypes = varianted.Select(v => v.GetType()).ToHashSet();
+				return varianted.Count == variantedTypes.Count ? null : true;
+			});
 
-            SetupConfig();
+			SetupConfig();
 		}
 
 		private void OnDayEnding(object? sender, DayEndingEventArgs e)

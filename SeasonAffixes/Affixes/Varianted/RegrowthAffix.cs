@@ -8,24 +8,33 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive
+namespace Shockah.SeasonAffixes.Affixes.Varianted
 {
-	internal sealed class RegrowthAffix : BaseSeasonAffix, ISeasonAffix
+	internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 	{
-		private static string ShortID => "Regrowth";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(16, 528, 16, 16));
+		private static string ShortPositiveID => "Regrowth";
+		private static string ShortNegativeID => "PoorYields";
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 
-		public RegrowthAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public TextureRectangle Icon
+			=> Variant == AffixVariant.Positive
+			? new(Game1.objectSpriteSheet, new(16, 528, 16, 16))
+			: new(Game1.objectSpriteSheet, new(0, 0, 16, 16));
+
+		public RegrowthAffix(AffixVariant variant) : base(variant == AffixVariant.Positive ? ShortPositiveID : ShortNegativeID, variant)
+		{
+			Tags = Variant == AffixVariant.Positive
+				? new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect }
+				: new HashSet<string> { VanillaSkill.CropsAspect };
+		}
 
 		public int GetPositivity(OrdinalSeason season)
-			=> 1;
+			=> Variant == AffixVariant.Positive ? 1 : 0;
 
 		public int GetNegativity(OrdinalSeason season)
-			=> 0;
+			=> Variant == AffixVariant.Negative ? 1 : 0;
 
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect };
+		public IReadOnlySet<string> Tags { get; init; }
 
 		public double GetProbabilityWeight(OrdinalSeason season)
 			=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0;
@@ -54,10 +63,18 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 				foreach (var kvp in data.Data)
 				{
 					string[] split = kvp.Value.Split('/');
-					if (split[4] == "-1")
+					if (Variant == AffixVariant.Positive)
 					{
-						int totalGrowthDays = split[0].Split(" ").Select(growthStage => int.Parse(growthStage)).Sum();
-						split[4] = $"{(int)Math.Ceiling(totalGrowthDays / 3.0)}";
+						if (split[4] == "-1")
+						{
+							int totalGrowthDays = split[0].Split(" ").Select(growthStage => int.Parse(growthStage)).Sum();
+							split[4] = $"{(int)Math.Ceiling(totalGrowthDays / 3.0)}";
+							data.Data[kvp.Key] = string.Join("/", split);
+						}
+					}
+					else
+					{
+						split[4] = "-1";
 						data.Data[kvp.Key] = string.Join("/", split);
 					}
 				}

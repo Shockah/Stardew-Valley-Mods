@@ -30,23 +30,4 @@ namespace Shockah.SeasonAffixes
 		double GetProbabilityWeight(OrdinalSeason season)
 			=> 1;
 	}
-
-	internal abstract class BaseSeasonAffix
-	{
-		protected static SeasonAffixes Mod
-			=> SeasonAffixes.Instance;
-
-		public string UniqueID { get; init; }
-
-		protected BaseSeasonAffix(string uniqueID)
-		{
-			this.UniqueID = uniqueID;
-		}
-
-		public override bool Equals(object? obj)
-			=> obj is ISeasonAffix affix && UniqueID == affix.UniqueID;
-
-		public override int GetHashCode()
-			=> UniqueID.GetHashCode();
-	}
 }

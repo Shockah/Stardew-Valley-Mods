@@ -18,11 +18,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Meteorites";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Chance = $"{(int)(Mod.Config.MeteoritesChance * 100):0.##}%" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{(int)(Mod.Config.MeteoritesChance * 100):0.##}%" });
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 400, 32, 32));
 
-		public MeteoritesAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public MeteoritesAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -39,7 +38,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.chance", () => Mod.Config.MeteoritesChance, min: 0.01f, max: 1f, interval: 0.01f, value => $"{(int)(value * 100):0.##}%");
+			helper.AddNumberOption($"{I18nPrefix}.config.chance", () => Mod.Config.MeteoritesChance, min: 0.01f, max: 1f, interval: 0.01f, value => $"{(int)(value * 100):0.##}%");
 		}
 
 		private void Apply(Harmony harmony)

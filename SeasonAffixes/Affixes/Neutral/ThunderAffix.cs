@@ -21,11 +21,10 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Thunder";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.neutral.{ShortID}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
 		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
 
-		public ThunderAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public ThunderAffix() : base(ShortID, "neutral") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -51,7 +50,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.neutral.{ShortID}.config.chance", () => Mod.Config.ThunderChance, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+			helper.AddNumberOption($"{I18nPrefix}.config.chance", () => Mod.Config.ThunderChance, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 		}
 
 		private void Apply(Harmony harmony)

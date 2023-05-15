@@ -21,11 +21,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static readonly Lazy<Action<BobberBar, float>> BobberBarDistanceFromCatchingSetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceSetter<BobberBar, float>());
 
 		private static string ShortID => "Tenacity";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 80, 16, 16));
 
-		public TenacityAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public TenacityAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> Mod.Config.TenacityValue < 1f ? 1 : 0;
@@ -49,7 +48,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.negative.{ShortID}.config.value", () => Mod.Config.TenacityValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.TenacityValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)

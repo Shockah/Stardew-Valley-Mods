@@ -15,11 +15,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Hivemind";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(64, 224, 16, 16));
 
-		public HivemindAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public HivemindAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -46,10 +45,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.range", () => Mod.Config.HivemindRange, min: 1, max: 10, interval: 1);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.flowersFor1DayDecrease", () => Mod.Config.HivemindFlowersFor1DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"affix.positive.{ShortID}.config.flowersForXDayDecrease.disabled") : $"{value}");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.flowersFor2DayDecrease", () => Mod.Config.HivemindFlowersFor2DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"affix.positive.{ShortID}.config.flowersForXDayDecrease.disabled") : $"{value}");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.flowersFor3DayDecrease", () => Mod.Config.HivemindFlowersFor3DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"affix.positive.{ShortID}.config.flowersForXDayDecrease.disabled") : $"{value}");
+			helper.AddNumberOption($"{I18nPrefix}.config.range", () => Mod.Config.HivemindRange, min: 1, max: 10, interval: 1);
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor1DayDecrease", () => Mod.Config.HivemindFlowersFor1DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor2DayDecrease", () => Mod.Config.HivemindFlowersFor2DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor3DayDecrease", () => Mod.Config.HivemindFlowersFor3DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
 		}
 
 		private void OnMachineChanged(GameLocation location, SObject machine, MachineProcessingState? oldState, MachineProcessingState? newState)

@@ -14,13 +14,12 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static string ShortID => "Love";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
 		public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
 
 		private readonly Dictionary<string, int> OldFriendship = new();
 
-		public LoveAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public LoveAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -47,7 +46,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.value", () => Mod.Config.LoveValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.LoveValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 		}
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)

@@ -18,13 +18,13 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 	internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		private static bool IsHarmonySetup = false;
+		private static CompetitionAffix Instance = null!;
 
 		private static readonly Lazy<Func<MineCart, int>> MineCartGameModeGetter = new(() => AccessTools.Field(typeof(MineCart), "gameMode").EmitInstanceGetter<MineCart, int>());
 		private static readonly Lazy<Func<MineCart, int>> MineCartScoreGetter = new(() => AccessTools.Field(typeof(MineCart), "score").EmitInstanceGetter<MineCart, int>());
 
 		private static string ShortID => "Competition";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 208, 16, 16));
 
 		private static readonly PerScreen<bool> RunOriginalBuyQiCoins = new(() => false);
@@ -32,7 +32,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly ConditionalWeakTable<AbigailGame.CowboyMonster, StructRef<int>> PrairieKingMonsterMaxHealth = new();
 		private static readonly PerScreen<float> ArcadeMoneyToReceive = new(() => 0);
 
-		public CompetitionAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public CompetitionAffix() : base(ShortID, "positive")
+		{
+			Instance = this;
+		}
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
@@ -60,17 +63,17 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
 
-			helper.AddSectionTitle($"affix.positive.{ShortID}.config.casino");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.qiCoinSellValue", () => Mod.Config.CompetitionQiCoinSellValue, min: 0.01f, max: 1f, interval: 0.01f, value => $"{value:0.##}");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.qiCoinExchangeCap", () => Mod.Config.CompetitionQiCoinExchangeCap, min: 0f, max: 25f, interval: 0.1f, value => $"{value:0.##}x");
+			helper.AddSectionTitle($"{I18nPrefix}.config.casino");
+			helper.AddNumberOption($"{I18nPrefix}.config.qiCoinSellValue", () => Mod.Config.CompetitionQiCoinSellValue, min: 0.01f, max: 1f, interval: 0.01f, value => $"{value:0.##}");
+			helper.AddNumberOption($"{I18nPrefix}.config.qiCoinExchangeCap", () => Mod.Config.CompetitionQiCoinExchangeCap, min: 0f, max: 25f, interval: 0.1f, value => $"{value:0.##}x");
 
-			helper.AddSectionTitle($"affix.positive.{ShortID}.config.prairieKing");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.prairieKing.monsterHealthMoney", () => Mod.Config.CompetitionPrairieKingMonsterHealthMoney, min: 0f, max: 10f, interval: 0.1f, value => $"{value:0.##}");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.prairieKing.coinMoney", () => Mod.Config.CompetitionPrairieKingCoinMoney, min: 0, max: 250, interval: 1);
+			helper.AddSectionTitle($"{I18nPrefix}.config.prairieKing");
+			helper.AddNumberOption($"{I18nPrefix}.config.prairieKing.monsterHealthMoney", () => Mod.Config.CompetitionPrairieKingMonsterHealthMoney, min: 0f, max: 10f, interval: 0.1f, value => $"{value:0.##}");
+			helper.AddNumberOption($"{I18nPrefix}.config.prairieKing.coinMoney", () => Mod.Config.CompetitionPrairieKingCoinMoney, min: 0, max: 250, interval: 1);
 
-			helper.AddSectionTitle($"affix.positive.{ShortID}.config.junimoKart");
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.junimoKart.coinMoney", () => Mod.Config.CompetitionJunimoKartCoinMoney, min: 0, max: 250, interval: 1);
-			helper.AddNumberOption($"affix.positive.{ShortID}.config.junimoKart.scoreMoney", () => Mod.Config.CompetitionJunimoKartScoreMoney, min: 0f, max: 1f, interval: 0.005f, value => $"{value:0.##}");
+			helper.AddSectionTitle($"{I18nPrefix}.config.junimoKart");
+			helper.AddNumberOption($"{I18nPrefix}.config.junimoKart.coinMoney", () => Mod.Config.CompetitionJunimoKartCoinMoney, min: 0, max: 250, interval: 1);
+			helper.AddNumberOption($"{I18nPrefix}.config.junimoKart.scoreMoney", () => Mod.Config.CompetitionJunimoKartScoreMoney, min: 0f, max: 1f, interval: 0.005f, value => $"{value:0.##}");
 		}
 
 		private void Apply(Harmony harmony)
@@ -155,7 +158,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			if (money <= 0)
 				return;
 
-			Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get("affix.positive.Competition.arcadeMoneyReward", new { Money = money }));
+			Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{I18nPrefix}.arcadeMoneyReward", new { Money = money }));
 			Game1.player.Money += money;
 			ArcadeMoneyToReceive.Value = 0;
 		}
@@ -187,9 +190,9 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 					return true;
 				}
 
-				Response buyResponse = new("BuyQiCoins", Mod.Helper.Translation.Get("affix.positive.Competition.buySellQiCoinsQuestion.buy"));
-				Response sellResponse = new("SellQiCoins", Mod.Helper.Translation.Get("affix.positive.Competition.buySellQiCoinsQuestion.sell"));
-				__instance.createQuestionDialogue(Mod.Helper.Translation.Get("affix.positive.Competition.buySellQiCoinsQuestion"), new Response[] { buyResponse, sellResponse }, $"{Mod.ModManifest.UniqueID}.{ShortID}.BuySellQiCoins");
+				Response buyResponse = new("BuyQiCoins", Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.buySellQiCoinsQuestion.buy"));
+				Response sellResponse = new("SellQiCoins", Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.buySellQiCoinsQuestion.sell"));
+				__instance.createQuestionDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.buySellQiCoinsQuestion"), new Response[] { buyResponse, sellResponse }, $"{Instance.UniqueID}.BuySellQiCoins");
 				return false;
 			}
 
@@ -201,32 +204,32 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			if (!Mod.ActiveAffixes.Any(a => a is CompetitionAffix))
 				return true;
 
-			if (questionAndAnswer == $"{Mod.ModManifest.UniqueID}.{ShortID}.BuySellQiCoins_BuyQiCoins")
+			if (questionAndAnswer == $"{Instance.UniqueID}.BuySellQiCoins_BuyQiCoins")
 			{
 				var tileLocation = Game1.player.getTileLocation();
 				RunOriginalBuyQiCoins.Value = true;
 				__instance.performAction("BuyQiCoins", Game1.player, new((int)tileLocation.X, (int)tileLocation.Y));
 			}
-			else if (questionAndAnswer == $"{Mod.ModManifest.UniqueID}.{ShortID}.BuySellQiCoins_SellQiCoins")
+			else if (questionAndAnswer == $"{Instance.UniqueID}.BuySellQiCoins_SellQiCoins")
 			{
 				int minCoins = GetMinimumQiCoinsToSell();
 				if (Game1.player.clubCoins < minCoins)
 				{
-					Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get("affix.positive.Competition.sellQiCoins.notEnoughQiCoins"));
+					Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.notEnoughQiCoins"));
 					return false;
 				}
 				if (QiCoinsLeftToSell.Value < minCoins)
 				{
-					Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get("affix.positive.Competition.sellQiCoins.cappedQiCoins"));
+					Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.cappedQiCoins"));
 					return false;
 				}
 
 				int coinsToSell = Math.Min(Game1.player.clubCoins, QiCoinsLeftToSell.Value);
 				int money = GetMoneyForQiCoins(coinsToSell);
-				__instance.createQuestionDialogue(Mod.Helper.Translation.Get("affix.positive.Competition.sellQiCoinsQuestion", new { Amount = coinsToSell, Money = money }), __instance.createYesNoResponses(), $"{Mod.ModManifest.UniqueID}.{ShortID}.SellQiCoins");
+				__instance.createQuestionDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoinsQuestion", new { Amount = coinsToSell, Money = money }), __instance.createYesNoResponses(), $"{Mod.ModManifest.UniqueID}.{ShortID}.SellQiCoins");
 				return false;
 			}
-			else if (questionAndAnswer == $"{Mod.ModManifest.UniqueID}.{ShortID}.SellQiCoins_Yes")
+			else if (questionAndAnswer == $"{Instance.UniqueID}.SellQiCoins_Yes")
 			{
 				int coinsToSell = Math.Min(Game1.player.clubCoins, QiCoinsLeftToSell.Value);
 				int money = GetMoneyForQiCoins(coinsToSell);

@@ -20,11 +20,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Silence";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 144, 16, 16));
 
-		public SilenceAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public SilenceAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;
@@ -41,7 +40,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"affix.negative.{ShortID}.config.friendshipGain", () => Mod.Config.SilenceFriendshipGain, min: 0, max: 250, interval: 10);
+			helper.AddNumberOption($"{I18nPrefix}.config.friendshipGain", () => Mod.Config.SilenceFriendshipGain, min: 0, max: 250, interval: 10);
 		}
 
 		private void Apply(Harmony harmony)

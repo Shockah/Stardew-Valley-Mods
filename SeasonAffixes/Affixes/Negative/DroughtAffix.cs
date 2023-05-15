@@ -13,11 +13,10 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		private static bool IsHarmonySetup = false;
 
 		private static string ShortID => "Drought";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.negative.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 333, 13, 13));
 
-		public DroughtAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public DroughtAffix() : base(ShortID, "negative") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 0;

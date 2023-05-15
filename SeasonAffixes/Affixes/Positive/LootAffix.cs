@@ -17,11 +17,10 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		private static readonly ConditionalWeakTable<GameLocation, Random> MonsterDropRandomCache = new();
 
 		private static string ShortID => "Loot";
-		public string LocalizedName => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.name");
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"affix.positive.{ShortID}.description");
+		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
 		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(352, 96, 16, 16));
 
-		public LootAffix() : base($"{Mod.ModManifest.UniqueID}.{ShortID}") { }
+		public LootAffix() : base(ShortID, "positive") { }
 
 		public int GetPositivity(OrdinalSeason season)
 			=> 1;
