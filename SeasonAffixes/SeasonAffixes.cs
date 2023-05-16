@@ -222,6 +222,7 @@ namespace Shockah.SeasonAffixes
 				new LoveAffix(),
 				new MeteoritesAffix(),
 				new MudAffix(),
+				new OvergrowthAffix(),
 				new TreasuresAffix(),
 
 				// negative affixes
