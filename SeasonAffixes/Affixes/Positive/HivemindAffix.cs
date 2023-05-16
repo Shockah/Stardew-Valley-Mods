@@ -45,10 +45,19 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 		{
 			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
 			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+
+			string DayDecreaseText(int value)
+			{
+				if (value == -1)
+					return helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled");
+				else
+					return $"{value}";
+			}
+
 			helper.AddNumberOption($"{I18nPrefix}.config.range", () => Mod.Config.HivemindRange, min: 1, max: 10, interval: 1);
-			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor1DayDecrease", () => Mod.Config.HivemindFlowersFor1DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
-			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor2DayDecrease", () => Mod.Config.HivemindFlowersFor2DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
-			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor3DayDecrease", () => Mod.Config.HivemindFlowersFor3DayDecrease, min: -1, max: 200, interval: 1, formatValue: value => value == -1 ? helper.Translations.Get($"{I18nPrefix}.config.flowersForXDayDecrease.disabled") : $"{value}");
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor1DayDecrease", () => Mod.Config.HivemindFlowersFor1DayDecrease, min: -1, max: 200, interval: 1, formatValue: DayDecreaseText);
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor2DayDecrease", () => Mod.Config.HivemindFlowersFor2DayDecrease, min: -1, max: 200, interval: 1, formatValue: DayDecreaseText);
+			helper.AddNumberOption($"{I18nPrefix}.config.flowersFor3DayDecrease", () => Mod.Config.HivemindFlowersFor3DayDecrease, min: -1, max: 200, interval: 1, formatValue: DayDecreaseText);
 		}
 
 		private void OnMachineChanged(GameLocation location, SObject machine, MachineProcessingState? oldState, MachineProcessingState? newState)
@@ -86,6 +95,8 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 
 			void HandleDecrease(int flowersRequired)
 			{
+				if (flowersRequired < 0)
+					return;
 				if (IsSatisfied(flowersLeft, flowersRequired, random))
 					dayDecrease++;
 				flowersLeft -= flowersRequired;
