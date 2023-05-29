@@ -21,6 +21,11 @@ namespace Shockah.JunimoWarp
 
 		private readonly PerScreen<Dictionary<Guid, Action<GameLocation, IntPoint>>> AwaitingNextWarpResponse = new(() => new());
 
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
+		}
+
 		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
