@@ -6,5 +6,12 @@
     "UniqueID": "Shockah.SeasonAffixes",
     "EntryDll": "SeasonAffixes.dll",
     "MinimumApiVersion": "3.0.0",
-    "UpdateKeys": []
+    "UpdateKeys": [],
+    "Dependencies": [
+        {
+            "UniqueID": "Shockah.Kokoro",
+            "IsRequired": true,
+            "MinimumVersion": "2.0.0"
+        }
+    ]
 }
