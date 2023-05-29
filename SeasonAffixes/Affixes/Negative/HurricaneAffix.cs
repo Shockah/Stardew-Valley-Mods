@@ -32,16 +32,6 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 		public void OnRegister()
 			=> Apply(Mod.Harmony);
 
-		public void OnActivate()
-		{
-			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
-		}
-
-		public void OnDeactivate()
-		{
-			Mod.Helper.GameContent.InvalidateCache("Data\\Locations");
-		}
-
 		private void Apply(Harmony harmony)
 		{
 			if (IsHarmonySetup)
