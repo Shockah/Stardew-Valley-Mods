@@ -16,13 +16,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\Kokoro\Kokoro.csproj">
-			<Private>false</Private>
-		</ProjectReference>
-		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll">
-			<Private>false</Private>
-		</Reference>
+		<ProjectReference Include="..\Kokoro\Kokoro.csproj" Private="false" />
+		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll" Private="false" />
 	</ItemGroup>
 </Project>

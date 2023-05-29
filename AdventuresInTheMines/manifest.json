@@ -9,6 +9,11 @@
     "UpdateKeys": [ "Nexus:15272" ],
     "Dependencies": [
         {
+            "UniqueID": "Shockah.Kokoro",
+            "IsRequired": true,
+            "MinimumVersion": "2.0.0"
+        },
+        {
             "UniqueID": "aedenthorn.ExtraMapLayers",
             "MinimumVersion": "0.3.3"
         }
