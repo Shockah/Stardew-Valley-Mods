@@ -63,31 +63,31 @@ namespace Shockah.MineTweaks
 					"config.stoneChanceMultiplier",
 					() => config().StoneChanceMultiplier,
 					v => config().StoneChanceMultiplier = v,
-					min: 0f, max: 10f, interval: 0.05f
+					min: 0f, max: 25f, interval: 0.05f
 				);
 				helper.AddNumberOption(
 					"config.gemStoneChanceMultiplier",
 					() => config().GemStoneChanceMultiplier,
 					v => config().GemStoneChanceMultiplier = v,
-					min: 0f, max: 10f, interval: 0.05f
+					min: 0f, max: 25f, interval: 0.05f
 				);
 				helper.AddNumberOption(
 					"config.itemChanceMultiplier",
 					() => config().ItemChanceMultiplier,
 					v => config().ItemChanceMultiplier = v,
-					min: 0f, max: 10f, interval: 0.05f
+					min: 0f, max: 25f, interval: 0.05f
 				);
 				helper.AddNumberOption(
 					"config.monsterChanceMultiplier",
 					() => config().MonsterChanceMultiplier,
 					v => config().MonsterChanceMultiplier = v,
-					min: 0f, max: 10f, interval: 0.05f
+					min: 0f, max: 25f, interval: 0.05f
 				);
 				helper.AddNumberOption(
 					"config.monsterMuskChanceMultiplier",
 					() => config().MonsterMuskChanceMultiplier,
 					v => config().MonsterMuskChanceMultiplier = v,
-					min: 0f, max: 10f, interval: 0.05f
+					min: 0f, max: 25f, interval: 0.05f
 				);
 			}
 
