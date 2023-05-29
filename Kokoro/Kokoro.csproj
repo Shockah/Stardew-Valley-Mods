@@ -17,9 +17,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
-		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll">
-			<Private>false</Private>
-		</Reference>
+		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll" Private="false" />
 		<PackageReference Include="Shrike" Version="2.0.0" />
 		<PackageReference Include="Shrike.Harmony" Version="2.0.0" />
 	</ItemGroup>
