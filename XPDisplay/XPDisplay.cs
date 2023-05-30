@@ -663,8 +663,9 @@ namespace Shockah.XPDisplay
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
 
 			int currentLevel = skill.GetBaseLevel(Game1.player);
+			int buffedLevel = skill.GetBuffedLevel(Game1.player);
 			int nextLevelXP = skill.GetLevelXP(currentLevel + 1);
-			if (levelIndex is 4 or 9 && currentLevel >= levelIndex)
+			if (levelIndex is 4 or 9 && buffedLevel >= levelIndex)
 				SkillBarHoverExclusions.Add((topLeft, bottomRight));
 
 			if (nextLevelXP != int.MaxValue && levelIndex is 0 or 9)
@@ -678,7 +679,7 @@ namespace Shockah.XPDisplay
 					SkillBarCorners[key] = (SkillBarCorners[key].Item1, bottomRight);
 			}
 
-			if (currentLevel % 10 != levelIndex)
+			if (buffedLevel % 10 != levelIndex)
 				return;
 			int currentLevelXP = skill.GetLevelXP(currentLevel);
 			int currentXP = skill.GetXP(Game1.player);
@@ -686,7 +687,7 @@ namespace Shockah.XPDisplay
 
 			Orientation orientation = isBigLevel ? Instance.Config.BigBarOrientation : Instance.Config.SmallBarOrientation;
 
-			if (currentLevel >= 10)
+			if (buffedLevel >= 10)
 			{
 				if (Instance.IsWalkOfLifeInstalled && WalkOfLifeBridge.IsPrestigeEnabled())
 					(barTexture, barTextureRectangle) = isBigLevel ? WalkOfLifeBridge.GetExtendedBigBar()!.Value : WalkOfLifeBridge.GetExtendedSmallBar()!.Value;
