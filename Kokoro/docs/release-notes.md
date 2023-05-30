@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 2.0.1
+Released 30 May 2023.
+
+* Fixed a bug where mods referencing the Shrike library failed to load, by force-referencing Shrike assemblies in Kokoro's code.
+
 ## 2.0.0
 Released 29 May 2023.
 
