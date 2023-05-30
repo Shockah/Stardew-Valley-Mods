@@ -300,6 +300,7 @@ namespace Shockah.XPDisplay
 
 		private void DrawSkillBar(ISkill skill, SpriteBatch b, UIAnchorSide anchorSide, Vector2 position, float scale, float alpha)
 		{
+			int buffedLevel = skill.GetBuffedLevel(Game1.player);
 			int currentLevel = skill.GetBaseLevel(Game1.player);
 			int nextLevelXP = skill.GetLevelXP(currentLevel + 1);
 			int currentLevelXP = skill.GetLevelXP(currentLevel);
@@ -353,20 +354,20 @@ namespace Shockah.XPDisplay
 					}
 				}
 
-				UpdateExtendedLevelTextures(currentLevel);
+				UpdateExtendedLevelTextures(buffedLevel);
 
-				var backgroundBarTexture = currentLevel > levelIndex ? obtainedBarTexture : unobtainedBarTexture;
-				var backgroundBarTextureRectangle = currentLevel > levelIndex ? obtainedBarTextureRectangle : unobtainedBarTextureRectangle;
+				var backgroundBarTexture = buffedLevel > levelIndex ? obtainedBarTexture : unobtainedBarTexture;
+				var backgroundBarTextureRectangle = buffedLevel > levelIndex ? obtainedBarTextureRectangle : unobtainedBarTextureRectangle;
 
 				var topLeft = wholeToolbarTopLeft + new Vector2(xOffset * scale, 0);
 				b.Draw(backgroundBarTexture, topLeft + new Vector2(-1, 1) * scale, backgroundBarTextureRectangle, Color.Black * alpha * 0.3f, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 				b.Draw(backgroundBarTexture, topLeft, backgroundBarTextureRectangle, Color.White * alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 				xOffset += backgroundBarTextureRectangle.Width;
 
-				if (currentLevel % 10 != levelIndex)
+				if (buffedLevel % 10 != levelIndex)
 					continue;
 
-				UpdateExtendedLevelTextures(currentLevel + 1);
+				UpdateExtendedLevelTextures(buffedLevel + 1);
 
 				Vector2 partialBarPosition;
 				Rectangle partialBarTextureRectangle;
@@ -402,7 +403,6 @@ namespace Shockah.XPDisplay
 			if (Config.ToolbarSkillBar.ShowLevelNumber)
 			{
 				xOffset += LevelNumberToBarSpacing;
-				int buffedLevel = skill.GetBuffedLevel(Game1.player);
 				bool isModifiedSkill = buffedLevel != currentLevel;
 
 				Color textColor = Color.SandyBrown;
