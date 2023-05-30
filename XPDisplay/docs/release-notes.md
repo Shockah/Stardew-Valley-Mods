@@ -2,6 +2,14 @@
 
 # Release notes
 
+## 1.3.0
+Released 30 May 2023.
+
+* Added an option to exclude a skill from showing up on the toolbar on experience gain.
+* Fixed the skill menu experience bar not displaying properly if any skill buff is active.
+* Fixed the toolbar experience bar not displaying properly if any skill buff is active.
+* Updated to Kokoro 2.0.0.
+
 ## 1.2.2
 Released 13 February 2023.
 
