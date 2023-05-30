@@ -1,22 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\Configuration.props" />
 	<PropertyGroup>
 		<RootNamespace>Shockah.Kokoro</RootNamespace>
 		<Version>2.0.1</Version>
-		<TargetFramework>net5.0</TargetFramework>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<WarningsAsErrors>Nullable</WarningsAsErrors>
-		<EnableHarmony>true</EnableHarmony>
 		<BundleExtraAssemblies>ThirdParty</BundleExtraAssemblies>
-		<IgnoreModFilePaths>Mono.Cecil.Rocks.dll</IgnoreModFilePaths>
-		<EnableModZip Condition="$(Configuration) != 'Release'">False</EnableModZip>
-		<LangVersion>11.0</LangVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Include="..\.editorconfig" Link=".editorconfig" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
 		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll" Private="false" />
 		<PackageReference Include="Shrike" Version="2.0.0" />
 		<PackageReference Include="Shrike.Harmony" Version="2.0.0" />
