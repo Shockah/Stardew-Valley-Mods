@@ -39,6 +39,7 @@ namespace Shockah.XPDisplay
 		internal static XPDisplay Instance = null!;
 		private bool IsWalkOfLifeInstalled = false;
 		private bool IsMargoInstalled = false;
+		private bool DidSetupConfig = false;
 
 		private static readonly Dictionary<(int uiSkillIndex, string? spaceCoreSkillName), (Vector2?, Vector2?)> SkillBarCorners = new();
 		private static readonly List<(Vector2, Vector2)> SkillBarHoverExclusions = new();
@@ -78,8 +79,6 @@ namespace Shockah.XPDisplay
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 		{
-			SetupConfig();
-
 			IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.ImmersiveProfessions");
 			IsMargoInstalled = Helper.ModRegistry.IsLoaded("DaLion.Overhaul");
 			var harmony = new Harmony(ModManifest.UniqueID);
@@ -119,10 +118,15 @@ namespace Shockah.XPDisplay
 
 		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 		{
+			if (!DidSetupConfig)
+				SetupConfig();
+
 			foreach (var (skill, lastKnown) in SkillsToRecheck.Value)
 			{
 				float xpChangedDuration = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
 				if (lastKnown.XP == skill.GetXP(Game1.player))
+					xpChangedDuration = 0f;
+				else if (Config.SkillsToExcludeFromToolbarOnXPGain.Contains(skill.UniqueID))
 					xpChangedDuration = 0f;
 
 				float levelChangedDuration = Instance.Config.ToolbarSkillBar.LevelChangedDurationInSeconds;
@@ -277,6 +281,23 @@ namespace Shockah.XPDisplay
 			helper.AddNumberOption("config.toolbar.toolUseDurationInSeconds", () => Config.ToolbarSkillBar.ToolUseDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
 			helper.AddNumberOption("config.toolbar.xpChangedDurationInSeconds", () => Config.ToolbarSkillBar.XPChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
 			helper.AddNumberOption("config.toolbar.levelChangedDurationInSeconds", () => Config.ToolbarSkillBar.LevelChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
+
+			helper.AddSectionTitle("config.toolbarExclusions.section");
+			foreach (var skill in SkillExt.GetAllSkills())
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => Config.SkillsToExcludeFromToolbarOnXPGain.Contains(skill.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.SkillsToExcludeFromToolbarOnXPGain.Add(skill.UniqueID);
+						else
+							Config.SkillsToExcludeFromToolbarOnXPGain.Remove(skill.UniqueID);
+					},
+					name: () => skill.Name
+				);
+
+			DidSetupConfig = true;
 		}
 
 		private ISkill? GetSkillForItem(Item? item)
