@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using StardewModdingAPI.Events;
 using Shockah.Kokoro.Stardew;
 using HarmonyLib;
+using Nanoray.Shrike;
+using Nanoray.Shrike.Harmony;
 
 namespace Shockah.Kokoro
 {
@@ -18,6 +20,10 @@ namespace Shockah.Kokoro
 		public override void Entry(IModHelper helper)
 		{
 			Instance = this;
+
+			// force-referencing Shrike assemblies, otherwise none dependent mods will load
+			_ = typeof(ISequenceMatcher<CodeInstruction>).Name;
+			_ = typeof(ILMatches).Name;
 
 			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 			MachineTracker.Setup(Monitor, helper, new Harmony(ModManifest.UniqueID));
