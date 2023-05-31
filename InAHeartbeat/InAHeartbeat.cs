@@ -18,6 +18,16 @@ namespace Shockah.InAHeartbeat
 {
 	public class InAHeartbeat : BaseMod<ModConfig>
 	{
+		private const int EmeraldID = 60;
+		private const int AquamarineID = 62;
+		private const int RubyID = 64;
+		private const int AmethystID = 66;
+		private const int TopazID = 68;
+		private const int JadeID = 70;
+		private const int DiamondID = 72;
+		private const int PrismaticShardID = 74;
+		private const int PearlID = 797;
+
 		private static InAHeartbeat Instance = null!;
 
 		public override void OnEntry(IModHelper helper)
@@ -52,10 +62,10 @@ namespace Shockah.InAHeartbeat
 
 			if (npc.Name == "Caroline")
 			{
-				if (!HasADatableFriendWithFriendshipLevel(Game1.player, Config.Date.MinFriendship))
-					return;
-
-				e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
+				if (HasADatableFriendWithFriendshipLevel(Game1.player, Config.Date.MinFriendship))
+					e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
+				if (HasADatableFriendWithFriendshipLevel(Game1.player, Config.Marry.MinFriendship))
+					e(Helper.Translation.Get("action.craftAPendant"), () => OnCraftAPendantAction(npc));
 			}
 		}
 
@@ -75,6 +85,24 @@ namespace Shockah.InAHeartbeat
 
 			player.addItemByMenuIfNecessary(new SObject(458, 1, quality: bestPossibleQuality.Value));
 			Game1.drawDialogue(npc, Helper.Translation.Get("action.arrangeABouquet.success"));
+		}
+
+		private void OnCraftAPendantAction(NPC npc)
+		{
+			var player = Game1.player;
+			int? bestPossibleQuality = GetBestPossiblePendantQuality(player);
+
+			if (bestPossibleQuality is null)
+			{
+				Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.notEnoughMaterials"));
+				return;
+			}
+
+			// this should always succeed
+			_ = ConsumePendantCraftingRequirements(player, bestPossibleQuality.Value);
+
+			player.addItemByMenuIfNecessary(new SObject(460, 1, quality: bestPossibleQuality.Value));
+			Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.success"));
 		}
 
 		private static bool HasADatableFriendWithFriendshipLevel(Farmer player, int friendshipLevel)
@@ -109,6 +137,19 @@ namespace Shockah.InAHeartbeat
 			}
 		}
 
+		private static IEnumerable<SObject> GetAllHeldGems(Farmer player)
+		{
+			foreach (var item in player.Items)
+			{
+				if (item is not SObject @object)
+					continue;
+				if (@object.bigCraftable.Value)
+					continue;
+				if (item.ParentSheetIndex is EmeraldID or AquamarineID or RubyID or AmethystID or TopazID or JadeID or DiamondID or PrismaticShardID)
+					yield return @object;
+			}
+		}
+
 		private int? GetBestPossibleBouquetQuality(Farmer player)
 		{
 			if (HasBouquetCraftingRequirements(player, SObject.bestQuality))
@@ -118,6 +159,24 @@ namespace Shockah.InAHeartbeat
 			else if (HasBouquetCraftingRequirements(player, SObject.medQuality))
 				return SObject.medQuality;
 			else if (HasBouquetCraftingRequirements(player, SObject.lowQuality))
+				return SObject.lowQuality;
+			else
+				return null;
+		}
+
+		private int? GetBestPossiblePendantQuality(Farmer player)
+		{
+			if (!player.Items.Any(item => item is SObject @object && !@object.bigCraftable.Value && @object.ParentSheetIndex == PearlID))
+				return null;
+			var types = GetAllHeldGems(player).Select(gem => gem.ParentSheetIndex).ToHashSet();
+
+			if (types.Count >= Config.PendantGemsRequiredForIridium)
+				return SObject.bestQuality;
+			else if (types.Count >= Config.PendantGemsRequiredForGold)
+				return SObject.highQuality;
+			else if (types.Count >= Config.PendantGemsRequiredForSilver)
+				return SObject.medQuality;
+			else if (types.Count >= Config.PendantGemsRequiredForRegular)
 				return SObject.lowQuality;
 			else
 				return null;
@@ -151,7 +210,7 @@ namespace Shockah.InAHeartbeat
 				.Select(e => (Item: e.Item, FlowerDescriptor: e.FlowerDescriptor, Amount: e.Item.Stack))
 				.ToList();
 
-			List<SObject> itemsToConsume = new();
+			List<Item> itemsToConsume = new();
 			HashSet<FlowerDescriptor> uniqueFlowerTypes = new();
 			int flowersLeft = Config.BouquetFlowersRequired;
 
@@ -174,7 +233,7 @@ namespace Shockah.InAHeartbeat
 
 					uniqueFlowerTypes.Add(entry.FlowerDescriptor);
 					flowersLeft--;
-					itemsToConsume.Add((SObject)entry.Item.getOne());
+					itemsToConsume.Add(entry.Item.getOne());
 
 					if (entry.Amount <= 1)
 						itemsLeft.RemoveAt(i--);
@@ -191,6 +250,39 @@ namespace Shockah.InAHeartbeat
 				if (uniqueFlowerTypes.Count < Config.BouquetFlowerTypesRequired)
 					return false;
 			}
+		}
+
+		private bool ConsumePendantCraftingRequirements(Farmer player, int itemQuality)
+		{
+			int gemsRequired = itemQuality switch
+			{
+				SObject.bestQuality => Config.PendantGemsRequiredForIridium,
+				SObject.highQuality => Config.PendantGemsRequiredForGold,
+				SObject.medQuality => Config.PendantGemsRequiredForSilver,
+				_ => Config.PendantGemsRequiredForRegular
+			};
+
+			var gems = GetAllHeldGems(player).ToList().OrderBy(gem => gem.salePrice());
+			HashSet<int> uniqueGemTypes = new();
+
+			foreach (var gem in gems)
+			{
+				if (uniqueGemTypes.Contains(gem.ParentSheetIndex))
+					continue;
+				uniqueGemTypes.Add(gem.ParentSheetIndex);
+				if (uniqueGemTypes.Count >= gemsRequired)
+					break;
+			}
+
+			if (uniqueGemTypes.Count < gemsRequired)
+				return false;
+
+			if (!player.ConsumeItem(new SObject(PearlID, 1), exactQuality: false))
+				return false;
+
+			foreach (var gemType in uniqueGemTypes)
+				player.ConsumeItem(new SObject(gemType, 1), exactQuality: false);
+			return true;
 		}
 
 		private static int GetFriendshipRequirement(ActionConfig config, int itemQuality)
