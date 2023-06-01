@@ -75,5 +75,21 @@ namespace Shockah.Kokoro.Stardew
 
 			throw new InvalidOperationException("Invalid state.");
 		}
+
+		public static DatingState GetDatingState(this Farmer player, NPC npc)
+		{
+			if (!player.friendshipData.TryGetValue(npc.Name, out var friendship))
+				return DatingState.NonDatable;
+			else if (friendship.IsMarried())
+				return DatingState.Married;
+			else if (friendship.IsEngaged())
+				return DatingState.Engaged;
+			else if (friendship.IsDating())
+				return DatingState.Dating;
+			else if (npc.datable.Value)
+				return DatingState.Datable;
+			else
+				return DatingState.NonDatable;
+		}
 	}
 }
