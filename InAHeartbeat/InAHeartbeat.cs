@@ -62,9 +62,9 @@ namespace Shockah.InAHeartbeat
 
 			if (npc.Name == "Caroline")
 			{
-				if (HasADatableFriendWithFriendshipLevel(Game1.player, Config.Date.MinFriendship))
+				if (HasFriendshipWithAnyone(Game1.player, Config.Date.MinFriendship, DatingState.Datable))
 					e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
-				if (HasADatableFriendWithFriendshipLevel(Game1.player, Config.Marry.MinFriendship))
+				if (HasFriendshipWithAnyone(Game1.player, Config.Marry.MinFriendship, DatingState.Dating))
 					e(Helper.Translation.Get("action.craftAPendant"), () => OnCraftAPendantAction(npc));
 			}
 		}
@@ -105,10 +105,10 @@ namespace Shockah.InAHeartbeat
 			Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.success"));
 		}
 
-		private static bool HasADatableFriendWithFriendshipLevel(Farmer player, int friendshipLevel)
+		private static bool HasFriendshipWithAnyone(Farmer player, int friendshipLevel, DatingState minimumDatingState)
 		{
 			foreach (NPC npc in Utility.getAllCharacters())
-				if (npc.datable.Value && player.getFriendshipLevelForNPC(npc.Name) >= friendshipLevel)
+				if (player.getFriendshipLevelForNPC(npc.Name) >= friendshipLevel && (int)player.GetDatingState(npc) >= (int)minimumDatingState)
 					return true;
 			return false;
 		}
