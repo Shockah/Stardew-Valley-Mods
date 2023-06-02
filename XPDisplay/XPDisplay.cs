@@ -74,7 +74,20 @@ namespace Shockah.XPDisplay
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 		{
-			// do nothing, for now
+			if (configVersion is null && Config.ExtensionData.TryGetValue("SkillsToExcludeFromToolbarOnXPGain", out var skillsToExcludeFromToolbarOnXPGainToken))
+			{
+				// the previous configs weren't versioned
+
+				Config.ExtensionData.Remove("SkillsToExcludeFromToolbarOnXPGain");
+				var skillsToExcludeFromToolbarOnXPGain = skillsToExcludeFromToolbarOnXPGainToken.ToObject<HashSet<string>>();
+				if (skillsToExcludeFromToolbarOnXPGain is null)
+				{
+					Monitor.Log("There was an issue migrating the `SkillsToExcludeFromToolbarOnXPGain` config value.", LogLevel.Error);
+					return;
+				}
+
+				Config.ToolbarSkillBar.SkillsToExcludeOnXPGain = skillsToExcludeFromToolbarOnXPGain;
+			}
 		}
 
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -126,11 +139,13 @@ namespace Shockah.XPDisplay
 				float xpChangedDuration = Instance.Config.ToolbarSkillBar.XPChangedDurationInSeconds;
 				if (lastKnown.XP == skill.GetXP(Game1.player))
 					xpChangedDuration = 0f;
-				else if (Config.SkillsToExcludeFromToolbarOnXPGain.Contains(skill.UniqueID))
+				else if (Config.ToolbarSkillBar.SkillsToExcludeOnXPGain.Contains(skill.UniqueID))
 					xpChangedDuration = 0f;
 
 				float levelChangedDuration = Instance.Config.ToolbarSkillBar.LevelChangedDurationInSeconds;
 				if (lastKnown.Level >= skill.GetBaseLevel(Game1.player))
+					levelChangedDuration = 0f;
+				else if (Config.ToolbarSkillBar.SkillsToExcludeOnLevelUp.Contains(skill.UniqueID))
 					levelChangedDuration = 0f;
 				else if (!string.IsNullOrEmpty(Instance.Config.LevelUpSoundName))
 					Game1.playSound(Instance.Config.LevelUpSoundName);
@@ -164,7 +179,7 @@ namespace Shockah.XPDisplay
 					if (ToolbarActiveDuration.Value <= 0f && Config.ToolbarSkillBar.AlwaysShowCurrentTool)
 					{
 						var skill = GetSkillForItem(Game1.player.CurrentItem);
-						if (skill is not null)
+						if (skill is not null && !Config.ToolbarSkillBar.SkillsToExcludeOnToolHeld.Contains(skill.UniqueID))
 						{
 							ToolbarCurrentSkill.Value = skill;
 							ToolbarActiveDuration.Value = 0.1f;
@@ -185,7 +200,7 @@ namespace Shockah.XPDisplay
 				if (Config.ToolbarSkillBar.IsEnabled && (Config.ToolbarSkillBar.AlwaysShowCurrentTool || Config.ToolbarSkillBar.ToolSwitchDurationInSeconds > 0f))
 				{
 					var skill = GetSkillForItem(Game1.player.CurrentItem);
-					if (skill is not null)
+					if (skill is not null && Config.ToolbarSkillBar.SkillsToExcludeOnToolSwitch.Contains(skill.UniqueID))
 					{
 						ToolbarCurrentSkill.Value = skill;
 						ToolbarActiveDuration.Value = Config.ToolbarSkillBar.AlwaysShowCurrentTool ? 0.1f : Config.ToolbarSkillBar.ToolSwitchDurationInSeconds;
@@ -282,20 +297,79 @@ namespace Shockah.XPDisplay
 			helper.AddNumberOption("config.toolbar.xpChangedDurationInSeconds", () => Config.ToolbarSkillBar.XPChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
 			helper.AddNumberOption("config.toolbar.levelChangedDurationInSeconds", () => Config.ToolbarSkillBar.LevelChangedDurationInSeconds, min: 0f, max: 15f, interval: 0.5f);
 
-			helper.AddSectionTitle("config.toolbarExclusions.section");
 			foreach (var skill in SkillExt.GetAllSkills())
+			{
+				api.AddSectionTitle(
+					ModManifest,
+					text: () => Helper.Translation.Get("config.toolbar.skillExclusion.section.name", new { Skill = skill.Name })
+				);
+
 				api.AddBoolOption(
 					ModManifest,
-					getValue: () => Config.SkillsToExcludeFromToolbarOnXPGain.Contains(skill.UniqueID),
+					getValue: () => !Config.ToolbarSkillBar.SkillsToExcludeOnXPGain.Contains(skill.UniqueID),
 					setValue: value =>
 					{
 						if (value)
-							Config.SkillsToExcludeFromToolbarOnXPGain.Add(skill.UniqueID);
+							Config.ToolbarSkillBar.SkillsToExcludeOnXPGain.Remove(skill.UniqueID);
 						else
-							Config.SkillsToExcludeFromToolbarOnXPGain.Remove(skill.UniqueID);
+							Config.ToolbarSkillBar.SkillsToExcludeOnXPGain.Add(skill.UniqueID);
 					},
-					name: () => skill.Name
+					name: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnXPGain.name")
 				);
+
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => !Config.ToolbarSkillBar.SkillsToExcludeOnLevelUp.Contains(skill.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.ToolbarSkillBar.SkillsToExcludeOnLevelUp.Remove(skill.UniqueID);
+						else
+							Config.ToolbarSkillBar.SkillsToExcludeOnLevelUp.Add(skill.UniqueID);
+					},
+					name: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnLevelUp.name")
+				);
+
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => !Config.ToolbarSkillBar.SkillsToExcludeOnToolHeld.Contains(skill.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolHeld.Remove(skill.UniqueID);
+						else
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolHeld.Add(skill.UniqueID);
+					},
+					name: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnToolHeld.name"),
+					tooltip: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnToolHeld.tooltip")
+				);
+
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => !Config.ToolbarSkillBar.SkillsToExcludeOnToolSwitch.Contains(skill.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolSwitch.Remove(skill.UniqueID);
+						else
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolSwitch.Add(skill.UniqueID);
+					},
+					name: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnToolSwitch.name")
+				);
+
+				api.AddBoolOption(
+					ModManifest,
+					getValue: () => !Config.ToolbarSkillBar.SkillsToExcludeOnToolUse.Contains(skill.UniqueID),
+					setValue: value =>
+					{
+						if (value)
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolUse.Remove(skill.UniqueID);
+						else
+							Config.ToolbarSkillBar.SkillsToExcludeOnToolUse.Add(skill.UniqueID);
+					},
+					name: () => Helper.Translation.Get("config.toolbar.skillExclusion.showOnToolUse.name")
+				);
+			}
 
 			DidSetupConfig = true;
 		}
@@ -486,7 +560,7 @@ namespace Shockah.XPDisplay
 				{
 					Instance.ToolbarActiveDuration.Value = 0f;
 				}
-				else
+				else if (!Instance.Config.ToolbarSkillBar.SkillsToExcludeOnToolUse.Contains(skill.UniqueID))
 				{
 					Instance.ToolbarCurrentSkill.Value = skill;
 					Instance.ToolbarActiveDuration.Value = Instance.Config.ToolbarSkillBar.ToolUseDurationInSeconds;

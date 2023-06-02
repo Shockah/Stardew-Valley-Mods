@@ -35,8 +35,13 @@
     "config.toolbar.levelChangedDurationInSeconds.name": "Duration: level up",
     "config.toolbar.levelChangedDurationInSeconds.tooltip": "How long in seconds to display the toolbar for afetr levelling up a skill.",
 
-    "config.toolbarExclusions.section.name": "Toolbar exclusions",
-    "config.toolbarExclusions.section.tooltip": "Skills to exclude from showing up on experience gain.",
+    "config.toolbar.skillExclusion.section.name": "{{Skill}} on toolbar",
+    "config.toolbar.skillExclusion.showOnXPGain.name": "Show on XP gain",
+    "config.toolbar.skillExclusion.showOnLevelUp.name": "Show on level up",
+    "config.toolbar.skillExclusion.showOnToolHeld.name": "Show on tool held",
+    "config.toolbar.skillExclusion.showOnToolHeld.tooltip": "Relates to the \"Always show current tool\" option.",
+    "config.toolbar.skillExclusion.showOnToolSwitch.name": "Show on tool switch",
+    "config.toolbar.skillExclusion.showOnToolUse.name": "Show on tool use",
 
     "tooltip.text": "{{CurrentXP}} / {{NextLevelXP}} XP ({{LevelPercent}}%)"
 }
