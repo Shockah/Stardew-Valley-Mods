@@ -24,6 +24,8 @@
     "config.toolbar.showIcon.tooltip": "Whether to show the skill icon on the left side of the toolbar.",
     "config.toolbar.showLevelNumber.name": "Show level numbers",
     "config.toolbar.showLevelNumber.tooltip": "Whether to show the current level on the right side of the toolbar.",
+    "config.toolbar.excludeSkillsAtMaxLevel.name": "Exclude skills at max level",
+    "config.toolbar.excludeSkillsAtMaxLevel.tooltip": "Don't show the toolbar experience bar for skills at max level.\nThis may not work correctly if you are running mods extending past the original 10 levels.",
     "config.toolbar.alwaysShowCurrentTool.name": "Always show current tool",
     "config.toolbar.alwaysShowCurrentTool.tooltip": "If enabled, the toolbar will never hide when a tool with a related skill is selected.",
     "config.toolbar.toolSwitchDurationInSeconds.name": "Duration: tool switch",

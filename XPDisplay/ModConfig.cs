@@ -25,6 +25,7 @@ namespace Shockah.XPDisplay
 		[JsonProperty] public float SpacingFromToolbar { get; internal set; } = 24f;
 		[JsonProperty] public bool ShowIcon { get; internal set; } = true;
 		[JsonProperty] public bool ShowLevelNumber { get; internal set; } = true;
+		[JsonProperty] public bool ExcludeSkillsAtMaxLevel { get; internal set; } = true;
 		[JsonProperty] public bool AlwaysShowCurrentTool { get; internal set; } = false;
 		[JsonProperty] public float ToolSwitchDurationInSeconds { get; internal set; } = 3f;
 		[JsonProperty] public float ToolUseDurationInSeconds { get; internal set; } = 3f;
