@@ -174,6 +174,8 @@ namespace Shockah.XPDisplay
 			if (Config.ToolbarSkillBar.AlwaysShowCurrentTool)
 			{
 				var skill = GetSkillForItem(Game1.player.CurrentItem);
+				if (skill is not null && skill.GetBaseLevel(Game1.player) >= skill.MaxLevel && Config.ToolbarSkillBar.ExcludeSkillsAtMaxLevel)
+					skill = null;
 				if (skill is not null)
 					Instance.ToolbarCurrentPermanentSkill.Value = skill;
 				Instance.ToolbarCurrentPermanentSkillActive.Value = skill is not null;
