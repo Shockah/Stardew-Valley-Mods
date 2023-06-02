@@ -216,7 +216,7 @@ namespace Shockah.XPDisplay
 				return;
 			if (ToolbarAlpha.Value <= 0f)
 				return;
-			if (Game1.activeClickableMenu is not null)
+			if (!Context.IsPlayerFree)
 				return;
 
 			var skill = ToolbarCurrentTemporarySkill.Value ?? ToolbarCurrentPermanentSkill.Value;
