@@ -285,7 +285,7 @@ namespace Shockah.XPDisplay
 			helper.AddSectionTitle("config.toolbar.section");
 			helper.AddBoolOption("config.toolbar.enabled", () => Config.ToolbarSkillBar.IsEnabled);
 			helper.AddNumberOption("config.toolbar.scale", () => Config.ToolbarSkillBar.Scale, min: 0.2f, max: 12f, interval: 0.05f);
-			helper.AddNumberOption("config.toolbar.spacingFromToolbar", () => Config.ToolbarSkillBar.SpacingFromToolbar, min: -32f, max: 128, interval: 1f);
+			helper.AddNumberOption("config.toolbar.spacingFromToolbar", () => Config.ToolbarSkillBar.SpacingFromToolbar);
 			helper.AddBoolOption("config.toolbar.showIcon", () => Config.ToolbarSkillBar.ShowIcon);
 			helper.AddBoolOption("config.toolbar.showLevelNumber", () => Config.ToolbarSkillBar.ShowLevelNumber);
 			helper.AddBoolOption("config.toolbar.excludeSkillsAtMaxLevel", () => Config.ToolbarSkillBar.ExcludeSkillsAtMaxLevel);
