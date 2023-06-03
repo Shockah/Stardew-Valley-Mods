@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 1.1.2
+Released 03 June 2023.
+
+* Compatibility with [Season Affixes](https://www.nexusmods.com/stardewvalley/mods/16297).
+
 ## 1.1.1
 Released 30 May 2023.
 
