@@ -2,16 +2,16 @@
     "Name": "Season Affixes",
     "Author": "Shockah",
     "Version": "1.0.0",
-    "Description": "Season Affixes",
+    "Description": "Adds seasonal \"affixes\", making every season unique in its own way.",
     "UniqueID": "Shockah.SeasonAffixes",
     "EntryDll": "SeasonAffixes.dll",
     "MinimumApiVersion": "3.0.0",
-    "UpdateKeys": [],
+    "UpdateKeys": [ "Nexus:16297" ],
     "Dependencies": [
         {
             "UniqueID": "Shockah.Kokoro",
             "IsRequired": true,
-            "MinimumVersion": "2.0.0"
+            "MinimumVersion": "2.0.1"
         }
     ]
 }
