@@ -230,7 +230,7 @@ namespace Shockah.SeasonAffixes
 				new DroughtAffix(),
 				new HardWaterAffix(),
 				new HurricaneAffix(),
-				new MediocrityAffix(),
+				//new MediocrityAffix(),
 				new ResilienceAffix(),
 				new SapAffix(),
 				new SilenceAffix(),
