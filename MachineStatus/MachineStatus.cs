@@ -30,7 +30,6 @@ namespace Shockah.MachineStatus
 		}
 
 		private static readonly ItemRenderer ItemRenderer = new();
-		private static readonly Vector2 DigitSize = new(5, 7);
 		private static readonly Vector2 SingleMachineSize = new(64, 64);
 
 		private static readonly (string titleKey, (int machineId, bool bigCraftable, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
@@ -789,7 +788,7 @@ namespace Shockah.MachineStatus
 		private static bool MachineMatches(SObject machine, IEnumerable<IWildcardPattern> patterns)
 			=> patterns.Any(p => p.Matches(machine.Name) || p.Matches(machine.DisplayName));
 
-		[return: NotNullIfNotNull("object")]
+		[return: NotNullIfNotNull(nameof(@object))]
 		private static SObject? GetOne(SObject? @object)
 		{
 			if (@object is CrabPot crabPot)
