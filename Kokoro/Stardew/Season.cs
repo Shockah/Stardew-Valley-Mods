@@ -1,10 +1,9 @@
-﻿namespace Shockah.Kokoro.Stardew
+﻿namespace Shockah.Kokoro.Stardew;
+
+public enum Season
 {
-	public enum Season
-	{
-		Spring,
-		Summer,
-		Fall,
-		Winter
-	}
+	Spring,
+	Summer,
+	Fall,
+	Winter
 }

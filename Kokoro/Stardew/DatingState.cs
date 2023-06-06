@@ -1,7 +1,6 @@
-﻿namespace Shockah.Kokoro.Stardew
+﻿namespace Shockah.Kokoro.Stardew;
+
+public enum DatingState
 {
-	public enum DatingState
-	{
-		NonDatable, Datable, Dating, Engaged, Married
-	}
+	NonDatable, Datable, Dating, Engaged, Married
 }

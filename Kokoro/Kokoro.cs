@@ -9,43 +9,42 @@ using HarmonyLib;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
 
-namespace Shockah.Kokoro
+namespace Shockah.Kokoro;
+
+public class Kokoro : BaseMod
 {
-	public class Kokoro : BaseMod
+	public static Kokoro Instance { get; private set; } = null!;
+
+	private PerScreen<LinkedList<string>> QueuedObjectDialogue { get; init; } = new(() => new());
+
+	public override void Entry(IModHelper helper)
 	{
-		public static Kokoro Instance { get; private set; } = null!;
+		Instance = this;
 
-		private PerScreen<LinkedList<string>> QueuedObjectDialogue { get; init; } = new(() => new());
+		// force-referencing Shrike assemblies, otherwise none dependent mods will load
+		_ = typeof(ISequenceMatcher<CodeInstruction>).Name;
+		_ = typeof(ILMatches).Name;
 
-		public override void Entry(IModHelper helper)
+		helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+		MachineTracker.Setup(Monitor, helper, new Harmony(ModManifest.UniqueID));
+	}
+
+	private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+	{
+		// dequeue object dialogue
+		var message = QueuedObjectDialogue.Value.First;
+		if (message is not null && Game1.activeClickableMenu is not DialogueBox)
 		{
-			Instance = this;
-
-			// force-referencing Shrike assemblies, otherwise none dependent mods will load
-			_ = typeof(ISequenceMatcher<CodeInstruction>).Name;
-			_ = typeof(ILMatches).Name;
-
-			helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-			MachineTracker.Setup(Monitor, helper, new Harmony(ModManifest.UniqueID));
+			QueuedObjectDialogue.Value.RemoveFirst();
+			Game1.drawObjectDialogue(message.Value);
 		}
+	}
 
-		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
-		{
-			// dequeue object dialogue
-			var message = QueuedObjectDialogue.Value.First;
-			if (message is not null && Game1.activeClickableMenu is not DialogueBox)
-			{
-				QueuedObjectDialogue.Value.RemoveFirst();
-				Game1.drawObjectDialogue(message.Value);
-			}
-		}
-
-		public void QueueObjectDialogue(string message)
-		{
-			if (Game1.activeClickableMenu is DialogueBox)
-				QueuedObjectDialogue.Value.AddLast(message);
-			else
-				Game1.drawObjectDialogue(message);
-		}
+	public void QueueObjectDialogue(string message)
+	{
+		if (Game1.activeClickableMenu is DialogueBox)
+			QueuedObjectDialogue.Value.AddLast(message);
+		else
+			Game1.drawObjectDialogue(message);
 	}
 }
