@@ -50,14 +50,16 @@ public static class HarmonyExt
 		HarmonyMethod? finalizer = null
 	)
 	{
+		var originalMethod = original();
+		if (originalMethod is null)
+		{
+			monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
+			return false;
+		}
+
 		try
 		{
-			var originalMethod = original();
-			if (originalMethod is null)
-			{
-				monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
-				return false;
-			}
+			
 			if (transpiler is not null)
 				WarnOnDebugAssembly(monitor, originalMethod.DeclaringType?.Assembly);
 			self.Patch(originalMethod, prefix, postfix, transpiler, finalizer);
@@ -66,7 +68,7 @@ public static class HarmonyExt
 		}
 		catch (Exception ex)
 		{
-			monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: {ex}", problemLogLevel);
+			monitor.Log($"Could not patch method {originalMethod} - the mod may not work correctly.\nReason: {ex}", problemLogLevel);
 			return false;
 		}
 	}
@@ -152,15 +154,15 @@ public static class HarmonyExt
 		HarmonyMethod? finalizer = null
 	)
 	{
+		var originalMethod = original();
+		if (originalMethod is null)
+		{
+			monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
+			return (0, 1);
+		}
+
 		try
 		{
-			var originalMethod = original();
-			if (originalMethod is null)
-			{
-				monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: Unknown method to patch.", problemLogLevel);
-				return (0, 1);
-			}
-
 			int patched = 0;
 			int total = 0;
 			Type? declaringType = originalMethod.DeclaringType;
@@ -225,7 +227,7 @@ public static class HarmonyExt
 		}
 		catch (Exception ex)
 		{
-			monitor.Log($"Could not patch method - the mod may not work correctly.\nReason: {ex}", problemLogLevel);
+			monitor.Log($"Could not patch method {originalMethod} - the mod may not work correctly.\nReason: {ex}", problemLogLevel);
 			return (0, 1);
 		}
 	}
