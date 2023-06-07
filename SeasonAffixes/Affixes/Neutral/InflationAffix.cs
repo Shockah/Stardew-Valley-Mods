@@ -202,7 +202,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			ModifyPrice(ref __result);
 		}
 
-		private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -228,12 +228,12 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
 
-		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -259,12 +259,12 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
 
-		private static IEnumerable<CodeInstruction> BoatTunnel_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> BoatTunnel_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -278,12 +278,12 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
 
-		private static IEnumerable<CodeInstruction> GameLocation_houseUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> GameLocation_houseUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -343,12 +343,12 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
 
-		private static IEnumerable<CodeInstruction> GameLocation_communityUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> GameLocation_communityUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -391,7 +391,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
@@ -407,7 +407,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
@@ -435,7 +435,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}

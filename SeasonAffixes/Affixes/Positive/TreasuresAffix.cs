@@ -9,6 +9,7 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Positive
@@ -55,7 +56,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			);
 		}
 
-		private static IEnumerable<CodeInstruction> GameLocation_digUpArtifactSpot_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+		private static IEnumerable<CodeInstruction> GameLocation_digUpArtifactSpot_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il, MethodBase originalMethod)
 		{
 			try
 			{
@@ -77,7 +78,7 @@ namespace Shockah.SeasonAffixes.Affixes.Positive
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}

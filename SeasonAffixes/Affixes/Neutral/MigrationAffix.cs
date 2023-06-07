@@ -8,6 +8,7 @@ using StardewValley.Locations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Neutral
@@ -60,7 +61,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			);
 		}
 
-		private static IEnumerable<CodeInstruction> GameLocation_getFish_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> GameLocation_getFish_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			// TODO: Shrike improvements: finding a matching stloc/ldloc to a given stloc/ldloc
 
@@ -85,7 +86,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 
 			if (!foundInstruction || toSkip != 0)
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: could not find instruction sequence.", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: could not find instruction sequence.", LogLevel.Error);
 		}
 
 		public static bool GameLocation_getFish_Transpiler_ShouldCountAsMagicBait(bool isUsingMagicBait)

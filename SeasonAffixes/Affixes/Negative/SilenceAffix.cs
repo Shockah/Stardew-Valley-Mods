@@ -10,6 +10,7 @@ using StardewModdingAPI;
 using StardewValley;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes.Affixes.Negative
@@ -55,7 +56,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			);
 		}
 
-		private static IEnumerable<CodeInstruction> NPC_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+		private static IEnumerable<CodeInstruction> NPC_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il, MethodBase originalMethod)
 		{
 			try
 			{
@@ -92,7 +93,7 @@ namespace Shockah.SeasonAffixes.Affixes.Negative
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}

@@ -70,7 +70,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			);
 		}
 
-		private static IEnumerable<CodeInstruction> Game1_newDayAfterFade_MoveNext_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+		private static IEnumerable<CodeInstruction> Game1_newDayAfterFade_MoveNext_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il, MethodBase originalMethod)
 		{
 			try
 			{
@@ -93,7 +93,7 @@ namespace Shockah.SeasonAffixes.Affixes.Neutral
 			}
 			catch (Exception ex)
 			{
-				Mod.Monitor.Log($"Could not patch methods - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}

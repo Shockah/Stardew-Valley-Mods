@@ -715,7 +715,7 @@ namespace Shockah.SeasonAffixes
 				.Benchmarking(Monitor, "AvoidingDuplicates");
 		}
 
-		private static IEnumerable<CodeInstruction> Game1_showEndOfNightStuff_Transpiler(IEnumerable<CodeInstruction> instructions)
+		private static IEnumerable<CodeInstruction> Game1_showEndOfNightStuff_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 		{
 			try
 			{
@@ -734,7 +734,7 @@ namespace Shockah.SeasonAffixes
 			}
 			catch (Exception ex)
 			{
-				Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+				Instance.Monitor.Log($"Could not patch method {originalMethod} - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 				return instructions;
 			}
 		}
