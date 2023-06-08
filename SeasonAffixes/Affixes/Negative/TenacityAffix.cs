@@ -11,61 +11,60 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative
+namespace Shockah.SeasonAffixes.Affixes.Negative;
+
+internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
 {
-	internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
+	private static readonly Lazy<Func<BobberBar, bool>> BobberBarBobberInBarGetter = new(() => AccessTools.Field(typeof(BobberBar), "bobberInBar").EmitInstanceGetter<BobberBar, bool>());
+	private static readonly Lazy<Func<BobberBar, bool>> BobberBarHandledFishResultGetter = new(() => AccessTools.Field(typeof(BobberBar), "handledFishResult").EmitInstanceGetter<BobberBar, bool>());
+	private static readonly Lazy<Func<BobberBar, float>> BobberBarDistanceFromCatchingGetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceGetter<BobberBar, float>());
+	private static readonly Lazy<Action<BobberBar, float>> BobberBarDistanceFromCatchingSetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceSetter<BobberBar, float>());
+
+	private static string ShortID => "Tenacity";
+	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
+	public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 80, 16, 16));
+
+	public TenacityAffix() : base(ShortID, "negative") { }
+
+	public int GetPositivity(OrdinalSeason season)
+		=> Mod.Config.TenacityValue < 1f ? 1 : 0;
+
+	public int GetNegativity(OrdinalSeason season)
+		=> Mod.Config.TenacityValue > 1f ? 1 : 0;
+
+	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
+
+	public void OnActivate()
 	{
-		private static readonly Lazy<Func<BobberBar, bool>> BobberBarBobberInBarGetter = new(() => AccessTools.Field(typeof(BobberBar), "bobberInBar").EmitInstanceGetter<BobberBar, bool>());
-		private static readonly Lazy<Func<BobberBar, bool>> BobberBarHandledFishResultGetter = new(() => AccessTools.Field(typeof(BobberBar), "handledFishResult").EmitInstanceGetter<BobberBar, bool>());
-		private static readonly Lazy<Func<BobberBar, float>> BobberBarDistanceFromCatchingGetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceGetter<BobberBar, float>());
-		private static readonly Lazy<Action<BobberBar, float>> BobberBarDistanceFromCatchingSetter = new(() => AccessTools.Field(typeof(BobberBar), "distanceFromCatching").EmitInstanceSetter<BobberBar, float>());
+		Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+	}
 
-		private static string ShortID => "Tenacity";
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.TenacityValue:0.##}x" });
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 80, 16, 16));
+	public void OnDeactivate()
+	{
+		Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+	}
 
-		public TenacityAffix() : base(ShortID, "negative") { }
+	public void SetupConfig(IManifest manifest)
+	{
+		var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+		GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+		helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.TenacityValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
+	}
 
-		public int GetPositivity(OrdinalSeason season)
-			=> Mod.Config.TenacityValue < 1f ? 1 : 0;
+	private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+	{
+		if (!Game1.game1.IsActive)
+			return;
+		if (Game1.activeClickableMenu is not BobberBar bar)
+			return;
+		if (BobberBarHandledFishResultGetter.Value(bar))
+			return;
+		if (!BobberBarBobberInBarGetter.Value(bar))
+			return;
 
-		public int GetNegativity(OrdinalSeason season)
-			=> Mod.Config.TenacityValue > 1f ? 1 : 0;
-
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
-
-		public void OnActivate()
-		{
-			Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-		}
-
-		public void OnDeactivate()
-		{
-			Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
-		}
-
-		public void SetupConfig(IManifest manifest)
-		{
-			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
-			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"{I18nPrefix}.config.value", () => Mod.Config.TenacityValue, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
-		}
-
-		private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
-		{
-			if (!Game1.game1.IsActive)
-				return;
-			if (Game1.activeClickableMenu is not BobberBar bar)
-				return;
-			if (BobberBarHandledFishResultGetter.Value(bar))
-				return;
-			if (!BobberBarBobberInBarGetter.Value(bar))
-				return;
-
-			float distanceFromCatching = BobberBarDistanceFromCatchingGetter.Value(bar);
-			distanceFromCatching -= 0.002f;
-			distanceFromCatching += 0.002f / Mod.Config.TenacityValue;
-			BobberBarDistanceFromCatchingSetter.Value(bar, distanceFromCatching);
-		}
+		float distanceFromCatching = BobberBarDistanceFromCatchingGetter.Value(bar);
+		distanceFromCatching -= 0.002f;
+		distanceFromCatching += 0.002f / Mod.Config.TenacityValue;
+		BobberBarDistanceFromCatchingSetter.Value(bar, distanceFromCatching);
 	}
 }

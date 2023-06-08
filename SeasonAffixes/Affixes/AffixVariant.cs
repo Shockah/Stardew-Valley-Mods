@@ -1,7 +1,6 @@
-﻿namespace Shockah.SeasonAffixes.Affixes
+﻿namespace Shockah.SeasonAffixes.Affixes;
+
+internal enum AffixVariant
 {
-	internal enum AffixVariant
-	{
-		Positive, Negative
-	}
+	Positive, Negative
 }

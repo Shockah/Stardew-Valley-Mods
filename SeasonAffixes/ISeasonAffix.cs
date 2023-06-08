@@ -4,30 +4,29 @@ using System.Collections.Generic;
 
 #nullable enable
 
-namespace Shockah.SeasonAffixes
+namespace Shockah.SeasonAffixes;
+
+public interface ISeasonAffix
 {
-	public interface ISeasonAffix
-	{
-		string UniqueID { get; }
-		string LocalizedName { get; }
-		string LocalizedDescription { get; }
-		TextureRectangle Icon { get; }
+	string UniqueID { get; }
+	string LocalizedName { get; }
+	string LocalizedDescription { get; }
+	TextureRectangle Icon { get; }
 
-		void OnRegister() { }
-		void OnUnregister() { }
-		void OnActivate() { }
-		void OnDeactivate() { }
+	void OnRegister() { }
+	void OnUnregister() { }
+	void OnActivate() { }
+	void OnDeactivate() { }
 
-		void SetupConfig(IManifest manifest) { }
-		void OnSaveConfig() { }
+	void SetupConfig(IManifest manifest) { }
+	void OnSaveConfig() { }
 
-		int GetPositivity(OrdinalSeason season);
-		int GetNegativity(OrdinalSeason season);
+	int GetPositivity(OrdinalSeason season);
+	int GetNegativity(OrdinalSeason season);
 
-		IReadOnlySet<string> Tags
-			=> new HashSet<string>();
+	IReadOnlySet<string> Tags
+		=> new HashSet<string>();
 
-		double GetProbabilityWeight(OrdinalSeason season)
-			=> 1;
-	}
+	double GetProbabilityWeight(OrdinalSeason season)
+		=> 1;
 }

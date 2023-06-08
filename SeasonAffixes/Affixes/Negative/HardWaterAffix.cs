@@ -7,55 +7,54 @@ using System.Collections.Generic;
 using System.Linq;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative
+namespace Shockah.SeasonAffixes.Affixes.Negative;
+
+internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
 {
-	internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
+	private static bool IsHarmonySetup = false;
+
+	private static string ShortID => "HardWater";
+	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
+	public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 384, 16, 16));
+
+	public HardWaterAffix() : base(ShortID, "negative") { }
+
+	public int GetPositivity(OrdinalSeason season)
+		=> 0;
+
+	public int GetNegativity(OrdinalSeason season)
+		=> 1;
+
+	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect };
+
+	public double GetProbabilityWeight(OrdinalSeason season)
 	{
-		private static bool IsHarmonySetup = false;
+		bool greenhouseUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));
+		bool gingerIslandUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("willyBackRoomInvitation"));
+		bool isWinter = season.Season == Season.Winter;
+		return isWinter && !greenhouseUnlocked && !gingerIslandUnlocked ? 0 : 1;
+	}
 
-		private static string ShortID => "HardWater";
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(368, 384, 16, 16));
+	public void OnRegister()
+		=> Apply(Mod.Harmony);
 
-		public HardWaterAffix() : base(ShortID, "negative") { }
+	private void Apply(Harmony harmony)
+	{
+		if (IsHarmonySetup)
+			return;
+		IsHarmonySetup = true;
 
-		public int GetPositivity(OrdinalSeason season)
-			=> 0;
+		harmony.TryPatch(
+			monitor: Mod.Monitor,
+			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
+			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_IsSprinkler_Postfix)))
+		);
+	}
 
-		public int GetNegativity(OrdinalSeason season)
-			=> 1;
-
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect };
-
-		public double GetProbabilityWeight(OrdinalSeason season)
-		{
-			bool greenhouseUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));
-			bool gingerIslandUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("willyBackRoomInvitation"));
-			bool isWinter = season.Season == Season.Winter;
-			return isWinter && !greenhouseUnlocked && !gingerIslandUnlocked ? 0 : 1;
-		}
-
-		public void OnRegister()
-			=> Apply(Mod.Harmony);
-
-		private void Apply(Harmony harmony)
-		{
-			if (IsHarmonySetup)
-				return;
-			IsHarmonySetup = true;
-
-			harmony.TryPatch(
-				monitor: Mod.Monitor,
-				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
-				postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_IsSprinkler_Postfix)))
-			);
-		}
-
-		private static void SObject_IsSprinkler_Postfix(ref bool __result)
-		{
-			if (!Mod.IsAffixActive(a => a is HardWaterAffix))
-				return;
-			__result = false;
-		}
+	private static void SObject_IsSprinkler_Postfix(ref bool __result)
+	{
+		if (!Mod.IsAffixActive(a => a is HardWaterAffix))
+			return;
+		__result = false;
 	}
 }

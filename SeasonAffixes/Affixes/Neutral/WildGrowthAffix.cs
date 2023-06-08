@@ -17,94 +17,93 @@ using System.Linq;
 using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Neutral
+namespace Shockah.SeasonAffixes.Affixes.Neutral;
+
+internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 {
-	internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
+	private static string ShortID => "WildGrowth";
+	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
+	public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(336, 192, 16, 16));
+
+	public WildGrowthAffix() : base(ShortID, "neutral") { }
+
+	public int GetPositivity(OrdinalSeason season)
+		=> 1;
+
+	public int GetNegativity(OrdinalSeason season)
+		=> 1;
+
+	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.WoodcuttingAspect };
+
+	public void OnActivate()
 	{
-		private static string ShortID => "WildGrowth";
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
-		public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(336, 192, 16, 16));
+		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+	}
 
-		public WildGrowthAffix() : base(ShortID, "neutral") { }
+	public void OnDeactivate()
+	{
+		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+	}
 
-		public int GetPositivity(OrdinalSeason season)
-			=> 1;
+	public void SetupConfig(IManifest manifest)
+	{
+		var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+		GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+		helper.AddNumberOption($"{I18nPrefix}.config.advanceChance", () => Mod.Config.WildGrowthAdvanceChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+		helper.AddNumberOption($"{I18nPrefix}.config.newSeedChance", () => Mod.Config.WildGrowthNewSeedChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
+	}
 
-		public int GetNegativity(OrdinalSeason season)
-			=> 1;
+	private void OnDayStarted(object? sender, DayStartedEventArgs e)
+	{
+		if (!Context.IsMainPlayer)
+			return;
 
-		public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.WoodcuttingAspect };
-
-		public void OnActivate()
+		var farm = Game1.getFarm();
+		foreach (var tree in farm.terrainFeatures.Values.OfType<Tree>().ToList())
 		{
-			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
-		}
-
-		public void OnDeactivate()
-		{
-			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
-		}
-
-		public void SetupConfig(IManifest manifest)
-		{
-			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
-			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"{I18nPrefix}.config.advanceChance", () => Mod.Config.WildGrowthAdvanceChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
-			helper.AddNumberOption($"{I18nPrefix}.config.newSeedChance", () => Mod.Config.WildGrowthNewSeedChance, min: 0.05f, max: 1f, interval: 0.05f, value => $"{(int)(value * 100):0.##}%");
-		}
-
-		private void OnDayStarted(object? sender, DayStartedEventArgs e)
-		{
-			if (!Context.IsMainPlayer)
-				return;
-
-			var farm = Game1.getFarm();
-			foreach (var tree in farm.terrainFeatures.Values.OfType<Tree>().ToList())
+			if (Game1.random.Next() < Mod.Config.WildGrowthAdvanceChance)
 			{
-				if (Game1.random.Next() < Mod.Config.WildGrowthAdvanceChance)
-				{
-					bool wasFertilized = tree.fertilized.Value;
-					tree.fertilized.Value = true;
-					tree.dayUpdate(new FakeLocation(farm), tree.currentTileLocation);
-					tree.fertilized.Value = wasFertilized;
-				}
-				if (tree.growthStage.Value >= 5 && Game1.random.Next() < Mod.Config.WildGrowthNewSeedChance)
-				{
-					int xCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.X;
-					int yCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.Y;
-					Vector2 location = new(xCoord, yCoord);
-					var noSpawn = farm.doesTileHaveProperty(xCoord, yCoord, "NoSpawn", "Back");
-					if ((noSpawn is null || (!noSpawn.Equals("Tree") && !noSpawn.Equals("All") && !noSpawn.Equals("True"))) && farm.isTileLocationOpen(new Location(xCoord, yCoord)) && !farm.isTileOccupied(location) && farm.doesTileHaveProperty(xCoord, yCoord, "Water", "Back") is null && farm.isTileOnMap(location))
-						farm.terrainFeatures.Add(location, new Tree(tree.treeType.Value, 0));
-				}
+				bool wasFertilized = tree.fertilized.Value;
+				tree.fertilized.Value = true;
+				tree.dayUpdate(new FakeLocation(farm), tree.currentTileLocation);
+				tree.fertilized.Value = wasFertilized;
+			}
+			if (tree.growthStage.Value >= 5 && Game1.random.Next() < Mod.Config.WildGrowthNewSeedChance)
+			{
+				int xCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.X;
+				int yCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.Y;
+				Vector2 location = new(xCoord, yCoord);
+				var noSpawn = farm.doesTileHaveProperty(xCoord, yCoord, "NoSpawn", "Back");
+				if ((noSpawn is null || (!noSpawn.Equals("Tree") && !noSpawn.Equals("All") && !noSpawn.Equals("True"))) && farm.isTileLocationOpen(new Location(xCoord, yCoord)) && !farm.isTileOccupied(location) && farm.doesTileHaveProperty(xCoord, yCoord, "Water", "Back") is null && farm.isTileOnMap(location))
+					farm.terrainFeatures.Add(location, new Tree(tree.treeType.Value, 0));
 			}
 		}
+	}
 
-		private sealed class FakeLocation : GameLocation
+	private sealed class FakeLocation : GameLocation
+	{
+		private static readonly Lazy<Action<GameLocation, NetVector2Dictionary<TerrainFeature, NetRef<TerrainFeature>>>> TerrainFeaturesSetter = new(() => AccessTools.Field(typeof(GameLocation), "terrainFeatures").EmitInstanceSetter<GameLocation, NetVector2Dictionary<TerrainFeature, NetRef<TerrainFeature>>>());
+		private static readonly Lazy<Action<GameLocation, OverlaidDictionary>> ObjectsSetter = new(() => AccessTools.Field(typeof(GameLocation), "objects").EmitInstanceSetter<GameLocation, OverlaidDictionary>());
+
+		private readonly GameLocation Wrapped;
+
+		public FakeLocation(GameLocation wrapped)
 		{
-			private static readonly Lazy<Action<GameLocation, NetVector2Dictionary<TerrainFeature, NetRef<TerrainFeature>>>> TerrainFeaturesSetter = new(() => AccessTools.Field(typeof(GameLocation), "terrainFeatures").EmitInstanceSetter<GameLocation, NetVector2Dictionary<TerrainFeature, NetRef<TerrainFeature>>>());
-			private static readonly Lazy<Action<GameLocation, OverlaidDictionary>> ObjectsSetter = new(() => AccessTools.Field(typeof(GameLocation), "objects").EmitInstanceSetter<GameLocation, OverlaidDictionary>());
-
-			private readonly GameLocation Wrapped;
-
-			public FakeLocation(GameLocation wrapped)
-			{
-				this.Wrapped = wrapped;
-				TerrainFeaturesSetter.Value(this, wrapped.terrainFeatures);
-				ObjectsSetter.Value(this, wrapped.objects);
-			}
-
-			public override SObject? getObjectAt(int x, int y)
-				=> Wrapped.getObjectAt(x, y);
-
-			public override string? doesTileHaveProperty(int xTile, int yTile, string propertyName, string layerName)
-				=> Wrapped.doesTileHaveProperty(xTile, yTile, propertyName, layerName);
-
-			public override bool CanPlantTreesHere(int sapling_index, int tile_x, int tile_y)
-				=> Wrapped.CanPlantTreesHere(sapling_index, tile_x, tile_y);
-
-			public override bool isTileOccupied(Vector2 tileLocation, string? characterToIgnore = "", bool ignoreAllCharacters = false)
-				=> Wrapped.isTileOccupied(tileLocation, characterToIgnore, ignoreAllCharacters);
+			this.Wrapped = wrapped;
+			TerrainFeaturesSetter.Value(this, wrapped.terrainFeatures);
+			ObjectsSetter.Value(this, wrapped.objects);
 		}
+
+		public override SObject? getObjectAt(int x, int y)
+			=> Wrapped.getObjectAt(x, y);
+
+		public override string? doesTileHaveProperty(int xTile, int yTile, string propertyName, string layerName)
+			=> Wrapped.doesTileHaveProperty(xTile, yTile, propertyName, layerName);
+
+		public override bool CanPlantTreesHere(int sapling_index, int tile_x, int tile_y)
+			=> Wrapped.CanPlantTreesHere(sapling_index, tile_x, tile_y);
+
+		public override bool isTileOccupied(Vector2 tileLocation, string? characterToIgnore = "", bool ignoreAllCharacters = false)
+			=> Wrapped.isTileOccupied(tileLocation, characterToIgnore, ignoreAllCharacters);
 	}
 }

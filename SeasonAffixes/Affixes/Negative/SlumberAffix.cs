@@ -6,50 +6,49 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative
+namespace Shockah.SeasonAffixes.Affixes.Negative;
+
+internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 {
-	internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
+	private static string ShortID => "Slumber";
+	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Hours = $"{(int)Mod.Config.SlumberHours:0.#}" });
+	public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 96, 16, 16));
+
+	public SlumberAffix() : base(ShortID, "negative") { }
+
+	public int GetPositivity(OrdinalSeason season)
+		=> 0;
+
+	public int GetNegativity(OrdinalSeason season)
+		=> 1;
+
+	public void OnActivate()
 	{
-		private static string ShortID => "Slumber";
-		public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Hours = $"{(int)Mod.Config.SlumberHours:0.#}" });
-		public TextureRectangle Icon => new(Game1.emoteSpriteSheet, new(32, 96, 16, 16));
+		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+	}
 
-		public SlumberAffix() : base(ShortID, "negative") { }
+	public void OnDeactivate()
+	{
+		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+	}
 
-		public int GetPositivity(OrdinalSeason season)
-			=> 0;
+	public void SetupConfig(IManifest manifest)
+	{
+		var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
+		GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
+		helper.AddNumberOption($"{I18nPrefix}.config.hours", () => Mod.Config.SlumberHours, min: 0.5f, max: 12f, interval: 0.5f);
+	}
 
-		public int GetNegativity(OrdinalSeason season)
-			=> 1;
+	private void OnDayStarted(object? sender, DayStartedEventArgs e)
+	{
+		if (!Context.IsMainPlayer)
+			return;
 
-		public void OnActivate()
+		int minutesToSkip = (int)Math.Round(Mod.Config.SlumberHours * 60) / 10 * 10;
+		while (minutesToSkip > 0)
 		{
-			Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
-		}
-
-		public void OnDeactivate()
-		{
-			Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
-		}
-
-		public void SetupConfig(IManifest manifest)
-		{
-			var api = Mod.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu")!;
-			GMCMI18nHelper helper = new(api, Mod.ModManifest, Mod.Helper.Translation);
-			helper.AddNumberOption($"{I18nPrefix}.config.hours", () => Mod.Config.SlumberHours, min: 0.5f, max: 12f, interval: 0.5f);
-		}
-
-		private void OnDayStarted(object? sender, DayStartedEventArgs e)
-		{
-			if (!Context.IsMainPlayer)
-				return;
-
-			int minutesToSkip = (int)Math.Round(Mod.Config.SlumberHours * 60) / 10 * 10;
-			while (minutesToSkip > 0)
-			{
-				Game1.performTenMinuteClockUpdate();
-				minutesToSkip -= 10;
-			}
+			Game1.performTenMinuteClockUpdate();
+			minutesToSkip -= 10;
 		}
 	}
 }
