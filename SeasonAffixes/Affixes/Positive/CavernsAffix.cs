@@ -83,13 +83,13 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 
 		var shafts = Enumerable.Range(1, MineShaft.bottomOfMineLevel)
 			.Select(i => new MineShaft(i))
-			.Where(shaft => IsPotentialPreLoadGemCavernFloor(shaft))
+			.Where(IsPotentialPreLoadGemCavernFloor)
 			.Select(shaft =>
 			{
 				shaft.loadLevel(shaft.mineLevel);
 				return shaft;
 			})
-			.Where(shaft => IsPotentialPostLoadGemCavernFloor(shaft))
+			.Where(IsPotentialPostLoadGemCavernFloor)
 			.ToList();
 
 		Random random = new((int)Game1.stats.DaysPlayed + (int)Game1.uniqueIDForThisGame / 2);
