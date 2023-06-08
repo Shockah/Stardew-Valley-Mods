@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace Shockah.InAHeartbeat
+namespace Shockah.InAHeartbeat;
+
+public interface IAdvancedSocialInteractionsApi
 {
-	public interface IAdvancedSocialInteractionsApi
-	{
-		public event EventHandler<Action<string, Action>> AdvancedInteractionStarted;
-	}
+	public event EventHandler<Action<string, Action>> AdvancedInteractionStarted;
 }
