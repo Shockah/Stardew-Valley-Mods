@@ -4,6 +4,7 @@ using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
 	public TextureRectangle Icon => new(Game1.mouseCursors, new(626, 1892, 9, 8));
 
-	private readonly Dictionary<string, int> OldFriendship = new();
+	private readonly PerScreen<Dictionary<string, int>> OldFriendship = new(() => new());
 
 	public LoveAffix() : base(ShortID, "positive") { }
 
@@ -33,12 +34,14 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		UpdateDispositions();
 		Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+		Mod.Helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
 		Mod.Helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 	}
 
 	public void OnDeactivate()
 	{
 		Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
+		Mod.Helper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;
 		Mod.Helper.Events.Content.AssetsInvalidated -= OnAssetsInvalidated;
 	}
 
@@ -51,7 +54,14 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 
 	private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 	{
+		if (!Context.IsWorldReady)
+			return;
 		UpdateFriendship();
+	}
+
+	private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+	{
+		UpdateDispositions();
 	}
 
 	private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
@@ -65,29 +75,29 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 
 	private void UpdateDispositions()
 	{
-		OldFriendship.Clear();
+		OldFriendship.Value.Clear();
 		Dictionary<string, string> dispositions = Game1.content.Load<Dictionary<string, string>>("Data\\NPCDispositions");
 		foreach (var (npcName, data) in dispositions)
 		{
 			string[] split = data.Split('/');
 			if (!split[5].Equals("datable", StringComparison.InvariantCultureIgnoreCase))
 				continue;
-			OldFriendship[npcName] = Game1.player.getFriendshipLevelForNPC(npcName);
+			OldFriendship.Value[npcName] = Game1.player.getFriendshipLevelForNPC(npcName);
 		}
 	}
 
 	private void UpdateFriendship()
 	{
-		foreach (var (npcName, oldFriendship) in OldFriendship)
+		foreach (var (npcName, oldFriendship) in OldFriendship.Value)
 		{
 			int newFriendship = Game1.player.getFriendshipLevelForNPC(npcName);
 			int extraFriendship = newFriendship - oldFriendship;
-			OldFriendship[npcName] += extraFriendship;
+			OldFriendship.Value[npcName] += extraFriendship;
 			if (extraFriendship > 0)
 			{
 				int bonusFriendship = (int)Math.Round(-extraFriendship + extraFriendship * Mod.Config.LoveValue);
 				Game1.player.friendshipData[npcName].Points += bonusFriendship;
-				OldFriendship[npcName] += bonusFriendship;
+				OldFriendship.Value[npcName] += bonusFriendship;
 			}
 		}
 	}
