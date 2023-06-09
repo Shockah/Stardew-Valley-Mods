@@ -2,6 +2,15 @@
 
 # Release notes
 
+## 2.1.0
+Released 9 June 2023.
+
+* Added `FarmerExt.GetDatingState()`.
+* Added `FarmerExt.ConsumeItem()`.
+* Improved `ItemExt.IsSameItem()`.
+* Improved Harmony errors.
+* Fixed an error when [SpaceCore](https://www.nexusmods.com/stardewvalley/mods/1348) was not installed.
+
 ## 2.0.1
 Released 30 May 2023.
 
