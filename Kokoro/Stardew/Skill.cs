@@ -243,6 +243,8 @@ public record SpaceCoreSkill(
 
 	public static IEnumerable<ISkill> GetAllSkills()
 	{
+		if (!Kokoro.Instance.Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
+			yield break;
 		SetupReflectionIfNeeded();
 		foreach (var skillName in GetSkillListDelegate())
 			yield return new SpaceCoreSkill(skillName);
