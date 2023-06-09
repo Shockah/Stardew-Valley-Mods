@@ -74,6 +74,8 @@ internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix
 			return true;
 		if (DayUpdateCallCounter.Get(__instance) == 0)
 			return true;
+		if (!Mod.IsAffixActive(a => a is HurricaneAffix))
+			return true;
 		return false;
 	}
 
