@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix
 {

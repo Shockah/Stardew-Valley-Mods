@@ -6,7 +6,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using System;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 {

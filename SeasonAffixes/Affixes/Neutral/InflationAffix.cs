@@ -16,7 +16,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Neutral;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 {

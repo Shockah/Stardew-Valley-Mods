@@ -1,4 +1,4 @@
-﻿namespace Shockah.SeasonAffixes.Affixes;
+﻿namespace Shockah.SeasonAffixes;
 
 internal enum AffixVariant
 {

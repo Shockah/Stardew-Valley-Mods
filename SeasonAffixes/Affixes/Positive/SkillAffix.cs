@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class SkillAffix : ISeasonAffix
 {

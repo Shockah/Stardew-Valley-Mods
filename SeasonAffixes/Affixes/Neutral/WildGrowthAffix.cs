@@ -17,7 +17,7 @@ using System.Linq;
 using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Neutral;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 {

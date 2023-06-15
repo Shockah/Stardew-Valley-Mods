@@ -9,7 +9,7 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
 {

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix
 {

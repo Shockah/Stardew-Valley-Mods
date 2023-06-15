@@ -5,7 +5,7 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
 {

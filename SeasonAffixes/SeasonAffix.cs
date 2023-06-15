@@ -1,6 +1,4 @@
-﻿using Shockah.SeasonAffixes.Affixes;
-
-namespace Shockah.SeasonAffixes;
+﻿namespace Shockah.SeasonAffixes;
 
 internal abstract class BaseSeasonAffix
 {

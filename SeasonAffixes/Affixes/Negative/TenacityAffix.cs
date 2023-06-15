@@ -11,7 +11,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
 {

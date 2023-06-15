@@ -17,7 +17,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
-namespace Shockah.SeasonAffixes.Affixes.Varying;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 {

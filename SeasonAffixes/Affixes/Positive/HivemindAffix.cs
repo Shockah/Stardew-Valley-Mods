@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 {

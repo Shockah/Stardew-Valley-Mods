@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class SapAffix : BaseSeasonAffix, ISeasonAffix
 {

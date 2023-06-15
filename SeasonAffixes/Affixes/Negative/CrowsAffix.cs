@@ -8,7 +8,7 @@ using StardewValley.BellsAndWhistles;
 using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Negative;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 {

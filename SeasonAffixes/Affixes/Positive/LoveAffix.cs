@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 {

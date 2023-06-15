@@ -8,7 +8,7 @@ using StardewValley.Locations;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class DescentAffix : BaseSeasonAffix, ISeasonAffix
 {

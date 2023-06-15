@@ -6,7 +6,7 @@ using StardewValley;
 using StardewValley.Locations;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class MudAffix : BaseSeasonAffix, ISeasonAffix
 {

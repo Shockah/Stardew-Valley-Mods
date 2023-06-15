@@ -11,7 +11,7 @@ using StardewValley.Events;
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class FairyTalesAffix : BaseSeasonAffix, ISeasonAffix
 {

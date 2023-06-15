@@ -6,10 +6,9 @@ using Shockah.Kokoro.UI;
 using StardewValley;
 using StardewValley.TerrainFeatures;
 using System.Collections.Generic;
-using System.Linq;
 using SObject = StardewValley.Object;
 
-namespace Shockah.SeasonAffixes.Affixes.Positive;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 {

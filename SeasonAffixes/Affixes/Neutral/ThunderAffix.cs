@@ -14,7 +14,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Shockah.SeasonAffixes.Affixes.Neutral;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 {

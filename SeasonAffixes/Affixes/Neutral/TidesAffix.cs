@@ -6,7 +6,7 @@ using StardewValley;
 using System;
 using System.Collections.Generic;
 
-namespace Shockah.SeasonAffixes.Affixes.Neutral;
+namespace Shockah.SeasonAffixes;
 
 internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
 {
