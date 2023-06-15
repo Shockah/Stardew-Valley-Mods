@@ -1,35 +1,34 @@
-﻿namespace Shockah.MachineStatus
+﻿namespace Shockah.MachineStatus;
+
+public static class MachineRenderingOptions
 {
-	public static class MachineRenderingOptions
+	public enum Grouping
 	{
-		public enum Grouping
-		{
-			None,
-			ByMachine,
-			ByMachineAndItem
-		}
+		None,
+		ByMachine,
+		ByMachineAndItem
+	}
 
-		public enum Sorting
-		{
-			None,
-			ByMachineAZ, ByMachineZA,
-			ReadyFirst, WaitingFirst, BusyFirst,
-			ByDistanceAscending, ByDistanceDescending,
-			ByItemAZ, ByItemZA
-		}
+	public enum Sorting
+	{
+		None,
+		ByMachineAZ, ByMachineZA,
+		ReadyFirst, WaitingFirst, BusyFirst,
+		ByDistanceAscending, ByDistanceDescending,
+		ByItemAZ, ByItemZA
+	}
 
-		public enum BubbleSway
-		{
-			Static,
-			Together,
-			Wave
-		}
+	public enum BubbleSway
+	{
+		Static,
+		Together,
+		Wave
+	}
 
-		public enum Visibility
-		{
-			Hidden,
-			Normal,
-			Focused
-		}
+	public enum Visibility
+	{
+		Hidden,
+		Normal,
+		Focused
 	}
 }
