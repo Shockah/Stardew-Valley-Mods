@@ -872,9 +872,11 @@ namespace Shockah.MachineStatus
 
 		private static bool IsMachine(SObject @object)
 		{
+			if (@object is ItemPedestal || @object is Torch)
+				return false;
 			if (@object is CrabPot || @object is WoodChipper)
 				return true;
-			if (@object.IsSprinkler())
+			if (@object.IsSprinkler() || @object.IsScarecrow())
 				return false;
 			if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory)
 				return false;
