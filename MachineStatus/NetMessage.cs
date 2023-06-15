@@ -164,10 +164,10 @@ internal static class NetMessage
 			);
 		}
 
-		public bool MatchesMachine(SVObject machine)
+		public readonly bool MatchesMachine(SVObject machine)
 			=> Machine.Matches(machine) && TileLocation.X == (int)machine.TileLocation.X && TileLocation.Y == (int)machine.TileLocation.Y;
 
-		public SVObject RetrieveMachine()
+		public readonly SVObject RetrieveMachine()
 		{
 			var machine = Machine.Retrieve(TileLocation);
 			machine.TileLocation = new Vector2(TileLocation.X, TileLocation.Y);
@@ -208,7 +208,7 @@ internal static class NetMessage
 				machine.Name
 			);
 
-		public bool MatchesMachine(SVObject machine)
+		public readonly bool MatchesMachine(SVObject machine)
 			=> MachineParentSheetIndex == machine.ParentSheetIndex && MachineName == machine.Name &&
 			TileLocation.X == (int)machine.TileLocation.X && TileLocation.Y == (int)machine.TileLocation.Y;
 	}
