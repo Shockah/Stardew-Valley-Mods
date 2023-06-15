@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Netcode;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -18,6 +19,12 @@ using xTile.Dimensions;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float WildGrowthAdvanceChance { get; internal set; } = 1f;
+	[JsonProperty] public float WildGrowthNewSeedChance { get; internal set; } = 0.5f;
+}
 
 internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 {

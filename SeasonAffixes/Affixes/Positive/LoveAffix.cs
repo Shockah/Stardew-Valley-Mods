@@ -1,4 +1,5 @@
-﻿using Shockah.CommonModCode.GMCM;
+﻿using Newtonsoft.Json;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
@@ -11,6 +12,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float LoveValue { get; internal set; } = 2f;
+}
 
 internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 {

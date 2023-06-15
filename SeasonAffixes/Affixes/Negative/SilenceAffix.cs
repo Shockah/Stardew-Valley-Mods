@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -14,6 +15,11 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public int SilenceFriendshipGain { get; internal set; } = 0;
+}
 
 internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix
 {

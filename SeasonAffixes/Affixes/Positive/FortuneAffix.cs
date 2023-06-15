@@ -1,4 +1,5 @@
-﻿using Shockah.CommonModCode.GMCM;
+﻿using Newtonsoft.Json;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
@@ -6,6 +7,11 @@ using StardewModdingAPI.Events;
 using StardewValley;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonIgnore] public float FortuneValue { get; internal set; } = 0.05f;
+}
 
 internal sealed class FortuneAffix : BaseSeasonAffix, ISeasonAffix
 {

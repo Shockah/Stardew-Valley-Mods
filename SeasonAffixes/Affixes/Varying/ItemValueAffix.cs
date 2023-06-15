@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -10,6 +11,13 @@ using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float AgricultureValue { get; internal set; } = 2f;
+	[JsonProperty] public float RanchingValue { get; internal set; } = 2f;
+	[JsonProperty] public float SeafoodValue { get; internal set; } = 2f;
+}
 
 internal sealed class ItemValueAffix : BaseSeasonAffix, ISeasonAffix
 {

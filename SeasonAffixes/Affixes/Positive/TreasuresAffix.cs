@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -13,6 +14,12 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float TreasuresChance { get; internal set; } = 0.25f;
+	[JsonProperty] public float TreasuresChanceWithEnchantment { get; internal set; } = 0.5f;
+}
 
 internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix
 {

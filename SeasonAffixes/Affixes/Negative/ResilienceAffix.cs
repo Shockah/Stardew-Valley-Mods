@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
@@ -10,6 +11,11 @@ using System;
 using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float ResilienceValue { get; internal set; } = 2f;
+}
 
 internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
 {

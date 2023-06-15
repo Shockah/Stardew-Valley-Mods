@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Netcode;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -14,6 +15,11 @@ using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float AccumulationChance { get; internal set; } = 0.3f;
+}
 
 internal sealed class AccumulationAffix : BaseSeasonAffix, ISeasonAffix
 {

@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -15,6 +16,11 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float ThunderChance { get; internal set; } = 2f;
+}
 
 internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 {

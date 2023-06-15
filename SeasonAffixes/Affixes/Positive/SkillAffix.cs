@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
@@ -12,6 +13,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public IDictionary<string, int> SkillLevelIncrease { get; internal set; } = new Dictionary<string, int>();
+	[JsonProperty] public IDictionary<string, float> SkillXPIncrease { get; internal set; } = new Dictionary<string, float>();
+}
 
 internal sealed class SkillAffix : ISeasonAffix
 {

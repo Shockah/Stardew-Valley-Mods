@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -15,6 +16,15 @@ using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public int CavernsMinFloors { get; internal set; } = 2;
+	[JsonProperty] public int CavernsMaxFloors { get; internal set; } = 3;
+	[JsonProperty] public int CavernsMinGems { get; internal set; } = 12;
+	[JsonProperty] public int CavernsMaxGems { get; internal set; } = 20;
+	[JsonProperty] public bool CavernsAllowPrismaticShard { get; internal set; } = false;
+}
 
 internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 {

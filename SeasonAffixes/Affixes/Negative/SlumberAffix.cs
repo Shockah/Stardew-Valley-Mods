@@ -1,4 +1,5 @@
-﻿using Shockah.CommonModCode.GMCM;
+﻿using Newtonsoft.Json;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
@@ -7,6 +8,11 @@ using StardewValley;
 using System;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float SlumberHours { get; internal set; } = 4f;
+}
 
 internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 {

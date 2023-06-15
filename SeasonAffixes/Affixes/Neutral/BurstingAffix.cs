@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -13,6 +14,14 @@ using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float BurstingNoBombWeight { get; internal set; } = 0f;
+	[JsonProperty] public float BurstingCherryBombWeight { get; internal set; } = 2f;
+	[JsonProperty] public float BurstingBombWeight { get; internal set; } = 2f;
+	[JsonProperty] public float BurstingMegaBombWeight { get; internal set; } = 1f;
+}
 
 internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
@@ -11,6 +12,14 @@ using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public int HivemindRange { get; internal set; } = 5;
+	[JsonProperty] public int HivemindFlowersFor1DayDecrease { get; internal set; } = 6;
+	[JsonProperty] public int HivemindFlowersFor2DayDecrease { get; internal set; } = 20;
+	[JsonProperty] public int HivemindFlowersFor3DayDecrease { get; internal set; } = 50;
+}
 
 internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 {

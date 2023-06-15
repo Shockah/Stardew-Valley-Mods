@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -14,6 +15,16 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float CompetitionQiCoinSellValue { get; internal set; } = 0.5f;
+	[JsonProperty] public float CompetitionQiCoinExchangeCap { get; internal set; } = 5f;
+	[JsonProperty] public float CompetitionPrairieKingMonsterHealthMoney { get; internal set; } = 1f;
+	[JsonProperty] public int CompetitionPrairieKingCoinMoney { get; internal set; } = 20;
+	[JsonProperty] public int CompetitionJunimoKartCoinMoney { get; internal set; } = 5;
+	[JsonProperty] public float CompetitionJunimoKartScoreMoney { get; internal set; } = 0.04f;
+}
 
 internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 {

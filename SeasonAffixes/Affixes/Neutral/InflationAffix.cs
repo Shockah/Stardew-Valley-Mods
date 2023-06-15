@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -17,6 +18,11 @@ using System.Reflection.Emit;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float InflationIncrease { get; internal set; } = 0.2f;
+}
 
 internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 {

@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
@@ -11,6 +12,11 @@ using System;
 using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float MeteoritesChance { get; internal set; } = 0.15f;
+}
 
 internal sealed class MeteoritesAffix : BaseSeasonAffix, ISeasonAffix
 {

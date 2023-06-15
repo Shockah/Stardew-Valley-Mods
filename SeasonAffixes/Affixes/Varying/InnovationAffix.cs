@@ -1,4 +1,5 @@
-﻿using Shockah.CommonModCode.GMCM;
+﻿using Newtonsoft.Json;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
@@ -12,6 +13,12 @@ using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
+
+partial class ModConfig
+{
+	[JsonProperty] public float InnovationDecrease { get; internal set; } = 0.25f;
+	[JsonProperty] public float RustIncrease { get; internal set; } = 0.5f;
+}
 
 internal sealed class InnovationAffix : BaseVariantedSeasonAffix, ISeasonAffix
 {
