@@ -479,11 +479,11 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		void RegisterAffixSetEntrySection(int? index)
 		{
 			ModConfig.AffixSetEntry GetEntry()
-				=> index is null ? NewAffixSetEntry : Config.AffixSetEntries[index.Value];
+				=> index is null || index.Value >= Config.AffixSetEntries.Count ? NewAffixSetEntry : Config.AffixSetEntries[index.Value];
 
 			void SetEntry(ModConfig.AffixSetEntry value)
 			{
-				if (index is null)
+				if (index is null || index.Value >= Config.AffixSetEntries.Count)
 					NewAffixSetEntry = value;
 				else
 					Config.AffixSetEntries[index.Value] = value;
@@ -760,9 +760,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		if (Context.IsMainPlayer)
 		{
 			var date = Game1.Date; // it's already "tomorrow" by now
-                OrdinalSeason season = new(date.Year, date.GetSeason());
+			OrdinalSeason season = new(date.Year, date.GetSeason());
 
-                int seed = 0;
+			int seed = 0;
 			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
 			seed = 31 * seed + (int)season.Season;
 			seed = 31 * seed + season.Year;
@@ -792,7 +792,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				Instance.SaveData.AffixSetChoiceHistory.RemoveAt(0);
 
 			Instance.AffixChoiceMenuConfig = new(new(date.Year, date.GetSeason()), Instance.Config.Incremental, choices, 0);
-                Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
+			Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 				season,
 				Instance.Config.Incremental,
 				choices.Select(choice => choice.Select(a => a.UniqueID).ToHashSet()).ToList(),
