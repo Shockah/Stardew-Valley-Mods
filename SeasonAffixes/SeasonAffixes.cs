@@ -920,14 +920,18 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	public void ActivateAffix(ISeasonAffix affix)
 	{
+		if (affix is MonotonyAffix)
+			return;
 		if (SaveData.ActiveAffixes.Contains(affix))
 			return;
 		LocalActivateAffix(affix);
-            SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+        SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 	}
 
 	public void DeactivateAffix(ISeasonAffix affix)
 	{
+		if (affix is MonotonyAffix)
+			return;
 		if (!SaveData.ActiveAffixes.Contains(affix))
 			return;
 		LocalDeactivateAffix(affix);
