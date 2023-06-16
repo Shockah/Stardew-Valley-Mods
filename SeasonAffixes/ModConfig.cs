@@ -7,18 +7,9 @@ namespace Shockah.SeasonAffixes;
 
 public partial class ModConfig : IVersioned.Modifiable
 {
-	public record AffixSetEntry(
-		int Positive = 0,
-		int Negative = 0,
-		double Weight = 0
-	)
-	{
-		internal bool IsValid()
-			=> Positive >= 0 && Negative >= 0 && (Positive + Negative) >= 0 && Weight > 0;
-	}
-
 	[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
+	[JsonProperty] public AffixSetChoicePeriod ChoicePeriod { get; internal set; } = AffixSetChoicePeriod.Season;
 	[JsonProperty] public bool Incremental { get; internal set; } = false;
 	[JsonProperty] public int Choices { get; internal set; } = 2;
 	//[JsonProperty] public int RerollsPerSeason { get; internal set; } = 1;

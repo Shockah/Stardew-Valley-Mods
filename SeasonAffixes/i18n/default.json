@@ -190,6 +190,14 @@
 	"affix.neutral.Monotony.description": "No special effects.",
 
 	// config
+	"config.choicePeriod.name": "Choice period",
+	"config.choicePeriod.tooltip": "How often do you get to choose affixes, and how long they are active for (if \"Incremental\" is disabled). Some affixes will be disabled if the period is set to \"Day\".",
+	"config.choicePeriod.value.Day": "Day",
+	"config.choicePeriod.value.FourThreeDays": "Monday-Thursday, Friday-Sunday",
+	"config.choicePeriod.value.Week": "Week",
+	"config.choicePeriod.value.TwoWeeks": "Two weeks",
+	"config.choicePeriod.value.Season": "Season",
+	"config.choicePeriod.value.Year": "Year",
 	"config.incremental.name": "Incremental",
 	"config.incremental.tooltip": "When enabled, chosen affixes will be *added* to the currently active affixes, instead of replacing them.\nIf enabled, consider lowering the affix set entry positivity and negativity sums.",
 	"config.choices.name": "Choices",

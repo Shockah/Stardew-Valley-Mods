@@ -36,7 +36,13 @@ internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 		=> 0;
 
 	public double GetProbabilityWeight(OrdinalSeason season)
-		=> season.Season != Season.Winter ? 1 : 0;
+	{
+		if (Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day)
+			return 0;
+		if (season.Season == Season.Winter)
+			return 0;
+		return 1;
+	}
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FlowersAspect };
 

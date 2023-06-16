@@ -29,6 +29,8 @@ internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
 
 	public double GetProbabilityWeight(OrdinalSeason season)
 	{
+		if (Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day)
+			return 0;
 		bool greenhouseUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("ccVault") || p.mailReceived.Contains("jojaVault"));
 		bool gingerIslandUnlocked = Game1.getAllFarmers().Any(p => p.mailReceived.Contains("willyBackRoomInvitation"));
 		bool isWinter = season.Season == Season.Winter;

@@ -29,7 +29,13 @@ internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect };
 
 	public double GetProbabilityWeight(OrdinalSeason season)
-		=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0;
+	{
+		if (Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day)
+			return 0;
+		if (!Mod.Config.WinterCrops && season.Season == Season.Winter)
+			return 0;
+		return 1;
+	}
 
 	public void OnRegister()
 		=> Apply(Mod.Harmony);

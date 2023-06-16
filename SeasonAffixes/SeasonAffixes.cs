@@ -25,7 +25,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	public static SeasonAffixes Instance { get; private set; } = null!;
 	private bool IsConfigRegistered { get; set; } = false;
 	internal Harmony Harmony { get; private set; } = null!;
-	private ModConfig.AffixSetEntry NewAffixSetEntry = new();
+	private AffixSetEntry NewAffixSetEntry = new();
 
 	private bool DidRegisterSkillAffixes = false;
 	private Dictionary<string, ISeasonAffix> AllAffixesStorage { get; init; } = new();
@@ -202,6 +202,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 	{
+		RegisterAffix(MonotonyAffix = new MonotonyAffix());
+
 		// positive affixes
 		foreach (var affix in new List<ISeasonAffix>()
 		{
@@ -274,8 +276,6 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		})
 			RegisterAffix(affix);
 
-		RegisterAffix(MonotonyAffix = new MonotonyAffix());
-
 		// conflicts
 		RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? true : null);
 		RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is SilenceAffix) && affixes.Any(a => a is LoveAffix) ? true : null);
@@ -296,9 +296,36 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		if (!Context.IsMainPlayer)
 			return;
 
+		var today = Game1.Date;
 		var tomorrow = Game1.Date.GetByAddingDays(1);
-		if (tomorrow.GetSeason() == Game1.Date.GetSeason())
-			return;
+		switch (Config.ChoicePeriod)
+		{
+			case AffixSetChoicePeriod.Day:
+				break;
+			case AffixSetChoicePeriod.FourThreeDays:
+				static bool IsWeekend(DayOfWeek day)
+					=> day is DayOfWeek.Friday or DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+				if (tomorrow.TotalWeeks == today.TotalWeeks && IsWeekend(tomorrow.DayOfWeek) == IsWeekend(today.DayOfWeek))
+					return;
+				break;
+			case AffixSetChoicePeriod.Week:
+				if (tomorrow.TotalWeeks == today.TotalWeeks)
+					return;
+				break;
+			case AffixSetChoicePeriod.TwoWeeks:
+				if (tomorrow.TotalWeeks / 2 == today.TotalWeeks / 2)
+					return;
+				break;
+			case AffixSetChoicePeriod.Season:
+				if (tomorrow.Year == today.Year && tomorrow.GetSeason() != today.GetSeason())
+					return;
+				break;
+			case AffixSetChoicePeriod.Year:
+				if (tomorrow.Year == today.Year)
+					return;
+				break;
+		}
 		QueueOvernightAffixChoice();
 	}
 
@@ -471,6 +498,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		);
 
 		helper.AddBoolOption("config.incremental", () => Config.Incremental);
+		helper.AddEnumOption("config.choicePeriod", () => Config.ChoicePeriod);
 		helper.AddNumberOption("config.choices", () => Config.Choices, min: 1, max: 4, interval: 1);
 		helper.AddNumberOption("config.affixRepeatPeriod", () => Config.AffixRepeatPeriod, min: 0);
 		helper.AddNumberOption("config.affixSetRepeatPeriod", () => Config.AffixSetRepeatPeriod, min: 0);
@@ -478,10 +506,10 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 		void RegisterAffixSetEntrySection(int? index)
 		{
-			ModConfig.AffixSetEntry GetEntry()
+			AffixSetEntry GetEntry()
 				=> index is null || index.Value >= Config.AffixSetEntries.Count ? NewAffixSetEntry : Config.AffixSetEntries[index.Value];
 
-			void SetEntry(ModConfig.AffixSetEntry value)
+			void SetEntry(AffixSetEntry value)
 			{
 				if (index is null || index.Value >= Config.AffixSetEntries.Count)
 					NewAffixSetEntry = value;
@@ -710,7 +738,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		.MultiplyingBy(new AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider(0.5))
 		.MultiplyingBy(new AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider(0.1));
 
-	private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, ModConfig.AffixSetEntry affixSetEntry, Random random)
+	private IAffixSetGenerator CreateAffixSetGenerator(IAffixesProvider affixesProvider, IAffixScoreProvider scoreProvider, IAffixSetWeightProvider affixSetWeightProvider, AffixSetEntry affixSetEntry, Random random)
 	{
 		var otherAffixes = ActivePermanentAffixesStorage;
 		if (Config.Incremental)
@@ -768,7 +796,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			seed = 31 * seed + season.Year;
 			Random random = new(seed);
 
-			WeightedRandom<ModConfig.AffixSetEntry> affixSetEntries = new();
+			WeightedRandom<AffixSetEntry> affixSetEntries = new();
 			foreach (var entry in Instance.Config.AffixSetEntries)
 				affixSetEntries.Add(new(entry.Weight, entry));
 			var affixSetEntry = affixSetEntries.Next(random);

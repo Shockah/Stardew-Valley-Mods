@@ -27,6 +27,9 @@ internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> 1;
 
+	public double GetProbabilityWeight(OrdinalSeason season)
+		=> Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day ? 0 : 1;
+
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.GatheringAspect };
 
 	public void OnRegister()

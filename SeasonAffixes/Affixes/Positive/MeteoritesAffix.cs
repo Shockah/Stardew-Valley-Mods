@@ -34,6 +34,9 @@ internal sealed class MeteoritesAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> 0;
 
+	public double GetProbabilityWeight(OrdinalSeason season)
+		=> Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day ? 0 : 1;
+
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.MetalAspect };
 
 	public void OnRegister()

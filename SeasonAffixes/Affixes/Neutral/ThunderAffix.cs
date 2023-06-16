@@ -38,16 +38,20 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> Mod.Helper.ModRegistry.IsLoaded("Shockah.SafeLightning") ? 0 : 1;
 
-	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.FishingAspect };
-
 	public double GetProbabilityWeight(OrdinalSeason season)
-		=> season.Season switch
+	{
+		if (Mod.Config.ChoicePeriod == AffixSetChoicePeriod.Day)
+			return 0;
+		return season.Season switch
 		{
 			Season.Spring or Season.Fall => 0.5,
 			Season.Summer => 1,
 			Season.Winter => 0,
 			_ => throw new ArgumentException($"{nameof(Season)} has an invalid value."),
 		};
+	}
+
+	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.FishingAspect };
 
 	public void OnRegister()
 		=> Apply(Mod.Harmony);
