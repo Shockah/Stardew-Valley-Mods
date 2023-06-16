@@ -4,6 +4,7 @@ using Nanoray.Shrike.Harmony;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
+using Shockah.Kokoro.SMAPI;
 using Shockah.Kokoro.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -74,6 +75,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
 		helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 		helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
+		helper.Events.Multiplayer.PeerDisconnected += OnPeerDisconnected;
 
 		RegisterModMessageHandler<NetMessage.QueueOvernightAffixChoice>(OnQueueOvernightAffixChoiceMessageReceived);
 		RegisterModMessageHandler<NetMessage.UpdateAffixChoiceMenuConfig>(OnUpdateAffixChoiceMenuConfigMessageReceived);
@@ -389,6 +391,12 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		SendModMessage(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()), e.Peer);
 	}
 
+	private void OnPeerDisconnected(object? sender, PeerDisconnectedEventArgs e)
+	{
+		PlayerChoices.Remove(e.Peer.GetPlayer());
+		ProceedWithChoices(playerIDToIgnore: e.Peer.PlayerID);
+	}
+
 	private void OnQueueOvernightAffixChoiceMessageReceived(NetMessage.QueueOvernightAffixChoice _)
 	{
 		IsAffixChoiceMenuQueued = true;
@@ -616,46 +624,54 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			}
 		}
 
-		if (Context.IsMainPlayer)
+		ProceedWithChoices();
+	}
+
+	private void ProceedWithChoices(long? playerIDToIgnore = null)
+	{
+		var offlinePlayersWhoChose = PlayerChoices.Keys.Where(player => !Game1.getOnlineFarmers().Contains(player)).ToList();
+		foreach (var player in offlinePlayersWhoChose)
+			PlayerChoices.Remove(player);
+
+		if (Game1.activeClickableMenu is not AffixChoiceMenu && !IsAffixChoiceMenuQueued)
+			return;
+		if (!Context.IsMainPlayer)
+			return;
+		if (PlayerChoices.Count < Game1.getOnlineFarmers().Where(player => player.UniqueMultiplayerID != playerIDToIgnore).Count())
+			return;
+
+		var groupedChoices = PlayerChoices
+			.GroupBy(kvp => kvp.Value)
+			.Select(group => (Choice: group.Key, Players: group.Select(kvp => kvp.Key).ToList()))
+			.OrderByDescending(group => group.Players.Count)
+			.ToList();
+		int mostVotes = groupedChoices[0].Players.Count;
+		var topChoices = groupedChoices.TakeWhile(group => group.Players.Count == mostVotes).Select(group => group.Choice).ToList();
+		var choice = Game1.random.NextElement(topChoices);
+
+		if (choice is PlayerChoice.Choice affixChoice)
 		{
-			if (PlayerChoices.Count != Game1.getOnlineFarmers().Count)
-				return;
-
-			var groupedChoices = PlayerChoices
-				.GroupBy(kvp => kvp.Value)
-				.Select(group => (Choice: group.Key, Players: group.Select(kvp => kvp.Key).ToList()))
-				.OrderByDescending(group => group.Players.Count)
-				.ToList();
-			int mostVotes = groupedChoices[0].Players.Count;
-			var topChoices = groupedChoices.TakeWhile(group => group.Players.Count == mostVotes).Select(group => group.Choice).ToList();
-			var choice = Game1.random.NextElement(topChoices);
-
-			if (choice is PlayerChoice.Choice affixChoice)
-			{
-				var newAffixes = new HashSet<ISeasonAffix>();
-				if (Config.Incremental)
-					foreach (var affix in SaveData.ActiveAffixes)
-						newAffixes.Add(affix);
-				foreach (var affix in affixChoice.Affixes)
+			var newAffixes = new HashSet<ISeasonAffix>();
+			if (Config.Incremental)
+				foreach (var affix in SaveData.ActiveAffixes)
 					newAffixes.Add(affix);
+			foreach (var affix in affixChoice.Affixes)
+				newAffixes.Add(affix);
 
-				ChangeActiveAffixes(newAffixes);
-				SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(SaveData.ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+			ChangeActiveAffixes(newAffixes);
+			SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(SaveData.ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 
-				if (Game1.activeClickableMenu is AffixChoiceMenu menu)
-					menu.SetConfirmedAffixSetChoice(affixChoice.Affixes);
-				else
-					Monitor.Log("Tried to confirm affix set choice, but our menu is gone???", LogLevel.Error);
-			}
-			else if (choice is PlayerChoice.Reroll)
-			{
-				// TODO: handle reroll
-			}
-			else if (choice is PlayerChoice.Invalid)
-			{
-				Monitor.Log("Due to mod mismatch, the players chose an invalid set of affixes. Closing the menu.", LogLevel.Error);
-				SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(null));
-			}
+			if (Game1.activeClickableMenu is AffixChoiceMenu menu)
+				menu.SetConfirmedAffixSetChoice(affixChoice.Affixes);
+		}
+		else if (choice is PlayerChoice.Reroll)
+		{
+			// TODO: handle reroll
+		}
+		else if (choice is PlayerChoice.Invalid)
+		{
+			Monitor.Log("Due to mod mismatch, the players chose an invalid set of affixes. Closing the menu.", LogLevel.Error);
+			SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(null));
 		}
 	}
 
