@@ -36,7 +36,7 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { new SpaceCoreSkill("drbirbdev.Socializing").UniqueID };
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		UpdateDispositions();
 		Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
@@ -44,7 +44,7 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 		Mod.Helper.Events.Content.AssetsInvalidated += OnAssetsInvalidated;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 		Mod.Helper.Events.GameLoop.SaveLoaded -= OnSaveLoaded;

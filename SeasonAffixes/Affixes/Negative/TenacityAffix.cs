@@ -40,12 +40,12 @@ internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;
 	}

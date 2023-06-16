@@ -43,13 +43,13 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	public void OnRegister()
 		=> Apply(Mod.Harmony);
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");

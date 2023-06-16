@@ -148,7 +148,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				return;
 			}
 
-			ActivateAffix(affix);
+			ActivateAffix(affix, AffixActivationContext.UserConfiguration);
 		});
 		helper.ConsoleCommands.Add("affixes_deactivate", "Deactivates a seasonal affix with given ID.", (_, args) =>
 		{
@@ -166,9 +166,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				return;
 			}
 
-			DeactivateAffix(affix);
+			DeactivateAffix(affix, AffixActivationContext.UserConfiguration);
 		});
-		helper.ConsoleCommands.Add("affixes_deactivate_all", "Deactivates all seasonal affixes.", (_, _) => DeactivateAllAffixes());
+		helper.ConsoleCommands.Add("affixes_deactivate_all", "Deactivates all seasonal affixes.", (_, _) => DeactivateAllAffixes(AffixActivationContext.UserConfiguration));
 		helper.ConsoleCommands.Add("affixes_queue_choice", "Queues an overnight affix choice menu.", (_, _) => QueueOvernightAffixChoice());
 		helper.ConsoleCommands.Add("affixes_clear_history", "Clears affix choice history.", (_, _) =>
 		{
@@ -348,12 +348,12 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 		foreach (var affix in SaveData.ActiveAffixes)
 		{
-			affix.OnActivate();
-			AffixActivated?.Invoke(affix);
+			affix.OnActivate(AffixActivationContext.SaveLoadedOrUnloaded);
+			AffixActivated?.Invoke(new(affix, AffixActivationContext.SaveLoadedOrUnloaded));
 		}
 		Monitor.Log($"Loaded save file. Active affixes:\n{string.Join("\n", SaveData.ActiveAffixes.Select(a => a.UniqueID))}", LogLevel.Info);
 
-		UpdatePermanentlyActiveAffixes();
+		UpdatePermanentlyActiveAffixes(AffixActivationContext.SaveLoadedOrUnloaded);
 	}
 
 	private void OnSaving(object? sender, SavingEventArgs e)
@@ -369,8 +369,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	{
 		foreach (var affix in SaveData.ActiveAffixes)
 		{
-			affix.OnDeactivate();
-			AffixDeactivated?.Invoke(affix);
+			affix.OnDeactivate(AffixActivationContext.SaveLoadedOrUnloaded);
+			AffixDeactivated?.Invoke(new(affix, AffixActivationContext.SaveLoadedOrUnloaded));
 		}
 		Monitor.Log("Unloaded save file. Deactivating all affixes.", LogLevel.Debug);
 	}
@@ -388,7 +388,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	private void OnPeerConnected(object? sender, PeerConnectedEventArgs e)
 	{
-		SendModMessage(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()), e.Peer);
+		SendModMessage(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet(), AffixActivationContext.SaveLoadedOrUnloaded), e.Peer);
 	}
 
 	private void OnPeerDisconnected(object? sender, PeerDisconnectedEventArgs e)
@@ -429,7 +429,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	private void OnAffixSetChoiceMessageReceived(Farmer sender, NetMessage.AffixSetChoice message)
 	{
-		var choice = new PlayerChoice.Choice(message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToHashSet());
+		var choice = new PlayerChoice.Choice(message.Affixes.Select(GetAffix).WhereNotNull().ToHashSet());
 		if (choice.Affixes.Count != message.Affixes.Count)
 		{
 			Monitor.Log($"Player {sender.displayName} voted, but seems to be running a different set of mods, making the vote invalid.", LogLevel.Error);
@@ -456,7 +456,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				return;
 			}
 
-			var affixes = message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToHashSet();
+			var affixes = message.Affixes.Select(GetAffix).WhereNotNull().ToHashSet();
 			if (affixes.Count != message.Affixes.Count)
 			{
 				Monitor.Log("Due to mod mismatch, the players chose an invalid set of affixes. Closing the menu.", LogLevel.Error);
@@ -474,8 +474,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	private void OnUpdateActiveAffixesMessageReceived(NetMessage.UpdateActiveAffixes message)
 	{
-		var affixes = message.Affixes.Select(id => GetAffix(id)).WhereNotNull().ToList();
-		LocalChangeActiveAffixes(affixes);
+		var affixes = message.Affixes.Select(GetAffix).WhereNotNull().ToList();
+		LocalChangeActiveAffixes(affixes, message.Context);
 	}
 
 	private void SetupConfig()
@@ -505,7 +505,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				foreach (var affix in AllAffixesStorage.Values)
 					affix.OnSaveConfig();
 
-				UpdatePermanentlyActiveAffixes();
+				UpdatePermanentlyActiveAffixes(AffixActivationContext.UserConfiguration);
 				WriteConfig();
 				LogConfig();
 				SetupConfig();
@@ -658,7 +658,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			foreach (var affix in affixChoice.Affixes)
 				newAffixes.Add(affix);
 
-			ChangeActiveAffixes(newAffixes);
+			ChangeActiveAffixes(newAffixes, AffixActivationContext.Choice);
 			SendModMessageToEveryone(new NetMessage.ConfirmAffixSetChoice(SaveData.ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
 
 			if (Game1.activeClickableMenu is AffixChoiceMenu menu)
@@ -675,7 +675,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		}
 	}
 
-	private void UpdatePermanentlyActiveAffixes()
+	private void UpdatePermanentlyActiveAffixes(AffixActivationContext context)
 	{
 		var newAffixes = AllAffixesStorage.Where(kvp => Config.PermanentAffixes.Contains(kvp.Key)).Select(kvp => kvp.Value).ToHashSet();
 		var toDeactivate = ActivePermanentAffixesStorage.Where(a => !newAffixes.Contains(a)).ToList();
@@ -683,50 +683,50 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 		foreach (var affix in toDeactivate)
 		{
-			affix.OnDeactivate();
+			affix.OnDeactivate(context);
 			ActivePermanentAffixesStorage.Remove(affix);
-			AffixDeactivated?.Invoke(affix);
+			AffixDeactivated?.Invoke(new(affix, context));
 			Monitor.Log($"Activated (permanent) affix `{affix.UniqueID}`.", LogLevel.Info);
 		}
 		foreach (var affix in toActivate)
 		{
 			ActivePermanentAffixesStorage.Add(affix);
-			affix.OnActivate();
-			AffixActivated?.Invoke(affix);
+			affix.OnActivate(context);
+			AffixActivated?.Invoke(new(affix, context));
 			Monitor.Log($"Deactivated (permanent) affix `{affix.UniqueID}`.", LogLevel.Info);
 		}
 	}
 
-	private void LocalActivateAffix(ISeasonAffix affix)
+	private void LocalActivateAffix(ISeasonAffix affix, AffixActivationContext context)
 	{
 		if (SaveData.ActiveAffixes.Contains(affix))
 			return;
 		SaveData.ActiveAffixes.Add(affix);
-		affix.OnActivate();
-		AffixActivated?.Invoke(affix);
+		affix.OnActivate(context);
+		AffixActivated?.Invoke(new(affix, context));
 		Monitor.Log($"Activated affix `{affix.UniqueID}`.", LogLevel.Info);
 	}
 
-	private void LocalDeactivateAffix(ISeasonAffix affix)
+	private void LocalDeactivateAffix(ISeasonAffix affix, AffixActivationContext context)
 	{
 		if (!SaveData.ActiveAffixes.Contains(affix))
 			return;
-		affix.OnDeactivate();
+		affix.OnDeactivate(context);
 		SaveData.ActiveAffixes.Remove(affix);
-		AffixDeactivated?.Invoke(affix);
+		AffixDeactivated?.Invoke(new(affix, context));
 		Monitor.Log($"Deactivated affix `{affix.UniqueID}`.", LogLevel.Info);
 	}
 
-	private void LocalChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes)
+	private void LocalChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes, AffixActivationContext context)
 	{
 		var affixSet = affixes.ToHashSet();
 		var toDeactivate = SaveData.ActiveAffixes.Where(a => !affixSet.Contains(a)).ToList();
 		var toActivate = affixSet.Where(a => !SaveData.ActiveAffixes.Contains(a)).ToList();
 
 		foreach (var affix in toDeactivate)
-			LocalDeactivateAffix(affix);
+			LocalDeactivateAffix(affix, context);
 		foreach (var affix in toActivate)
-			LocalActivateAffix(affix);
+			LocalActivateAffix(affix, context);
 	}
 
 	private static IAffixScoreProvider CreateAffixScoreProvider()
@@ -865,8 +865,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	public event Action<ISeasonAffix>? AffixRegistered;
 	public event Action<ISeasonAffix>? AffixUnregistered;
-	public event Action<ISeasonAffix>? AffixActivated;
-	public event Action<ISeasonAffix>? AffixDeactivated;
+	public event Action<AffixActivationEvent>? AffixActivated;
+	public event Action<AffixActivationEvent>? AffixDeactivated;
 
 	public IReadOnlyDictionary<string, ISeasonAffix> AllAffixes => AllAffixesStorage.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 	public IReadOnlySet<ISeasonAffix> ActiveAffixes => SaveData.ActiveAffixes.Union(ActivePermanentAffixesStorage).ToHashSet();
@@ -909,7 +909,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	{
 		if (!AllAffixesStorage.ContainsKey(affix.UniqueID))
 			return;
-		DeactivateAffix(affix);
+		DeactivateAffix(affix, AffixActivationContext.Other);
 
 		affix.OnUnregister();
 
@@ -934,37 +934,37 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	public void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider)
 		=> AffixCombinationWeightProviders.Remove(provider);
 
-	public void ActivateAffix(ISeasonAffix affix)
+	public void ActivateAffix(ISeasonAffix affix, AffixActivationContext context)
 	{
 		if (affix is MonotonyAffix)
 			return;
 		if (SaveData.ActiveAffixes.Contains(affix))
 			return;
-		LocalActivateAffix(affix);
-        SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+		LocalActivateAffix(affix, context);
+        SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet(), context));
 	}
 
-	public void DeactivateAffix(ISeasonAffix affix)
+	public void DeactivateAffix(ISeasonAffix affix, AffixActivationContext context)
 	{
 		if (affix is MonotonyAffix)
 			return;
 		if (!SaveData.ActiveAffixes.Contains(affix))
 			return;
-		LocalDeactivateAffix(affix);
-		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+		LocalDeactivateAffix(affix, context);
+		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet(), context));
 	}
 
-	public void DeactivateAllAffixes()
+	public void DeactivateAllAffixes(AffixActivationContext context)
 	{
 		foreach (var affix in SaveData.ActiveAffixes.ToList())
-			LocalDeactivateAffix(affix);
-		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+			LocalDeactivateAffix(affix, context);
+		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet(), context));
 	}
 
-	public void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes)
+	public void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes, AffixActivationContext context)
 	{
-		LocalChangeActiveAffixes(affixes);
-		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet()));
+		LocalChangeActiveAffixes(affixes, context);
+		SendModMessageToEveryone(new NetMessage.UpdateActiveAffixes(ActiveAffixes.Select(a => a.UniqueID).ToHashSet(), context));
 	}
 
 	public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)

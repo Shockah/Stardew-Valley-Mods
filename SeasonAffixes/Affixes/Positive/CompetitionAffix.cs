@@ -57,13 +57,13 @@ internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 	public void OnRegister()
 		=> Apply(Mod.Harmony);
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 		Mod.Helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 		Mod.Helper.Events.GameLoop.UpdateTicked -= OnUpdateTicked;

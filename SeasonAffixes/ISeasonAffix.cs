@@ -15,8 +15,9 @@ public interface ISeasonAffix
 
 	void OnRegister() { }
 	void OnUnregister() { }
-	void OnActivate() { }
-	void OnDeactivate() { }
+
+	void OnActivate(AffixActivationContext context) { }
+	void OnDeactivate(AffixActivationContext context) { }
 
 	void SetupConfig(IManifest manifest) { }
 	void OnSaveConfig() { }

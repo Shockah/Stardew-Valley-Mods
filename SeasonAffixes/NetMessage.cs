@@ -14,7 +14,8 @@ internal static class NetMessage
 	);
 
 	public record UpdateActiveAffixes(
-		HashSet<string> Affixes
+		HashSet<string> Affixes,
+		AffixActivationContext Context
 	);
 
 	public record ConfirmAffixSetChoice(

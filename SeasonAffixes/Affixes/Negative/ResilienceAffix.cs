@@ -36,13 +36,13 @@ internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
 	public double GetProbabilityWeight(OrdinalSeason season)
 		=> season.Season == Season.Winter ? 0 : 1;
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Monsters");
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Monsters");

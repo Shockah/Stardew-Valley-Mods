@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable enable
+
 namespace Shockah.SeasonAffixes;
 
 public interface ISeasonAffixesApi
@@ -9,8 +11,8 @@ public interface ISeasonAffixesApi
 
 	event Action<ISeasonAffix>? AffixRegistered;
 	event Action<ISeasonAffix>? AffixUnregistered;
-	event Action<ISeasonAffix>? AffixActivated;
-	event Action<ISeasonAffix>? AffixDeactivated;
+	event Action<AffixActivationEvent>? AffixActivated;
+	event Action<AffixActivationEvent>? AffixDeactivated;
 
 	IReadOnlyDictionary<string, ISeasonAffix> AllAffixes { get; }
 	IReadOnlySet<ISeasonAffix> ActiveAffixes { get; }
@@ -28,10 +30,10 @@ public interface ISeasonAffixesApi
 	void RegisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 	void UnregisterAffixCombinationWeightProvider(Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?> provider);
 
-	void ActivateAffix(ISeasonAffix affix);
-	void DeactivateAffix(ISeasonAffix affix);
-	void DeactivateAllAffixes();
-	void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes);
+	void ActivateAffix(ISeasonAffix affix, AffixActivationContext context);
+	void DeactivateAffix(ISeasonAffix affix, AffixActivationContext context);
+	void DeactivateAllAffixes(AffixActivationContext context);
+	void ChangeActiveAffixes(IEnumerable<ISeasonAffix> affixes, AffixActivationContext context);
 
 	IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes);
 	string GetSeasonName(IReadOnlyList<ISeasonAffix> affixes);

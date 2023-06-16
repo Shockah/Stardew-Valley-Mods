@@ -45,12 +45,12 @@ internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.WoodcuttingAspect };
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 	}

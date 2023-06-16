@@ -27,7 +27,7 @@ internal sealed class FortuneAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> 0;
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 
@@ -36,7 +36,7 @@ internal sealed class FortuneAffix : BaseSeasonAffix, ISeasonAffix
 		Game1.player.team.sharedDailyLuck.Value += Mod.Config.FortuneValue;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		if (!Context.IsMainPlayer)
 			return;

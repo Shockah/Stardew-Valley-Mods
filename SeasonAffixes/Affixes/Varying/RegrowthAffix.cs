@@ -59,14 +59,14 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 	public double GetProbabilityWeight(OrdinalSeason season)
 		=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0;
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Crops");
 		UpdateExistingCrops();
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Crops");

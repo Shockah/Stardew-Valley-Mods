@@ -24,13 +24,13 @@ internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FishingAspect };
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Fish");
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 		Mod.Helper.GameContent.InvalidateCache("Data\\Fish");

@@ -26,14 +26,14 @@ internal sealed class MediocrityAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> 1;
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		AffixApplied.Clear();
 		Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
 		MachineTracker.MachineChangedEvent += OnMachineChanged;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
 		MachineTracker.MachineChangedEvent -= OnMachineChanged;

@@ -110,21 +110,21 @@ internal sealed class SkillAffix : ISeasonAffix
 	public void OnRegister()
 		=> Apply(Mod.Harmony);
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 		Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
 
-		if (Skill is VanillaSkill skill)
+		if (!(context is AffixActivationContext.Choice or AffixActivationContext.SaveLoadedOrUnloaded) && Skill is VanillaSkill skill)
 			ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 		Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
 
-		if (Skill is VanillaSkill skill)
+		if (!(context is AffixActivationContext.Choice or AffixActivationContext.SaveLoadedOrUnloaded) && Skill is VanillaSkill skill)
 			ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
 	}
 
@@ -186,6 +186,12 @@ internal sealed class SkillAffix : ISeasonAffix
 		if (IsHarmonySetup)
 			return;
 		IsHarmonySetup = true;
+
+		//harmony.TryPatch(
+		//	monitor: Mod.Monitor,
+		//	original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.ClearBuffs)),
+		//	postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Farmer_ClearBuffs_Postfix)))
+		//);
 
 		harmony.TryPatch(
 			monitor: Mod.Monitor,

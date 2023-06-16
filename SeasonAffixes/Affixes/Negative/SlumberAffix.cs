@@ -28,12 +28,12 @@ internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
 	public int GetNegativity(OrdinalSeason season)
 		=> 1;
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 	}

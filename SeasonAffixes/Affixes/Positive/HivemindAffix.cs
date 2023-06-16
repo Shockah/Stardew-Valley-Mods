@@ -46,12 +46,12 @@ internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.FlowersAspect };
 
-	public void OnActivate()
+	public void OnActivate(AffixActivationContext context)
 	{
 		MachineTracker.MachineChangedEvent += OnMachineChanged;
 	}
 
-	public void OnDeactivate()
+	public void OnDeactivate(AffixActivationContext context)
 	{
 		MachineTracker.MachineChangedEvent -= OnMachineChanged;
 	}
