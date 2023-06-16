@@ -10,6 +10,7 @@ public partial class ModConfig : IVersioned.Modifiable
 	[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
 
 	[JsonProperty] public AffixSetChoicePeriod ChoicePeriod { get; internal set; } = AffixSetChoicePeriod.Season;
+	[JsonProperty] public bool ChoiceOnYear1Spring2 { get; internal set; } = false;
 	[JsonProperty] public bool Incremental { get; internal set; } = false;
 	[JsonProperty] public int Choices { get; internal set; } = 2;
 	//[JsonProperty] public int RerollsPerSeason { get; internal set; } = 1;

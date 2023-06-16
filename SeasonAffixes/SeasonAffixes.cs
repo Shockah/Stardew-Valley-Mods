@@ -298,6 +298,13 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 		var today = Game1.Date;
 		var tomorrow = Game1.Date.GetByAddingDays(1);
+
+		if (Config.ChoiceOnYear1Spring2 && tomorrow.Year == 1 && tomorrow.GetSeason() == Season.Spring && tomorrow.DayOfMonth == 2)
+		{
+			QueueOvernightAffixChoice();
+			return;
+		}
+
 		switch (Config.ChoicePeriod)
 		{
 			case AffixSetChoicePeriod.Day:
@@ -497,8 +504,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			}
 		);
 
-		helper.AddBoolOption("config.incremental", () => Config.Incremental);
 		helper.AddEnumOption("config.choicePeriod", () => Config.ChoicePeriod);
+		helper.AddBoolOption("config.choiceOnYear1Spring2", () => Config.ChoiceOnYear1Spring2);
+		helper.AddBoolOption("config.incremental", () => Config.Incremental);
 		helper.AddNumberOption("config.choices", () => Config.Choices, min: 1, max: 4, interval: 1);
 		helper.AddNumberOption("config.affixRepeatPeriod", () => Config.AffixRepeatPeriod, min: 0);
 		helper.AddNumberOption("config.affixSetRepeatPeriod", () => Config.AffixSetRepeatPeriod, min: 0);

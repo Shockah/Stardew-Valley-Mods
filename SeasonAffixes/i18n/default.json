@@ -198,6 +198,8 @@
 	"config.choicePeriod.value.TwoWeeks": "Two weeks",
 	"config.choicePeriod.value.Season": "Season",
 	"config.choicePeriod.value.Year": "Year",
+	"config.choiceOnYear1Spring2.name": "Choice on Year 1 Spring 2",
+	"config.choiceOnYear1Spring2.tooltip": "Should there be an additional affix choice on Year 1 Spring 2. For technical reasons, it is not possible to start a new save with an affix choice - this is a workaround for that.",
 	"config.incremental.name": "Incremental",
 	"config.incremental.tooltip": "When enabled, chosen affixes will be *added* to the currently active affixes, instead of replacing them.\nIf enabled, consider lowering the affix set entry positivity and negativity sums.",
 	"config.choices.name": "Choices",
