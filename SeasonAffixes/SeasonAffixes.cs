@@ -816,8 +816,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 			int seed = 0;
 			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
-			seed = 31 * seed + (int)season.Season;
-			seed = 31 * seed + season.Year;
+			seed = 31 * seed + date.TotalDays;
 			Random random = new(seed);
 
 			WeightedRandom<AffixSetEntry> affixSetEntries = new();
