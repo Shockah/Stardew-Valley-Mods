@@ -185,6 +185,10 @@
 	"affix.neutral.WildGrowth.config.newSeedChance.name": "New seed chance",
 	"affix.neutral.WildGrowth.config.newSeedChance.tooltip": "The chance for each tree to create a new seed nearby each day.",
 
+	// implementation details
+	"affix.neutral.Monotony.name": "Monotony",
+	"affix.neutral.Monotony.description": "No special effects.",
+
 	// config
 	"config.incremental.name": "Incremental",
 	"config.incremental.tooltip": "When enabled, chosen affixes will be *added* to the currently active affixes, instead of replacing them.\nIf enabled, consider lowering the affix set entry positivity and negativity sums.",

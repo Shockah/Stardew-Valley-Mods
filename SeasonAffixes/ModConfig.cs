@@ -10,11 +10,11 @@ public partial class ModConfig : IVersioned.Modifiable
 	public record AffixSetEntry(
 		int Positive = 0,
 		int Negative = 0,
-		double Weight = 1.0
+		double Weight = 0
 	)
 	{
 		internal bool IsValid()
-			=> Positive >= 0 && Negative >= 0 && (Positive + Negative) > 0 && Weight > 0;
+			=> Positive >= 0 && Negative >= 0 && (Positive + Negative) >= 0 && Weight > 0;
 	}
 
 	[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }

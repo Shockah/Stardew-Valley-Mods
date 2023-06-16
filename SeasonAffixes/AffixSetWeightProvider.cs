@@ -25,7 +25,9 @@ internal sealed class DefaultProbabilityAffixSetWeightProvider : IAffixSetWeight
 	}
 
 	public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
-		=> combination.Average(a => ProbabilityWeightProvider.GetProbabilityWeight(a, season));
+		=> combination.Count == 0
+		? 0
+		: combination.Average(a => ProbabilityWeightProvider.GetProbabilityWeight(a, season));
 }
 
 internal sealed class MultiplyingAffixSetWeightProvider : IAffixSetWeightProvider
@@ -71,7 +73,9 @@ internal sealed class ConfigAffixSetWeightProvider : IAffixSetWeightProvider
 	}
 
 	public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
-		=> combination.Average(a => AffixWeights.TryGetValue(a.UniqueID, out var weight) ? weight : 1.0);
+		=> combination.Count == 0
+		? 0
+		: combination.Average(a => AffixWeights.TryGetValue(a.UniqueID, out var weight) ? weight : 1.0);
 }
 
 internal sealed class CustomAffixSetWeightProvider : IAffixSetWeightProvider

@@ -33,6 +33,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 	private Dictionary<string, HashSet<ISeasonAffix>> AffixTagDictionary { get; init; } = new();
 	private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, bool?>> AffixConflictInfoProviders { get; init; } = new();
 	private List<Func<IReadOnlySet<ISeasonAffix>, OrdinalSeason, double?>> AffixCombinationWeightProviders { get; init; } = new();
+	private ISeasonAffix MonotonyAffix { get; set; } = null!;
 
 	private readonly PerScreen<SaveData> PerScreenSaveData = new(() => new());
 	private readonly PerScreen<bool> PerScreenIsAffixChoiceMenuQueued = new(() => false);
@@ -272,6 +273,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			)
 		})
 			RegisterAffix(affix);
+
+		RegisterAffix(MonotonyAffix = new MonotonyAffix());
 
 		// conflicts
 		RegisterAffixConflictInfoProvider((affixes, _) => affixes.Any(a => a is DroughtAffix) && affixes.Any(a => a is ThunderAffix) ? true : null);
@@ -557,13 +560,24 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		if (player == Game1.player)
 		{
 			if (anyChoice is PlayerChoice.Choice choice)
-				SendModMessageToEveryone(new NetMessage.AffixSetChoice(choice.Affixes.Select(a => a.UniqueID).ToHashSet()));
+			{
+				var affixes = choice.Affixes;
+				if (affixes.Count == 1 && affixes.First() == MonotonyAffix)
+					affixes = new HashSet<ISeasonAffix>();
+				SendModMessageToEveryone(new NetMessage.AffixSetChoice(affixes.Select(a => a.UniqueID).ToHashSet()));
+			}
 			else if (anyChoice is PlayerChoice.Reroll)
+			{
 				SendModMessageToEveryone(new NetMessage.RerollChoice());
+			}
 			else if (anyChoice is PlayerChoice.Invalid)
-				{ } // do nothing
+			{
+				// do nothing
+			}
 			else
+			{
 				throw new NotImplementedException($"Unimplemented player choice {anyChoice}.");
+			}
 		}
 
 		if (Context.IsMainPlayer)
@@ -766,6 +780,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			var affixSetGenerator = Instance.CreateAffixSetGenerator(affixesProvider, affixScoreProvider, affixSetWeightProvider, affixSetEntry, random);
 
 			var choices = affixSetGenerator.Generate(season).Take(Instance.Config.Choices).ToList();
+			if (choices.Count == 0)
+				choices.Add(new HashSet<ISeasonAffix> { Instance.MonotonyAffix });
 
 			Instance.SaveData.AffixChoiceHistory.Add(choices.SelectMany(set => set).ToHashSet());
 			while (Instance.SaveData.AffixChoiceHistory.Count > Instance.Config.AffixRepeatPeriod)
@@ -897,8 +913,11 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 	public IReadOnlyList<ISeasonAffix> GetUIOrderedAffixes(OrdinalSeason season, IEnumerable<ISeasonAffix> affixes)
 	{
-		var affixScoreProvider = CreateAffixScoreProvider();
 		var affixList = affixes.ToList();
+		if (affixList.Count == 0)
+			affixList.Add(MonotonyAffix);
+
+		var affixScoreProvider = CreateAffixScoreProvider();
 		var relatedAffixDictionary = affixList.ToDictionary(a => a, a => affixList.Where(a2 => a2.Tags.Any(t => a.Tags.Contains(t))).ToHashSet());
 
 		var results = new List<ISeasonAffix>();
