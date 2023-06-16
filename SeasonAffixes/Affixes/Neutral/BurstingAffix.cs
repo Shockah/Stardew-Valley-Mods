@@ -10,6 +10,7 @@ using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Monsters;
+using System;
 using System.Collections.Generic;
 using SObject = StardewValley.Object;
 
@@ -25,6 +26,10 @@ partial class ModConfig
 
 internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 {
+	private const int CherryBombID = 286;
+	private const int BombID = 287;
+	private const int MegaBombID = 288;
+
 	private static bool IsHarmonySetup = false;
 	private static readonly WeakCounter<GameLocation> MonsterDropCallCounter = new();
 
@@ -85,6 +90,16 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_monsterDrop_Prefix)), priority: Priority.First),
 			finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_monsterDrop_Finalizer)), priority: Priority.Last)
 		);
+
+		Type? stopRugRemovalSObjectPatchesType = AccessTools.TypeByName("StopRugRemoval.HarmonyPatches.SObjectPatches, StopRugRemoval");
+		if (stopRugRemovalSObjectPatchesType is not null)
+		{
+			harmony.TryPatch(
+				monitor: Mod.Monitor,
+				original: () => AccessTools.Method(stopRugRemovalSObjectPatchesType, "PrefixPlacementAction"),
+				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(StopRugRemoval_SObjectPatches_PrefixPlacementAction_Prefix)))
+			);
+		}
 	}
 
 	private static bool TryToPlaceItemRecursively(int itemIndex, GameLocation location, Vector2 centerTile, Farmer player, int maxIterations = 16)
@@ -142,9 +157,9 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 
 		WeightedRandom<int?> weightedRandom = new();
 		weightedRandom.Add(new(Mod.Config.BurstingNoBombWeight, null));
-		weightedRandom.Add(new(Mod.Config.BurstingCherryBombWeight, 286));
-		weightedRandom.Add(new(Mod.Config.BurstingBombWeight, 287));
-		weightedRandom.Add(new(Mod.Config.BurstingMegaBombWeight, 288));
+		weightedRandom.Add(new(Mod.Config.BurstingCherryBombWeight, CherryBombID));
+		weightedRandom.Add(new(Mod.Config.BurstingBombWeight, BombID));
+		weightedRandom.Add(new(Mod.Config.BurstingMegaBombWeight, MegaBombID));
 
 		int? itemToSpawn = weightedRandom.Next(Game1.random);
 		if (itemToSpawn is null)
@@ -158,5 +173,18 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 		if (!Mod.IsAffixActive(a => a is BurstingAffix))
 			return;
 		MonsterDropCallCounter.Pop(__instance);
+	}
+
+	private static bool StopRugRemoval_SObjectPatches_PrefixPlacementAction_Prefix(SObject __0, GameLocation location, ref bool __result)
+	{
+		if (!Mod.IsAffixActive(a => a is BurstingAffix))
+			return true;
+		if (__0.bigCraftable.Value || !(__0.ParentSheetIndex is CherryBombID or BombID or MegaBombID))
+			return true;
+		if (MonsterDropCallCounter.Get(location) == 0)
+			return true;
+
+		__result = true;
+		return false;
 	}
 }
