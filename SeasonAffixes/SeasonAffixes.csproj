@@ -2,7 +2,7 @@
 	<Import Project="..\Configuration.props" />
 	<PropertyGroup>
 		<RootNamespace>Shockah.SeasonAffixes</RootNamespace>
-		<Version>1.0.1</Version>
+		<Version>1.1.0</Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Kokoro\Kokoro.csproj" Private="false" />

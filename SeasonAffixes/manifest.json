@@ -1,7 +1,7 @@
 ﻿{
     "Name": "Season Affixes",
     "Author": "Shockah",
-    "Version": "1.0.1",
+    "Version": "1.1.0",
     "Description": "Adds seasonal \"affixes\", making every season unique in its own way.",
     "UniqueID": "Shockah.SeasonAffixes",
     "EntryDll": "SeasonAffixes.dll",
