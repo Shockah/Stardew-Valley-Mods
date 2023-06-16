@@ -327,7 +327,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 					return;
 				break;
 			case AffixSetChoicePeriod.Season:
-				if (tomorrow.Year == today.Year && tomorrow.GetSeason() != today.GetSeason())
+				if (tomorrow.Year == today.Year && tomorrow.GetSeason() == today.GetSeason())
 					return;
 				break;
 			case AffixSetChoicePeriod.Year:
