@@ -855,7 +855,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		List<IClickableMenu> newMenus = new();
 		newMenus.AddRange(Game1.endOfNightMenus.Where(m => m is SaveGameMenu or ShippingMenu));
 		newMenus.Add(new AffixChoiceMenu());
-		newMenus.AddRange(Game1.endOfNightMenus.Where(m => !newMenus.Contains(m)));
+		newMenus.AddRange(Game1.endOfNightMenus.Where(m => !newMenus.Contains(m)).Reverse());
 		Game1.endOfNightMenus = new Stack<IClickableMenu>(newMenus);
 
 		Instance.PlayerChoices.Clear();
