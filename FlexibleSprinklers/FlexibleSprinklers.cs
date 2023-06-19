@@ -383,6 +383,22 @@ namespace Shockah.FlexibleSprinklers
 		internal SprinklerInfo GetSprinklerInfo(SObject sprinkler)
 		{
 			var layout = GetUnmodifiedSprinklerCoverage(sprinkler);
+			if (layout.SetEquals(SprinklerInfo.DefaultTier1Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier1Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier2Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier2Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier3Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier3Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier4Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier4Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier5Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier5Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier6Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier6Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier7Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier7Coverage;
+			else if (layout.SetEquals(SprinklerInfo.DefaultTier8Coverage.Value))
+				layout = (IReadOnlySet<IntPoint>)Config.Tier8Coverage;
 			return new SprinklerInfo(sprinkler, new(new((int)sprinkler.TileLocation.X, (int)sprinkler.TileLocation.Y)), layout);
 		}
 
