@@ -93,13 +93,15 @@ public class Kokoro : BaseMod
 
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
 				.AsGuidAnchorable()
+				// split into two `Find`s, because current published FTM is built in debug and the instructions differ between these parts:
+				// just `bne.un.s` vs `ceq` + `stloc.s` + `ldloc.s` + `brfalse.s`
 				.Find(
 					ILMatches.Call("get_StartOfDay").WithAutoAnchor(out Guid callGetStartOfDayAnchor),
 					ILMatches.Stloc(stardewTimeType, originalMethod.GetMethodBody()!.LocalVariables).WithAutoAnchor(out Guid stlocStardewTimeAnchor),
 					ILMatches.Ldloca(stardewTimeType, originalMethod.GetMethodBody()!.LocalVariables),
-					ILMatches.Call("get_Time").WithAutoAnchor(out Guid callGetTimeAnchor),
-					ILMatches.LdcI4(600),
-					ILMatches.BneUn,
+					ILMatches.Call("get_Time").WithAutoAnchor(out Guid callGetTimeAnchor)
+				)
+				.Find(
 					ILMatches.Ldsfld("TimedSpawns").WithAutoAnchor(out Guid ldsfldTimedSpawnsAnchor),
 					ILMatches.LdcI4(600),
 					ILMatches.Call("op_Implicit").WithAutoAnchor(out Guid callOpImplicitAnchor),
