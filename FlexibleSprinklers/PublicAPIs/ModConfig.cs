@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Shockah.Kokoro;
 using StardewModdingAPI;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Shockah.FlexibleSprinklers
 {
@@ -22,17 +25,18 @@ namespace Shockah.FlexibleSprinklers
 		[JsonProperty] public bool CoverageOverlayDuplicates { get; internal set; } = true;
 		[JsonProperty] public bool ShowCoverageOnPlacement { get; internal set; } = true;
 		[JsonProperty] public bool ShowCoverageOnAction { get; internal set; } = true;
-		[JsonProperty] public int Tier1Power { get; internal set; } = 4;
-		[JsonProperty] public int Tier2Power { get; internal set; } = 3 * 3 - 1;
-		[JsonProperty] public int Tier3Power { get; internal set; } = 5 * 5 - 1;
-		[JsonProperty] public int Tier4Power { get; internal set; } = 7 * 7 - 1;
-		[JsonProperty] public int Tier5Power { get; internal set; } = 9 * 9 - 1;
-		[JsonProperty] public int Tier6Power { get; internal set; } = 11 * 11 - 1;
-		[JsonProperty] public int Tier7Power { get; internal set; } = 13 * 13 - 1;
-		[JsonProperty] public int Tier8Power { get; internal set; } = 15 * 15 - 1;
+		[JsonProperty] public ISet<IntPoint> Tier1Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(4).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier2Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(3 * 3 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier3Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(5 * 5 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier4Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(7 * 7 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier5Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(9 * 9 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier6Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(11 * 11 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier7Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(13 * 13 - 1).ToHashSet();
+		[JsonProperty] public ISet<IntPoint> Tier8Coverage { get; internal set; } = IntPoint.Zero.GetSpiralingTiles().Distinct().Take(15 * 15 - 1).ToHashSet();
 		[JsonProperty] public bool CompatibilityMode { get; internal set; } = true;
 		[JsonProperty] public bool WaterGardenPots { get; internal set; } = false;
 		[JsonProperty] public bool WaterPetBowl { get; internal set; } = false;
 		[JsonProperty] public bool WaterAtSprinkler { get; internal set; } = false;
+		[JsonExtensionData] internal IDictionary<string, JToken> ExtensionData { get; set; } = new Dictionary<string, JToken>();
 	}
 }
