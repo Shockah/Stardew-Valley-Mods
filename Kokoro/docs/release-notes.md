@@ -2,6 +2,12 @@
 
 # Release notes
 
+## 2.1.1
+Released 19 June 2023.
+
+* Updated the [Shrike](https://github.com/Nanoray-pl/Shrike) library to 2.1.0.
+* Patching [Farm Type Manager](https://www.nexusmods.com/stardewvalley/mods/3231) to fix an issue with mods changing the day start time or skipping 10 minute intervals.
+
 ## 2.1.0
 Released 9 June 2023.
 
