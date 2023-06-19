@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 2.1.2
+Released 19 June 2023.
+
+* Fixed the [Farm Type Manager](https://www.nexusmods.com/stardewvalley/mods/3231) patch to also work when it is built in the debug configuration (which happens to be the case for the latest published version as of writing this changelog line).
+
 ## 2.1.1
 Released 19 June 2023.
 
