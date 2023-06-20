@@ -121,17 +121,19 @@ internal partial class SelectableGridOption
 		return new((Game1.uiViewport.Width - gmcmSize.X) / 2, (Game1.uiViewport.Height - gmcmSize.Y) / 2);
 	}
 
-	private float GetCellLength(Vector2? gmcmSize = null)
+	private float GetCellScale(Vector2? gmcmSize = null)
 	{
 		gmcmSize ??= GetGMCMSize();
-		float possibleLength = (gmcmSize.Value.X - Margin - (Length - 1) * CellSpacing) / Length;
-		return possibleLength > MaxCellSize ? MaxCellSize : possibleLength;
+		float availableWidth = gmcmSize.Value.X - Margin;
+		float requiredWidthAtFullScale = Length * MaxCellSize + (Length - 1) * CellSpacing;
+		float scale = Math.Min(availableWidth / requiredWidthAtFullScale, 1f);
+		return scale;
 	}
 
-	private int GetHeight(float? cellLength = null, Vector2? gmcmSize = null)
+	private int GetHeight(float? cellScale = null, Vector2? gmcmSize = null)
 	{
-		cellLength ??= GetCellLength(gmcmSize: gmcmSize);
-		return (int)Math.Ceiling(cellLength.Value * Length + CellSpacing * (Length - 1)) + RowHeight; // extra row, we're not rendering inline
+		cellScale ??= GetCellScale(gmcmSize: gmcmSize);
+		return (int)Math.Ceiling(MaxCellSize * cellScale.Value * Length + CellSpacing * cellScale.Value * (Length - 1)) + RowHeight; // extra row, we're not rendering inline
 	}
 
 	private void Draw(SpriteBatch b, Vector2 basePosition)
@@ -147,12 +149,14 @@ internal partial class SelectableGridOption
 
 		Vector2 gmcmSize = GetGMCMSize();
 		Vector2 gmcmPosition = GetGMCMPosition(gmcmSize);
-		float cellLength = GetCellLength(gmcmSize);
+		float cellScale = GetCellScale(gmcmSize);
+		float cellLength = MaxCellSize * cellScale;
+		float cellSpacing = CellSpacing * cellScale;
 		bool hoverGMCM = mouseX >= gmcmPosition.X && mouseY >= gmcmPosition.Y && mouseX < gmcmPosition.X + gmcmSize.X && mouseY < gmcmPosition.Y + gmcmSize.Y;
 
 		Vector2 startPosition = new(gmcmPosition.X + Margin, basePosition.Y + RowHeight);
 		float widthLeft = gmcmSize.X - Margin;
-		float totalCellWidth = cellLength * Length + CellSpacing * (Length - 1);
+		float totalCellWidth = cellLength * Length + cellSpacing * (Length - 1);
 		startPosition.X += widthLeft / 2f - totalCellWidth / 2f;
 
 		for (int drawY = 0; drawY < Length; drawY++)
@@ -200,7 +204,7 @@ internal partial class SelectableGridOption
 				if (texture.Rectangle.Height * iconScale > cellLength)
 					iconScale = 1f * cellLength / texture.Rectangle.Height;
 
-				Vector2 texturePosition = new(startPosition.X + drawX * (cellLength + CellSpacing), startPosition.Y + drawY * (cellLength + CellSpacing));
+				Vector2 texturePosition = new(startPosition.X + drawX * (cellLength + cellSpacing), startPosition.Y + drawY * (cellLength + cellSpacing));
 				Vector2 textureCenterPosition = new(texturePosition.X + cellLength / 2f, texturePosition.Y + cellLength / 2f);
 				b.Draw(texture.Texture, textureCenterPosition, texture.Rectangle, Color.White, 0f, new Vector2(texture.Rectangle.Width / 2f, texture.Rectangle.Height / 2f), iconScale, SpriteEffects.None, 4f);
 
