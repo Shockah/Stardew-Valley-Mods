@@ -36,6 +36,7 @@ internal partial class SelectableGridOption
 	private readonly Lazy<TextureRectangle> UncheckedTexture = new(() => new(Game1.mouseCursors, OptionsCheckbox.sourceRectUnchecked));
 
 	private readonly Lazy<TextureRectangle> BombTexture = new(() => new(Game1.objectSpriteSheet, new(368, 176, 16, 16)));
+	private readonly Lazy<TextureRectangle> BigBombTexture = new(() => new(Game1.objectSpriteSheet, new(0, 192, 16, 16)));
 	private readonly Lazy<TextureRectangle> FlagTexture = new(() => new(Game1.emoteSpriteSheet, new(0, 64, 16, 16)));
 
 	private IReadOnlySet<IntPoint> OriginalValues = new HashSet<IntPoint>();
@@ -171,25 +172,15 @@ internal partial class SelectableGridOption
 					if (MinesweeperGame is null)
 						return (valueX == 0 && valueY == 0 ? CenterTexture : (CurrentValues.Contains(new(valueX, valueY)) ? CheckedTexture : UncheckedTexture)).Value;
 
-					if (IsMinesweeperGameOver)
+					if (IsMinesweeperGameOver && MinesweeperGame.Tiles[new(drawX, drawY)] == Minesweeper.Tile.Bomb)
+						return MinesweeperGame.Markings[new(drawX, drawY)] == Minesweeper.Marking.Check ? BigBombTexture.Value : BombTexture.Value;
+					return MinesweeperGame.Markings[new(drawX, drawY)] switch
 					{
-						if (MinesweeperGame.Tiles[new(drawX, drawY)] == Minesweeper.Tile.Bomb)
-							return BombTexture.Value;
-						else if (MinesweeperGame.Markings[new(drawX, drawY)] == Minesweeper.Marking.Flag)
-							return FlagTexture.Value;
-						else
-							return UncheckedTexture.Value;
-					}
-					else
-					{
-						return MinesweeperGame.Markings[new(drawX, drawY)] switch
-						{
-							Minesweeper.Marking.None => CheckedTexture.Value,
-							Minesweeper.Marking.Check => UncheckedTexture.Value,
-							Minesweeper.Marking.Flag => FlagTexture.Value,
-							_ => throw new ArgumentException($"{nameof(Minesweeper.Marking)} has an invalid value."),
-						};
-					}
+						Minesweeper.Marking.None => CheckedTexture.Value,
+						Minesweeper.Marking.Check => UncheckedTexture.Value,
+						Minesweeper.Marking.Flag => FlagTexture.Value,
+						_ => throw new ArgumentException($"{nameof(Minesweeper.Marking)} has an invalid value."),
+					};
 				}
 
 				TextureRectangle texture = GetTexture();
@@ -208,7 +199,7 @@ internal partial class SelectableGridOption
 				Vector2 textureCenterPosition = new(texturePosition.X + cellLength / 2f, texturePosition.Y + cellLength / 2f);
 				b.Draw(texture.Texture, textureCenterPosition, texture.Rectangle, Color.White, 0f, new Vector2(texture.Rectangle.Width / 2f, texture.Rectangle.Height / 2f), iconScale, SpriteEffects.None, 4f);
 
-				if (MinesweeperGame is not null && !IsMinesweeperGameOver && MinesweeperGame.Markings[new(drawX, drawY)] == Minesweeper.Marking.Check)
+				if (MinesweeperGame is not null && MinesweeperGame.Markings[new(drawX, drawY)] == Minesweeper.Marking.Check && MinesweeperGame.Tiles[new(drawX, drawY)] != Minesweeper.Tile.Bomb)
 				{
 					int bombCount = MinesweeperGame.BombCountCache[new(drawX, drawY)];
 					if (bombCount != 0)
@@ -419,10 +410,10 @@ partial class SelectableGridOption
 		{
 			if (Markings[point] == Marking.Check)
 				return CheckResult.KeepGoing;
+			Markings[point] = Marking.Check;
 			if (Tiles[point] == Tile.Bomb)
 				return CheckResult.GameOver;
 
-			Markings[point] = Marking.Check;
 			FloodFillZeroBombs(point);
 			return Tiles.Bounds.AllPointEnumerator().Any(p => Tiles[p] == Tile.Empty && Markings[p] != Marking.Check) ? CheckResult.KeepGoing : CheckResult.Win;
 		}
