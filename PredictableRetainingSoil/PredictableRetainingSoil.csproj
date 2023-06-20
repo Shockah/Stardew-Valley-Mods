@@ -6,5 +6,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Kokoro\Kokoro.csproj" Private="false" />
+		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll" Private="false" />
 	</ItemGroup>
 </Project>

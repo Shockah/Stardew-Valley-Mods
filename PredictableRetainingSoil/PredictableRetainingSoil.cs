@@ -1,15 +1,18 @@
 ﻿using HarmonyLib;
+using Netcode;
 using Shockah.Kokoro;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.TerrainFeatures;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.PredictableRetainingSoil
 {
-	public class PredictableRetainingSoil : Mod, IPredictableRetainingSoilApi
+	public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainingSoilApi
 	{
 		private const int BasicRetainingSoilID = 370;
 		private const int QualityRetainingSoilID = 371;
@@ -20,7 +23,6 @@ namespace Shockah.PredictableRetainingSoil
 		private static readonly string MultiFertilizerFertilizerDataQualifiedName = "MultiFertilizer.Framework.FertilizerData, MultiFertilizer";
 
 		internal static PredictableRetainingSoil Instance { get; private set; } = null!;
-		private ModConfig Config { get; set; } = null!;
 		private IFluent<string> Fluent { get; set; } = null!;
 
 		private bool IsMultiFertilizerLoaded { get; set; } = false;
@@ -28,14 +30,21 @@ namespace Shockah.PredictableRetainingSoil
 		private Func<HoeDirt, int?> GetMultiFertilizerRetainingSoilType { get; set; } = null!;
 
 		private bool IsStayingWateredViaRetainingSoil = false;
+		private List<(WeakReference<NetInt> State, WeakReference<HoeDirt> Soil)> TrackedSoilStateValues { get; set; } = new();
 
-		public override void Entry(IModHelper helper)
+		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
+		{
+			// do nothing, for now
+		}
+
+		public override void OnEntry(IModHelper helper)
 		{
 			Instance = this;
 
 			Config = helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+			helper.Events.GameLoop.DayStarted += OnDayStarted;
 
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
@@ -53,6 +62,11 @@ namespace Shockah.PredictableRetainingSoil
 				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.plant)),
 				postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_plant_Postfix))
+			);
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(NetInt), nameof(NetInt.Set)),
+				postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(NetInt_Set_Postfix))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
@@ -143,6 +157,11 @@ namespace Shockah.PredictableRetainingSoil
 			SetupConfig();
 		}
 
+		private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		{
+			TrackedSoilStateValues = TrackedSoilStateValues.Where(e => e.State.TryGetTarget(out _) && e.Soil.TryGetTarget(out _)).ToList();
+		}
+
 		private void SetupConfig()
 		{
 			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -187,11 +206,7 @@ namespace Shockah.PredictableRetainingSoil
 		private static void HoeDirt_ctor_Postfix(HoeDirt __instance)
 		{
 			__instance.NetFields.AddFields(__instance.GetRetainingSoilDaysLeftNetField());
-			__instance.state.fieldChangeVisibleEvent += (_, _, newValue) =>
-			{
-				if (newValue > 0 && !Instance.IsStayingWateredViaRetainingSoil)
-					Instance.RefreshRetainingSoilDaysLeft(__instance);
-			};
+			Instance.TrackedSoilStateValues.Add((State: new(__instance.state), Soil: new(__instance)));
 		}
 
 		private static void HoeDirt_dayUpdate_Prefix(HoeDirt __instance, ref int __state)
@@ -228,6 +243,22 @@ namespace Shockah.PredictableRetainingSoil
 			if (__instance.state.Value == 0)
 				return;
 			Instance.RefreshRetainingSoilDaysLeft(__instance);
+		}
+
+		private static void NetInt_Set_Postfix(NetInt __instance, int newValue)
+		{
+			if (Instance.IsStayingWateredViaRetainingSoil)
+				return;
+			if (newValue <= 0)
+				return;
+
+			var entry = Instance.TrackedSoilStateValues.FirstOrNull(e => e.State.TryGetTarget(out var state) && ReferenceEquals(state, __instance));
+			if (entry is null)
+				return;
+			if (!entry.Value.Soil.TryGetTarget(out var soil))
+				return;
+
+			Instance.RefreshRetainingSoilDaysLeft(soil);
 		}
 
 		private static void CraftingRecipe_Constructor_Postfix(CraftingRecipe __instance)
