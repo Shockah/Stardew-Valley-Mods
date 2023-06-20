@@ -84,12 +84,38 @@ namespace Shockah.FlexibleSprinklers
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 		{
-			if (configVersion is not null && configVersion.IsOlderThan("2.0.0"))
+			if (configVersion is null)
+				return;
+
+			if (configVersion.IsOlderThan("2.0.0"))
 			{
 				if (Config.SprinklerBehavior == SprinklerBehaviorEnum.Flexible)
 					Config.SprinklerBehavior = SprinklerBehaviorEnum.Cluster;
 				else if (Config.SprinklerBehavior == SprinklerBehaviorEnum.FlexibleWithoutVanilla)
 					Config.SprinklerBehavior = SprinklerBehaviorEnum.ClusterWithoutVanilla;
+			}
+
+			if (configVersion.IsOlderThan("2.1.0"))
+			{
+				if (Config.ExtensionData.TryGetValue("Tier1Power", out var powerToken))
+					Config.Tier1Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier2Power", out powerToken))
+					Config.Tier2Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier3Power", out powerToken))
+					Config.Tier3Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier4Power", out powerToken))
+					Config.Tier4Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier5Power", out powerToken))
+					Config.Tier5Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier6Power", out powerToken))
+					Config.Tier6Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier7Power", out powerToken))
+					Config.Tier7Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+				if (Config.ExtensionData.TryGetValue("Tier8Power", out powerToken))
+					Config.Tier8Coverage = IntPoint.Zero.GetSpiralingTiles().Distinct().Take((int)powerToken).ToHashSet();
+
+				for (int i = 1; i <= 8; i++)
+					Config.ExtensionData.Remove($"Tier{i}Power");
 			}
 		}
 
