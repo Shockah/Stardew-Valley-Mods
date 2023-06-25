@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 1.1.3
+Released 25 June 2023.
+
+* Additional Inflation affix fixes.
+
 ## 1.1.2
 Released 25 June 2023.
 
