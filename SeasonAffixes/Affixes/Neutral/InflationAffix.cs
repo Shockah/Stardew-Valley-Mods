@@ -8,11 +8,13 @@ using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using SObject = StardewValley.Object;
@@ -32,6 +34,8 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Increase = $"{(int)(Mod.Config.InflationIncrease * 100):0.##}%" });
 	public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
+	private readonly PerScreen<List<WeakReference<object>>> HandledContexts = new(() => new());
+
 	public InflationAffix() : base(ShortID, "neutral") { }
 
 	public int GetPositivity(OrdinalSeason season)
@@ -46,13 +50,16 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
+		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 	}
 
 	public void OnDeactivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
+		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
+		PruneHandledContexts();
 	}
 
 	public void SetupConfig(IManifest manifest)
@@ -77,6 +84,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 			asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"].Replace("300,000", $"{GetModifiedPrice(300000):#,##0}").Replace("300.000", $"{GetModifiedPrice(300000):#.##0}");
 		});
 	}
+
+	private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		=> PruneHandledContexts();
 
 	private void Apply(Harmony harmony)
 	{
@@ -159,53 +169,69 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		}
 	}
 
+	private void PruneHandledContexts()
+		=> HandledContexts.Value.RemoveAll(r => !r.TryGetTarget(out _));
+
 	public static int GetModifiedPrice(int originalPrice)
 		=> (int)Math.Round(originalPrice * (1f + Mod.Config.InflationIncrease));
 
-	private static void ModifyPrice(ref int price)
-		=> price = GetModifiedPrice(price);
-
-	private static void Item_salePrice_Postfix(ref int __result)
+	private void ModifyPrice(ref int price, object? context)
 	{
-		if (__result <= 0)
-			return;
-		if (!Mod.IsAffixActive(a => a is InflationAffix))
-			return;
-		ModifyPrice(ref __result);
+		if (context is not null)
+		{
+			if (HandledContexts.Value.Any(r => r.TryGetTarget(out var handledContext) && ReferenceEquals(handledContext, context)))
+				return;
+			HandledContexts.Value.Add(new(context));
+		}
+		price = GetModifiedPrice(price);
 	}
 
-	private static void SObject_sellToStorePrice_Postfix(ref int __result)
+	private static void Item_salePrice_Postfix(Item __instance, ref int __result)
 	{
 		if (__result <= 0)
 			return;
-		if (!Mod.IsAffixActive(a => a is InflationAffix))
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
 			return;
-		ModifyPrice(ref __result);
+		affix.ModifyPrice(ref __result, __instance);
+	}
+
+	private static void SObject_sellToStorePrice_Postfix(SObject __instance, ref int __result)
+	{
+		if (__result <= 0)
+			return;
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
+			return;
+		affix.ModifyPrice(ref __result, __instance);
 	}
 
 	private static void ShopMenu_ctor_Postfix(ShopMenu __instance, int currency)
 	{
 		if (currency != 0)
 			return;
-		if (!Mod.IsAffixActive(a => a is InflationAffix))
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
 			return;
 		foreach (var kvp in __instance.itemPriceAndStock)
 			if (kvp.Value.Length == 2)
-				ModifyPrice(ref kvp.Value[0]);
+				affix.ModifyPrice(ref kvp.Value[0], kvp.Key);
 	}
 
 	private static void BluePrint_ctor_Postfix(BluePrint __instance)
 	{
-		if (!Mod.IsAffixActive(a => a is InflationAffix))
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
 			return;
-		ModifyPrice(ref __instance.moneyRequired);
+		affix.ModifyPrice(ref __instance.moneyRequired, __instance);
 	}
 
 	private static void Utility_priceForToolUpgradeLevel_Postfix(ref int __result)
 	{
-		if (!Mod.IsAffixActive(a => a is InflationAffix))
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
 			return;
-		ModifyPrice(ref __result);
+		affix.ModifyPrice(ref __result, context: null);
 	}
 
 	private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
@@ -448,8 +474,20 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 
 	public static void JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues(Dictionary<ISalable, int[]> stock, ISalable item, int[] values)
 	{
-		if (Mod.IsAffixActive(a => a is InflationAffix) && values.Length == 2)
-			ModifyPrice(ref values[0]);
+		if (values.Length != 2)
+		{
+			stock.Add(item, values);
+			return;
+		}
+
+		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+		if (affix is null)
+		{
+			stock.Add(item, values);
+			return;
+		}
+
+		affix.ModifyPrice(ref values[0], item);
 		stock.Add(item, values);
 	}
 }
