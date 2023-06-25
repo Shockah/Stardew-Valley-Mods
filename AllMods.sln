@@ -118,6 +118,4 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {740E3A5B-D4B3-423E-86ED-F1C6C5E553D4}
 	EndGlobalSection
-		_CommonWithHarmony\_CommonWithHarmony.projitems*{8f00bd63-311b-4b49-909c-51d56c6ddae2}*SharedItemsImports = 5
-		_Common\_Common.projitems*{8f00bd63-311b-4b49-909c-51d56c6ddae2}*SharedItemsImports = 5
 EndGlobal
