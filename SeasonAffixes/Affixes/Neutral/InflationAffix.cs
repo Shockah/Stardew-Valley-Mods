@@ -35,6 +35,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	public TextureRectangle Icon => new(Game1.objectSpriteSheet, new(272, 528, 16, 16));
 
 	private readonly PerScreen<List<WeakReference<object>>> HandledContexts = new(() => new());
+	private readonly PerScreen<List<WeakReference<ShopMenu>>> HandledShopMenus = new(() => new());
 
 	public InflationAffix() : base(ShortID, "neutral") { }
 
@@ -51,6 +52,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+		Mod.Helper.Events.Display.MenuChanged += OnMenuChanged;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 	}
 
@@ -58,6 +60,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
 		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+		Mod.Helper.Events.Display.MenuChanged -= OnMenuChanged;
 		Mod.Helper.GameContent.InvalidateCache("Strings\\Locations");
 		PruneHandledContexts();
 	}
@@ -88,6 +91,21 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	private void OnDayStarted(object? sender, DayStartedEventArgs e)
 		=> PruneHandledContexts();
 
+	[EventPriority(EventPriority.Low - 10)]
+	private void OnMenuChanged(object? sender, MenuChangedEventArgs e)
+	{
+		if (e.NewMenu is not ShopMenu menu)
+			return;
+		if (menu.currency != 0)
+			return;
+		if (HandledShopMenus.Value.Any(r => r.TryGetTarget(out var handledMenu) && ReferenceEquals(handledMenu, menu)))
+			return;
+
+		foreach (var kvp in menu.itemPriceAndStock)
+			if (kvp.Value.Length == 2)
+				ModifyPrice(ref kvp.Value[0], kvp.Key);
+	}
+
 	private void Apply(Harmony harmony)
 	{
 		if (IsHarmonySetup)
@@ -96,18 +114,8 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 
 		harmony.TryPatchVirtual(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(Item), nameof(Item.salePrice)),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Item_salePrice_Postfix)))
-		);
-		harmony.TryPatchVirtual(
-			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
 			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_sellToStorePrice_Postfix)))
-		);
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Constructor(typeof(ShopMenu), new Type[] { typeof(Dictionary<ISalable, int[]>), typeof(int), typeof(string), typeof(Func<ISalable, Farmer, int, bool>), typeof(Func<ISalable, bool>), typeof(string) }),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(ShopMenu_ctor_Postfix)))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
@@ -186,36 +194,14 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		price = GetModifiedPrice(price);
 	}
 
-	private static void Item_salePrice_Postfix(Item __instance, ref int __result)
+	private static void SObject_sellToStorePrice_Postfix(ref int __result)
 	{
 		if (__result <= 0)
 			return;
 		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
 		if (affix is null)
 			return;
-		affix.ModifyPrice(ref __result, __instance);
-	}
-
-	private static void SObject_sellToStorePrice_Postfix(SObject __instance, ref int __result)
-	{
-		if (__result <= 0)
-			return;
-		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
-		if (affix is null)
-			return;
-		affix.ModifyPrice(ref __result, __instance);
-	}
-
-	private static void ShopMenu_ctor_Postfix(ShopMenu __instance, int currency)
-	{
-		if (currency != 0)
-			return;
-		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
-		if (affix is null)
-			return;
-		foreach (var kvp in __instance.itemPriceAndStock)
-			if (kvp.Value.Length == 2)
-				affix.ModifyPrice(ref kvp.Value[0], kvp.Key);
+		affix.ModifyPrice(ref __result, context: null);
 	}
 
 	private static void BluePrint_ctor_Postfix(BluePrint __instance)
