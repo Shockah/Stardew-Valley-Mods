@@ -2,6 +2,11 @@
 
 # Release notes
 
+## 1.1.2
+Released 25 June 2023.
+
+* Potentially fixed the Inflation affix infinitely stacking the price change on the same items over and over.
+
 ## 1.1.1
 Released 16 June 2023.
 
