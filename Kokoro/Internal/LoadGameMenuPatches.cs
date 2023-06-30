@@ -7,6 +7,7 @@ using StardewValley.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -20,8 +21,8 @@ internal static class LoadGameMenuPatches
 	}
 
 	private static readonly ConditionalWeakTable<LoadGameMenu, List<ClickableTextureComponent>> ModInfoButtons = new();
+	private static readonly ConditionalWeakTable<LoadGameMenu, Func<LoadGameMenu, List<LoadGameMenu.MenuSlot>>> MenuSlotsGetters = new();
 	private static readonly Lazy<Func<LoadGameMenu, int>> CurrentItemIndexGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "currentItemIndex").EmitInstanceGetter<LoadGameMenu, int>());
-	private static readonly Lazy<Func<LoadGameMenu, List<LoadGameMenu.MenuSlot>>> MenuSlotsGetter = new(() => AccessTools.Property(typeof(LoadGameMenu), "MenuSlots").EmitInstanceGetter<LoadGameMenu, List<LoadGameMenu.MenuSlot>>());
     private static readonly Lazy<Func<LoadGameMenu, int>> TimerToLoadGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "timerToLoad").EmitInstanceGetter<LoadGameMenu, int>());
     private static readonly Lazy<Func<LoadGameMenu, bool>> LoadingGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "loading").EmitInstanceGetter<LoadGameMenu, bool>());
     private static readonly Lazy<Func<LoadGameMenu, bool>> DeletingGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "deleting").EmitInstanceGetter<LoadGameMenu, bool>());
@@ -52,8 +53,8 @@ internal static class LoadGameMenuPatches
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(LoadGameMenu), "drawStatusText"),
-            prefix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_drawStatusText_Prefix)))
+            original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
+            postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(IClickableMenu_draw_Postfix)))
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
@@ -64,8 +65,8 @@ internal static class LoadGameMenuPatches
 
 	private static void LoadGameMenu_ctor_Postfix(LoadGameMenu __instance)
 	{
-        var modInfoButtons = __instance.deleteButtons
-            .Select(b => new ClickableTextureComponent("", new Rectangle(b.bounds.X - 52, b.bounds.Y, b.bounds.Width, b.bounds.Height), "", "", Game1.mouseCursors, new Rectangle(208, 320, 16, 16), 2.5f)
+        var modInfoButtons = __instance.slotButtons
+            .Select(b => new ClickableTextureComponent("", new Rectangle(b.bounds.X + b.bounds.Width - 104, b.bounds.Y + 16, 48, 48), "", "", Game1.mouseCursors, new Rectangle(208, 320, 16, 16), 2.5f)
             {
                 myID = b.myID + 100,
                 region = b.region,
@@ -79,21 +80,42 @@ internal static class LoadGameMenuPatches
                 rightNeighborID = b.rightNeighborID
             })
             .ToList();
-
         ModInfoButtons.AddOrUpdate(__instance, modInfoButtons);
+
+		static PropertyInfo GetMenuSlotsProperty(LoadGameMenu __instance)
+		{
+			var type = __instance.GetType();
+			while (true)
+			{
+				var property = AccessTools.Property(type, "MenuSlots");
+				if (property is not null)
+					return property;
+				if (type == typeof(LoadGameMenu))
+					throw new InvalidOperationException();
+			}
+		}
+		MenuSlotsGetters.AddOrUpdate(__instance, GetMenuSlotsProperty(__instance).EmitInstanceGetter<LoadGameMenu, List<LoadGameMenu.MenuSlot>>());
 	}
 
 	private static void LoadGameMenu_UpdateButtons_Postfix(LoadGameMenu __instance)
 	{
 		if (!ModInfoButtons.TryGetValue(__instance, out var modInfoButtons))
 			return;
+		if (!MenuSlotsGetters.TryGetValue(__instance, out var menuSlotGetter))
+			return;
 
-		var menuSlots = MenuSlotsGetter.Value(__instance);
+		var menuSlots = menuSlotGetter(__instance);
 		var currentItemIndex = CurrentItemIndexGetter.Value(__instance);
 
 		for (int i = 0; i < modInfoButtons.Count; i++)
 		{
 			var modInfoButton = modInfoButtons[i];
+			if (i >= menuSlots.Count)
+			{
+				modInfoButton.visible = false;
+				continue;
+			}
+
 			var menuSlot = menuSlots[i + currentItemIndex];
 			if (menuSlot is not LoadGameMenu.SaveFileSlot saveFileSlot)
 			{
@@ -113,8 +135,8 @@ internal static class LoadGameMenuPatches
 
 		for (int i = 0; i < modInfoButtons.Count; i++)
 		{
-			var b = __instance.deleteButtons[i];
-			modInfoButtons[i].bounds = new Rectangle(b.bounds.X - 52, b.bounds.Y, b.bounds.Width, b.bounds.Height);
+			var b = __instance.slotButtons[i];
+			modInfoButtons[i].bounds = new Rectangle(b.bounds.X + b.bounds.Width - 104, b.bounds.Y + 16, 48, 48);
         }
     }
 
@@ -134,9 +156,11 @@ internal static class LoadGameMenuPatches
         }
     }
 
-	private static void LoadGameMenu_drawStatusText_Prefix(LoadGameMenu __instance, SpriteBatch b)
+	private static void IClickableMenu_draw_Postfix(IClickableMenu __instance, SpriteBatch b)
 	{
-        if (!ModInfoButtons.TryGetValue(__instance, out var modInfoButtons))
+		if (__instance is not LoadGameMenu menu)
+			return;
+        if (!ModInfoButtons.TryGetValue(menu, out var modInfoButtons))
             return;
 
 		foreach (var modInfoButton in modInfoButtons)
@@ -149,10 +173,12 @@ internal static class LoadGameMenuPatches
             return true;
         if (!ModInfoButtons.TryGetValue(__instance, out var modInfoButtons))
             return true;
+		if (!MenuSlotsGetters.TryGetValue(__instance, out var menuSlotGetter))
+			return true;
 		if (TimerToLoadGetter.Value(__instance) > 0 || LoadingGetter.Value(__instance) || DeletingGetter.Value(__instance))
 			return true;
 
-        var menuSlots = MenuSlotsGetter.Value(__instance);
+        var menuSlots = menuSlotGetter(__instance);
         var currentItemIndex = CurrentItemIndexGetter.Value(__instance);
 
         for (int i = 0; i < modInfoButtons.Count; i++)
