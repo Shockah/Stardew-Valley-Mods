@@ -52,7 +52,10 @@ public class Kokoro : BaseMod
 		=> UpdateSaveFileDescriptor(Game1.player);
 
 	private void OnSaving(object? sender, SavingEventArgs e)
-		=> UpdateSaveFileDescriptor(Game1.player);
+	{
+		if (Context.IsMainPlayer)
+			UpdateSaveFileDescriptor(Game1.player);
+	}
 
 	private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 	{
