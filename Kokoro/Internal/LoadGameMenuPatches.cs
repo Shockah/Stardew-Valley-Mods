@@ -164,6 +164,7 @@ internal static class LoadGameMenuPatches
                     continue;
 
                 DesktopClipboard.SetText(BuildTooltip(saveFileSlot.Farmer, TooltipContent.ListMods, limited: false));
+				Game1.addHUDMessage(new(Kokoro.Instance.Helper.Translation.Get("saveDescriptor.copiedToClipboard")));
                 if (playSound)
                     Game1.playSound("select");
                 return false;

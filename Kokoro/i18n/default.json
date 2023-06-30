@@ -9,5 +9,6 @@
 	"saveDescriptor.allMods": "Mods ({{Count}}):",
 	"saveDescriptor.allModsMatch": "All ({{Count}}) mods match.",
 	"saveDescriptor.andXMore": "... and {{Count}} more.",
-	"saveDescriptor.noInfo": "No additional info available for this save file."
+	"saveDescriptor.noInfo": "No additional info available for this save file.",
+	"saveDescriptor.copiedToClipboard": "Copied mod list to clipboard."
 }
