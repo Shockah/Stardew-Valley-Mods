@@ -209,7 +209,7 @@ internal static class LoadGameMenuPatches
 				.ToList();
 
 			int modSections = (pendingRemovalMods.Count == 0 ? 0 : 1) + (pendingAdditionMods.Count == 0 ? 0 : 1) + (pendingDowngradeMods.Count == 0 ? 0 : 1) + (pendingUpgradeMods.Count == 0 ? 0 : 1) + (matchingMods.Count == 0 ? 0 : 1);
-            int maxModLines = limited ? 30 / modSections : int.MaxValue;
+            int maxModLines = limited ? 16 / modSections : int.MaxValue;
 
             void ListMods(string titleKey, List<KeyValuePair<string, SaveFileDescriptor.ModDescriptor>> mods, Func<KeyValuePair<string, SaveFileDescriptor.ModDescriptor>, string> lineBuilder)
             {
