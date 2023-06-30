@@ -15,7 +15,8 @@ public class Kokoro : BaseMod
 {
 	public static Kokoro Instance { get; private set; } = null!;
 
-	private PerScreen<LinkedList<string>> QueuedObjectDialogue { get; init; } = new(() => new());
+	private readonly PerScreen<LinkedList<string>> QueuedObjectDialogue = new(() => new());
+	private Dictionary<long, SaveFileDescriptor> SaveFileDescriptors { get; init; } = new();
 
 	public override void Entry(IModHelper helper)
 	{
@@ -27,14 +28,22 @@ public class Kokoro : BaseMod
 
 		helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 		helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-		MachineTracker.Setup(Monitor, helper, new Harmony(ModManifest.UniqueID));
+		helper.Events.GameLoop.SaveCreated += OnSaveCreated;
+		helper.Events.GameLoop.Saving += OnSaving;
 	}
 
 	private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 	{
+		var descriptorsModel = Helper.Data.ReadGlobalData<SaveFilesModel>($"{ModManifest.UniqueID}.SaveFileDescriptors");
+		if (descriptorsModel is not null)
+			foreach (var entry in descriptorsModel.Entries)
+				SaveFileDescriptors[entry.PlayerID] = entry.Descriptor;
+
 		var harmony = new Harmony(ModManifest.UniqueID);
+		LoadGameMenuPatches.Apply(harmony);
 		FarmTypeManagerPatches.Apply(harmony);
-	}
+        MachineTracker.Setup(Monitor, Helper, harmony);
+    }
 
 	private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
 	{
@@ -45,13 +54,36 @@ public class Kokoro : BaseMod
 			QueuedObjectDialogue.Value.RemoveFirst();
 			Game1.drawObjectDialogue(message.Value);
 		}
-	}
+    }
 
-	public void QueueObjectDialogue(string message)
+    private void OnSaveCreated(object? sender, SaveCreatedEventArgs e)
+        => UpdateSaveFileDescriptor(Game1.player);
+
+    private void OnSaving(object? sender, SavingEventArgs e)
+        => UpdateSaveFileDescriptor(Game1.player);
+
+    public void QueueObjectDialogue(string message)
 	{
 		if (Game1.activeClickableMenu is DialogueBox)
 			QueuedObjectDialogue.Value.AddLast(message);
 		else
 			Game1.drawObjectDialogue(message);
+	}
+
+	internal SaveFileDescriptor? GetSaveFileDescriptor(Farmer player)
+		=> SaveFileDescriptors.TryGetValue(player.UniqueMultiplayerID, out var descriptor) ? descriptor : null;
+
+	internal void UpdateSaveFileDescriptor(Farmer player)
+	{
+		SaveFileDescriptors[player.UniqueMultiplayerID] = SaveFileDescriptor.CreateFromCurrentState();
+		FlushSaveFileDescriptor();
+	}
+
+	private void FlushSaveFileDescriptor()
+	{
+		SaveFilesModel model = new();
+		foreach (var (key, descriptor) in SaveFileDescriptors)
+			model.Entries.Add(new(key, descriptor));
+		Helper.Data.WriteGlobalData($"{ModManifest.UniqueID}.SaveFileDescriptors", model);
 	}
 }
