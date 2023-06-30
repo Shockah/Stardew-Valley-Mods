@@ -56,6 +56,16 @@ public class Kokoro : BaseMod
 					original: () => AccessTools.Method(modEntryType, "TimeChanged"),
 					transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(FarmTypeManager_ModEntry_TimeChanged_Transpiler)))
 				);
+
+#if DEBUG
+				var generationType = AccessTools.Inner(modEntryType, "Generation");
+
+				harmony.TryPatch(
+					monitor: Monitor,
+					original: () => AccessTools.Method(generationType, "SpawnTimedSpawns"),
+					prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(FarmTypeManager_ModEntry_Generation_SpawnTimedSpawns_Prefix)))
+				);
+#endif
 			}
 		}
 	}
@@ -108,6 +118,8 @@ public class Kokoro : BaseMod
 					ILMatches.Newobj(AccessTools.Constructor(typeof(Nullable<>).MakeGenericType(stardewTimeType), new Type[] { stardewTimeType })).WithAutoAnchor(out Guid newobjNullableStardewTimeAnchor),
 					ILMatches.Call("SpawnTimedSpawns").WithAutoAnchor(out Guid callSpawnTimedSpawnsAnchor)
 				)
+				.PointerMatcher(SequenceMatcherRelativeElement.Last)
+				.EncompassUntil(callGetStartOfDayAnchor)
 				.AnchorBlock(out Guid findAnchor)
 
 				.PointerMatcher(callGetStartOfDayAnchor).Element(out var callGetStartOfDayInstruction)
@@ -239,4 +251,20 @@ public class Kokoro : BaseMod
 			return instructions;
 		}
 	}
+
+#if DEBUG
+	private static void FarmTypeManager_ModEntry_Generation_SpawnTimedSpawns_Prefix(object? time)
+	{
+		if (time is null)
+		{
+			Instance.Monitor.Log("FTM called SpawnTimedSpawns for time: null", LogLevel.Debug);
+			return;
+		}
+
+		var modEntryType = AccessTools.TypeByName("FarmTypeManager.ModEntry, FarmTypeManager")!;
+		var stardewTimeType = AccessTools.Inner(modEntryType, "StardewTime");
+		var timeGetter = AccessTools.PropertyGetter(stardewTimeType, "Time");
+		Instance.Monitor.Log($"FTM called SpawnTimedSpawns for time: {(int)timeGetter.Invoke(time, null)!}", LogLevel.Debug);
+	}
+#endif
 }
