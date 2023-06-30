@@ -5,6 +5,7 @@
 ## Upcoming version
 
 * Added a system to keep track and display additional save file information, which includes the SMAPI version and the list of mods and their versions.
+* Implemented displaying HUD messages in the main menu.
 * Fixed the [Farm Type Manager](https://www.nexusmods.com/stardewvalley/mods/3231) patch, which broke when trying to make it work both for debug and release configurations.
 
 ## 2.1.2
