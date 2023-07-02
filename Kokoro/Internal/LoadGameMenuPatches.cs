@@ -117,7 +117,7 @@ internal static class LoadGameMenuPatches
 			}
 
 			var menuSlot = menuSlots[i + currentItemIndex];
-			if (menuSlot is not LoadGameMenu.SaveFileSlot saveFileSlot)
+			if (menuSlot is not LoadGameMenu.SaveFileSlot saveFileSlot || !(menuSlot.GetType() == typeof(LoadGameMenu.SaveFileSlot) || menuSlot.GetType() == AccessTools.Inner(typeof(CoopMenu), "HostFileSlot")))
 			{
 				modInfoButton.visible = false;
 				continue;
