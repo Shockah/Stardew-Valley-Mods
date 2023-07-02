@@ -77,7 +77,8 @@ internal static class LoadGameMenuPatches
                 upNeighborImmutable = b.upNeighborImmutable,
                 upNeighborID = b.upNeighborID,
                 rightNeighborImmutable = b.rightNeighborImmutable,
-                rightNeighborID = b.rightNeighborID
+                rightNeighborID = b.rightNeighborID,
+				visible = false
             })
             .ToList();
         ModInfoButtons.AddOrUpdate(__instance, modInfoButtons);
