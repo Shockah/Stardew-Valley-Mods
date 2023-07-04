@@ -5,6 +5,7 @@
 ## Upcoming version
 
 * Fixed a potential out of bounds error in the Cluster family behaviors.
+* Added a missing feature to the easter egg.
 
 ## 2.1.0
 Released 20 June 2023.
