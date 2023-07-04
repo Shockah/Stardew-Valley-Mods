@@ -98,7 +98,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private IReadOnlyList<WateringStep> GetUncachedSprinklerTilesWithSteps(IMap<SoilType>.WithKnownSize map, IReadOnlySet<SprinklerInfo> sprinklers)
 		{
-			CachingMap<SoilType>.WithKnownSize cachingMap = new(map);
+			OutOfBoundsValuesMap<SoilType> cachingMap = new(new CachingMap<SoilType>.WithKnownSize(map), SoilType.NonWaterable);
 			Dictionary<SprinklerInfo, IReadOnlyList<WateringStep>> priorityBehaviorSprinklerTilesWithSteps = new();
 			if (PriorityBehavior is not null)
 			{
