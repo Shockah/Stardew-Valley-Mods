@@ -2,7 +2,8 @@
 
 # Release notes
 
-## Upcoming version
+## 2.1.1
+Released 4 July 2023.
 
 * Fixed a potential out of bounds error in the Cluster family behaviors.
 * Added a missing feature to the easter egg.
