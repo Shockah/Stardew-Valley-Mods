@@ -262,7 +262,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			_ => Config.PendantGemsRequiredForRegular
 		};
 
-		var gems = GetAllHeldGems(player).ToList().OrderBy(gem => gem.salePrice());
+		var gems = GetAllHeldGems(player).OrderBy(gem => gem.salePrice());
 		HashSet<int> uniqueGemTypes = new();
 
 		foreach (var gem in gems)
