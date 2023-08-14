@@ -73,9 +73,9 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 		if (npc.Name == "Caroline")
 		{
-			if (Config.IsBouquetCraftable && HasFriendshipWithAnyone(Game1.player, Config.Date.MinFriendship, DatingState.Datable))
+			if (Config.IsBouquetCraftable && HasFriendshipWithAnyone(Game1.player, Config.DateFriendshipRequired.GetMin(), DatingState.Datable))
 				e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
-			if (Config.IsPendantCraftable && HasFriendshipWithAnyone(Game1.player, Config.Marry.MinFriendship, DatingState.Dating))
+			if (Config.IsPendantCraftable && HasFriendshipWithAnyone(Game1.player, Config.MarryFriendshipRequired.GetMin(), DatingState.Dating))
 				e(Helper.Translation.Get("action.craftAPendant"), () => OnCraftAPendantAction(npc));
 		}
 	}
@@ -181,13 +181,13 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			return null;
 		var types = GetAllHeldGems(player).Select(gem => gem.ParentSheetIndex).ToHashSet();
 
-		if (types.Count >= Config.PendantGemsRequiredForIridium)
+		if (types.Count >= Config.PendantGemsRequired.Iridium)
 			return SObject.bestQuality;
-		else if (types.Count >= Config.PendantGemsRequiredForGold)
+		else if (types.Count >= Config.PendantGemsRequired.Gold)
 			return SObject.highQuality;
-		else if (types.Count >= Config.PendantGemsRequiredForSilver)
+		else if (types.Count >= Config.PendantGemsRequired.Silver)
 			return SObject.medQuality;
-		else if (types.Count >= Config.PendantGemsRequiredForRegular)
+		else if (types.Count >= Config.PendantGemsRequired.Regular)
 			return SObject.lowQuality;
 		else
 			return null;
@@ -265,14 +265,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 	private bool ConsumePendantCraftingRequirements(Farmer player, int itemQuality)
 	{
-		int gemsRequired = itemQuality switch
-		{
-			SObject.bestQuality => Config.PendantGemsRequiredForIridium,
-			SObject.highQuality => Config.PendantGemsRequiredForGold,
-			SObject.medQuality => Config.PendantGemsRequiredForSilver,
-			_ => Config.PendantGemsRequiredForRegular
-		};
-
+		int gemsRequired = Config.PendantGemsRequired.GetForQuality(itemQuality);
 		var gems = GetAllHeldGems(player).OrderBy(gem => gem.salePrice());
 		HashSet<int> uniqueGemTypes = new();
 
@@ -294,17 +287,6 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		foreach (var gemType in uniqueGemTypes)
 			player.ConsumeItem(new SObject(gemType, 1), exactQuality: false);
 		return true;
-	}
-
-	private static int GetFriendshipRequirement(ActionConfig config, int itemQuality)
-	{
-		return itemQuality switch
-		{
-			SObject.medQuality => config.SilverFriendship,
-			SObject.highQuality => config.GoldFriendship,
-			SObject.bestQuality => config.IridiumFriendship,
-			_ => config.RegularFriendship
-		};
 	}
 
 	private static IEnumerable<CodeInstruction> NPC_tryToReceiveActiveObject_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
@@ -359,7 +341,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 	}
 
 	private static void NPC_engagementResponse_Prefix(NPC __instance, Farmer who, bool asRoommate)
-		=> SetMarriedFriendshipRequirement(__instance, asRoommate ? Instance.Config.Marry.RegularFriendship : GetMarryFriendshipRequirement(who));
+		=> SetMarriedFriendshipRequirement(__instance, asRoommate ? Instance.Config.MarryFriendshipRequired.Regular : GetMarryFriendshipRequirement(who));
 
 	private static IEnumerable<CodeInstruction> NPC_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 	{
@@ -397,14 +379,14 @@ public class InAHeartbeat : BaseMod<ModConfig>
 	}
 
 	public static int GetDateFriendshipRequirement(Farmer player)
-		=> GetFriendshipRequirement(Instance.Config.Date, player.ActiveObject.Quality);
+		=> Instance.Config.DateFriendshipRequired.GetForQuality(player.ActiveObject.Quality);
 
 	public static int GetMarryFriendshipRequirement(Farmer player)
-		=> GetFriendshipRequirement(Instance.Config.Marry, player.ActiveObject.Quality);
+		=> Instance.Config.MarryFriendshipRequired.GetForQuality(player.ActiveObject.Quality);
 
 	public static int GetMarriedFriendshipRequirement(NPC npc)
 	{
-		int marriedFriendshipRequirement = Instance.Config.Marry.RegularFriendship;
+		int marriedFriendshipRequirement = Instance.Config.MarryFriendshipRequired.Regular;
 		if (npc.modData.TryGetValue($"{Instance.ModManifest.UniqueID}/MarriedFriendshipRequirement", out var marriedFriendshipRequirementString))
 			if (int.TryParse(marriedFriendshipRequirementString, out var parsedMarriedFriendshipRequirement))
 				marriedFriendshipRequirement = parsedMarriedFriendshipRequirement;
