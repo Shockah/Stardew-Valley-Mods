@@ -74,9 +74,27 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		if (npc.Name == "Caroline")
 		{
 			if (Config.IsBouquetCraftable && HasFriendshipWithAnyone(Game1.player, Config.DateFriendshipRequired.GetMin(), DatingState.Datable))
-				e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
+			{
+				string translationKey = GetBestPossibleBouquetQuality(Game1.player) switch
+				{
+					SObject.bestQuality => "action.arrangeABouquet.iridium",
+					SObject.highQuality => "action.arrangeABouquet.gold",
+					SObject.medQuality => "action.arrangeABouquet.silver",
+					_ => "action.arrangeABouquet.regular"
+				};
+				e(Helper.Translation.Get(translationKey), () => OnArrangeABouquetAction(npc));
+			}
 			if (Config.IsPendantCraftable && HasFriendshipWithAnyone(Game1.player, Config.MarryFriendshipRequired.GetMin(), DatingState.Dating))
-				e(Helper.Translation.Get("action.craftAPendant"), () => OnCraftAPendantAction(npc));
+			{
+				string translationKey = GetBestPossiblePendantQuality(Game1.player) switch
+				{
+					SObject.bestQuality => "action.craftAPendant.iridium",
+					SObject.highQuality => "action.craftAPendant.gold",
+					SObject.medQuality => "action.craftAPendant.silver",
+					_ => "action.craftAPendant.regular"
+				};
+				e(Helper.Translation.Get(translationKey), () => OnCraftAPendantAction(npc));
+			}
 		}
 	}
 

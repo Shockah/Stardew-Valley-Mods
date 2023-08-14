@@ -1,8 +1,14 @@
 {
-	"action.arrangeABouquet": "Arrange a Bouquet",
+	"action.arrangeABouquet.regular": "Arrange a Bouquet",
+	"action.arrangeABouquet.silver": "Arrange a (silver) Bouquet",
+	"action.arrangeABouquet.gold": "Arrange a (gold) Bouquet",
+	"action.arrangeABouquet.iridium": "Arrange an (iridium) Bouquet",
 	"action.arrangeABouquet.notEnoughFlowers": "I'm sorry, but it seems you don't have enough flowers for a bouquet.$2#$b#Don't worry, though. Love is patient, and opportunities will arise.$0#$b#Keep exploring and gathering flowers, and when the time is right, you can create a beautiful bouquet.$0#",
 	"action.arrangeABouquet.success": "Ah, the bouquet is complete! It turned out beautifully, showcasing the vibrant colors and delicate blossoms you provided.$1#$b#When you present this bouquet to your romantic interest, they'll undoubtedly appreciate the thought and effort you've put into it.$0#$b#Remember to be sincere and confident in expressing your feelings. Best of luck, and may this bouquet pave the way for a blossoming romance!$1#",
-	"action.craftAPendant": "Craft a Mermaid's Pendant",
+	"action.craftAPendant.regular": "Craft a Mermaid's Pendant",
+	"action.craftAPendant.silver": "Craft a (silver) Mermaid's Pendant",
+	"action.craftAPendant.gold": "Craft a (gold) Mermaid's Pendant",
+	"action.craftAPendant.iridium": "Craft an (iridium) Mermaid's Pendant",
 	"action.craftAPendant.notEnoughMaterials": "I'm afraid you're missing the necessary materials...",
 	"action.craftAPendant.success": "Here's your Mermaid's Pendant! I hope the one you're gonna give it to loves it!"
 }
