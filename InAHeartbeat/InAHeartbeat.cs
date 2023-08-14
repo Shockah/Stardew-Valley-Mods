@@ -2,7 +2,9 @@
 using Microsoft.Xna.Framework;
 using Nanoray.Shrike;
 using Nanoray.Shrike.Harmony;
+using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
+using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -45,6 +47,8 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			Monitor.Log("Advanced Social Interactions is not installed. The mod will not work.", LogLevel.Error);
 			return;
 		}
+
+		SetupConfig();
 
 		api.AdvancedInteractionStarted += OnAdvancedInteractionStarted;
 
@@ -132,6 +136,124 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 		player.addItemByMenuIfNecessary(new SObject(460, 1, quality: bestPossibleQuality.Value));
 		Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.success"));
+	}
+
+	private void SetupConfig()
+	{
+		var api = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+		if (api is null)
+			return;
+		GMCMI18nHelper helper = new(api, ModManifest, Helper.Translation);
+
+		api.Register(
+			ModManifest,
+			reset: () => Config = new ModConfig(),
+			save: () =>
+			{
+				WriteConfig();
+				LogConfig();
+			}
+		);
+
+		helper.AddSectionTitle("config.bouquet.section");
+		helper.AddBoolOption("config.craftable", () => Config.IsBouquetCraftable);
+		helper.AddNumberOption("config.bouquet.flowersRequired", () => Config.BouquetFlowersRequired, min: 0, max: 20, interval: 1);
+		helper.AddNumberOption("config.bouquet.flowerTypesRequired", () => Config.BouquetFlowerTypesRequired, min: 0, max: 20, interval: 1);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.DateFriendshipRequired.Regular,
+			setValue: value => Config.DateFriendshipRequired.Regular = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.regular.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.DateFriendshipRequired.Silver,
+			setValue: value => Config.DateFriendshipRequired.Silver = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.silver.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.DateFriendshipRequired.Gold,
+			setValue: value => Config.DateFriendshipRequired.Gold = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.gold.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.DateFriendshipRequired.Iridium,
+			setValue: value => Config.DateFriendshipRequired.Iridium = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.iridium.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+
+		helper.AddSectionTitle("config.pendant.section");
+		helper.AddBoolOption("config.craftable", () => Config.IsPendantCraftable);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.PendantGemsRequired.Regular,
+			setValue: value => Config.PendantGemsRequired.Regular = value,
+			name: () => Helper.Translation.Get("config.pendant.gemsRequired.regular.name"),
+			min: 0, max: 8, interval: 1
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.PendantGemsRequired.Silver,
+			setValue: value => Config.PendantGemsRequired.Silver = value,
+			name: () => Helper.Translation.Get("config.pendant.gemsRequired.silver.name"),
+			min: 0, max: 8, interval: 1
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.PendantGemsRequired.Gold,
+			setValue: value => Config.PendantGemsRequired.Gold = value,
+			name: () => Helper.Translation.Get("config.pendant.gemsRequired.gold.name"),
+			min: 0, max: 8, interval: 1
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.PendantGemsRequired.Iridium,
+			setValue: value => Config.PendantGemsRequired.Iridium = value,
+			name: () => Helper.Translation.Get("config.pendant.gemsRequired.iridium.name"),
+			min: 0, max: 8, interval: 1
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.MarryFriendshipRequired.Regular,
+			setValue: value => Config.MarryFriendshipRequired.Regular = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.regular.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.MarryFriendshipRequired.Silver,
+			setValue: value => Config.MarryFriendshipRequired.Silver = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.silver.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.MarryFriendshipRequired.Gold,
+			setValue: value => Config.MarryFriendshipRequired.Gold = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.gold.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
+		api.AddNumberOption(
+			ModManifest,
+			getValue: () => Config.MarryFriendshipRequired.Iridium,
+			setValue: value => Config.MarryFriendshipRequired.Iridium = value,
+			name: () => Helper.Translation.Get("config.friendshipRequired.iridium.name"),
+			tooltip: () => Helper.Translation.Get("config.friendshipRequired.tooltip"),
+			min: 0, max: 2500, interval: 50
+		);
 	}
 
 	private static bool HasFriendshipWithAnyone(Farmer player, int friendshipLevel, DatingState minimumDatingState)
