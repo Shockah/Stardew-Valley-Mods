@@ -11,6 +11,7 @@ using StardewValley.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using SObject = StardewValley.Object;
 
@@ -53,6 +54,16 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			original: () => AccessTools.Method(typeof(NPC), nameof(NPC.tryToReceiveActiveObject)),
 			transpiler: new HarmonyMethod(GetType(), nameof(NPC_tryToReceiveActiveObject_Transpiler))
 		);
+		harmony.TryPatch(
+			monitor: Monitor,
+			original: () => AccessTools.Method(typeof(NPC), "engagementResponse"),
+			prefix: new HarmonyMethod(GetType(), nameof(NPC_engagementResponse_Prefix))
+		);
+		harmony.TryPatch(
+			monitor: Monitor,
+			original: () => AccessTools.Method(typeof(NPC), nameof(NPC.checkAction)),
+			transpiler: new HarmonyMethod(GetType(), nameof(NPC_checkAction_Transpiler))
+		);
 	}
 
 	private void OnAdvancedInteractionStarted(object? sender, Action<string, Action> e)
@@ -62,9 +73,9 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 		if (npc.Name == "Caroline")
 		{
-			if (HasFriendshipWithAnyone(Game1.player, Config.Date.MinFriendship, DatingState.Datable))
+			if (Config.IsBouquetCraftable && HasFriendshipWithAnyone(Game1.player, Config.Date.MinFriendship, DatingState.Datable))
 				e(Helper.Translation.Get("action.arrangeABouquet"), () => OnArrangeABouquetAction(npc));
-			if (HasFriendshipWithAnyone(Game1.player, Config.Marry.MinFriendship, DatingState.Dating))
+			if (Config.IsPendantCraftable && HasFriendshipWithAnyone(Game1.player, Config.Marry.MinFriendship, DatingState.Dating))
 				e(Helper.Translation.Get("action.craftAPendant"), () => OnCraftAPendantAction(npc));
 		}
 	}
@@ -296,7 +307,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		};
 	}
 
-	private static IEnumerable<CodeInstruction> NPC_tryToReceiveActiveObject_Transpiler(IEnumerable<CodeInstruction> instructions)
+	private static IEnumerable<CodeInstruction> NPC_tryToReceiveActiveObject_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 	{
 		try
 		{
@@ -342,7 +353,45 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		}
 		catch (Exception ex)
 		{
-			Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+			Instance.Monitor.Log($"Could not patch method {originalMethod} - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+			return instructions;
+		}
+	}
+
+	private static void NPC_engagementResponse_Prefix(NPC __instance, Farmer who, bool asRoommate)
+		=> SetMarriedFriendshipRequirement(__instance, asRoommate ? Instance.Config.Marry.RegularFriendship : GetMarryFriendshipRequirement(who));
+
+	private static IEnumerable<CodeInstruction> NPC_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+	{
+		try
+		{
+			return new SequenceBlockMatcher<CodeInstruction>(instructions)
+				.AsGuidAnchorable()
+				.Find(
+					ILMatches.Ldarg(1).WithAutoAnchor(out Guid findHeadAnchor),
+					ILMatches.Ldarg(0),
+					ILMatches.Call("get_Name"),
+					ILMatches.Call("getFriendshipHeartLevelForNPC"),
+					ILMatches.LdcI4(9),
+					ILMatches.Ble.WithAutoAnchor(out Guid kissDenyAnchor)
+				)
+				.PointerMatcher(kissDenyAnchor)
+				.ExtractBranchTarget(out Label kissDenyBranchLabel)
+				.EncompassUntil(findHeadAnchor)
+				.Replace(
+					new CodeInstruction(OpCodes.Ldarg_1),
+					new CodeInstruction(OpCodes.Ldarg_0),
+					new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(NPC), nameof(NPC.Name))),
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Farmer), nameof(Farmer.getFriendshipLevelForNPC))),
+					new CodeInstruction(OpCodes.Ldarg_0),
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InAHeartbeat), nameof(GetMarriedFriendshipRequirement))),
+					new CodeInstruction(OpCodes.Blt, kissDenyBranchLabel)
+				)
+				.AllElements();
+		}
+		catch (Exception ex)
+		{
+			Instance.Monitor.Log($"Could not patch method {originalMethod} - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
 			return instructions;
 		}
 	}
@@ -351,5 +400,17 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		=> GetFriendshipRequirement(Instance.Config.Date, player.ActiveObject.Quality);
 
 	public static int GetMarryFriendshipRequirement(Farmer player)
-		=> GetFriendshipRequirement(Instance.Config.Date, player.ActiveObject.Quality);
+		=> GetFriendshipRequirement(Instance.Config.Marry, player.ActiveObject.Quality);
+
+	public static int GetMarriedFriendshipRequirement(NPC npc)
+	{
+		int marriedFriendshipRequirement = Instance.Config.Marry.RegularFriendship;
+		if (npc.modData.TryGetValue($"{Instance.ModManifest.UniqueID}/MarriedFriendshipRequirement", out var marriedFriendshipRequirementString))
+			if (int.TryParse(marriedFriendshipRequirementString, out var parsedMarriedFriendshipRequirement))
+				marriedFriendshipRequirement = parsedMarriedFriendshipRequirement;
+		return marriedFriendshipRequirement;
+	}
+
+	public static void SetMarriedFriendshipRequirement(NPC npc, int value)
+		=> npc.modData[$"{Instance.ModManifest.UniqueID}/MarriedFriendshipRequirement"] = $"{value}";
 }
