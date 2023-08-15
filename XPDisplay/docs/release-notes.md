@@ -2,6 +2,10 @@
 
 # Release notes
 
+## Upcoming version
+
+* Fixed a potential bug that could occur with other mods granting additional XP, which would skip an XP/level change update.
+
 ## 1.4.0
 Released 02 June 2023.
 

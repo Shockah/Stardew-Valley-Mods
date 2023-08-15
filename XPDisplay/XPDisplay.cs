@@ -568,6 +568,8 @@ namespace Shockah.XPDisplay
 			if (__instance != Game1.player)
 				return;
 			var skill = new VanillaSkill(which);
+			if (SkillsToRecheck.Value.ContainsKey(skill))
+				return;
 			SkillsToRecheck.Value[skill] = (skill.GetBaseLevel(__instance), skill.GetXP(__instance));
 		}
 
@@ -576,6 +578,8 @@ namespace Shockah.XPDisplay
 			if (farmer != Game1.player)
 				return;
 			var skill = new SpaceCoreSkill(skillName);
+			if (SkillsToRecheck.Value.ContainsKey(skill))
+				return;
 			SkillsToRecheck.Value[skill] = (skill.GetBaseLevel(farmer), skill.GetXP(farmer));
 		}
 
