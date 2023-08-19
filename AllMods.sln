@@ -45,6 +45,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatsOnHats", "HatsOnHats\Ha
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InAHeartbeat", "InAHeartbeat\InAHeartbeat.csproj", "{4F3FDAF9-302F-4F20-8698-3E022D7572F6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Matrix", "Matrix\Matrix.csproj", "{7C2037DC-8A29-4B7D-AD52-6B9006562C9D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,10 @@ Global
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C2037DC-8A29-4B7D-AD52-6B9006562C9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C2037DC-8A29-4B7D-AD52-6B9006562C9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C2037DC-8A29-4B7D-AD52-6B9006562C9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C2037DC-8A29-4B7D-AD52-6B9006562C9D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

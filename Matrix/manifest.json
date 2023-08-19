@@ -1,0 +1,17 @@
+{
+	"Name": "Matrix",
+	"Author": "Shockah",
+	"Version": "0.1.0",
+	"Description": "Restarts the game inside of itself, allowing for some advanced modding techniques to be employed.",
+	"UniqueID": "Shockah.Matrix",
+	"EntryDll": "Matrix.dll",
+	"MinimumApiVersion": "4.0.0-alpha.20230814",
+	"UpdateKeys": [],
+	"Dependencies": [
+		{
+			"UniqueID": "Shockah.Kokoro",
+			"IsRequired": true,
+			"MinimumVersion": "3.0.0"
+		}
+	]
+}
