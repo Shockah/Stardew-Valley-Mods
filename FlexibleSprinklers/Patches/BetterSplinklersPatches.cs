@@ -13,7 +13,7 @@ namespace Shockah.FlexibleSprinklers
 			try
 			{
 				harmony.Patch(
-					original: AccessTools.Method(Type.GetType(BetterSprinklersSprinklerModQualifiedName), "RunSprinklers"),
+					original: AccessTools.DeclaredMethod(Type.GetType(BetterSprinklersSprinklerModQualifiedName), "RunSprinklers"),
 					prefix: new HarmonyMethod(typeof(BetterSplinklersPatches), nameof(RunSprinklers_Prefix))
 				);
 			}

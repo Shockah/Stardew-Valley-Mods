@@ -66,7 +66,7 @@ namespace Shockah.FlexibleSprinklers
 
 				if (IsSlimeHutchWaterSpotsInstalled)
 				{
-					var tileIndex = location.getTileIndexAt(new(v.X, v.Y), "Buildings");
+					var tileIndex = location.getTileIndexAt(v.X, v.Y, "Buildings");
 					if (tileIndex is 2134 or 2135)
 						return true;
 				}
@@ -243,8 +243,7 @@ namespace Shockah.FlexibleSprinklers
 				return;
 
 			var tile = e.Cursor.GrabTile;
-			var location = Game1.currentLocation;
-			var @object = location.getObjectAtTile((int)tile.X, (int)tile.Y);
+			var @object = Game1.currentLocation.getObjectAtTile((int)tile.X, (int)tile.Y);
 			if (@object is null || !@object.IsSprinkler())
 				return;
 
@@ -257,7 +256,7 @@ namespace Shockah.FlexibleSprinklers
 			#endif
 
 			if (Config.ActivateOnAction && SprinklerBehavior is ISprinklerBehavior.Independent)
-				ActivateSprinkler(@object, location);
+				ActivateSprinkler(@object);
 			if (Config.ShowCoverageOnAction)
 				DisplaySprinklerCoverage();
 			Helper.Input.Suppress(e.Button);
@@ -266,7 +265,7 @@ namespace Shockah.FlexibleSprinklers
 		private void OnSprinklerAdded(GameLocation location, SObject sprinkler)
 		{
 			if (Config.ActivateOnPlacement && SprinklerBehavior is ISprinklerBehavior.Independent)
-				ActivateSprinkler(sprinkler, location);
+				ActivateSprinkler(sprinkler);
 			if (Config.ShowCoverageOnPlacement)
 				DisplaySprinklerCoverage();
 		}
@@ -371,9 +370,9 @@ namespace Shockah.FlexibleSprinklers
 			
 			var sprinklerTiles = SprinklerBehavior.GetSprinklerTiles(map, sprinklers);
 			foreach (var sprinklerTile in sprinklerTiles)
-				WaterTile(location, sprinklerTile);
+				WaterTile(location, sprinkler: null, sprinklerTile);
 			foreach (var sprinkler in location.Objects.Values.Where(o => o.IsSprinkler()))
-				sprinkler.ApplySprinklerAnimation(location);
+				sprinkler.ApplySprinklerAnimation();
 		}
 
 		internal static string GetNameForLocation(GameLocation location)
@@ -392,7 +391,7 @@ namespace Shockah.FlexibleSprinklers
 				return $"{selfName} @ {rootName}";
 		}
 
-		public void ActivateSprinkler(SObject sprinkler, GameLocation location)
+		public void ActivateSprinkler(SObject sprinkler)
 		{
 			if (SprinklerBehavior is not ISprinklerBehavior.Independent)
 				throw new InvalidOperationException("Current sprinkler behavior does not allow independent sprinkler activation.");
@@ -400,10 +399,12 @@ namespace Shockah.FlexibleSprinklers
 				return;
 			if (!sprinkler.IsSprinkler())
 				return;
+			if (sprinkler.Location is null)
+				return;
 
-			foreach (var sprinklerTile in GetModifiedSprinklerCoverage(sprinkler, location))
-				sprinkler.ApplySprinkler(location, new Vector2(sprinklerTile.X, sprinklerTile.Y));
-			sprinkler.ApplySprinklerAnimation(location);
+			foreach (var sprinklerTile in GetModifiedSprinklerCoverage(sprinkler))
+				WaterTile(sprinkler.Location, sprinkler, sprinklerTile);
+			sprinkler.ApplySprinklerAnimation();
 		}
 
 		internal SprinklerInfo GetSprinklerInfo(SObject sprinkler)
@@ -439,18 +440,19 @@ namespace Shockah.FlexibleSprinklers
 		public IReadOnlySet<SprinklerInfo> GetAllSprinklers(GameLocation location)
 			=> new InterceptingSprinklerProvider(new ObjectSprinklerProvider(), SprinklerInfoInterceptors).GetSprinklers(location);
 
-		private static void WaterTile(GameLocation location, IntPoint point)
+		private static void WaterTile(GameLocation location, SObject? sprinkler, IntPoint point)
 		{
 			var can = new WateringCan();
 			var tileVector = new Vector2(point.X, point.Y);
 
-			if (location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature))
-				feature.performToolAction(can, 0, tileVector, location);
-			if (location.Objects.TryGetValue(tileVector, out SObject @object))
-				@object.performToolAction(can, location);
-			location.performToolAction(can, point.X, point.Y);
+			// only calling this so other mods know a tile is watered via a sprinkler
+			sprinkler?.ApplySprinkler(tileVector);
 
-			// TODO: add animation, if needed
+			if (location.terrainFeatures.TryGetValue(tileVector, out TerrainFeature feature))
+				feature.performToolAction(can, 0, tileVector);
+			if (location.Objects.TryGetValue(tileVector, out SObject @object))
+				@object.performToolAction(can);
+			location.performToolAction(can, point.X, point.Y);
 		}
 
 		public int GetSprinklerSpreadRange(int power)
@@ -483,7 +485,7 @@ namespace Shockah.FlexibleSprinklers
 			return Math.Max(spreadRange, focusedRange);
 		}
 
-		public bool IsTileInRangeOfSprinkler(SObject sprinkler, GameLocation location, IntPoint tileLocation)
+		public bool IsTileInRangeOfSprinkler(SObject sprinkler, IntPoint tileLocation)
 		{
 			if (SprinklerBehavior is not ISprinklerBehavior.Independent)
 				throw new InvalidOperationException("Current sprinkler behavior does not allow independent sprinkler activation.");
@@ -496,18 +498,22 @@ namespace Shockah.FlexibleSprinklers
 				if (!info.Coverage.Contains(tileLocation))
 					return false;
 			}
-			return GetModifiedSprinklerCoverage(sprinkler, location).Contains(tileLocation);
+			return GetModifiedSprinklerCoverage(sprinkler).Contains(tileLocation);
 		}
 
 		public bool IsTileInRangeOfAnySprinkler(GameLocation location, IntPoint tileLocation)
 			=> PrivateIsTileInRangeOfSprinklers(GetAllSprinklers(location), location, tileLocation);
 
-		public bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, GameLocation location, IntPoint tileLocation)
+		public bool IsTileInRangeOfSprinklers(IEnumerable<SObject> sprinklers, IntPoint tileLocation)
 		{
 			if (SprinklerBehavior is not ISprinklerBehavior.Independent)
 				throw new InvalidOperationException("Current sprinkler behavior does not allow independent sprinkler activation.");
 
 			var sprinklersSet = sprinklers.ToHashSet();
+			if (sprinklersSet.Count == 0)
+				return false;
+
+			var location = sprinklersSet.First().Location;
 			var sprinklerInfos = GetAllSprinklers(location)
 				.Where(s => s.Owner is SObject @object && sprinklersSet.Contains(@object))
 				.ToHashSet();
@@ -550,18 +556,15 @@ namespace Shockah.FlexibleSprinklers
 			return SprinklerBehavior.GetSprinklerTiles(map, sprinklers).Contains(tileLocation);
 		}
 
-		public IReadOnlySet<IntPoint> GetModifiedSprinklerCoverage(SObject sprinkler, GameLocation location)
+		public IReadOnlySet<IntPoint> GetModifiedSprinklerCoverage(SObject sprinkler)
 		{
 			if (SprinklerBehavior is not ISprinklerBehavior.Independent)
 				throw new InvalidOperationException("Current sprinkler behavior does not allow independent sprinkler activation.");
 
 			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
-			VanillaPatches.FindGameLocationContextOverride = FindGameLocationContext.FlexibleSprinklersGetModifiedSprinklerCoverage;
 			VanillaPatches.IsVanillaQueryInProgress = false;
-			VanillaPatches.CurrentLocation = location;
 			var layout = sprinkler.GetSprinklerTiles().Select(t => new IntPoint((int)t.X, (int)t.Y)).ToHashSet();
 			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
-			VanillaPatches.FindGameLocationContextOverride = null;
 			return layout;
 		}
 
@@ -595,14 +598,12 @@ namespace Shockah.FlexibleSprinklers
 			}
 
 			var wasVanillaQueryInProgress = VanillaPatches.IsVanillaQueryInProgress;
-			VanillaPatches.FindGameLocationContextOverride = FindGameLocationContext.FlexibleSprinklersGetUnmodifiedSprinklerCoverage;
 			VanillaPatches.IsVanillaQueryInProgress = true;
 			var layout = sprinkler.GetSprinklerTiles()
 				.Where(t => t != sprinkler.TileLocation)
 				.Select(t => new IntPoint((int)t.X, (int)t.Y))
 				.ToHashSet();
 			VanillaPatches.IsVanillaQueryInProgress = wasVanillaQueryInProgress;
-			VanillaPatches.FindGameLocationContextOverride = null;
 			return layout;
 		}
 

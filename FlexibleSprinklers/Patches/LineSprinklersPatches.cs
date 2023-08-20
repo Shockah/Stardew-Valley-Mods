@@ -19,23 +19,23 @@ namespace Shockah.FlexibleSprinklers
 			try
 			{
 				harmony.Patch(
-					original: AccessTools.Method(Type.GetType(LineSprinklersModEntryQualifiedName), "OnDayStarted"),
+					original: AccessTools.DeclaredMethod(Type.GetType(LineSprinklersModEntryQualifiedName), "OnDayStarted"),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(OnDayStarted_Prefix)),
 					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(OnDayStarted_Postfix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(Type.GetType(LineSprinklersModEntryQualifiedName), "GetLocations"),
+					original: AccessTools.DeclaredMethod(Type.GetType(LineSprinklersModEntryQualifiedName), "GetLocations"),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(GetLocations_Prefix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.IsSprinkler)),
+					original: AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.IsSprinkler)),
 					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_IsSprinkler_Postfix))
 				);
 
 				harmony.Patch(
-					original: AccessTools.Method(typeof(SObject), nameof(SObject.GetBaseRadiusForSprinkler)),
+					original: AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.GetBaseRadiusForSprinkler)),
 					prefix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetBaseRadiusForSprinkler_Prefix)),
 					postfix: new HarmonyMethod(typeof(LineSprinklersPatches), nameof(Object_GetBaseRadiusForSprinkler_Postfix))
 				);
