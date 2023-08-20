@@ -20,7 +20,7 @@ namespace Shockah.MaximizeFix
 
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(Game1), nameof(Game1.SetWindowSize)),
+				original: () => AccessTools.DeclaredMethod(typeof(Game1), nameof(Game1.SetWindowSize)),
 				transpiler: new HarmonyMethod(typeof(MaximizeFix), nameof(Game1_SetWindowSize_Transpiler))
 			);
 		}
