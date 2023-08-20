@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
 using System;
@@ -19,13 +18,8 @@ public static class GameExt
 		return texture;
 	});
 
-	private static readonly Lazy<Func<Multiplayer>> MultiplayerGetter = new(() => AccessTools.Field(typeof(Game1), "multiplayer").EmitStaticGetter<Multiplayer>());
-
 	public static Texture2D Pixel
 		=> LazyPixel.Value;
-
-	public static Multiplayer Multiplayer
-		=> MultiplayerGetter.Value();
 
 	public static MultiplayerMode GetMultiplayerMode()
 		=> (MultiplayerMode)Game1.multiplayerMode;
@@ -36,11 +30,12 @@ public static class GameExt
 	public static IReadOnlyList<GameLocation> GetAllLocations()
 	{
 		List<GameLocation> locations = new();
-		Utility.ForAllLocations(l =>
+		Utility.ForEachLocation(l =>
 		{
 			if (l is not null)
 				locations.Add(l);
-		});
+			return true;
+		}, includeInteriors: true, includeGenerated: true);
 		return locations;
 	}
 }

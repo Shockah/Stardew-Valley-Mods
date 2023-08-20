@@ -33,33 +33,33 @@ internal static class LoadGameMenuPatches
 	{
 		harmony.TryPatch(
 			monitor: Kokoro.Instance.Monitor,
-			original: () => AccessTools.Constructor(typeof(LoadGameMenu), Array.Empty<Type>()),
-			postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_ctor_Postfix)))
+			original: () => AccessTools.DeclaredConstructor(typeof(LoadGameMenu), new Type[] { typeof(string) }),
+			postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_ctor_Postfix)))
 		);
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(LoadGameMenu), nameof(LoadGameMenu.UpdateButtons)),
-            postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_UpdateButtons_Postfix)))
+            original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.UpdateButtons)),
+            postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_UpdateButtons_Postfix)))
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(LoadGameMenu), nameof(LoadGameMenu.gameWindowSizeChanged)),
-            postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_gameWindowSizeChanged_Postfix)))
+            original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.gameWindowSizeChanged)),
+            postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_gameWindowSizeChanged_Postfix)))
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(LoadGameMenu), nameof(LoadGameMenu.performHoverAction)),
-            postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_performHoverAction_Postfix)))
+            original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.performHoverAction)),
+            postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_performHoverAction_Postfix)))
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
-            postfix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(IClickableMenu_draw_Postfix)))
+            original: () => AccessTools.DeclaredMethod(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
+            postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(IClickableMenu_draw_Postfix)))
         );
         harmony.TryPatch(
             monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.Method(typeof(LoadGameMenu), nameof(LoadGameMenu.receiveLeftClick)),
-            prefix: new HarmonyMethod(AccessTools.Method(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_receiveLeftClick_Prefix)))
+            original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.receiveLeftClick)),
+            prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_receiveLeftClick_Prefix)))
         );
     }
 

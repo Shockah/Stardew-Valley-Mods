@@ -78,9 +78,6 @@ public static class WorldDateExt
 	public static WorldDate New(int year, int seasonIndex, int dayOfMonth)
 		=> New(year, (Season)seasonIndex, dayOfMonth);
 
-	public static Season GetSeason(this WorldDate self)
-		=> (Season)self.SeasonIndex;
-
 	public static WorldDate? ParseDate(string text)
 	{
 		text = text.Trim();
@@ -113,5 +110,5 @@ public static class WorldDateExt
 	}
 
 	public static string ToParsable(this WorldDate self)
-		=> $"{Enum.GetName(self.GetSeason())!} {self.DayOfMonth} Year {self.Year}";
+		=> $"{Enum.GetName(self.Season)!} {self.DayOfMonth} Year {self.Year}";
 }

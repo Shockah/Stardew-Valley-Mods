@@ -26,13 +26,13 @@ internal static class FarmTypeManagerPatches
 		{
 			harmony.TryPatch(
 				monitor: Kokoro.Instance.Monitor,
-				original: () => AccessTools.Method(modEntryType, "DayStarted"),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(FarmTypeManagerPatches), nameof(FarmTypeManager_ModEntry_DayStarted_Transpiler)))
+				original: () => AccessTools.DeclaredMethod(modEntryType, "DayStarted"),
+				transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FarmTypeManagerPatches), nameof(FarmTypeManager_ModEntry_DayStarted_Transpiler)))
 			);
 			harmony.TryPatch(
 				monitor: Kokoro.Instance.Monitor,
-				original: () => AccessTools.Method(modEntryType, "TimeChanged"),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(FarmTypeManagerPatches), nameof(FarmTypeManager_ModEntry_TimeChanged_Transpiler)))
+				original: () => AccessTools.DeclaredMethod(modEntryType, "TimeChanged"),
+				transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(FarmTypeManagerPatches), nameof(FarmTypeManager_ModEntry_TimeChanged_Transpiler)))
 			);
 
 #if DEBUG
