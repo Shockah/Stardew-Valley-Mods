@@ -23,7 +23,7 @@ namespace Shockah.StackSizeChanger
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatchVirtual(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(SObject), nameof(SObject.maximumStackSize)),
+				original: () => AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.maximumStackSize)),
 				postfix: new HarmonyMethod(typeof(StackSizeChanger), nameof(SObject_maximumStackSize_Postfix))
 			);
 		}
