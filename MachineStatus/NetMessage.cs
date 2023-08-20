@@ -11,7 +11,7 @@ namespace Shockah.MachineStatus;
 
 internal static class NetMessage
 {
-	private const int CrabPotID = 710;
+	private const string CrabPotID = "(O)710";
 
 	public static class Entity
 	{
@@ -39,20 +39,18 @@ internal static class NetMessage
 
 		public readonly struct SObject
 		{
-			public readonly int ParentSheetIndex { get; }
+			public readonly string ItemId { get; }
 			public readonly string? DynamicGameAssetsId { get; }
 			public readonly string Name { get; }
-			public readonly bool BigCraftable { get; }
 			public readonly bool ShowNextIndex { get; }
 			public readonly Color? Color { get; }
 			public readonly bool ColorSameIndexAsParentSheetIndex { get; }
 
-			public SObject(int parentSheetIndex, string? dynamicGameAssetsId, string name, bool bigCraftable, bool showNextIndex, Color? color, bool colorSameIndexAsParentSheetIndex)
+			public SObject(string itemId, string? dynamicGameAssetsId, string name, bool showNextIndex, Color? color, bool colorSameIndexAsParentSheetIndex)
 			{
-				this.ParentSheetIndex = parentSheetIndex;
+				this.ItemId = itemId;
 				this.DynamicGameAssetsId = dynamicGameAssetsId;
 				this.Name = name;
-				this.BigCraftable = bigCraftable;
 				this.ShowNextIndex = showNextIndex;
 				this.Color = color;
 				this.ColorSameIndexAsParentSheetIndex = colorSameIndexAsParentSheetIndex;
@@ -69,10 +67,9 @@ internal static class NetMessage
 				}
 
 				return new(
-					@object.ParentSheetIndex,
+					@object.ItemId,
 					MachineStatus.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object),
 					@object.Name,
-					@object.bigCraftable.Value,
 					@object.showNextIndex.Value,
 					color,
 					colorSameIndexAsParentSheetIndex
@@ -80,21 +77,22 @@ internal static class NetMessage
 			}
 
 			public bool Matches(SVObject @object)
-				=> ParentSheetIndex == @object.ParentSheetIndex && Equals(DynamicGameAssetsId, MachineStatus.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object)) && BigCraftable == @object.bigCraftable.Value && Name == @object.Name;
+				=> ItemId == @object.ItemId && Equals(DynamicGameAssetsId, MachineStatus.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object)) && Name == @object.Name;
 
 			public SVObject Retrieve(IntPoint? tileLocation)
 			{
 				SVObject result;
 				if (tileLocation is null)
 				{
-					result = Color.HasValue ? new ColoredObject(ParentSheetIndex, 1, Color.Value) : new SVObject(ParentSheetIndex, 1);
+					result = Color.HasValue ? new ColoredObject(ItemId, 1, Color.Value) : new SVObject(ItemId, 1);
 				}
 				else
 				{
-					if (!BigCraftable && ParentSheetIndex == CrabPotID)
-						result = new CrabPot(new Vector2(tileLocation.Value.X, tileLocation.Value.Y));
+					if (ItemId == CrabPotID)
+						result = new CrabPot();
 					else
-						result = new SVObject(new Vector2(tileLocation.Value.X, tileLocation.Value.Y), ParentSheetIndex, 1);
+						result = new SVObject(ItemId, 1);
+					result.TileLocation = new Vector2(tileLocation.Value.X, tileLocation.Value.Y);
 				}
 
 				if (DynamicGameAssetsId is not null)
@@ -107,7 +105,6 @@ internal static class NetMessage
 				}
 
 				result.Name = Name;
-				result.bigCraftable.Value = BigCraftable;
 				result.showNextIndex.Value = ShowNextIndex;
 				if (result is ColoredObject colored)
 					colored.ColorSameIndexAsParentSheetIndex = ColorSameIndexAsParentSheetIndex;
@@ -115,7 +112,7 @@ internal static class NetMessage
 			}
 
 			public override string ToString()
-				=> $"{ParentSheetIndex}:{Name}{(BigCraftable ? " (BigCraftable)" : "")}";
+				=> $"{ItemId}:{Name}";
 		}
 	}
 

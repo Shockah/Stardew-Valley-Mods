@@ -32,49 +32,49 @@ public class MachineStatus : BaseMod<ModConfig>
 	private static readonly ItemRenderer ItemRenderer = new();
 	private static readonly Vector2 SingleMachineSize = new(64, 64);
 
-	private static readonly (string titleKey, (int machineId, bool bigCraftable, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
+	private static readonly (string titleKey, (string machineId, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
 	{
-		("config.machine.category.artisan", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
+		("config.machine.category.artisan", new (string machineId, string machineName, MachineType type)[]
 		{
-			(10, true, "Bee House", MachineType.Generator),
-			(163, true, "Cask", MachineType.Processor),
-			(16, true, "Cheese Press", MachineType.Processor),
-			(12, true, "Keg", MachineType.Processor),
-			(17, true, "Loom", MachineType.Processor),
-			(24, true, "Mayonnaise Machine", MachineType.Processor),
-			(19, true, "Oil Maker", MachineType.Processor),
-			(15, true, "Preserves Jar", MachineType.Processor)
+			("(BC)10", "Bee House", MachineType.Generator),
+			("(BC)163", "Cask", MachineType.Processor),
+			("(BC)16", "Cheese Press", MachineType.Processor),
+			("(BC)12", "Keg", MachineType.Processor),
+			("(BC)17", "Loom", MachineType.Processor),
+			("(BC)24", "Mayonnaise Machine", MachineType.Processor),
+			("(BC)19", "Oil Maker", MachineType.Processor),
+			("(BC)15", "Preserves Jar", MachineType.Processor)
 		}),
-		("config.machine.category.refining", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
+		("config.machine.category.refining", new (string machineId, string machineName, MachineType type)[]
 		{
-			(90, true, "Bone Mill", MachineType.Processor),
-			(114, true, "Charcoal Kiln", MachineType.Processor),
-			(21, true, "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
-			(13, true, "Furnace", MachineType.Processor),
-			(182, true, "Geode Crusher", MachineType.Processor),
-			(264, true, "Heavy Tapper", MachineType.Generator),
-			(9, true, "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
-			(20, true, "Recycling Machine", MachineType.Processor),
-			(25, true, "Seed Maker", MachineType.Processor),
-			(158, true, "Slime Egg-Press", MachineType.Processor),
-			(231, true, "Solar Panel", MachineType.Generator),
-			(105, true, "Tapper", MachineType.Generator),
-			(211, true, "Wood Chipper", MachineType.Processor),
-			(154, true, "Worm Bin", MachineType.Generator)
+			("(BC)90", "Bone Mill", MachineType.Processor),
+			("(BC)114", "Charcoal Kiln", MachineType.Processor),
+			("(BC)21", "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
+			("(BC)13", "Furnace", MachineType.Processor),
+			("(BC)182", "Geode Crusher", MachineType.Processor),
+			("(BC)264", "Heavy Tapper", MachineType.Generator),
+			("(BC)9", "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
+			("(BC)20", "Recycling Machine", MachineType.Processor),
+			("(BC)25", "Seed Maker", MachineType.Processor),
+			("(BC)158", "Slime Egg-Press", MachineType.Processor),
+			("(BC)231", "Solar Panel", MachineType.Generator),
+			("(BC)105", "Tapper", MachineType.Generator),
+			("(BC)211", "Wood Chipper", MachineType.Processor),
+			("(BC)154", "Worm Bin", MachineType.Generator)
 		}),
-		("config.machine.category.misc", new (int machineId, bool bigCraftable, string machineName, MachineType type)[]
+		("config.machine.category.misc", new (string machineId, string machineName, MachineType type)[]
 		{
-			(246, true, "Coffee Maker", MachineType.Generator),
-			(710, false, "Crab Pot", MachineType.Processor),
-			(265, true, "Deconstructor", MachineType.Processor),
-			(101, true, "Incubator", MachineType.Processor),
-			(128, true, "Mushroom Box", MachineType.Generator),
-			(254, true, "Ostrich Incubator", MachineType.Processor),
-			(156, true, "Slime Incubator", MachineType.Processor),
-			(117, true, "Soda Machine", MachineType.Generator),
-			(127, true, "Statue of Endless Fortune", MachineType.Generator),
-			(160, true, "Statue of Perfection", MachineType.Generator),
-			(280, true, "Statue of True Perfection", MachineType.Generator)
+			("(BC)246", "Coffee Maker", MachineType.Generator),
+			("(O)710", "Crab Pot", MachineType.Processor),
+			("(BC)265", "Deconstructor", MachineType.Processor),
+			("(BC)101", "Incubator", MachineType.Processor),
+			("(BC)128", "Mushroom Box", MachineType.Generator),
+			("(BC)254", "Ostrich Incubator", MachineType.Processor),
+			("(BC)156", "Slime Incubator", MachineType.Processor),
+			("(BC)117", "Soda Machine", MachineType.Generator),
+			("(BC)127", "Statue of Endless Fortune", MachineType.Generator),
+			("(BC)160", "Statue of Perfection", MachineType.Generator),
+			("(BC)280", "Statue of True Perfection", MachineType.Generator)
 		}),
 	};
 
@@ -204,7 +204,7 @@ public class MachineStatus : BaseMod<ModConfig>
 					formatAllowedValue: v =>
 					{
 						var localizedMachineName = v.machineName;
-						if (v.bigCraftable)
+						if (v.machineId.StartsWith("(BC)"))
 						{
 							if (Game1.bigCraftablesInformation.TryGetValue(v.machineId, out string? info))
 								localizedMachineName = info.Split('/')[8];
@@ -353,7 +353,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			VisibilityAlpha = 1f;
 
 		var player = Game1.player;
-		var newPlayerLocation = (player.currentLocation, player.getTileLocation());
+		var newPlayerLocation = (player.currentLocation, player.Tile);
 		if (Config.Sorting.Any(s => s is MachineRenderingOptions.Sorting.ByDistanceAscending or MachineRenderingOptions.Sorting.ByDistanceDescending))
 			if (LastPlayerTileLocation is null || LastPlayerTileLocation.Value != newPlayerLocation)
 				SortMachines(player);
@@ -738,7 +738,7 @@ public class MachineStatus : BaseMod<ModConfig>
 				case MachineRenderingOptions.Sorting.ByDistanceDescending:
 					SortResults(
 						sorting == MachineRenderingOptions.Sorting.ByDistanceAscending,
-						e => e.location == LocationDescriptor.Create(player.currentLocation) ? (player.getTileLocation() - e.machine.TileLocation).Length() : float.PositiveInfinity
+						e => e.location == LocationDescriptor.Create(player.currentLocation) ? (player.Tile - e.machine.TileLocation).Length() : float.PositiveInfinity
 					);
 					break;
 				case MachineRenderingOptions.Sorting.ByItemAZ:
@@ -791,8 +791,8 @@ public class MachineStatus : BaseMod<ModConfig>
 	[return: NotNullIfNotNull(nameof(@object))]
 	private static SObject? GetOne(SObject? @object)
 	{
-		if (@object is CrabPot crabPot)
-			return new CrabPot(crabPot.TileLocation);
+		if (@object is CrabPot) // TODO: check if this is still needed
+			return new CrabPot();
 		else
 			return @object?.getOne() as SObject;
 	}
