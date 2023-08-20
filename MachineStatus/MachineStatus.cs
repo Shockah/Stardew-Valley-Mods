@@ -23,59 +23,53 @@ namespace Shockah.MachineStatus;
 
 public class MachineStatus : BaseMod<ModConfig>
 {
-	private enum MachineType
-	{
-		Generator,
-		Processor
-	}
-
 	private static readonly ItemRenderer ItemRenderer = new();
 	private static readonly Vector2 SingleMachineSize = new(64, 64);
 
-	private static readonly (string titleKey, (string machineId, string machineName, MachineType type)[] machineNames)[] KnownMachineNames = new[]
+	private static readonly (string titleKey, string[] machineIds)[] CategorizedMachineTypes = new[]
 	{
-		("config.machine.category.artisan", new (string machineId, string machineName, MachineType type)[]
+		("config.machine.category.artisan", new string[]
 		{
-			("(BC)10", "Bee House", MachineType.Generator),
-			("(BC)163", "Cask", MachineType.Processor),
-			("(BC)16", "Cheese Press", MachineType.Processor),
-			("(BC)12", "Keg", MachineType.Processor),
-			("(BC)17", "Loom", MachineType.Processor),
-			("(BC)24", "Mayonnaise Machine", MachineType.Processor),
-			("(BC)19", "Oil Maker", MachineType.Processor),
-			("(BC)15", "Preserves Jar", MachineType.Processor)
+			"(BC)10", // Bee House
+			"(BC)163", // Cask
+			"(BC)16", // Cheese Press
+			"(BC)12", // Keg
+			"(BC)17", // Loom
+			"(BC)24", // Mayonnaise Machine
+			"(BC)19", // Oil Maker
+			"(BC)15" // Preserves Jar
 		}),
-		("config.machine.category.refining", new (string machineId, string machineName, MachineType type)[]
+		("config.machine.category.refining", new string[]
 		{
-			("(BC)90", "Bone Mill", MachineType.Processor),
-			("(BC)114", "Charcoal Kiln", MachineType.Processor),
-			("(BC)21", "Crystalarium", MachineType.Processor), // it is more of a generator, but it does take an input (once)
-			("(BC)13", "Furnace", MachineType.Processor),
-			("(BC)182", "Geode Crusher", MachineType.Processor),
-			("(BC)264", "Heavy Tapper", MachineType.Generator),
-			("(BC)9", "Lightning Rod", MachineType.Processor), // does not take items as input, but it is a kind of a processor
-			("(BC)20", "Recycling Machine", MachineType.Processor),
-			("(BC)25", "Seed Maker", MachineType.Processor),
-			("(BC)158", "Slime Egg-Press", MachineType.Processor),
-			("(BC)231", "Solar Panel", MachineType.Generator),
-			("(BC)105", "Tapper", MachineType.Generator),
-			("(BC)211", "Wood Chipper", MachineType.Processor),
-			("(BC)154", "Worm Bin", MachineType.Generator)
+			"(BC)90", // Bone Mill
+			"(BC)114", // Charcoal Kiln
+			"(BC)21", // Crystalarium
+			"(BC)13", // Furnace
+			"(BC)182", // Geode Crusher
+			"(BC)264", // Heavy Tapper
+			"(BC)9", // Lightning Rod
+			"(BC)20", // Recycling Machine
+			"(BC)25", // Seed Maker
+			"(BC)158", // Slime Egg-Press
+			"(BC)231", // Solar Panel
+			"(BC)105", // Tapper
+			"(BC)211", // Wood Chipper
+			"(BC)154" // Worm Bin
 		}),
-		("config.machine.category.misc", new (string machineId, string machineName, MachineType type)[]
+		("config.machine.category.misc", new string[]
 		{
-			("(BC)246", "Coffee Maker", MachineType.Generator),
-			("(O)710", "Crab Pot", MachineType.Processor),
-			("(BC)265", "Deconstructor", MachineType.Processor),
-			("(BC)101", "Incubator", MachineType.Processor),
-			("(BC)128", "Mushroom Box", MachineType.Generator),
-			("(BC)254", "Ostrich Incubator", MachineType.Processor),
-			("(BC)156", "Slime Incubator", MachineType.Processor),
-			("(BC)117", "Soda Machine", MachineType.Generator),
-			("(BC)127", "Statue of Endless Fortune", MachineType.Generator),
-			("(BC)160", "Statue of Perfection", MachineType.Generator),
-			("(BC)280", "Statue of True Perfection", MachineType.Generator)
-		}),
+			"(BC)246", // Coffee Maker
+			"(O)710", // Crab Pot
+			"(BC)265", // Deconstructor
+			"(BC)101", // Incubator
+			"(BC)128", // Mushroom Box
+			"(BC)254", // Ostrich Incubator
+			"(BC)156", // Slime Incubator
+			"(BC)117", // Soda Machine
+			"(BC)127", // Statue of Endless Fortune
+			"(BC)160", // Statue of Perfection
+			"(BC)280" // Statue of True Perfection
+		})
 	};
 
 	internal static MachineStatus Instance { get; set; } = null!;
@@ -165,23 +159,27 @@ public class MachineStatus : BaseMod<ModConfig>
 		string BuiltInMachineSyntax(string machineName)
 			=> $"*|{machineName}";
 
+		var categorizedMachineTypes = CategorizedMachineTypes
+			.Select(section => (titleKey: section.titleKey, machines: section.machineIds.Select(machineId => ItemRegistry.Create(machineId, allowNull: true)).WhereNotNull().ToList()))
+			.ToList();
+
 		void SetupExceptionsPage(string typeKey, MachineState state, IList<string> exceptions)
 		{
 			helper.AddPage(typeKey, typeKey);
 
 			helper.AddTextOption(
 				keyPrefix: "config.exceptions.manual",
-				getValue: () => string.Join(", ", exceptions.Where(ex => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex)))),
+				getValue: () => string.Join(", ", exceptions.Where(ex => !categorizedMachineTypes.Any(section => section.machines.Any(machine => BuiltInMachineSyntax(machine.Name) == ex)))),
 				setValue: value =>
 				{
 					var existingVanillaValues = exceptions
-						.Where(ex => KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == ex)))
+						.Where(ex => categorizedMachineTypes.Any(section => section.machines.Any(machine => BuiltInMachineSyntax(machine.Name) == ex)))
 						.ToList();
 					var customInputValues = value
 						.Split(',')
 						.Select(s => s.Trim())
 						.Where(s => s.Length > 0)
-						.Where(s => !KnownMachineNames.Any(section => section.machineNames.Any(machine => BuiltInMachineSyntax(machine.machineName) == s)))
+						.Where(s => !categorizedMachineTypes.Any(section => section.machines.Any(machine => BuiltInMachineSyntax(machine.Name) == s)))
 						.ToList();
 
 					exceptions.Clear();
@@ -192,30 +190,16 @@ public class MachineStatus : BaseMod<ModConfig>
 				}
 			);
 
-			foreach (var (titleKey, machines) in KnownMachineNames)
+			foreach (var (titleKey, machines) in categorizedMachineTypes)
 			{
 				helper.AddMultiSelectTextOption(
 					titleKey,
-					getValue: v => exceptions.Contains(BuiltInMachineSyntax(v.machineName)),
-					addValue: v => exceptions.Add(BuiltInMachineSyntax(v.machineName)),
-					removeValue: v => exceptions.Remove(BuiltInMachineSyntax(v.machineName)),
+					getValue: v => exceptions.Contains(BuiltInMachineSyntax(v.Name)),
+					addValue: v => exceptions.Add(BuiltInMachineSyntax(v.Name)),
+					removeValue: v => exceptions.Remove(BuiltInMachineSyntax(v.Name)),
 					columns: _ => 2,
-					allowedValues: machines.Where(m => !(m.type == MachineType.Generator && state == MachineState.Waiting)).ToArray(),
-					formatAllowedValue: v =>
-					{
-						var localizedMachineName = v.machineName;
-						if (v.machineId.StartsWith("(BC)"))
-						{
-							if (Game1.bigCraftablesInformation.TryGetValue(v.machineId, out string? info))
-								localizedMachineName = info.Split('/')[8];
-						}
-						else
-						{
-							if (Game1.objectInformation.TryGetValue(v.machineId, out string? info))
-								localizedMachineName = info.Split('/')[4];
-						}
-						return localizedMachineName;
-					}
+					allowedValues: machines.Where(m => !(!m.GetContextTags().Contains("machine_input") && state == MachineState.Waiting)).ToArray(),
+					formatAllowedValue: v => v.DisplayName
 				);
 			}
 		}
