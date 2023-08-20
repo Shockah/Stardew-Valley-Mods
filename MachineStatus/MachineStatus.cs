@@ -82,16 +82,16 @@ public class MachineStatus : BaseMod<ModConfig>
 	private bool IsConfigRegistered { get; set; } = false;
 	internal IDynamicGameAssetsApi? DynamicGameAssetsApi { get; set; }
 
-	private readonly IList<WeakReference<SObject>> TrackedMachines = new List<WeakReference<SObject>>();
-	private readonly IList<SObject> IgnoredMachinesForUpdates = new List<SObject>();
-	private readonly ISet<(GameLocation location, SObject machine)> QueuedMachineUpdates = new HashSet<(GameLocation location, SObject machine)>();
+	private readonly List<WeakReference<SObject>> TrackedMachines = new();
+	private readonly List<SObject> IgnoredMachinesForUpdates = new();
+	private readonly HashSet<SObject> QueuedMachineUpdates = new();
 
-	private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenHostMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
-	private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenClientMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
-	private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenVisibleMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
-	private readonly PerScreen<IList<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenSortedMachines = new(() => new List<(LocationDescriptor location, SObject machine, MachineState state)>());
-	private readonly PerScreen<IList<(SObject machine, IList<SObject> heldItems)>> PerScreenGroupedMachines = new(() => new List<(SObject machine, IList<SObject> heldItems)>());
-	private readonly PerScreen<IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>> PerScreenFlowMachines = new(() => new List<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)>());
+	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenHostMachines = new(() => new());
+	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenClientMachines = new(() => new());
+	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenVisibleMachines = new(() => new());
+	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenSortedMachines = new(() => new());
+	private readonly PerScreen<List<(SObject machine, List<SObject> heldItems)>> PerScreenGroupedMachines = new(() => new());
+	private readonly PerScreen<List<(IntPoint position, (SObject machine, List<SObject> heldItems) machine)>> PerScreenFlowMachines = new(() => new());
 	private readonly PerScreen<bool> PerScreenAreVisibleMachinesDirty = new(() => true);
 	private readonly PerScreen<bool> PerScreenAreSortedMachinesDirty = new(() => true);
 	private readonly PerScreen<bool> PerScreenAreGroupedMachinesDirty = new(() => true);
@@ -101,12 +101,12 @@ public class MachineStatus : BaseMod<ModConfig>
 	private readonly PerScreen<float> PerScreenVisibilityAlpha = new(() => 1f);
 	private readonly PerScreen<bool> PerScreenIsHoveredOver = new(() => false);
 
-	private IList<(LocationDescriptor location, SObject machine, MachineState state)> HostMachines => PerScreenHostMachines.Value;
-	private IList<(LocationDescriptor location, SObject machine, MachineState state)> ClientMachines => PerScreenClientMachines.Value;
-	private IList<(LocationDescriptor location, SObject machine, MachineState state)> VisibleMachines => PerScreenVisibleMachines.Value;
-	private IList<(LocationDescriptor location, SObject machine, MachineState state)> SortedMachines => PerScreenSortedMachines.Value;
-	private IList<(SObject machine, IList<SObject> heldItems)> GroupedMachines => PerScreenGroupedMachines.Value;
-	private IList<(IntPoint position, (SObject machine, IList<SObject> heldItems) machine)> FlowMachines => PerScreenFlowMachines.Value;
+	private List<(LocationDescriptor location, SObject machine, MachineState state)> HostMachines => PerScreenHostMachines.Value;
+	private List<(LocationDescriptor location, SObject machine, MachineState state)> ClientMachines => PerScreenClientMachines.Value;
+	private List<(LocationDescriptor location, SObject machine, MachineState state)> VisibleMachines => PerScreenVisibleMachines.Value;
+	private List<(LocationDescriptor location, SObject machine, MachineState state)> SortedMachines => PerScreenSortedMachines.Value;
+	private List<(SObject machine, List<SObject> heldItems)> GroupedMachines => PerScreenGroupedMachines.Value;
+	private List<(IntPoint position, (SObject machine, List<SObject> heldItems) machine)> FlowMachines => PerScreenFlowMachines.Value;
 	private bool AreVisibleMachinesDirty { get => PerScreenAreVisibleMachinesDirty.Value; set => PerScreenAreVisibleMachinesDirty.Value = value; }
 	private bool AreSortedMachinesDirty { get => PerScreenAreSortedMachinesDirty.Value; set => PerScreenAreSortedMachinesDirty.Value = value; }
 	private bool AreGroupedMachinesDirty { get => PerScreenAreGroupedMachinesDirty.Value; set => PerScreenAreGroupedMachinesDirty.Value = value; }
@@ -322,8 +322,8 @@ public class MachineStatus : BaseMod<ModConfig>
 
 		if (GameExt.GetMultiplayerMode() != MultiplayerMode.Client)
 		{
-			foreach (var (location, machine) in QueuedMachineUpdates)
-				UpdateMachine(location, machine);
+			foreach (var machine in QueuedMachineUpdates)
+				UpdateMachine(machine);
 			QueuedMachineUpdates.Clear();
 		}
 
@@ -366,9 +366,9 @@ public class MachineStatus : BaseMod<ModConfig>
 			return;
 
 		foreach (var @object in e.Removed)
-			RemoveMachine(e.Location, @object.Value);
+			RemoveMachine(@object.Value);
 		foreach (var @object in e.Added)
-			StartTrackingMachine(e.Location, @object.Value);
+			StartTrackingMachine(@object.Value);
 	}
 
 	private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
@@ -571,7 +571,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			return;
 		foreach (var location in GameExt.GetAllLocations())
 			foreach (var @object in location.Objects.Values)
-				StartTrackingMachine(location, @object);
+				StartTrackingMachine(@object);
 	}
 
 	private void UpdateFlowMachinesIfNeeded(Farmer player)
@@ -583,8 +583,7 @@ public class MachineStatus : BaseMod<ModConfig>
 
 	private void UpdateFlowMachines()
 	{
-		IList<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)> machineCoords
-			= new List<((int column, int row) position, (SObject machine, IList<SObject> heldItems) machine)>();
+		List<((int column, int row) position, (SObject machine, List<SObject> heldItems) machine)> machineCoords = new();
 		int column = 0;
 		int row = 0;
 
@@ -618,7 +617,7 @@ public class MachineStatus : BaseMod<ModConfig>
 
 	private void GroupMachines()
 	{
-		void AddHeldItem(IList<SObject> heldItems, SObject newHeldItem)
+		void AddHeldItem(List<SObject> heldItems, SObject newHeldItem)
 		{
 			foreach (var heldItem in heldItems)
 			{
@@ -628,7 +627,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			heldItems.Add(newHeldItem);
 		}
 
-		IList<SObject> CopyHeldItems(SObject machine)
+		List<SObject> CopyHeldItems(SObject machine)
 		{
 			var list = new List<SObject>();
 			if (machine.TryGetAnyHeldObject(out var heldObject))
@@ -636,7 +635,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			return list;
 		}
 
-		IList<(SObject machine, IList<SObject> heldItems)> results = new List<(SObject machine, IList<SObject> heldItems)>();
+		List<(SObject machine, List<SObject> heldItems)> results = new();
 		foreach (var (location, machine, state) in SortedMachines)
 		{
 			switch (Config.Grouping)
@@ -885,10 +884,13 @@ public class MachineStatus : BaseMod<ModConfig>
 		return true;
 	}
 
-	private bool UpsertMachine(GameLocation location, SObject machine)
+	private bool UpsertMachine(SObject machine)
 	{
+		if (machine.Location is null)
+			return false;
+
 		var newState = GetMachineState(machine);
-		var locationDescriptor = LocationDescriptor.Create(location);
+		var locationDescriptor = LocationDescriptor.Create(machine.Location);
 		var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine.Name == machine.Name && e.machine.TileLocation == machine.TileLocation);
 		if (existingEntry is null)
 		{
@@ -906,38 +908,43 @@ public class MachineStatus : BaseMod<ModConfig>
 		return true;
 	}
 
-	private bool RemoveMachine(GameLocation location, SObject machine)
+	private bool RemoveMachine(SObject machine)
 	{
-		var locationDescriptor = LocationDescriptor.Create(location);
+		if (machine.Location is null)
+			return false;
+
+		var locationDescriptor = LocationDescriptor.Create(machine.Location);
 		var existingEntry = HostMachines.FirstOrNull(e => e.location == locationDescriptor && e.machine.Name == machine.Name && e.machine.TileLocation == machine.TileLocation);
 		if (existingEntry is not null)
 		{
 			HostMachines.Remove(existingEntry.Value);
-			SendModMessageToEveryone(NetMessage.MachineRemove.Create(location, machine));
+			SendModMessageToEveryone(NetMessage.MachineRemove.Create(machine.Location, machine));
 			Monitor.Log($"Removed {existingEntry.Value.state} machine {{Name: {machine.Name}, DisplayName: {machine.DisplayName}, Type: {machine.GetType().GetBestName()}}} in location {locationDescriptor}", LogLevel.Trace);
 			AreVisibleMachinesDirty = true;
 		}
 		return existingEntry is not null;
 	}
 
-	internal bool UpdateMachine(GameLocation location, SObject machine)
+	internal bool UpdateMachine(SObject machine)
 	{
+		if (machine.Location is null)
+			return false;
 		if (!IsMachine(machine))
 			return false;
-		if (!IsLocationAccessible(location))
-			return RemoveMachine(location, machine);
-		return UpsertMachine(location, machine);
+		if (!IsLocationAccessible(machine.Location))
+			return RemoveMachine(machine);
+		return UpsertMachine(machine);
 	}
 
 	[SuppressMessage("SMAPI.CommonErrors", "AvoidNetField:Avoid Netcode types when possible", Justification = "Registering for events")]
-	internal void StartTrackingMachine(GameLocation location, SObject machine)
+	internal void StartTrackingMachine(SObject machine)
 	{
 		if (GameExt.GetMultiplayerMode() == MultiplayerMode.Client)
 			return;
 		if (!IsMachine(machine))
 			return;
 
-		UpdateMachine(location, machine);
+		UpdateMachine(machine);
 		foreach (var refToRemove in TrackedMachines.Where(r => !r.TryGetTarget(out _)).ToList())
 			TrackedMachines.Remove(refToRemove);
 		if (TrackedMachines.Any(r => r.TryGetTarget(out var trackedMachine) && machine == trackedMachine))
@@ -950,7 +957,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			var oldState = GetMachineState(oldValue, machine.MinutesUntilReady, machine.GetAnyHeldObject());
 			var newState = GetMachineState(newValue, machine.MinutesUntilReady, machine.GetAnyHeldObject());
 			if (newState != oldState)
-				QueuedMachineUpdates.Add((location, machine));
+				QueuedMachineUpdates.Add(machine);
 		};
 		machine.minutesUntilReady.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
 		{
@@ -959,7 +966,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			var oldState = GetMachineState(machine.readyForHarvest.Value, oldValue, machine.GetAnyHeldObject());
 			var newState = GetMachineState(machine.readyForHarvest.Value, newValue, machine.GetAnyHeldObject());
 			if (newState != oldState)
-				QueuedMachineUpdates.Add((location, machine));
+				QueuedMachineUpdates.Add(machine);
 		};
 		machine.heldObject.fieldChangeVisibleEvent += (_, oldValue, newValue) =>
 		{
@@ -968,7 +975,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			var oldState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, oldValue);
 			var newState = GetMachineState(machine.readyForHarvest.Value, machine.MinutesUntilReady, newValue);
 			if (newState != oldState)
-				QueuedMachineUpdates.Add((location, machine));
+				QueuedMachineUpdates.Add(machine);
 		};
 		if (machine is CrabPot crabPot)
 		{
@@ -976,7 +983,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			{
 				if (IgnoredMachinesForUpdates.Contains(machine))
 					return;
-				QueuedMachineUpdates.Add((location, machine));
+				QueuedMachineUpdates.Add(machine);
 			};
 		}
 
