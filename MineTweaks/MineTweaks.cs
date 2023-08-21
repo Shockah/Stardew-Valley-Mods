@@ -28,12 +28,12 @@ namespace Shockah.MineTweaks
 			Harmony harmony = new(ModManifest.UniqueID);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(MineShaft), "adjustLevelChances"),
+				original: () => AccessTools.DeclaredMethod(typeof(MineShaft), "adjustLevelChances"),
 				postfix: new HarmonyMethod(GetType(), nameof(MineShaft_adjustLevelChances_Postfix))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(VolcanoDungeon), "adjustLevelChances"),
+				original: () => AccessTools.DeclaredMethod(typeof(VolcanoDungeon), "adjustLevelChances"),
 				postfix: new HarmonyMethod(GetType(), nameof(VolcanoDungeon_adjustLevelChances_Postfix))
 			);
 		}
@@ -100,13 +100,13 @@ namespace Shockah.MineTweaks
 		{
 			if (__instance.mineLevel == MineShaft.quarryMineShaft)
 				return;
-			MineTypeConfig config = __instance.mineLevel >= MineShaft.desertArea ? Instance.Config.SkullCavern : Instance.Config.Mine;
+			var config = __instance.mineLevel >= MineShaft.desertArea ? Instance.Config.SkullCavern : Instance.Config.Mine;
 			ApplyChances(config, ref stoneChance, ref monsterChance, ref itemChance, ref gemStoneChance);
 		}
 
 		private static void VolcanoDungeon_adjustLevelChances_Postfix(ref double stoneChance, ref double monsterChance, ref double itemChance, ref double gemStoneChance)
 		{
-			MineTypeConfig config = Instance.Config.Volcano;
+			var config = Instance.Config.Volcano;
 			ApplyChances(config, ref stoneChance, ref monsterChance, ref itemChance, ref gemStoneChance);
 		}
 
@@ -117,10 +117,10 @@ namespace Shockah.MineTweaks
 			itemChance *= config.ItemChanceMultiplier;
 			gemStoneChance *= config.GemStoneChanceMultiplier;
 
-			bool AnyOnlineFarmerHasBuff(int buffID)
+			bool AnyOnlineFarmerHasBuff(string buffID)
 				=> Game1.getOnlineFarmers().Any(player => player.hasBuff(buffID));
 
-			if (AnyOnlineFarmerHasBuff(24))
+			if (AnyOnlineFarmerHasBuff("24"))
 				monsterChance *= 0.5f * config.MonsterMuskChanceMultiplier;
 		}
 	}
