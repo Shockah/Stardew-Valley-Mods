@@ -60,7 +60,7 @@ public class MachineStatus : BaseMod<ModConfig>
 		("config.machine.category.misc", new string[]
 		{
 			"(BC)246", // Coffee Maker
-			"(O)710", // Crab Pot
+			"(O)710", // Crab Pot // not included in Data/Machines
 			"(BC)265", // Deconstructor
 			"(BC)101", // Incubator
 			"(BC)128", // Mushroom Box
@@ -864,19 +864,7 @@ public class MachineStatus : BaseMod<ModConfig>
 	}
 
 	private static bool IsMachine(SObject @object)
-	{
-		if (@object is ItemPedestal || @object is Torch)
-			return false;
-		if (@object is CrabPot || @object is WoodChipper)
-			return true;
-		if (@object.IsSprinkler() || @object.IsScarecrow())
-			return false;
-		if (!@object.bigCraftable.Value && @object.Category != SObject.BigCraftableCategory)
-			return false;
-		if (@object.heldObject.Value is Chest || @object.heldObject.Value?.Name == "Chest")
-			return false;
-		return true;
-	}
+		=> @object is CrabPot || @object.GetMachineData() is not null;
 
 	private bool UpsertMachine(SObject machine)
 	{
