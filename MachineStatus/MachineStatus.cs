@@ -10,6 +10,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.GameData.Machines;
 using StardewValley.Locations;
 using StardewValley.Objects;
 using System;
@@ -190,9 +191,8 @@ public class MachineStatus : BaseMod<ModConfig>
 				}
 			);
 
-			foreach (var (titleKey, machines) in categorizedMachineTypes)
-			{
-				helper.AddMultiSelectTextOption(
+			void AddMultiSelectOption(string titleKey, IEnumerable<Item> machines)
+				=> helper.AddMultiSelectTextOption(
 					titleKey,
 					getValue: v => exceptions.Contains(BuiltInMachineSyntax(v.Name)),
 					addValue: v => exceptions.Add(BuiltInMachineSyntax(v.Name)),
@@ -201,7 +201,17 @@ public class MachineStatus : BaseMod<ModConfig>
 					allowedValues: machines.Where(m => !(!m.GetContextTags().Contains("machine_input") && state == MachineState.Waiting)).ToArray(),
 					formatAllowedValue: v => v.DisplayName
 				);
-			}
+
+			foreach (var (titleKey, machines) in categorizedMachineTypes)
+				AddMultiSelectOption(titleKey, machines);
+
+			var unknownMachines = Game1.content.Load<Dictionary<string, MachineData>>("Data\\Machines")
+				.Where(kvp => !CategorizedMachineTypes.Any(section => section.machineIds.Contains(kvp.Key)))
+				.Select(kvp => ItemRegistry.Create(kvp.Key, allowNull: true))
+				.WhereNotNull()
+				.ToList();
+			if (unknownMachines.Count != 0)
+				AddMultiSelectOption("config.machine.category.uncategorized", unknownMachines);
 		}
 
 		void SetupStateConfig(string optionKey, string pageKey, Expression<Func<bool>> boolProperty)
