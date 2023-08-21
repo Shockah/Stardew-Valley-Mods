@@ -30,26 +30,26 @@ namespace Shockah.ProjectFluent
 			{
 				Type translationHelperType = AccessTools.TypeByName("StardewModdingAPI.Framework.ModHelpers.TranslationHelper, StardewModdingAPI");
 
-				MethodInfo getWithKeyMethod = AccessTools.Method(translationHelperType, "Get", new Type[] { typeof(string) });
-				MethodInfo getWithKeyAndTokensMethod = AccessTools.Method(translationHelperType, "Get", new Type[] { typeof(string), typeof(object) });
-				MethodInfo getInAllLocalesMethod = AccessTools.Method(translationHelperType, "GetInAllLocales");
-				MethodInfo getTranslationsMethod = AccessTools.Method(translationHelperType, "GetTranslations");
+				MethodInfo getWithKeyMethod = AccessTools.DeclaredMethod(translationHelperType, "Get", new Type[] { typeof(string) });
+				MethodInfo getWithKeyAndTokensMethod = AccessTools.DeclaredMethod(translationHelperType, "Get", new Type[] { typeof(string), typeof(object) });
+				MethodInfo getInAllLocalesMethod = AccessTools.DeclaredMethod(translationHelperType, "GetInAllLocales");
+				MethodInfo getTranslationsMethod = AccessTools.DeclaredMethod(translationHelperType, "GetTranslations");
 
 				harmony.Patch(
 					original: getWithKeyMethod,
-					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+					postfix: new HarmonyMethod(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix))
 				);
 				harmony.Patch(
 					original: getWithKeyAndTokensMethod,
-					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+					postfix: new HarmonyMethod(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix))
 				);
 				harmony.Patch(
 					original: getInAllLocalesMethod,
-					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix)))
+					postfix: new HarmonyMethod(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithKey_Postfix))
 				);
 				harmony.Patch(
 					original: getTranslationsMethod,
-					postfix: new HarmonyMethod(AccessTools.Method(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithoutKey_Postfix)))
+					postfix: new HarmonyMethod(typeof(I18nIntegration), nameof(TranslationHelper_MethodWithoutKey_Postfix))
 				);
 			}
 			catch (Exception ex)
