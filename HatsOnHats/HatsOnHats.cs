@@ -16,9 +16,7 @@ public class HatsOnHats : BaseMod
 {
 	private static Hat? ExtraHatOverride { get; set; }
 	private static Texture2D? OriginalHairstylesTexture { get; set; }
-	private static Texture2D? OriginalShirtsTexture { get; set; }
 	private static Texture2D? OriginalAccessoriesTexture { get; set; }
-	private static Texture2D? OriginalPantsTexture { get; set; }
 	private static Hat? OriginalHat { get; set; }
 
 	private static readonly Lazy<Texture2D> ClearPixel = new(() =>
@@ -41,9 +39,19 @@ public class HatsOnHats : BaseMod
 
 		harmony.TryPatch(
 			monitor: Monitor,
-			original: () => AccessTools.Method(typeof(FarmerRenderer), nameof(FarmerRenderer.drawHairAndAccesories)),
+			original: () => AccessTools.DeclaredMethod(typeof(FarmerRenderer), nameof(FarmerRenderer.drawHairAndAccesories)),
 			prefix: new HarmonyMethod(GetType(), nameof(FarmerRenderer_drawHairAndAccesories_Prefix)),
 			finalizer: new HarmonyMethod(GetType(), nameof(FarmerRenderer_drawHairAndAccesories_Finalizer))
+		);
+		harmony.TryPatch(
+			monitor: Monitor,
+			original: () => AccessTools.DeclaredMethod(typeof(Farmer), nameof(Farmer.GetDisplayPants)),
+			postfix: new HarmonyMethod(GetType(), nameof(Farmer_GetDisplayPants_Postfix))
+		);
+		harmony.TryPatch(
+			monitor: Monitor,
+			original: () => AccessTools.DeclaredMethod(typeof(Farmer), nameof(Farmer.GetDisplayShirt)),
+			postfix: new HarmonyMethod(GetType(), nameof(Farmer_GetDisplayShirt_Postfix))
 		);
 	}
 
@@ -69,9 +77,7 @@ public class HatsOnHats : BaseMod
 		if (ExtraHatOverride is null)
 		{
 			OriginalHairstylesTexture = FarmerRenderer.hairStylesTexture;
-			OriginalShirtsTexture = FarmerRenderer.shirtsTexture;
 			OriginalAccessoriesTexture = FarmerRenderer.accessoriesTexture;
-			OriginalPantsTexture = FarmerRenderer.pantsTexture;
 			OriginalHat = who.hat.Value;
 
 			who.hat.Value = GetHats(who).FirstOrDefault();
@@ -91,9 +97,7 @@ public class HatsOnHats : BaseMod
 		try
 		{
 			FarmerRenderer.hairStylesTexture = ClearPixel.Value;
-			FarmerRenderer.shirtsTexture = ClearPixel.Value;
 			FarmerRenderer.accessoriesTexture = ClearPixel.Value;
-			FarmerRenderer.pantsTexture = ClearPixel.Value;
 
 			int index = 0;
 			int layer = 0;
@@ -115,11 +119,21 @@ public class HatsOnHats : BaseMod
 		finally
 		{
 			FarmerRenderer.hairStylesTexture = OriginalHairstylesTexture;
-			FarmerRenderer.shirtsTexture = OriginalShirtsTexture;
 			FarmerRenderer.accessoriesTexture = OriginalAccessoriesTexture;
-			FarmerRenderer.pantsTexture = OriginalPantsTexture;
 			who.hat.Value = OriginalHat;
 			ExtraHatOverride = null;
 		}
+	}
+
+	private static void Farmer_GetDisplayPants_Postfix(ref Texture2D texture)
+	{
+		if (ExtraHatOverride is not null)
+			texture = ClearPixel.Value;
+	}
+
+	private static void Farmer_GetDisplayShirt_Postfix(ref Texture2D texture)
+	{
+		if (ExtraHatOverride is not null)
+			texture = ClearPixel.Value;
 	}
 }
