@@ -2,6 +2,11 @@
 
 # Release notes
 
+## Upcoming version
+
+* Updated to Stardew Valley 1.6 and SMAPI 4.0.0.
+* Fixed an issue preventing planting crops on the Ginger Island farm after Community Center completion.
+
 ## 1.1.2
 Released 03 June 2023.
 

@@ -13,7 +13,7 @@ using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -25,9 +25,9 @@ namespace Shockah.EarlyGingerIsland
 		private bool IsConfigRegistered { get; set; } = false;
 		private UnlockCondition NewUnlockCondition = new();
 
-		private const int BatteryPackID = 787;
-		private const int HardwoodID = 709;
-		private const int IridiumBarID = 337;
+		private const string BatteryPackID = "(O)787";
+		private const string HardwoodID = "(O)709";
+		private const string IridiumBarID = "(O)337";
 
 		public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 		{
@@ -46,39 +46,39 @@ namespace Shockah.EarlyGingerIsland
 			var harmony = new Harmony(ModManifest.UniqueID);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_checkAction_Transpiler)), priority: Priority.VeryLow)
+				original: () => AccessTools.DeclaredConstructor(typeof(BoatTunnel), new Type[] { typeof(string), typeof(string) }),
+				postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(EarlyGingerIsland), nameof(BoatTunnel_ctor_Postfix)), priority: Priority.VeryHigh)
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_answerDialogue_Transpiler)), priority: Priority.VeryLow)
+				original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
+				transpiler: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(BoatTunnel_checkAction_Transpiler))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_GetTicketPrice_Postfix)), priority: Priority.VeryLow)
+				original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
+				transpiler: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(BoatTunnel_answerDialogue_Transpiler))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.StartDeparture)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(BoatTunnel_StartDeparture_Postfix)))
+				original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.StartDeparture)),
+				postfix: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(BoatTunnel_StartDeparture_Postfix))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(ParrotUpgradePerch), nameof(ParrotUpgradePerch.IsAvailable)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Postfix))),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Transpiler)))
+				original: () => AccessTools.DeclaredMethod(typeof(ParrotUpgradePerch), nameof(ParrotUpgradePerch.IsAvailable)),
+				postfix: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Postfix)),
+				transpiler: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(ParrotUpgradePerch_IsAvailable_Transpiler))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.canPlantThisSeedHere)),
-				postfix: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(HoeDirt_canPlantThisSeedHere_Postfix)))
+				original: () => AccessTools.DeclaredMethod(typeof(HoeDirt), nameof(HoeDirt.canPlantThisSeedHere)),
+				postfix: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(HoeDirt_canPlantThisSeedHere_Postfix))
 			);
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(IslandWest), nameof(IslandWest.checkAction)),
-				transpiler: new HarmonyMethod(AccessTools.Method(typeof(EarlyGingerIsland), nameof(IslandWest_checkAction_Transpiler)))
+				original: () => AccessTools.DeclaredMethod(typeof(IslandWest), nameof(IslandWest.checkAction)),
+				transpiler: new HarmonyMethod(typeof(EarlyGingerIsland), nameof(IslandWest_checkAction_Transpiler))
 			);
 		}
 
@@ -338,11 +338,13 @@ namespace Shockah.EarlyGingerIsland
 		}
 
 		private static bool ShouldGingerIslandBeUnlockedInVanilla()
-			=> Game1.MasterPlayer.eventsSeen.Contains(191393) || Game1.MasterPlayer.eventsSeen.Contains(502261) || Game1.MasterPlayer.hasCompletedCommunityCenter();
+			=> Game1.MasterPlayer.eventsSeen.Contains("191393") || Game1.MasterPlayer.eventsSeen.Contains("502261") || Game1.MasterPlayer.hasCompletedCommunityCenter();
 
-		private bool ShouldAllowPlanting(GameLocation location, IntPoint point)
+		private bool ShouldAllowPlanting(GameLocation location)
 		{
 			if (location is not IslandWest)
+				return true;
+			if (ShouldGingerIslandBeUnlockedInVanilla())
 				return true;
 
 			switch (Config.PlantingOnIslandFarmBeforeCC)
@@ -352,11 +354,7 @@ namespace Shockah.EarlyGingerIsland
 				case PlantingOnIslandFarmBeforeCC.Enabled:
 					return true;
 				case PlantingOnIslandFarmBeforeCC.OnlyOneCrop:
-					for (int y = 0; y < location.Map.DisplayHeight / Game1.tileSize; y++)
-						for (int x = 0; x < location.Map.DisplayWidth / Game1.tileSize; x++)
-							if (location.terrainFeatures.TryGetValue(new(x, y), out var terrainFeature) && terrainFeature is HoeDirt dirt && dirt.crop is not null)
-								return false;
-					return true;
+					return !location.terrainFeatures.Values.Any(feature => feature is HoeDirt dirt && dirt.crop is not null);
 				default:
 					throw new ArgumentException($"{nameof(PlantingOnIslandFarmBeforeCC)} has an invalid value.");
 			}
@@ -444,9 +442,8 @@ namespace Shockah.EarlyGingerIsland
 			} while (changedAny);
 		}
 
-		[SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Used in transpiled code")]
-		public static int ModifyTicketPrice(int price)
-			=> Instance.Config.BoatTicketPrice;
+		private static void BoatTunnel_ctor_Postfix(BoatTunnel __instance)
+			=> __instance.TicketPrice = Instance.Config.BoatTicketPrice;
 
 		private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
@@ -455,66 +452,45 @@ namespace Shockah.EarlyGingerIsland
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
 					.AsGuidAnchorable()
 
-					// replacing boat ticket price call - the original method gets inlined
-					.Do(matcher =>
-					{
-						return matcher
-							.ForEach(
-								SequenceMatcherRelativeBounds.WholeSequence,
-								new IElementMatch<CodeInstruction>[]
-								{
-									ILMatches.Ldarg(0),
-									ILMatches.Call(AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)))
-								},
-								matcher =>
-								{
-									return matcher
-										.Insert(
-											SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-											new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EarlyGingerIsland), nameof(ModifyTicketPrice)))
-										);
-								},
-								minExpectedOccurences: 2,
-								maxExpectedOccurences: 2
-							);
-					})
-
 					// replacing material costs
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(BatteryPackID),
+								ILMatches.Ldarg(3),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(BatteryPackID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.LdcI4(0),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
+								ILMatches.Call("ContainsId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixBatteryPacksRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixBatteryPacksRequired));
 					})
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(HardwoodID),
+								ILMatches.Ldarg(3),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(HardwoodID),
 								ILMatches.LdcI4(200).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.LdcI4(0),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
+								ILMatches.Call("ContainsId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixHardwoodRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixHardwoodRequired));
 					})
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
-								ILMatches.LdcI4(IridiumBarID),
+								ILMatches.Ldarg(3),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(IridiumBarID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.LdcI4(0),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.hasItemInInventory)))
+								ILMatches.Call("ContainsId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixIridiumBarsRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixIridiumBarsRequired));
 					})
 
 					.AllElements();
@@ -533,56 +509,45 @@ namespace Shockah.EarlyGingerIsland
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
 					.AsGuidAnchorable()
 
-					// replacing boat ticket price call - the original method gets inlined
-					.Do(matcher =>
-					{
-						return matcher
-							.Find(
-								ILMatches.Ldarg(0),
-								ILMatches.Call(AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.GetTicketPrice)))
-							)
-							.Insert(
-								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EarlyGingerIsland), nameof(ModifyTicketPrice)))
-							);
-					})
-
 					// replacing material costs
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(BatteryPackID),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(BatteryPackID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
+								ILMatches.Call("ReduceId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixBatteryPacksRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixBatteryPacksRequired));
 					})
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(HardwoodID),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(HardwoodID),
 								ILMatches.LdcI4(200).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
+								ILMatches.Call("ReduceId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixHardwoodRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixHardwoodRequired));
 					})
 					.Do(matcher =>
 					{
 						return matcher
 							.Find(
 								ILMatches.Call(AccessTools.PropertyGetter(typeof(Game1), nameof(Game1.player))),
-								ILMatches.LdcI4(IridiumBarID),
+								ILMatches.Call("get_Items"),
+								ILMatches.Ldstr(IridiumBarID),
 								ILMatches.LdcI4(5).WithAutoAnchor(out Guid countAnchor),
-								ILMatches.Call(AccessTools.Method(typeof(Farmer), nameof(Farmer.removeItemsFromInventory)))
+								ILMatches.Call("ReduceId")
 							)
 							.PointerMatcher(countAnchor)
-							.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.BoatFixIridiumBarsRequired));
+							.Replace(CodeInstruction.CallClosure(() => Instance.Config.BoatFixIridiumBarsRequired));
 					})
 
 					.AllElements();
@@ -659,14 +624,14 @@ namespace Shockah.EarlyGingerIsland
 			return requiredMails;
 		}
 
-		private static void HoeDirt_canPlantThisSeedHere_Postfix(HoeDirt __instance, int tileX, int tileY, bool isFertilizer, ref bool __result)
+		private static void HoeDirt_canPlantThisSeedHere_Postfix(HoeDirt __instance, bool isFertilizer, ref bool __result)
 		{
 			if (isFertilizer)
 				return;
 			if (__instance.crop is not null)
 				return;
 
-			if (!Instance.ShouldAllowPlanting(Game1.currentLocation, new(tileX, tileY)))
+			if (!Instance.ShouldAllowPlanting(__instance.Location))
 				__result = false;
 		}
 
@@ -682,7 +647,7 @@ namespace Shockah.EarlyGingerIsland
 						ILMatches.Bge
 					)
 					.PointerMatcher(countAnchor)
-					.Replace(CodeInstruction.CallClosure<Func<int>>(() => Instance.Config.GoldenWalnutsRequiredForQiRoom))
+					.Replace(CodeInstruction.CallClosure(() => Instance.Config.GoldenWalnutsRequiredForQiRoom))
 					.AllElements();
 			}
 			catch (Exception ex)
