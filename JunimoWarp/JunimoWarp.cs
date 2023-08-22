@@ -110,7 +110,7 @@ namespace Shockah.JunimoWarp
 				{
 					var warp = allWarps[(i + 1) % allWarps.Count];
 					foreach (var neighbor in new IntPoint[] { warp.Point + IntPoint.Bottom, warp.Point + IntPoint.Top, warp.Point + IntPoint.Left, warp.Point + IntPoint.Right })
-						if (warp.Location.isTileLocationTotallyClearAndPlaceableIgnoreFloors(new(neighbor.X, neighbor.Y)))
+						if (warp.Location.isTilePassable(new(neighbor.X, neighbor.Y)))
 							return (warp.Location, neighbor);
 				}
 			return (location, point);
@@ -134,7 +134,7 @@ namespace Shockah.JunimoWarp
 		internal static void AnimatePlayerWarp(GameLocation location, IntPoint point)
 		{
 			for (int i = 0; i < 12; i++)
-				GameExt.Multiplayer.broadcastSprites(Game1.player.currentLocation, new TemporaryAnimatedSprite(354, Game1.random.Next(25, 75), 6, 1, new Vector2(Game1.random.Next((int)Game1.player.position.X - 256, (int)Game1.player.position.X + 192), Game1.random.Next((int)Game1.player.position.Y - 256, (int)Game1.player.position.Y + 192)), flicker: false, Game1.random.NextDouble() < 0.5));
+				Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, new TemporaryAnimatedSprite(354, Game1.random.Next(25, 75), 6, 1, new Vector2(Game1.random.Next((int)Game1.player.position.X - 256, (int)Game1.player.position.X + 192), Game1.random.Next((int)Game1.player.position.Y - 256, (int)Game1.player.position.Y + 192)), flicker: false, Game1.random.NextDouble() < 0.5));
 			Game1.player.currentLocation.playSound("wand");
 			Game1.displayFarmer = false;
 			Game1.player.temporarilyInvincible = true;
@@ -161,9 +161,9 @@ namespace Shockah.JunimoWarp
 			}, 1000);
 
 			int j = 0;
-			for (int xTile = Game1.player.getTileX() + 8; xTile >= Game1.player.getTileX() - 8; xTile--)
+			for (int xTile = Game1.player.TilePoint.X + 8; xTile >= Game1.player.TilePoint.X - 8; xTile--)
 			{
-				GameExt.Multiplayer.broadcastSprites(Game1.player.currentLocation, new TemporaryAnimatedSprite(6, new Vector2(xTile, Game1.player.getTileY()) * 64f, Color.White, 8, flipped: false, 50f)
+				Game1.Multiplayer.broadcastSprites(Game1.player.currentLocation, new TemporaryAnimatedSprite(6, new Vector2(xTile, Game1.player.Tile.Y) * 64f, Color.White, 8, flipped: false, 50f)
 				{
 					layerDepth = 1f,
 					delayBeforeAnimationStart = j * 25,
