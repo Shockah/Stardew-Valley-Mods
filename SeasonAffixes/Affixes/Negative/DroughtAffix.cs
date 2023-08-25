@@ -50,7 +50,7 @@ internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
 		);
 	}
 
-	private static void Game1_getWeatherModificationsForDate_Postfix(ref int __result)
+	private static void Game1_getWeatherModificationsForDate_Postfix(ref string __result)
 	{
 		if (!Mod.IsAffixActive(a => a is DroughtAffix))
 			return;

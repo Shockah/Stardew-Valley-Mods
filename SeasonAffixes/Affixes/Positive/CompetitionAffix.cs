@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using xTile.Dimensions;
 
 namespace Shockah.SeasonAffixes;
 
@@ -95,7 +96,7 @@ internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.performAction)),
+			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.performAction), new Type[] { typeof(string[]), typeof(Farmer), typeof(Location) }),
 			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_performAction_Prefix)))
 		);
 
@@ -217,7 +218,7 @@ internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 
 		if (questionAndAnswer == $"{Instance.UniqueID}.BuySellQiCoins_BuyQiCoins")
 		{
-			var tileLocation = Game1.player.getTileLocation();
+			var tileLocation = Game1.player.Tile;
 			RunOriginalBuyQiCoins.Value = true;
 			__instance.performAction("BuyQiCoins", Game1.player, new((int)tileLocation.X, (int)tileLocation.Y));
 		}

@@ -74,17 +74,21 @@ internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 			if (Game1.random.Next() < Mod.Config.WildGrowthAdvanceChance)
 			{
 				bool wasFertilized = tree.fertilized.Value;
+
 				tree.fertilized.Value = true;
-				tree.dayUpdate(new FakeLocation(farm), tree.currentTileLocation);
+				tree.Location = new FakeLocation(farm);
+
+				tree.dayUpdate();
+
 				tree.fertilized.Value = wasFertilized;
+				tree.Location = farm;
 			}
 			if (tree.growthStage.Value >= 5 && Game1.random.Next() < Mod.Config.WildGrowthNewSeedChance)
 			{
-				int xCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.X;
-				int yCoord = Game1.random.Next(-3, 4) + (int)tree.currentTileLocation.Y;
+				int xCoord = Game1.random.Next(-3, 4) + (int)tree.Tile.X;
+				int yCoord = Game1.random.Next(-3, 4) + (int)tree.Tile.Y;
 				Vector2 location = new(xCoord, yCoord);
-				var noSpawn = farm.doesTileHaveProperty(xCoord, yCoord, "NoSpawn", "Back");
-				if ((noSpawn is null || (!noSpawn.Equals("Tree") && !noSpawn.Equals("All") && !noSpawn.Equals("True"))) && farm.isTileLocationOpen(new Location(xCoord, yCoord)) && !farm.isTileOccupied(location) && farm.doesTileHaveProperty(xCoord, yCoord, "Water", "Back") is null && farm.isTileOnMap(location))
+				if (!farm.IsNoSpawnTile(location, "Tree") && farm.isTileLocationOpen(new Location(xCoord, yCoord)) && !farm.IsTileOccupiedBy(location) && !farm.isWaterTile(xCoord, yCoord) && farm.isTileOnMap(location))
 					farm.terrainFeatures.Add(location, new Tree(tree.treeType.Value, 0));
 			}
 		}
@@ -110,10 +114,10 @@ internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
 		public override string? doesTileHaveProperty(int xTile, int yTile, string propertyName, string layerName)
 			=> Wrapped.doesTileHaveProperty(xTile, yTile, propertyName, layerName);
 
-		public override bool CanPlantTreesHere(int sapling_index, int tile_x, int tile_y)
-			=> Wrapped.CanPlantTreesHere(sapling_index, tile_x, tile_y);
+		public override bool CanPlantTreesHere(string itemId, int tile_x, int tile_y)
+			=> Wrapped.CanPlantTreesHere(itemId, tile_x, tile_y);
 
-		public override bool isTileOccupied(Vector2 tileLocation, string? characterToIgnore = "", bool ignoreAllCharacters = false)
-			=> Wrapped.isTileOccupied(tileLocation, characterToIgnore, ignoreAllCharacters);
+		public override bool IsTileOccupiedBy(Vector2 tile, CollisionMask collisionMask = CollisionMask.All, CollisionMask ignorePassables = CollisionMask.None, bool useFarmerTile = false)
+			=> Wrapped.IsTileOccupiedBy(tile, collisionMask, ignorePassables, useFarmerTile);
 	}
 }

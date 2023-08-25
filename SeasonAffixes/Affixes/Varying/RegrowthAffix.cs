@@ -8,6 +8,7 @@ using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.GameData.Crops;
 using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using System;
@@ -36,7 +37,7 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 
 	private static readonly Lazy<Func<Crop, Vector2>> TilePositionGetter = new(() => AccessTools.Field(typeof(Crop), "tilePosition").EmitInstanceGetter<Crop, Vector2>());
 
-	private readonly HashSet<int> AdjustedCrops = new();
+	private readonly HashSet<string> AdjustedCrops = new();
 
 	public RegrowthAffix(AffixVariant variant) : base(variant == AffixVariant.Positive ? ShortPositiveID : ShortNegativeID, variant)
 	{
@@ -53,11 +54,11 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; }
 
-	public void OnRegister()
-		=> Apply(Mod.Harmony);
-
 	public double GetProbabilityWeight(OrdinalSeason season)
 		=> Mod.Config.WinterCrops || season.Season != Season.Winter ? 1 : 0;
+
+	public void OnRegister()
+		=> Apply(Mod.Harmony);
 
 	public void OnActivate(AffixActivationContext context)
 	{
@@ -96,26 +97,23 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 		{
 			AdjustedCrops.Clear();
 
-			var data = asset.AsDictionary<int, string>();
+			var data = asset.AsDictionary<string, CropData>();
 			foreach (var kvp in data.Data)
 			{
-				string[] split = kvp.Value.Split('/');
 				if (Variant == AffixVariant.Positive)
 				{
-					if (split[4] == "-1")
+					if (kvp.Value.RegrowDays == -1)
 					{
-						int totalGrowthDays = split[0].Split(" ").Select(growthStage => int.Parse(growthStage)).Sum();
-						split[4] = $"{(int)Math.Ceiling(totalGrowthDays / 3.0)}";
-						data.Data[kvp.Key] = string.Join("/", split);
+						int totalGrowthDays = kvp.Value.DaysInPhase.Sum();
+						kvp.Value.RegrowDays = (int)Math.Ceiling(totalGrowthDays / 3.0);
 						AdjustedCrops.Add(kvp.Key);
 					}
 				}
 				else
 				{
-					if (split[4] != "-1")
+					if (kvp.Value.RegrowDays != -1)
 					{
-						split[4] = "-1";
-						data.Data[kvp.Key] = string.Join("/", split);
+						kvp.Value.RegrowDays = -1;
 						AdjustedCrops.Add(kvp.Key);
 					}
 				}
@@ -140,12 +138,7 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 
 	private static void UpdateCrop(Crop crop)
 	{
-		Dictionary<int, string> allCropData = Game1.content.Load<Dictionary<int, string>>("Data\\Crops");
-		if (!allCropData.TryGetValue(crop.netSeedIndex.Value, out var cropData))
-			return;
-		string[] split = cropData.Split('/');
-		crop.regrowAfterHarvest.Value = Convert.ToInt32(split[4]);
-		if (crop.regrowAfterHarvest.Value == -1)
+		if (!crop.RegrowsAfterHarvest())
 			crop.fullyGrown.Value = false;
 		crop.updateDrawMath(TilePositionGetter.Value(crop));
 	}

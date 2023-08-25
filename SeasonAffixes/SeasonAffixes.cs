@@ -301,7 +301,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		var today = Game1.Date;
 		var tomorrow = Game1.Date.GetByAddingDays(1);
 
-		if (Config.ChoiceOnYear1Spring2 && tomorrow.Year == 1 && tomorrow.GetSeason() == Season.Spring && tomorrow.DayOfMonth == 2)
+		if (Config.ChoiceOnYear1Spring2 && tomorrow.Year == 1 && tomorrow.Season == Season.Spring && tomorrow.DayOfMonth == 2)
 		{
 			QueueOvernightAffixChoice();
 			return;
@@ -327,7 +327,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 					return;
 				break;
 			case AffixSetChoicePeriod.Season:
-				if (tomorrow.Year == today.Year && tomorrow.GetSeason() == today.GetSeason())
+				if (tomorrow.Year == today.Year && tomorrow.Season == today.Season)
 					return;
 				break;
 			case AffixSetChoicePeriod.Year:
@@ -783,6 +783,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
 				.Find(
 					ILMatches.Ldstr("newRecord"),
+					ILMatches.AnyLdloca,
+					ILMatches.Instruction(OpCodes.Initobj),
+					ILMatches.AnyLdloc,
 					ILMatches.Call("playSound")
 				)
 				.PointerMatcher(SequenceMatcherRelativeElement.AfterLast)
@@ -812,7 +815,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		if (Context.IsMainPlayer)
 		{
 			var date = Game1.Date; // it's already "tomorrow" by now
-			OrdinalSeason season = new(date.Year, date.GetSeason());
+			OrdinalSeason season = new(date.Year, date.Season);
 
 			int seed = 0;
 			seed = 31 * seed + (int)Game1.uniqueIDForThisGame;
@@ -842,7 +845,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 			while (Instance.SaveData.AffixSetChoiceHistory.Count > Instance.Config.AffixSetRepeatPeriod)
 				Instance.SaveData.AffixSetChoiceHistory.RemoveAt(0);
 
-			Instance.AffixChoiceMenuConfig = new(new(date.Year, date.GetSeason()), Instance.Config.Incremental, choices, 0);
+			Instance.AffixChoiceMenuConfig = new(new(date.Year, date.Season), Instance.Config.Incremental, choices, 0);
 			Instance.SendModMessageToEveryone(new NetMessage.UpdateAffixChoiceMenuConfig(
 				season,
 				Instance.Config.Incremental,

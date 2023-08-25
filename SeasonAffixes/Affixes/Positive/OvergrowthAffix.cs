@@ -4,8 +4,13 @@ using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
+using StardewValley.Extensions;
+using StardewValley.GameData.Locations;
+using StardewValley.Internal;
 using StardewValley.TerrainFeatures;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
@@ -52,51 +57,70 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 		if (!Mod.IsAffixActive(a => a is OvergrowthAffix))
 			return;
 
-		var itemToSpawn = GetItemToSpawn(soil.currentLocation);
-		if (itemToSpawn is null)
+		var forage = GetForageToSpawn(soil.Location);
+		if (forage is null)
 			return;
 
-		var location = soil.currentLocation;
 		Vector2 point = new(xTile, yTile);
-		Poof(location, point);
+		Poof(soil.Location, point);
 		DelayedAction.functionAfterDelay(() =>
 		{
-			location.removeEverythingExceptCharactersFromThisTile(xTile, yTile);
-			location.dropObject(new SObject(point, itemToSpawn.Value, null, canBeSetDown: false, canBeGrabbed: true, isHoedirt: false, isSpawnedObject: true), point * 64, Game1.viewport, initialPlacement: true);
+			soil.Location.removeObjectsAndSpawned(xTile, yTile, 1, 1);
+			soil.Location.dropObject(forage, point * 64, Game1.viewport, initialPlacement: true);
 		}, SpawnDelay);
 	}
 
-	private static int? GetItemToSpawn(GameLocation location)
+	private static SObject? GetForageToSpawn(GameLocation location)
 	{
-		var season = (Season)Utility.getSeasonNumber(location.GetSeasonForLocation());
-		WeightedRandom<int> weighted = new();
-		PopulateForage(weighted, location.Name, season);
+		var random = new Random();
+		var possibleForage = GetPossibleForage(location, random);
+		if (possibleForage.Count == 0)
+			return null;
 
-		if (weighted.Items.Count == 0)
-		{
-			PopulateForage(weighted, "BusStop", season);
-			PopulateForage(weighted, "Forest", season);
-			PopulateForage(weighted, "Town", season);
-			PopulateForage(weighted, "Mountain", season);
-			PopulateForage(weighted, "Backwoods", season);
-			PopulateForage(weighted, "Railroad", season);
-		}
-		return weighted.Items.Count == 0 ? null : weighted.Next(Game1.random);
+		var forage = possibleForage
+			.Where(entry => entry.Chance > 0)
+			.OrderBy(entry => entry.Chance)
+			.FirstOrDefault(entry => entry.Chance >= 1 || entry.Chance <= random.Next());
+		if (forage is null)
+			return null;
+		if (ItemQueryResolver.TryResolveRandomItem(forage, new ItemQueryContext(location, null, random)) is not SObject item)
+			return null;
+		return item;
 	}
 
-	private static void PopulateForage(WeightedRandom<int> weighted, string locationName, Season season)
+	private static List<SpawnForageData> GetPossibleForage(GameLocation location, Random random)
 	{
-		var data = Game1.content.Load<Dictionary<string, string>>("Data\\Locations");
-		if (!data.TryGetValue(locationName, out var rawData))
-			return;
+		List<SpawnForageData> forage = new();
+		forage.AddRange(GetPossibleForage(location, location.Name, random));
 
-		string rawSeasonData = rawData.Split('/')[(int)season];
-		if (rawSeasonData == "-1")
-			return;
+		if (forage.Count == 0)
+		{
+			forage.AddRange(GetPossibleForage(location, "BusStop", random));
+			forage.AddRange(GetPossibleForage(location, "Forest", random));
+			forage.AddRange(GetPossibleForage(location, "Town", random));
+			forage.AddRange(GetPossibleForage(location, "Mountain", random));
+			forage.AddRange(GetPossibleForage(location, "Backwoods", random));
+			forage.AddRange(GetPossibleForage(location, "Railroad", random));
+		}
+		return forage;
+	}
 
-		string[] split = rawSeasonData.Split(" ");
-		for (int i = 0; i < split.Length; i += 2)
-			weighted.Add(new(double.Parse(split[i + 1]), int.Parse(split[i])));
+	private static List<SpawnForageData> GetPossibleForage(GameLocation location, string dataLocationName, Random random)
+	{
+		var data = Game1.content.Load<Dictionary<string, LocationData>>("Data\\Locations");
+		if (!data.TryGetValue(dataLocationName, out var locationData))
+			return new List<SpawnForageData>();
+
+		return locationData.Forage
+			.Where(entry =>
+			{
+				if (entry.Season is not null && entry.Season.Value != location.GetSeason())
+					return false;
+				if (entry.Condition is not null && !GameStateQuery.CheckConditions(entry.Condition, location, null, null, null, random))
+					return false;
+				return true;
+			})
+			.ToList();
 	}
 
 	private static void Poof(GameLocation location, Vector2 point)
@@ -121,6 +145,6 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 		{
 			light = true
 		};
-		GameExt.Multiplayer.broadcastSprites(location, sprite);
+		Game1.Multiplayer.broadcastSprites(location, sprite);
 	}
 }

@@ -10,6 +10,8 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.GameData.Buildings;
+using StardewValley.GameData.Tools;
 using StardewValley.Locations;
 using StardewValley.Menus;
 using System;
@@ -74,18 +76,38 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 
 	private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
 	{
-		if (!e.Name.IsEquivalentTo("Strings\\Locations"))
-			return;
-		e.Edit(rawAsset =>
+		if (e.Name.IsEquivalentTo("Strings\\Locations"))
 		{
-			var asset = rawAsset.AsDictionary<string, string>();
-			asset.Data["BusStop_BuyTicketToDesert"] = asset.Data["BusStop_BuyTicketToDesert"].Replace("500", $"{GetModifiedPrice(500)}");
-			asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"].Replace("10,000", $"{GetModifiedPrice(10000):#,##0}").Replace("10.000", $"{GetModifiedPrice(10000):#.##0}");
-			asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"].Replace("50,000", $"{GetModifiedPrice(50000):#,##0}").Replace("50.000", $"{GetModifiedPrice(50000):#.##0}");
-			asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"].Replace("100,000", $"{GetModifiedPrice(100000):#,##0}").Replace("100.000", $"{GetModifiedPrice(100000):#.##0}");
-			asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"].Replace("500,000", $"{GetModifiedPrice(500000):#,##0}").Replace("500.000", $"{GetModifiedPrice(500000):#.##0}");
-			asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"].Replace("300,000", $"{GetModifiedPrice(300000):#,##0}").Replace("300.000", $"{GetModifiedPrice(300000):#.##0}");
-		});
+			e.Edit(rawAsset =>
+			{
+				var asset = rawAsset.AsDictionary<string, string>();
+				asset.Data["BusStop_BuyTicketToDesert"] = asset.Data["BusStop_BuyTicketToDesert"].Replace("500", $"{GetModifiedPrice(500)}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse1"].Replace("10,000", $"{GetModifiedPrice(10000):#,##0}").Replace("10.000", $"{GetModifiedPrice(10000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse2"].Replace("50,000", $"{GetModifiedPrice(50000):#,##0}").Replace("50.000", $"{GetModifiedPrice(50000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"] = asset.Data["ScienceHouse_Carpenter_UpgradeHouse3"].Replace("100,000", $"{GetModifiedPrice(100000):#,##0}").Replace("100.000", $"{GetModifiedPrice(100000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade1"].Replace("500,000", $"{GetModifiedPrice(500000):#,##0}").Replace("500.000", $"{GetModifiedPrice(500000):#.##0}");
+				asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"] = asset.Data["ScienceHouse_Carpenter_CommunityUpgrade2"].Replace("300,000", $"{GetModifiedPrice(300000):#,##0}").Replace("300.000", $"{GetModifiedPrice(300000):#.##0}");
+			});
+		}
+		else if (e.Name.IsEquivalentTo("Data\\Buildings"))
+		{
+			e.Edit(rawAsset =>
+			{
+				var asset = rawAsset.AsDictionary<string, BuildingData>();
+				foreach (var (key, building) in asset.Data)
+					building.BuildCost = GetModifiedPrice(building.BuildCost);
+			});
+		}
+		else if (e.Name.IsEquivalentTo("Data\\Tools"))
+		{
+			e.Edit(rawAsset =>
+			{
+				var asset = rawAsset.AsDictionary<string, ToolData>();
+				foreach (var (key, tool) in asset.Data)
+					if (tool.SalePrice > 0)
+						tool.SalePrice = GetModifiedPrice(tool.SalePrice);
+			});
+		}
 	}
 
 	private void OnDayStarted(object? sender, DayStartedEventArgs e)
@@ -101,9 +123,17 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		if (HandledShopMenus.Value.Any(r => r.TryGetTarget(out var handledMenu) && ReferenceEquals(handledMenu, menu)))
 			return;
 
-		foreach (var kvp in menu.itemPriceAndStock)
-			if (kvp.Value.Length == 2)
-				ModifyPrice(ref kvp.Value[0], kvp.Key);
+		foreach (var kvp in menu.itemPriceAndStock.ToList())
+			menu.itemPriceAndStock[kvp.Key] = new(
+				price: GetModifiedPrice(kvp.Value.price, kvp.Key),
+				stock: kvp.Value.stock,
+				trade_item: kvp.Value.tradeItem,
+				trade_item_count: kvp.Value.tradeItemCount,
+				stock_mode: kvp.Value.limitedStockMode,
+				synced_key: kvp.Value.syncedKey,
+				item_to_sync_stack: kvp.Value.itemToSyncStacks,
+				stack_draw_type: kvp.Value.stackDrawType
+			);
 	}
 
 	private void Apply(Harmony harmony)
@@ -115,66 +145,53 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		harmony.TryPatchVirtual(
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.sellToStorePrice)),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SObject_sellToStorePrice_Postfix)))
+			postfix: new HarmonyMethod(GetType(), nameof(SObject_sellToStorePrice_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Constructor(typeof(BluePrint), new Type[] { typeof(string) }),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BluePrint_ctor_Postfix)))
+			original: () => AccessTools.DeclaredConstructor(typeof(BusStop), new Type[] { typeof(string), typeof(string) }),
+			postfix: new HarmonyMethod(GetType(), nameof(BusStop_ctor_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(Utility), "priceForToolUpgradeLevel"),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Utility_priceForToolUpgradeLevel_Postfix)))
-		);
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(BusStop), nameof(BusStop.answerDialogue)),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BusStop_answerDialogue_Transpiler)))
-		);
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BoatTunnel_checkAction_Transpiler)))
-		);
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BoatTunnel_answerDialogue_Transpiler)))
+			original: () => AccessTools.DeclaredConstructor(typeof(BoatTunnel), new Type[] { typeof(string), typeof(string) }),
+			postfix: new HarmonyMethod(GetType(), nameof(BoatTunnel_ctor_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(GameLocation), "houseUpgradeAccept"),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_houseUpgradeAccept_Transpiler)))
+			transpiler: new HarmonyMethod(GetType(), nameof(GameLocation_houseUpgradeAccept_Transpiler))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(GameLocation), "communityUpgradeAccept"),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_communityUpgradeAccept_Transpiler)))
+			transpiler: new HarmonyMethod(GetType(), nameof(GameLocation_communityUpgradeAccept_Transpiler))
 		);
 
-		if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.JsonAssets"))
-		{
-			harmony.TryPatch(
-				monitor: Mod.Monitor,
-				original: () => AccessTools.Method(AccessTools.TypeByName("JsonAssets.Mod, JsonAssets"), "OnMenuChanged"),
-				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(JsonAssets_Mod_OnMenuChanged_Transpiler)))
-			);
-		}
+		// TODO: reimplement Json Assets integration, if needed
+		//if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.JsonAssets"))
+		//{
+		//	harmony.TryPatch(
+		//		monitor: Mod.Monitor,
+		//		original: () => AccessTools.Method(AccessTools.TypeByName("JsonAssets.Mod, JsonAssets"), "OnMenuChanged"),
+		//		transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(JsonAssets_Mod_OnMenuChanged_Transpiler)))
+		//	);
+		//}
 
-		if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.DynamicGameAssets"))
-		{
-			harmony.TryPatch(
-				monitor: Mod.Monitor,
-				original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShop"),
-				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
-			);
-			harmony.TryPatch(
-				monitor: Mod.Monitor,
-				original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShopStock"),
-				transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
-			);
-		}
+		// TODO: reimplement Dynamic Game Assets integration, if needed
+		//if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.DynamicGameAssets"))
+		//{
+		//	harmony.TryPatch(
+		//		monitor: Mod.Monitor,
+		//		original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShop"),
+		//		transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+		//	);
+		//	harmony.TryPatch(
+		//		monitor: Mod.Monitor,
+		//		original: () => AccessTools.Method(AccessTools.TypeByName("DynamicGameAssets.ShopEntry, DynamicGameAssets"), "AddToShopStock"),
+		//		transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler)))
+		//	);
+		//}
 	}
 
 	private void PruneHandledContexts()
@@ -183,15 +200,14 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 	public static int GetModifiedPrice(int originalPrice)
 		=> (int)Math.Round(originalPrice * (1f + Mod.Config.InflationIncrease));
 
-	private void ModifyPrice(ref int price, object? context)
+	private int GetModifiedPrice(int originalPrice, object? context)
 	{
-		if (context is not null)
-		{
-			if (HandledContexts.Value.Any(r => r.TryGetTarget(out var handledContext) && ReferenceEquals(handledContext, context)))
-				return;
-			HandledContexts.Value.Add(new(context));
-		}
-		price = GetModifiedPrice(price);
+		if (context is null)
+			return GetModifiedPrice(originalPrice);
+		if (HandledContexts.Value.Any(r => r.TryGetTarget(out var handledContext) && ReferenceEquals(handledContext, context)))
+			return originalPrice;
+		HandledContexts.Value.Add(new(context));
+		return GetModifiedPrice(originalPrice);
 	}
 
 	private static void SObject_sellToStorePrice_Postfix(ref int __result)
@@ -201,105 +217,14 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
 		if (affix is null)
 			return;
-		affix.ModifyPrice(ref __result, context: null);
+		__result = GetModifiedPrice(__result);
 	}
 
-	private static void BluePrint_ctor_Postfix(BluePrint __instance)
-	{
-		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
-		if (affix is null)
-			return;
-		affix.ModifyPrice(ref __instance.moneyRequired, __instance);
-	}
+	private static void BusStop_ctor_Postfix(BusStop __instance)
+		=> __instance.TicketPrice = GetModifiedPrice(__instance.TicketPrice);
 
-	private static void Utility_priceForToolUpgradeLevel_Postfix(ref int __result)
-	{
-		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
-		if (affix is null)
-			return;
-		affix.ModifyPrice(ref __result, context: null);
-	}
-
-	private static IEnumerable<CodeInstruction> BusStop_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.ForEach(
-					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
-						ILMatches.LdcI4(500)
-					},
-					matcher =>
-					{
-						return matcher
-							.Insert(
-								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
-							);
-					},
-					minExpectedOccurences: 3,
-					maxExpectedOccurences: 3
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
-
-	private static IEnumerable<CodeInstruction> BoatTunnel_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.ForEach(
-					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
-						ILMatches.Call("GetTicketPrice")
-					},
-					matcher =>
-					{
-						return matcher
-							.Insert(
-								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
-							);
-					},
-					minExpectedOccurences: 2,
-					maxExpectedOccurences: 2
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
-
-	private static IEnumerable<CodeInstruction> BoatTunnel_answerDialogue_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(ILMatches.Call("GetTicketPrice"))
-				.Insert(
-					SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
+	private static void BoatTunnel_ctor_Postfix(BoatTunnel __instance)
+		=> __instance.TicketPrice = GetModifiedPrice(__instance.TicketPrice);
 
 	private static IEnumerable<CodeInstruction> GameLocation_houseUpgradeAccept_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 	{
@@ -317,7 +242,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 						return matcher
 							.Insert(
 								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice), new Type[] { typeof(int) }))
 							);
 					},
 					minExpectedOccurences: 3,
@@ -334,7 +259,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 						return matcher
 							.Insert(
 								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice), new Type[] { typeof(int) }))
 							);
 					},
 					minExpectedOccurences: 3,
@@ -351,7 +276,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 						return matcher
 							.Insert(
 								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice), new Type[] { typeof(int) }))
 							);
 					},
 					minExpectedOccurences: 3,
@@ -382,7 +307,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 						return matcher
 							.Insert(
 								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice), new Type[] { typeof(int) }))
 							);
 					},
 					minExpectedOccurences: 3,
@@ -399,7 +324,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 						return matcher
 							.Insert(
 								SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice)))
+								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(GetModifiedPrice), new Type[] { typeof(int) }))
 							);
 					},
 					minExpectedOccurences: 3,
@@ -414,66 +339,66 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 		}
 	}
 
-	private static IEnumerable<CodeInstruction> JsonAssets_Mod_OnMenuChanged_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) })))
-				.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))))
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
+	//private static IEnumerable<CodeInstruction> JsonAssets_Mod_OnMenuChanged_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+	//{
+	//	try
+	//	{
+	//		return new SequenceBlockMatcher<CodeInstruction>(instructions)
+	//			.Find(ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) })))
+	//			.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))))
+	//			.AllElements();
+	//	}
+	//	catch (Exception ex)
+	//	{
+	//		Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+	//		return instructions;
+	//	}
+	//}
 
-	private static IEnumerable<CodeInstruction> DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.ForEach(
-					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
-						ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) }))
-					},
-					matcher =>
-					{
-						return matcher
-							.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))));
-					},
-					minExpectedOccurences: 3,
-					maxExpectedOccurences: 3
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
+	//private static IEnumerable<CodeInstruction> DynamicGameAssets_ShopEntry_AddToShopOrAddToShopStock_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+	//{
+	//	try
+	//	{
+	//		return new SequenceBlockMatcher<CodeInstruction>(instructions)
+	//			.ForEach(
+	//				SequenceMatcherRelativeBounds.WholeSequence,
+	//				new IElementMatch<CodeInstruction>[]
+	//				{
+	//					ILMatches.Instruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<ISalable, int[]>), nameof(Dictionary<ISalable, int[]>.Add), new Type[] { typeof(ISalable), typeof(int[]) }))
+	//				},
+	//				matcher =>
+	//				{
+	//					return matcher
+	//						.Replace(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InflationAffix), nameof(JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues))));
+	//				},
+	//				minExpectedOccurences: 3,
+	//				maxExpectedOccurences: 3
+	//			)
+	//			.AllElements();
+	//	}
+	//	catch (Exception ex)
+	//	{
+	//		Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+	//		return instructions;
+	//	}
+	//}
 
-	public static void JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues(Dictionary<ISalable, int[]> stock, ISalable item, int[] values)
-	{
-		if (values.Length != 2)
-		{
-			stock.Add(item, values);
-			return;
-		}
+	//public static void JsonAssetsOrDynamicGameAssets_Mod_OnMenuChanged_Transpiler_ModifyValues(Dictionary<ISalable, int[]> stock, ISalable item, int[] values)
+	//{
+	//	if (values.Length != 2)
+	//	{
+	//		stock.Add(item, values);
+	//		return;
+	//	}
 
-		var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
-		if (affix is null)
-		{
-			stock.Add(item, values);
-			return;
-		}
+	//	var affix = Mod.ActiveAffixes.OfType<InflationAffix>().FirstOrDefault();
+	//	if (affix is null)
+	//	{
+	//		stock.Add(item, values);
+	//		return;
+	//	}
 
-		affix.ModifyPrice(ref values[0], item);
-		stock.Add(item, values);
-	}
+	//	affix.ModifyPrice(ref values[0], item);
+	//	stock.Add(item, values);
+	//}
 }

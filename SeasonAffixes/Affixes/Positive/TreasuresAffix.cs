@@ -23,7 +23,7 @@ partial class ModConfig
 
 internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix
 {
-	private const int ArtifactTroveID = 275;
+	private const string ArtifactTroveID = "(O)275";
 
 	private static bool IsHarmonySetup = false;
 

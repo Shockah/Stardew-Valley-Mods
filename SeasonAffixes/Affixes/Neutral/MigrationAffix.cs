@@ -1,13 +1,15 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
+using Nanoray.Shrike;
+using Nanoray.Shrike.Harmony;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Locations;
+using StardewValley.Internal;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -16,7 +18,6 @@ namespace Shockah.SeasonAffixes;
 internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
-	private static readonly List<WeakReference<GameLocation>> LocationsDuringGetFish = new();
 
 	private static string ShortID => "Migration";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
@@ -43,73 +44,55 @@ internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
 
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.getFish)),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_getFish_Transpiler)))
-		);
-
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(Beach), nameof(Beach.getFish)),
-			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocationSubclass_getFish_Prefix)), priority: Priority.First),
-			finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocationSubclass_getFish_Finalizer)), priority: Priority.Last)
-		);
-
-		harmony.TryPatchVirtual(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.IsUsingMagicBait)),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(GameLocation_IsUsingMagicBait_Postfix)))
+			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.GetFishFromLocationData), new Type[] { typeof(string), typeof(Vector2), typeof(int), typeof(Farmer), typeof(bool), typeof(bool), typeof(GameLocation), typeof(ItemQueryContext) }),
+			transpiler: new HarmonyMethod(GetType(), nameof(GameLocation_GetFishFromLocationData_Transpiler))
 		);
 	}
 
-	private static IEnumerable<CodeInstruction> GameLocation_getFish_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+	private static IEnumerable<CodeInstruction> GameLocation_GetFishFromLocationData_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 	{
-		// TODO: Shrike improvements: finding a matching stloc/ldloc to a given stloc/ldloc
-
-		bool foundInstruction = false;
-		int toSkip = 0;
-
-		foreach (var instruction in instructions)
+		try
 		{
-			if (!foundInstruction && instruction.opcode == OpCodes.Ldloc_S && ((instruction.operand is int intValue && intValue == 4) || (instruction.operand is sbyte sbyteValue && sbyteValue == 4) || (instruction.operand is LocalBuilder builder && builder.LocalIndex == 4)))
-			{
-				foundInstruction = true;
-				toSkip = 1;
+			return new SequenceBlockMatcher<CodeInstruction>(instructions)
 
-				yield return new CodeInstruction(OpCodes.Ldloc_S, (sbyte)4);
-				yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_getFish_Transpiler_ShouldCountAsMagicBait)));
-			}
+				.Find(
+					ILMatches.Stloc<HashSet<string>>(originalMethod.GetMethodBody()!.LocalVariables)
+				)
+				.PointerMatcher(SequenceMatcherRelativeElement.First)
+				.CreateLdlocInstruction(out var ldlocIgnoreQueryKeys)
+				.Insert(
+					SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
-			if (toSkip > 0)
-				toSkip--;
-			else
-				yield return instruction;
+					ldlocIgnoreQueryKeys,
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys)))
+				)
+
+				.Find(
+					ILMatches.Ldloca<Season?>(originalMethod.GetMethodBody()!.LocalVariables),
+					ILMatches.Call("GetValueOrDefault"),
+					ILMatches.Ldloc<Season>(originalMethod.GetMethodBody()!.LocalVariables),
+					ILMatches.Instruction(OpCodes.Ceq)
+				)
+				.Insert(
+					SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_GetFishFromLocationData_Transpiler_DoSeasonsMatch)))
+				)
+
+				.AllElements();
 		}
-
-		if (!foundInstruction || toSkip != 0)
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: could not find instruction sequence.", LogLevel.Error);
+		catch (Exception ex)
+		{
+			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+			return instructions;
+		}
 	}
 
-	public static bool GameLocation_getFish_Transpiler_ShouldCountAsMagicBait(bool isUsingMagicBait)
-		=> isUsingMagicBait || Mod.IsAffixActive(a => a is MigrationAffix);
-
-	private static void GameLocationSubclass_getFish_Prefix(GameLocation __instance)
+	private static void GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys(HashSet<string> ignoreQueryKeys)
 	{
-		LocationsDuringGetFish.Add(new(__instance));
+		foreach (var key in GameStateQuery.SeasonQueryKeys)
+			ignoreQueryKeys.Add(key);
 	}
 
-	private static void GameLocationSubclass_getFish_Finalizer(GameLocation __instance)
-	{
-		int? index = LocationsDuringGetFish.FirstIndex(r => r.TryGetTarget(out var location) && location == __instance);
-		if (index is not null)
-			LocationsDuringGetFish.RemoveAt(index.Value);
-	}
-
-	private static void GameLocation_IsUsingMagicBait_Postfix(GameLocation __instance, ref bool __result)
-	{
-		if (!Mod.IsAffixActive(a => a is MigrationAffix))
-			return;
-		if (!LocationsDuringGetFish.Any(r => r.TryGetTarget(out var location) && location == __instance))
-			return;
-		__result = true;
-	}
+	private static bool GameLocation_GetFishFromLocationData_Transpiler_DoSeasonsMatch(bool doSeasonsMatch)
+		=> doSeasonsMatch || Mod.IsAffixActive(a => a is MigrationAffix);
 }

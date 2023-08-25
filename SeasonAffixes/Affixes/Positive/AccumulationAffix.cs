@@ -72,7 +72,7 @@ internal sealed class AccumulationAffix : BaseSeasonAffix, ISeasonAffix
 		__state = TreeFallingGetter.Value(__instance);
 	}
 
-	private static void Tree_tickUpdate_Postfix(Tree __instance, Vector2 tileLocation, GameLocation location, ref bool __state)
+	private static void Tree_tickUpdate_Postfix(Tree __instance, ref bool __state)
 	{
 		if (TreeDestroyGetter.Value(__instance).Value)
 			return;
@@ -87,11 +87,11 @@ internal sealed class AccumulationAffix : BaseSeasonAffix, ISeasonAffix
 		if (Game1.random.NextDouble() >= Mod.Config.AccumulationChance)
 			return;
 
-		SObject fakeTapper = new(Vector2.Zero, 105);
+		SObject fakeTapper = (SObject)ItemRegistry.Create("(O)105");
 		__instance.UpdateTapperProduct(fakeTapper);
 		if (fakeTapper.heldObject.Value is null)
 			return;
 
-		Game1.createItemDebris(fakeTapper.heldObject.Value, new Vector2(tileLocation.X + (__instance.shakeLeft.Value ? (-4) : 4), tileLocation.Y) * Game1.tileSize, -1, location, playerToDropFor.getStandingY() - 32);
+		Game1.createItemDebris(fakeTapper.heldObject.Value, new Vector2(__instance.Tile.X + (__instance.shakeLeft.Value ? (-4) : 4), __instance.Tile.Y) * Game1.tileSize, -1, __instance.Location, playerToDropFor.StandingPixel.Y - 32);
 	}
 }

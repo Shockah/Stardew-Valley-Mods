@@ -5,8 +5,8 @@ using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
-using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Buffs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -112,20 +112,14 @@ internal sealed class SkillAffix : ISeasonAffix
 
 	public void OnActivate(AffixActivationContext context)
 	{
-		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
-		Mod.Helper.Events.GameLoop.DayEnding += OnDayEnding;
-
-		if (!(context is AffixActivationContext.Choice or AffixActivationContext.SaveLoadedOrUnloaded) && Skill is VanillaSkill skill)
-			ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
+		foreach (var player in Game1.getAllFarmers())
+			player.buffs.Dirty = true;
 	}
 
 	public void OnDeactivate(AffixActivationContext context)
 	{
-		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
-		Mod.Helper.Events.GameLoop.DayEnding -= OnDayEnding;
-
-		if (!(context is AffixActivationContext.Choice or AffixActivationContext.SaveLoadedOrUnloaded) && Skill is VanillaSkill skill)
-			ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
+		foreach (var player in Game1.getAllFarmers())
+			player.buffs.Dirty = true;
 	}
 
 	public void SetupConfig(IManifest manifest)
@@ -167,36 +161,21 @@ internal sealed class SkillAffix : ISeasonAffix
 		);
 	}
 
-	private void OnDayStarted(object? sender, DayStartedEventArgs e)
-	{
-		if (Skill is not VanillaSkill skill)
-			return;
-		ModifySkillLevel(Game1.player, skill, LevelIncreaseConfig);
-	}
-
-	private void OnDayEnding(object? sender, DayEndingEventArgs e)
-	{
-		if (Skill is not VanillaSkill skill)
-			return;
-		ModifySkillLevel(Game1.player, skill, -LevelIncreaseConfig);
-	}
-
 	private void Apply(Harmony harmony)
 	{
 		if (IsHarmonySetup)
 			return;
 		IsHarmonySetup = true;
 
-		//harmony.TryPatch(
-		//	monitor: Mod.Monitor,
-		//	original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.ClearBuffs)),
-		//	postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Farmer_ClearBuffs_Postfix)))
-		//);
-
+		harmony.TryPatch(
+			monitor: Mod.Monitor,
+			original: () => AccessTools.Method(typeof(BuffManager), nameof(BuffManager.GetValues)),
+			prefix: new HarmonyMethod(GetType(), nameof(BuffManager_GetValues_Postfix))
+		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
-			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Farmer_gainExperience_Prefix)))
+			prefix: new HarmonyMethod(GetType(), nameof(Farmer_gainExperience_Prefix))
 		);
 
 		if (Mod.Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
@@ -204,36 +183,49 @@ internal sealed class SkillAffix : ISeasonAffix
 			harmony.TryPatch(
 				monitor: Mod.Monitor,
 				original: () => AccessTools.Method(AccessTools.TypeByName("SpaceCore.Skills, SpaceCore"), "AddExperience"),
-				prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(SpaceCore_Skills_AddExperience_Prefix)))
+				prefix: new HarmonyMethod(GetType(), nameof(SpaceCore_Skills_AddExperience_Prefix))
 			);
 		}
 	}
 
-	private static void ModifySkillLevel(Farmer player, VanillaSkill skill, int levels)
+	private void ModifySkillLevel(BuffEffects effects)
+	{
+		if (Skill is not VanillaSkill skill)
+			return;
+		ModifySkillLevel(effects, skill, LevelIncreaseConfig);
+	}
+
+	private static void ModifySkillLevel(BuffEffects effects, VanillaSkill skill, int levels)
 	{
 		switch (skill.SkillIndex)
 		{
 			case Farmer.farmingSkill:
-				player.addedFarmingLevel.Value += levels;
+				effects.FarmingLevel.Value += levels;
 				break;
 			case Farmer.miningSkill:
-				player.addedMiningLevel.Value += levels;
+				effects.MiningLevel.Value += levels;
 				break;
 			case Farmer.foragingSkill:
-				player.addedForagingLevel.Value += levels;
+				effects.ForagingLevel.Value += levels;
 				break;
 			case Farmer.fishingSkill:
-				player.addedFishingLevel.Value += levels;
+				effects.FishingLevel.Value += levels;
 				break;
 			case Farmer.combatSkill:
-				player.addedCombatLevel.Value += levels;
+				effects.CombatLevel.Value += levels;
 				break;
 			case Farmer.luckSkill:
-				player.addedLuckLevel.Value += levels;
+				effects.LuckLevel.Value += levels;
 				break;
 			default:
 				throw new ArgumentException($"{nameof(skill.SkillIndex)} has an invalid value.");
 		}
+	}
+
+	private static void BuffManager_GetValues_Postfix(ref BuffEffects __result)
+	{
+		foreach (var affix in Mod.ActiveAffixes.OfType<SkillAffix>())
+			affix.ModifySkillLevel(__result);
 	}
 
 	private static void Farmer_gainExperience_Prefix(int which, ref int howMuch)

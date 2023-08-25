@@ -1,19 +1,16 @@
-﻿using HarmonyLib;
-using Nanoray.Shrike;
-using Nanoray.Shrike.Harmony;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
 using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.GameData.LocationContexts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
 
@@ -24,8 +21,6 @@ partial class ModConfig
 
 internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 {
-	private static bool IsHarmonySetup = false;
-
 	private static string ShortID => "Thunder";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
 	public TextureRectangle Icon => new(Game1.mouseCursors, new(413, 346, 13, 13));
@@ -53,8 +48,19 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 
 	public IReadOnlySet<string> Tags { get; init; } = new HashSet<string> { VanillaSkill.CropsAspect, VanillaSkill.FlowersAspect, VanillaSkill.FishingAspect };
 
-	public void OnRegister()
-		=> Apply(Mod.Harmony);
+	public void OnActivate(AffixActivationContext context)
+	{
+		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+		Mod.Helper.Events.Content.AssetRequested += OnAssetRequested;
+		Mod.Helper.GameContent.InvalidateCache("Data\\LocationContexts");
+	}
+
+	public void OnDeactivate(AffixActivationContext context)
+	{
+		Mod.Helper.Events.GameLoop.DayStarted -= OnDayStarted;
+		Mod.Helper.Events.Content.AssetRequested -= OnAssetRequested;
+		Mod.Helper.GameContent.InvalidateCache("Data\\LocationContexts");
+	}
 
 	public void SetupConfig(IManifest manifest)
 	{
@@ -63,55 +69,111 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 		helper.AddNumberOption($"{I18nPrefix}.config.chance", () => Mod.Config.ThunderChance, min: 0.25f, max: 4f, interval: 0.05f, value => $"{value:0.##}x");
 	}
 
-	private void Apply(Harmony harmony)
+	private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		=> Mod.Helper.GameContent.InvalidateCache("Data\\LocationContexts");
+
+	private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
 	{
-		if (IsHarmonySetup)
+		if (!e.Name.IsEquivalentTo("Data\\LocationContexts"))
 			return;
-		IsHarmonySetup = true;
-
-		var game1Type = typeof(Game1);
-		var newDayAfterFadeEnumeratorType = game1Type.GetNestedTypes(BindingFlags.NonPublic)
-			.FirstOrDefault(t => t.Name.StartsWith("<_newDayAfterFade>") && AccessTools.Method(t, "MoveNext") is not null);
-
-		harmony.TryPatch(
-			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(newDayAfterFadeEnumeratorType, "MoveNext"),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_newDayAfterFade_MoveNext_Transpiler)))
-		);
-	}
-
-	private static IEnumerable<CodeInstruction> Game1_newDayAfterFade_MoveNext_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il, MethodBase originalMethod)
-	{
-		try
+		e.Edit(asset =>
 		{
-			var newLabel = il.DefineLabel();
-
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(
-					ILMatches.Instruction(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.random))),
-					ILMatches.Call("NextDouble"),
-					ILMatches.Instruction(OpCodes.Ldsfld, AccessTools.Field(typeof(Game1), nameof(Game1.chanceToRainTomorrow))),
-					ILMatches.BgeUn
-				)
-				.PointerMatcher(SequenceMatcherRelativeElement.First)
-				.ExtractLabels(out var labels)
-				.Insert(
-					SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ThunderAffix), nameof(Game1_newDayAfterFade_MoveNext_Transpiler_ModifyChanceToRainTomorrow))).WithLabels(labels)
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
+			var data = asset.AsDictionary<string, LocationContextData>();
+			foreach (var kvp in data.Data)
+			{
+				foreach (var entry in kvp.Value.WeatherConditions)
+				{
+					var isRainy = entry.Weather.Equals("Rain", StringComparison.InvariantCultureIgnoreCase) || entry.Weather.Equals("Storm", StringComparison.InvariantCultureIgnoreCase);
+					var queries = GameStateQuery.Parse(entry.Condition);
+					var newQueries = ModifyRandomChance(queries, (originalChance, isNegated) => isRainy ? Math.Pow(originalChance, 1.0 / Mod.Config.ThunderChance) : Math.Pow(originalChance, Mod.Config.ThunderChance));
+				}
+			}
+		}, priority: AssetEditPriority.Late);
 	}
 
-	public static void Game1_newDayAfterFade_MoveNext_Transpiler_ModifyChanceToRainTomorrow()
+	private GameStateQuery.ParsedGameStateQuery[] ModifyRandomChance(GameStateQuery.ParsedGameStateQuery[] query, RandomChanceMutator mutator, bool externallyMutated = false)
+		=> query.Select(q => ModifyRandomChance(q, mutator, externallyMutated)).ToArray();
+
+	private GameStateQuery.ParsedGameStateQuery ModifyRandomChance(GameStateQuery.ParsedGameStateQuery query, RandomChanceMutator mutator, bool externallyMutated = false)
 	{
-		if (!Mod.IsAffixActive(a => a is ThunderAffix))
-			return;
-		Game1.chanceToRainTomorrow *= Mod.Config.ThunderChance;
+		if (!string.IsNullOrEmpty(query.Error))
+			return query;
+		if (query.Query.Length == 0)
+			return query;
+
+		GameStateQuery.ParsedGameStateQuery? RebuildQuery(string[] newValues)
+			=> GameStateQuery.Parse(
+				(query.Negated ? "!" : "") + string.Join(
+					" ",
+					newValues
+						.Select(p => p.Replace("\\", "\\\\").Replace("\"", "\\\""))
+						.Select(p => p.Contains(' ') ? "\"\"" : p)
+				)
+			).FirstOrNull();
+
+		switch (query.Query[0].ToUpper())
+		{
+			case "RANDOM":
+				{
+					if (query.Query.Length < 2)
+						return query;
+					if (!double.TryParse(query.Query[1], out var chance))
+						return query;
+
+					string[] newArgs = query.Query.ToArray();
+					newArgs[1] = $"{mutator(chance, query.Negated ^ externallyMutated)}";
+					return RebuildQuery(newArgs) ?? query;
+				}
+			case "SYNCED_RANDOM":
+				{
+					if (query.Query.Length < 4)
+						return query;
+					if (!double.TryParse(query.Query[3], out var chance))
+						return query;
+
+					string[] newArgs = query.Query.ToArray();
+					newArgs[3] = $"{mutator(chance, query.Negated ^ externallyMutated)}";
+					return RebuildQuery(newArgs) ?? query;
+				}
+			case "SYNCED_SUMMER_RAIN_RANDOM":
+				{
+					if (query.Query.Length < 3)
+						return query;
+					if (!double.TryParse(query.Query[1], out var baseChance))
+						return query;
+					if (!double.TryParse(query.Query[2], out var dayMultiplier))
+						return query;
+
+					var daysInSeason = Game1.Date.Season.GetDays(Context.IsWorldReady ? Game1.Date.Year : 1);
+					var minChance = baseChance + dayMultiplier;
+					var maxChance = baseChance + dayMultiplier * daysInSeason;
+
+					minChance = mutator(minChance, query.Negated ^ externallyMutated);
+					maxChance = mutator(maxChance, query.Negated ^ externallyMutated);
+
+					dayMultiplier = (maxChance - minChance) / daysInSeason;
+					baseChance = maxChance - dayMultiplier * daysInSeason;
+
+					string[] newArgs = query.Query.ToArray();
+					newArgs[1] = $"{baseChance}";
+					newArgs[3] = $"{dayMultiplier}";
+					return RebuildQuery(newArgs) ?? query;
+				}
+			case "ANY":
+				{
+					string[] newArgs = query.Query.ToArray();
+					for (int i = 1; i < newArgs.Length; i++)
+					{
+						var innerQueries = GameStateQuery.Parse(newArgs[i]);
+						var newInnerQueries = ModifyRandomChance(innerQueries, mutator, externallyMutated: query.Negated ^ externallyMutated);
+						newArgs[i] = string.Join(", ", newInnerQueries);
+					}
+					return RebuildQuery(newArgs) ?? query;
+				}
+			default:
+				return query;
+		}
 	}
+
+	private delegate double RandomChanceMutator(double originalChance, bool isNegated);
 }

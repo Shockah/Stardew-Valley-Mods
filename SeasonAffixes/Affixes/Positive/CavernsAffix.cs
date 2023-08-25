@@ -163,18 +163,19 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 			possibleTiles.Remove(point);
 
 			int gemIndex = weightedRandom.Next(random);
-			int? stoneIndex = GetStoneIndexForGem(gemIndex);
+			string? stoneId = GetStoneIdForGem(gemIndex);
 
-			if (stoneIndex is null)
+			if (stoneId is null)
 			{
-				__instance.dropObject(new SObject(new(point.X, point.Y), gemIndex, null, canBeSetDown: false, canBeGrabbed: true, isHoedirt: false, isSpawnedObject: true), new(point.X * Game1.tileSize, point.Y * Game1.tileSize), Game1.viewport, initialPlacement: true);
+				if (ItemRegistry.Create(stoneId) is not SObject item)
+					continue;
+				__instance.dropObject(item, new(point.X * Game1.tileSize, point.Y * Game1.tileSize), Game1.viewport, initialPlacement: true);
 			}
 			else
 			{
-				var stone = new SObject(new(point.X, point.Y), stoneIndex.Value, "Stone", canBeSetDown: true, canBeGrabbed: false, isHoedirt: false, isSpawnedObject: false)
-				{
-					MinutesUntilReady = 5
-				};
+				if (ItemRegistry.Create("(O)40") is not SObject stone)
+					continue;
+				stone.MinutesUntilReady = 5;
 				__instance.Objects.Add(new(point.X, point.Y), stone);
 				StonesLeftOnThisLevelSetter.Value(__instance, StonesLeftOnThisLevelGetter.Value(__instance) + 1);
 			}
@@ -197,16 +198,16 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 		return results;
 	}
 
-	private static int? GetStoneIndexForGem(int gemIndex)
+	private static string? GetStoneIdForGem(int gemIndex)
 		=> gemIndex switch
 		{
-			72 => 2, // Diamond
-			64 => 4, // Ruby
-			70 => 6, // Jade
-			66 => 8, // Amethyst
-			68 => 10, // Topaz
-			60 => 12, // Emerald
-			62 => 14, // Aquamarine
+			72 => "(O)2", // Diamond
+			64 => "(O)4", // Ruby
+			70 => "(O)6", // Jade
+			66 => "(O)8", // Amethyst
+			68 => "(O)10", // Topaz
+			60 => "(O)12", // Emerald
+			62 => "(O)14", // Aquamarine
 			_ => null,
 		};
 }

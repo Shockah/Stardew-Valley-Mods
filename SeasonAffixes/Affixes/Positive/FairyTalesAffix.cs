@@ -9,6 +9,7 @@ using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Events;
+using StardewValley.Extensions;
 using System;
 using System.Collections.Generic;
 

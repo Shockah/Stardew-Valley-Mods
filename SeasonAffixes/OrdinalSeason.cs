@@ -1,4 +1,4 @@
-﻿using Shockah.Kokoro.Stardew;
+﻿using StardewValley;
 
 namespace Shockah.SeasonAffixes;
 

@@ -138,12 +138,27 @@ internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 		while (openList.Count != 0)
 		{
 			var currentTile = openList.Dequeue();
-			if (location.terrainFeatures.TryGetValue(currentTile, out var feature) && feature is HoeDirt { crop: Crop crop } && new SObject(crop.indexOfHarvest.Value, 1).Category == SObject.flowersCategory && crop.currentPhase.Value >= crop.phaseDays.Count - 1 && !crop.dead.Value && (additionalCheck is null || additionalCheck(crop)))
-				results++;
 			foreach (var v in Utility.getAdjacentTileLocations(currentTile))
 				if (!closedList.Contains(v) && (range < 0 || Math.Abs(v.X - startTileLocation.X) + Math.Abs(v.Y - startTileLocation.Y) <= range))
 					openList.Enqueue(v);
 			closedList.Add(currentTile);
+
+			if (!location.terrainFeatures.TryGetValue(currentTile, out var feature))
+				continue;
+			if (feature is not HoeDirt { crop: Crop crop })
+				continue;
+			if (crop.currentPhase.Value < crop.phaseDays.Count - 1 || crop.dead.Value)
+				continue;
+
+			var data = ItemRegistry.GetData(crop.indexOfHarvest.Value);
+			if (data is null)
+				continue;
+			if (data.Category != SObject.flowersCategory)
+				continue;
+			if (additionalCheck is not null && !additionalCheck(crop))
+				continue;
+
+			results++;
 		}
 		return results;
 	}

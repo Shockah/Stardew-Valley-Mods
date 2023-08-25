@@ -3,7 +3,6 @@ using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewValley;
-using StardewValley.Locations;
 using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes;
@@ -48,18 +47,18 @@ internal sealed class MudAffix : BaseSeasonAffix, ISeasonAffix
 
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(BuildableGameLocation), nameof(BuildableGameLocation.doesTileHaveProperty)),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BuildableGameLocation_doesTileHaveProperty_Postfix)))
+			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.doesTileHaveProperty)),
+			postfix: new HarmonyMethod(GetType(), nameof(GameLocation_doesTileHaveProperty_Postfix))
 		);
 
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
-			original: () => AccessTools.Method(typeof(BuildableGameLocation), nameof(BuildableGameLocation.doesTileHavePropertyNoNull)),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(BuildableGameLocation_doesTileHavePropertyNoNull_Postfix)))
+			original: () => AccessTools.Method(typeof(GameLocation), nameof(GameLocation.doesTileHavePropertyNoNull)),
+			postfix: new HarmonyMethod(GetType(), nameof(GameLocation_doesTileHavePropertyNoNull_Postfix))
 		);
 	}
 
-	private static void BuildableGameLocation_doesTileHaveProperty_Postfix(BuildableGameLocation __instance, string propertyName, ref string? __result)
+	private static void GameLocation_doesTileHaveProperty_Postfix(GameLocation __instance, string propertyName, ref string? __result)
 	{
 		if (!Mod.IsAffixActive(a => a is MudAffix))
 			return;
@@ -67,7 +66,7 @@ internal sealed class MudAffix : BaseSeasonAffix, ISeasonAffix
 			__result = null;
 	}
 
-	private static void BuildableGameLocation_doesTileHavePropertyNoNull_Postfix(BuildableGameLocation __instance, string propertyName, ref string __result)
+	private static void GameLocation_doesTileHavePropertyNoNull_Postfix(GameLocation __instance, string propertyName, ref string __result)
 	{
 		if (!Mod.IsAffixActive(a => a is MudAffix))
 			return;

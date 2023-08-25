@@ -26,9 +26,9 @@ partial class ModConfig
 
 internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 {
-	private const int CherryBombID = 286;
-	private const int BombID = 287;
-	private const int MegaBombID = 288;
+	private const string CherryBombID = "(O)286";
+	private const string BombID = "(O)287";
+	private const string MegaBombID = "(O)288";
 
 	private static bool IsHarmonySetup = false;
 	private static readonly WeakCounter<GameLocation> MonsterDropCallCounter = new();
@@ -102,7 +102,7 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 		}
 	}
 
-	private static bool TryToPlaceItemRecursively(int itemIndex, GameLocation location, Vector2 centerTile, Farmer player, int maxIterations = 16)
+	private static bool TryToPlaceItemRecursively(SObject item, GameLocation location, Vector2 centerTile, Farmer player, int maxIterations = 16)
 	{
 		Queue<Vector2> queue = new();
 		queue.Enqueue(centerTile);
@@ -114,9 +114,9 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 
 			Vector2 vector = queue.Dequeue();
 			list.Add(vector);
-			if (!location.isTileOccupied(vector, "ignoreMe") && IsTileOnClearAndSolidGround(location, vector) && location.isTileOccupiedByFarmer(vector) is null && location.doesTileHaveProperty((int)vector.X, (int)vector.Y, "Type", "Back") is not null && location.doesTileHaveProperty((int)vector.X, (int)vector.Y, "Type", "Back").Equals("Stone"))
+			if (Utility.playerCanPlaceItemHere(location, item, (int)centerTile.X, (int)centerTile.Y, player))
 			{
-				PlaceItem(itemIndex, location, vector, player);
+				PlaceItem(item, location, vector, player);
 				return true;
 			}
 
@@ -140,11 +140,8 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 		return true;
 	}
 
-	private static void PlaceItem(int itemIndex, GameLocation location, Vector2 point, Farmer player)
-	{
-		var bomb = new SObject(point, itemIndex, 1);
-		bomb.placementAction(location, (int)point.X * 64, (int)point.Y * 64, player);
-	}
+	private static void PlaceItem(SObject item, GameLocation location, Vector2 point, Farmer player)
+		=> item.placementAction(location, (int)point.X * 64, (int)point.Y * 64, player);
 
 	private static void GameLocation_monsterDrop_Prefix(GameLocation __instance, Monster __0, Farmer __3)
 	{
@@ -155,17 +152,20 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 		if (counter != 1)
 			return;
 
-		WeightedRandom<int?> weightedRandom = new();
+		WeightedRandom<string?> weightedRandom = new();
 		weightedRandom.Add(new(Mod.Config.BurstingNoBombWeight, null));
 		weightedRandom.Add(new(Mod.Config.BurstingCherryBombWeight, CherryBombID));
 		weightedRandom.Add(new(Mod.Config.BurstingBombWeight, BombID));
 		weightedRandom.Add(new(Mod.Config.BurstingMegaBombWeight, MegaBombID));
 
-		int? itemToSpawn = weightedRandom.Next(Game1.random);
-		if (itemToSpawn is null)
+		string? itemIdToSpawn = weightedRandom.Next(Game1.random);
+		if (itemIdToSpawn is null)
 			return;
 
-		TryToPlaceItemRecursively(itemToSpawn.Value, __instance, __0.getTileLocation(), __3, 50);
+		var item = ItemRegistry.Create(itemIdToSpawn);
+		if (item is not SObject @object)
+			return;
+		TryToPlaceItemRecursively(@object, __instance, __0 .Tile, __3, 50);
 	}
 
 	private static void GameLocation_monsterDrop_Finalizer(GameLocation __instance)
@@ -179,7 +179,7 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		if (!Mod.IsAffixActive(a => a is BurstingAffix))
 			return true;
-		if (__0.bigCraftable.Value || !(__0.ParentSheetIndex is CherryBombID or BombID or MegaBombID))
+		if (__0.bigCraftable.Value || !(__0.ItemId is CherryBombID or BombID or MegaBombID))
 			return true;
 		if (MonsterDropCallCounter.Get(location) == 0)
 			return true;

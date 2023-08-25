@@ -47,14 +47,14 @@ internal sealed class SapAffix : BaseSeasonAffix, ISeasonAffix
 		);
 	}
 
-	private static void Tree_UpdateTapperProduct_Postfix(SObject tapper_instance)
+	private static void Tree_UpdateTapperProduct_Postfix(SObject tapper)
 	{
 		if (!Mod.IsAffixActive(a => a is SapAffix))
 			return;
 
-		float timeMultiplier = tapper_instance.ParentSheetIndex == 264 ? 0.5f : 1f;
+		float timeMultiplier = tapper.ParentSheetIndex == 264 ? 0.5f : 1f;
 		Random random = new((int)Game1.uniqueIDForThisGame + (int)Game1.stats.DaysPlayed + 73137);
-		tapper_instance.heldObject.Value = new SObject(92, random.Next(3, 8));
-		tapper_instance.MinutesUntilReady = Utility.CalculateMinutesUntilMorning(Game1.timeOfDay, (int)Math.Max(1.0, Math.Floor(1f * timeMultiplier)));
+		tapper.heldObject.Value = ItemRegistry.Create("(O)92", random.Next(3, 8)) as SObject;
+		tapper.MinutesUntilReady = Utility.CalculateMinutesUntilMorning(Game1.timeOfDay, (int)Math.Max(1.0, Math.Floor(1f * timeMultiplier)));
 	}
 }
