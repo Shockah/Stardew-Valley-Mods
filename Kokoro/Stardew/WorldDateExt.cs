@@ -11,6 +11,9 @@ public static class WorldDateExt
 	private static readonly Regex SeasonYearRegex = new($"({AllSeasonsRegexPattern})\\s*y(?:ear)?\\s(\\d+)", RegexOptions.IgnoreCase);
 	private static readonly Regex YearRegex = new($"y(?:ear)?\\s(\\d+)", RegexOptions.IgnoreCase);
 
+	public static int GetDays(this Season season, int year)
+		=> GetDaysInSeason((int)season, year);
+
 	public static int GetDaysInSeason(int season, int year)
 	{
 		string seasonName = Utility.getSeasonNameFromNumber(season);
