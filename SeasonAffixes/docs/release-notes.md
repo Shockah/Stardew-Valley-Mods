@@ -2,6 +2,11 @@
 
 # Release notes
 
+## Upcoming version
+
+* Updated to Stardew Valley 1.6 and SMAPI 4.0.0.
+* Fixed Fairy Tales affix always overriding the Meteorites affix.
+
 ## 1.1.3
 Released 25 June 2023.
 

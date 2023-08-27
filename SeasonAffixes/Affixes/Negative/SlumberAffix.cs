@@ -14,7 +14,7 @@ partial class ModConfig
 	[JsonProperty] public float SlumberHours { get; internal set; } = 4f;
 }
 
-internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class SlumberAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Slumber";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Hours = $"{(int)Mod.Config.SlumberHours:0.#}" });

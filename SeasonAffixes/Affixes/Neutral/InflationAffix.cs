@@ -28,7 +28,7 @@ partial class ModConfig
 	[JsonProperty] public float InflationIncrease { get; internal set; } = 0.2f;
 }
 
-internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 

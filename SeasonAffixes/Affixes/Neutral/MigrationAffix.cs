@@ -15,7 +15,7 @@ using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 

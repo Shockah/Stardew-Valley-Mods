@@ -77,10 +77,12 @@ internal sealed class BoonsAffix : BaseSeasonAffix, ISeasonAffix
 		if (possibleForage.Count == 0)
 			return null;
 
-		var forage = possibleForage
-			.Where(entry => entry.Chance > 0)
-			.OrderBy(entry => entry.Chance)
-			.FirstOrDefault(entry => entry.Chance >= 1 || entry.Chance <= random.Next());
+		WeightedRandom<SpawnForageData> weighted = new(
+			possibleForage
+				.Where(entry => entry.Chance > 0)
+				.Select(entry => new WeightedItem<SpawnForageData>(Math.Pow(entry.Chance, 2), entry))
+		);
+		var forage = weighted.Next(random);
 		if (forage is null)
 			return null;
 		if (ItemQueryResolver.TryResolveRandomItem(forage, new ItemQueryContext(location, null, random)) is not SObject item)

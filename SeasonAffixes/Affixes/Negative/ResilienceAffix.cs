@@ -17,7 +17,7 @@ partial class ModConfig
 	[JsonProperty] public float ResilienceValue { get; internal set; } = 2f;
 }
 
-internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class ResilienceAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Resilience";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.ResilienceValue:0.##}x" });

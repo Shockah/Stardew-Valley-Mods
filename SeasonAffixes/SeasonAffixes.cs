@@ -86,7 +86,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 
 		helper.ConsoleCommands.Add("affixes_list_all", "Lists all known (active or not) seasonal affixes.", (_, _) =>
 		{
-			var affixes = AllAffixes.Values.ToList();
+			var affixes = AllAffixes.Values
+				.Where(a => a != MonotonyAffix)
+				.ToList();
 			if (affixes.Count == 0)
 			{
 				Monitor.Log("There are no known (active or not) affixes.", LogLevel.Info);
@@ -98,7 +100,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		});
 		helper.ConsoleCommands.Add("affixes_list_active", "Lists all active affixes.", (_, _) =>
 		{
-			var affixes = ActiveAffixes;
+			var affixes = ActiveAffixes
+				.Where(a => a != MonotonyAffix)
+				.ToList();
 			if (affixes.Count == 0)
 			{
 				Monitor.Log("There are no active affixes.", LogLevel.Info);
@@ -110,7 +114,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		});
 		helper.ConsoleCommands.Add("affixes_list_seasonal", "Lists all active seasonal affixes.", (_, _) =>
 		{
-			var affixes = ActiveSeasonalAffixes;
+			var affixes = ActiveSeasonalAffixes
+				.Where(a => a != MonotonyAffix)
+				.ToList();
 			if (affixes.Count == 0)
 			{
 				Monitor.Log("There are no active seasonal affixes.", LogLevel.Info);
@@ -122,7 +128,9 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 		});
 		helper.ConsoleCommands.Add("affixes_list_permanent", "Lists all active seasonal affixes.", (_, _) =>
 		{
-			var affixes = ActivePermanentAffixes;
+			var affixes = ActivePermanentAffixes
+				.Where(a => a != MonotonyAffix)
+				.ToList();
 			if (affixes.Count == 0)
 			{
 				Monitor.Log("There are no active permanent affixes.", LogLevel.Info);

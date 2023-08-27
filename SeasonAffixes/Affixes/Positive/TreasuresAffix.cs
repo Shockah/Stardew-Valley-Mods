@@ -21,7 +21,7 @@ partial class ModConfig
 	[JsonProperty] public float TreasuresChanceWithEnchantment { get; internal set; } = 0.5f;
 }
 
-internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class TreasuresAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private const string ArtifactTroveID = "(O)275";
 

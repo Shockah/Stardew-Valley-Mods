@@ -18,7 +18,7 @@ partial class ModConfig
 	[JsonProperty] public float LoveValue { get; internal set; } = 2f;
 }
 
-internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Love";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });

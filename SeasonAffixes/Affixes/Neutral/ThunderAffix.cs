@@ -19,7 +19,7 @@ partial class ModConfig
 	[JsonProperty] public float ThunderChance { get; internal set; } = 2f;
 }
 
-internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Thunder";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });

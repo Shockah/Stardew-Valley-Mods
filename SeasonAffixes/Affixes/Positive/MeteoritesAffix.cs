@@ -69,7 +69,7 @@ internal sealed class MeteoritesAffix : BaseSeasonAffix, ISeasonAffix
 		if (__result is not null)
 			return;
 
-		Random random = new((int)Game1.stats.DaysPlayed + (int)Game1.uniqueIDForThisGame / 2);
+		Random random = new((int)Game1.stats.DaysPlayed + (int)Game1.uniqueIDForThisGame * 2);
 		if (random.NextDouble() > Mod.Config.MeteoritesChance)
 			return;
 		__result = new SoundInTheNightEvent(SoundInTheNightEvent.meteorite);

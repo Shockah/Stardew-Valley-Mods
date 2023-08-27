@@ -24,7 +24,7 @@ partial class ModConfig
 	[JsonProperty] public float BurstingMegaBombWeight { get; internal set; } = 1f;
 }
 
-internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private const string CherryBombID = "(O)286";
 	private const string BombID = "(O)287";

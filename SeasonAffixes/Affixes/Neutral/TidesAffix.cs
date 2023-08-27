@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Tides";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");

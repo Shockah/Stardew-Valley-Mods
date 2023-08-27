@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class DroughtAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 

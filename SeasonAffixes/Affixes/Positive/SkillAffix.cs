@@ -170,7 +170,8 @@ internal sealed class SkillAffix : ISeasonAffix
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(BuffManager), nameof(BuffManager.GetValues)),
-			prefix: new HarmonyMethod(GetType(), nameof(BuffManager_GetValues_Postfix))
+			prefix: new HarmonyMethod(GetType(), nameof(BuffManager_GetValues_Prefix)),
+			postfix: new HarmonyMethod(GetType(), nameof(BuffManager_GetValues_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Mod.Monitor,
@@ -222,8 +223,13 @@ internal sealed class SkillAffix : ISeasonAffix
 		}
 	}
 
-	private static void BuffManager_GetValues_Postfix(ref BuffEffects __result)
+	private static void BuffManager_GetValues_Prefix(BuffManager __instance, ref bool __state)
+		=> __state = __instance.Dirty;
+
+	private static void BuffManager_GetValues_Postfix(ref BuffEffects __result, ref bool __state)
 	{
+		if (!__state)
+			return;
 		foreach (var affix in Mod.ActiveAffixes.OfType<SkillAffix>())
 			affix.ModifySkillLevel(__result);
 	}

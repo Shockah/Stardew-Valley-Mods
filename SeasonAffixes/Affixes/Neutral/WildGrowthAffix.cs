@@ -26,7 +26,7 @@ partial class ModConfig
 	[JsonProperty] public float WildGrowthNewSeedChance { get; internal set; } = 0.5f;
 }
 
-internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class WildGrowthAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "WildGrowth";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");

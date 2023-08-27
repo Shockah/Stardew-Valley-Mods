@@ -15,7 +15,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 	private static readonly int SpawnDelay = 250;
@@ -63,10 +63,12 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 
 		Vector2 point = new(xTile, yTile);
 		Poof(soil.Location, point);
+		var location = soil.Location;
+
 		DelayedAction.functionAfterDelay(() =>
 		{
-			soil.Location.removeObjectsAndSpawned(xTile, yTile, 1, 1);
-			soil.Location.dropObject(forage, point * 64, Game1.viewport, initialPlacement: true);
+			location.removeObjectsAndSpawned(xTile, yTile, 1, 1);
+			location.dropObject(forage, point * 64, Game1.viewport, initialPlacement: true);
 		}, SpawnDelay);
 	}
 
@@ -77,10 +79,12 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 		if (possibleForage.Count == 0)
 			return null;
 
-		var forage = possibleForage
-			.Where(entry => entry.Chance > 0)
-			.OrderBy(entry => entry.Chance)
-			.FirstOrDefault(entry => entry.Chance >= 1 || entry.Chance <= random.Next());
+		WeightedRandom<SpawnForageData> weighted = new(
+			possibleForage
+				.Where(entry => entry.Chance > 0)
+				.Select(entry => new WeightedItem<SpawnForageData>(Math.Pow(entry.Chance, 2), entry))
+		);
+		var forage = weighted.Next(random);
 		if (forage is null)
 			return null;
 		if (ItemQueryResolver.TryResolveRandomItem(forage, new ItemQueryContext(location, null, random)) is not SObject item)

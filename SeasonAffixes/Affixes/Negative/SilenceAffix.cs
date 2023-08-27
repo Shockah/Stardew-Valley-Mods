@@ -21,7 +21,7 @@ partial class ModConfig
 	[JsonProperty] public int SilenceFriendshipGain { get; internal set; } = 0;
 }
 
-internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 

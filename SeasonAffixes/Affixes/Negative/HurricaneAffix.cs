@@ -10,7 +10,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static bool IsHarmonySetup = false;
 	private static readonly WeakCounter<GameLocation> DayUpdateCallCounter = new();

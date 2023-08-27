@@ -21,7 +21,7 @@ partial class ModConfig
 	[JsonProperty] public int HivemindFlowersFor3DayDecrease { get; internal set; } = 50;
 }
 
-internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
+internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
 {
 	private static string ShortID => "Hivemind";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");

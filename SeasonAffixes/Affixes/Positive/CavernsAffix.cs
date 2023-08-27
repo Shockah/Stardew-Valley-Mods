@@ -56,6 +56,7 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 	public void OnActivate(AffixActivationContext context)
 	{
 		Mod.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+		SetUpGemCavernFloors();
 	}
 
 	public void OnDeactivate(AffixActivationContext context)
@@ -88,6 +89,9 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 	}
 
 	private void OnDayStarted(object? sender, DayStartedEventArgs e)
+		=> SetUpGemCavernFloors();
+
+	private static void SetUpGemCavernFloors()
 	{
 		GemCavernFloors.Value.Clear();
 
@@ -153,21 +157,21 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 		Random random = new((int)Game1.stats.DaysPlayed + __instance.mineLevel * 150 + (int)Game1.uniqueIDForThisGame / 2);
 		int gemsToSpawn = Math.Min(random.Next(Mod.Config.CavernsMinGems, Mod.Config.CavernsMaxGems + 1), (int)(possibleTiles.Count * 0.75f));
 
-		WeightedRandom<int> weightedRandom = new();
-		foreach (var (itemIndex, price) in GetGemDefinitions())
-			weightedRandom.Add(new(1.0 / Math.Sqrt(price), itemIndex));
+		WeightedRandom<string> weightedRandom = new();
+		foreach (var (itemId, price) in GetGemDefinitions())
+			weightedRandom.Add(new(1.0 / Math.Sqrt(price), itemId));
 
 		for (int i = 0; i < gemsToSpawn; i++)
 		{
 			IntPoint point = Game1.random.NextElement(possibleTiles);
 			possibleTiles.Remove(point);
 
-			int gemIndex = weightedRandom.Next(random);
-			string? stoneId = GetStoneIdForGem(gemIndex);
+			string gemId = weightedRandom.Next(random);
+			string? stoneId = GetStoneIdForGem(gemId);
 
 			if (stoneId is null)
 			{
-				if (ItemRegistry.Create(stoneId) is not SObject item)
+				if (ItemRegistry.Create(gemId) is not SObject item)
 					continue;
 				__instance.dropObject(item, new(point.X * Game1.tileSize, point.Y * Game1.tileSize), Game1.viewport, initialPlacement: true);
 			}
@@ -182,32 +186,32 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 		}
 	}
 
-	private static List<(int ItemIndex, int Price)> GetGemDefinitions()
+	private static List<(string ItemId, int Price)> GetGemDefinitions()
 	{
-		List<(int ItemIndex, int Price)> results = new();
-		var data = Game1.content.Load<Dictionary<int, string>>("Data\\ObjectInformation");
-		foreach (var (itemIndex, rawItemData) in data)
+		List<(string ItemId, int Price)> results = new();
+		var data = Game1.content.Load<Dictionary<string, string>>("Data\\ObjectInformation");
+		foreach (var (itemId, rawItemData) in data)
 		{
-			if (itemIndex == 74 && !Mod.Config.CavernsAllowPrismaticShard)
+			if (itemId == "74" && !Mod.Config.CavernsAllowPrismaticShard)
 				continue;
 			var split = rawItemData.Split("/");
 			if (split[3] != "Minerals -2")
 				continue;
-			results.Add((ItemIndex: itemIndex, Price: int.Parse(split[1])));
+			results.Add((ItemId: $"(O){itemId}", Price: int.Parse(split[1])));
 		}
 		return results;
 	}
 
-	private static string? GetStoneIdForGem(int gemIndex)
+	private static string? GetStoneIdForGem(string gemIndex)
 		=> gemIndex switch
 		{
-			72 => "(O)2", // Diamond
-			64 => "(O)4", // Ruby
-			70 => "(O)6", // Jade
-			66 => "(O)8", // Amethyst
-			68 => "(O)10", // Topaz
-			60 => "(O)12", // Emerald
-			62 => "(O)14", // Aquamarine
+			"(O)72" => "(O)2", // Diamond
+			"(O)64" => "(O)4", // Ruby
+			"(O)70" => "(O)6", // Jade
+			"(O)66" => "(O)8", // Amethyst
+			"(O)68" => "(O)10", // Topaz
+			"(O)60" => "(O)12", // Emerald
+			"(O)62" => "(O)14", // Aquamarine
 			_ => null,
 		};
 }
