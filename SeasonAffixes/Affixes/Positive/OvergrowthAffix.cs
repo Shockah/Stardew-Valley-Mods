@@ -15,7 +15,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
 	private static readonly int SpawnDelay = 250;

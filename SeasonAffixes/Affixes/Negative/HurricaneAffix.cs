@@ -10,7 +10,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
 	private static readonly WeakCounter<GameLocation> DayUpdateCallCounter = new();
@@ -83,7 +83,5 @@ internal sealed class HurricaneAffix : BaseSeasonAffix, ISeasonAffix // TODO: te
 	}
 
 	private static bool FarmTypeManager_ModEntry_Generation_ForageGeneration_Prefix()
-	{
-		return !Mod.IsAffixActive(a => a is HurricaneAffix);
-	}
+		=> !Mod.IsAffixActive(a => a is HurricaneAffix);
 }

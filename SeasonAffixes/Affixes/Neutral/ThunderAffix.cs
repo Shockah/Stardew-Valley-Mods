@@ -19,7 +19,7 @@ partial class ModConfig
 	[JsonProperty] public float ThunderChance { get; internal set; } = 2f;
 }
 
-internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static string ShortID => "Thunder";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Chance = $"{Mod.Config.ThunderChance:0.##}x" });
@@ -83,9 +83,12 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test
 			{
 				foreach (var entry in kvp.Value.WeatherConditions)
 				{
+					if (string.IsNullOrEmpty(entry.Condition))
+						continue;
 					var isRainy = entry.Weather.Equals("Rain", StringComparison.InvariantCultureIgnoreCase) || entry.Weather.Equals("Storm", StringComparison.InvariantCultureIgnoreCase);
 					var queries = GameStateQuery.Parse(entry.Condition);
-					var newQueries = ModifyRandomChance(queries, (originalChance, isNegated) => isRainy ? Math.Pow(originalChance, 1.0 / Mod.Config.ThunderChance) : Math.Pow(originalChance, Mod.Config.ThunderChance));
+					var newQueries = ModifyRandomChance(queries, (originalChance, isNegated) => 1.0 - Math.Pow(1.0 - originalChance, (isRainy ^ isNegated) ? Mod.Config.ThunderChance : 1.0 / Mod.Config.ThunderChance));
+					entry.Condition = Serialize(newQueries);
 				}
 			}
 		}, priority: AssetEditPriority.Late);
@@ -102,14 +105,7 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test
 			return query;
 
 		GameStateQuery.ParsedGameStateQuery? RebuildQuery(string[] newValues)
-			=> GameStateQuery.Parse(
-				(query.Negated ? "!" : "") + string.Join(
-					" ",
-					newValues
-						.Select(p => p.Replace("\\", "\\\\").Replace("\"", "\\\""))
-						.Select(p => p.Contains(' ') ? "\"\"" : p)
-				)
-			).FirstOrNull();
+			=> GameStateQuery.Parse(Serialize(query, query: newValues)).FirstOrNull();
 
 		switch (query.Query[0].ToUpper())
 		{
@@ -151,12 +147,12 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test
 					minChance = mutator(minChance, query.Negated ^ externallyMutated);
 					maxChance = mutator(maxChance, query.Negated ^ externallyMutated);
 
-					dayMultiplier = (maxChance - minChance) / daysInSeason;
+					dayMultiplier = (maxChance - minChance) / (daysInSeason - 1);
 					baseChance = maxChance - dayMultiplier * daysInSeason;
 
 					string[] newArgs = query.Query.ToArray();
 					newArgs[1] = $"{baseChance}";
-					newArgs[3] = $"{dayMultiplier}";
+					newArgs[2] = $"{dayMultiplier}";
 					return RebuildQuery(newArgs) ?? query;
 				}
 			case "ANY":
@@ -166,7 +162,7 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test
 					{
 						var innerQueries = GameStateQuery.Parse(newArgs[i]);
 						var newInnerQueries = ModifyRandomChance(innerQueries, mutator, externallyMutated: query.Negated ^ externallyMutated);
-						newArgs[i] = string.Join(", ", newInnerQueries);
+						newArgs[i] = Serialize(newInnerQueries);
 					}
 					return RebuildQuery(newArgs) ?? query;
 				}
@@ -174,6 +170,17 @@ internal sealed class ThunderAffix : BaseSeasonAffix, ISeasonAffix // TODO: test
 				return query;
 		}
 	}
+
+	private static string Serialize(GameStateQuery.ParsedGameStateQuery parsed, string[]? query = null, bool? negated = null)
+		=> (negated ?? parsed.Negated ? "!" : "") + string.Join(
+			" ",
+			(query ?? parsed.Query)
+				.Select(p => p.Replace("\\", "\\\\").Replace("\"", "\\\""))
+				.Select(p => p.Contains(' ') ? "\"\"" : p)
+		);
+
+	private static string Serialize(GameStateQuery.ParsedGameStateQuery[] parsed)
+		=> string.Join(", ", parsed.Select(q => Serialize(q)));
 
 	private delegate double RandomChanceMutator(double originalChance, bool isNegated);
 }

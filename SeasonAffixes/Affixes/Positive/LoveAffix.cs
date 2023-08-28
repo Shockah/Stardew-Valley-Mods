@@ -18,7 +18,7 @@ partial class ModConfig
 	[JsonProperty] public float LoveValue { get; internal set; } = 2f;
 }
 
-internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static string ShortID => "Love";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description", new { Value = $"{Mod.Config.LoveValue:0.##}x" });
@@ -72,7 +72,7 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in
 
 	private void OnAssetsInvalidated(object? sender, AssetsInvalidatedEventArgs e)
 	{
-		if (e.NamesWithoutLocale.Any(a => a.IsEquivalentTo("Data\\NPCDispositions")))
+		if (e.NamesWithoutLocale.Any(a => a.IsEquivalentTo("Data\\Characters")))
 		{
 			UpdateFriendship();
 			UpdateDispositions();
@@ -82,11 +82,9 @@ internal sealed class LoveAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in
 	private void UpdateDispositions()
 	{
 		OldFriendship.Value.Clear();
-		Dictionary<string, string> dispositions = Game1.content.Load<Dictionary<string, string>>("Data\\NPCDispositions");
-		foreach (var (npcName, data) in dispositions)
+		foreach (var (npcName, data) in Game1.characterData)
 		{
-			string[] split = data.Split('/');
-			if (!split[5].Equals("datable", StringComparison.InvariantCultureIgnoreCase))
+			if (!data.CanBeRomanced)
 				continue;
 			OldFriendship.Value[npcName] = Game1.player.getFriendshipLevelForNPC(npcName);
 		}

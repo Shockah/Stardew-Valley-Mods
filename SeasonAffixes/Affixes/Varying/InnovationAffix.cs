@@ -20,7 +20,7 @@ partial class ModConfig
 	[JsonProperty] public float RustIncrease { get; internal set; } = 0.5f;
 }
 
-internal sealed class InnovationAffix : BaseVariantedSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class InnovationAffix : BaseVariantedSeasonAffix, ISeasonAffix
 {
 	private static string ShortPositiveID => "Innovation";
 	private static string ShortNegativeID => "Rust";

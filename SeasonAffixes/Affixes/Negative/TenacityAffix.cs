@@ -19,7 +19,7 @@ partial class ModConfig
 	[JsonProperty] public float TenacityValue { get; internal set; } = 1.5f;
 }
 
-internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class TenacityAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static readonly Lazy<Func<BobberBar, bool>> BobberBarBobberInBarGetter = new(() => AccessTools.Field(typeof(BobberBar), "bobberInBar").EmitInstanceGetter<BobberBar, bool>());
 	private static readonly Lazy<Func<BobberBar, bool>> BobberBarHandledFishResultGetter = new(() => AccessTools.Field(typeof(BobberBar), "handledFishResult").EmitInstanceGetter<BobberBar, bool>());

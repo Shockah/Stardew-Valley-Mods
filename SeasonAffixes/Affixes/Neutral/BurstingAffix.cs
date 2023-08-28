@@ -8,6 +8,7 @@ using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Extensions;
 using StardewValley.Locations;
 using StardewValley.Monsters;
 using System;
@@ -24,7 +25,7 @@ partial class ModConfig
 	[JsonProperty] public float BurstingMegaBombWeight { get; internal set; } = 1f;
 }
 
-internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private const string CherryBombID = "(O)286";
 	private const string BombID = "(O)287";
@@ -114,7 +115,7 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix // TODO: tes
 
 			Vector2 vector = queue.Dequeue();
 			list.Add(vector);
-			if (Utility.playerCanPlaceItemHere(location, item, (int)centerTile.X, (int)centerTile.Y, player))
+			if (!location.IsTileOccupiedBy(vector) && IsTileOnClearAndSolidGround(location, vector) && location.doesTileHaveProperty((int)vector.X, (int)vector.Y, "Type", "Back") != null && location.doesTileHaveProperty((int)vector.X, (int)vector.Y, "Type", "Back").Equals("Stone"))
 			{
 				PlaceItem(item, location, vector, player);
 				return true;
@@ -131,9 +132,9 @@ internal sealed class BurstingAffix : BaseSeasonAffix, ISeasonAffix // TODO: tes
 
 	private static bool IsTileOnClearAndSolidGround(GameLocation location, Vector2 v)
 	{
-		if (location.map.GetLayer("Back").Tiles[(int)v.X, (int)v.Y] is null)
+		if (location.map.RequireLayer("Back").Tiles[(int)v.X, (int)v.Y] is null)
 			return false;
-		if (location.map.GetLayer("Front").Tiles[(int)v.X, (int)v.Y] is not null || location.map.GetLayer("Buildings").Tiles[(int)v.X, (int)v.Y] is not null)
+		if (location.map.RequireLayer("Front").Tiles[(int)v.X, (int)v.Y] is not null || location.map.RequireLayer("Buildings").Tiles[(int)v.X, (int)v.Y] is not null)
 			return false;
 		if (location is MineShaft && location.getTileIndexAt((int)v.X, (int)v.Y, "Back") == 77)
 			return false;

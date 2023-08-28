@@ -15,7 +15,7 @@ using System.Reflection.Emit;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
 
@@ -59,11 +59,11 @@ internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix // TODO: te
 					ILMatches.Stloc<HashSet<string>>(originalMethod.GetMethodBody()!.LocalVariables)
 				)
 				.PointerMatcher(SequenceMatcherRelativeElement.First)
-				.CreateLdlocInstruction(out var ldlocIgnoreQueryKeys)
+				.CreateLdlocaInstruction(out var ldlocaIgnoreQueryKeys)
 				.Insert(
 					SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
 
-					ldlocIgnoreQueryKeys,
+					ldlocaIgnoreQueryKeys,
 					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MigrationAffix), nameof(GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys)))
 				)
 
@@ -87,8 +87,9 @@ internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix // TODO: te
 		}
 	}
 
-	private static void GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys(HashSet<string> ignoreQueryKeys)
+	private static void GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys(ref HashSet<string>? ignoreQueryKeys)
 	{
+		ignoreQueryKeys ??= new();
 		foreach (var key in GameStateQuery.SeasonQueryKeys)
 			ignoreQueryKeys.Add(key);
 	}

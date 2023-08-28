@@ -21,7 +21,7 @@ partial class ModConfig
 	[JsonProperty] public int HivemindFlowersFor3DayDecrease { get; internal set; } = 50;
 }
 
-internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static string ShortID => "Hivemind";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
@@ -79,9 +79,9 @@ internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix // TODO: tes
 	{
 		if (!Context.IsMainPlayer)
 			return;
-		if (newState is null || newState.Value.ReadyForHarvest || newState.Value.MinutesUntilReady == 0)
+		if (machine.QualifiedItemId != "(BC)10")
 			return;
-		if (!machine.bigCraftable.Value || machine.ParentSheetIndex != 10)
+		if (newState is null || newState.Value.ReadyForHarvest || newState.Value.MinutesUntilReady == 0)
 			return;
 
 		int flowersAround = CountCloseFlowers(location, machine.TileLocation, Mod.Config.HivemindRange, crop => !crop.forageCrop.Value);
@@ -138,10 +138,11 @@ internal sealed class HivemindAffix : BaseSeasonAffix, ISeasonAffix // TODO: tes
 		while (openList.Count != 0)
 		{
 			var currentTile = openList.Dequeue();
+			if (!closedList.Add(currentTile))
+				continue;
 			foreach (var v in Utility.getAdjacentTileLocations(currentTile))
-				if (!closedList.Contains(v) && (range < 0 || Math.Abs(v.X - startTileLocation.X) + Math.Abs(v.Y - startTileLocation.Y) <= range))
+				if (range < 0 || Math.Abs(v.X - startTileLocation.X) + Math.Abs(v.Y - startTileLocation.Y) <= range)
 					openList.Enqueue(v);
-			closedList.Add(currentTile);
 
 			if (!location.terrainFeatures.TryGetValue(currentTile, out var feature))
 				continue;

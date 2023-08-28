@@ -10,7 +10,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class CrowsAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
 

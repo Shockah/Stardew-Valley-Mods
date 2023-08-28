@@ -9,7 +9,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix // TODO: test in 1.6
+internal sealed class HardWaterAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;
 
