@@ -15,6 +15,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
+// TODO: don't wait for falling animation, it's no longer needed
 internal sealed class BoonsAffix : BaseSeasonAffix, ISeasonAffix
 {
 	private static bool IsHarmonySetup = false;

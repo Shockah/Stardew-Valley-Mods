@@ -125,14 +125,14 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 
 		foreach (var kvp in menu.itemPriceAndStock.ToList())
 			menu.itemPriceAndStock[kvp.Key] = new(
-				price: GetModifiedPrice(kvp.Value.price, kvp.Key),
-				stock: kvp.Value.stock,
-				trade_item: kvp.Value.tradeItem,
-				trade_item_count: kvp.Value.tradeItemCount,
-				stock_mode: kvp.Value.limitedStockMode,
-				synced_key: kvp.Value.syncedKey,
-				item_to_sync_stack: kvp.Value.itemToSyncStacks,
-				stack_draw_type: kvp.Value.stackDrawType
+				price: GetModifiedPrice(kvp.Value.Price, kvp.Key),
+				stock: kvp.Value.Stock,
+				tradeItem: kvp.Value.TradeItem,
+				tradeItemCount: kvp.Value.TradeItemCount,
+				stockMode: kvp.Value.LimitedStockMode,
+				syncedKey: kvp.Value.SyncedKey,
+				itemToSyncStack: kvp.Value.ItemToSyncStack,
+				stackDrawType: kvp.Value.StackDrawType
 			);
 	}
 

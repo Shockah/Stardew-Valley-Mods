@@ -8,6 +8,7 @@ using Shockah.Kokoro.GMCM;
 using Shockah.Kokoro.UI;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Enchantments;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
