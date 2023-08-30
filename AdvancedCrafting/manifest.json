@@ -1,0 +1,17 @@
+{
+	"Name": "Advanced Crafting",
+	"Author": "Shockah",
+	"Version": "0.1.0",
+	"Description": "TODO",
+	"UniqueID": "Shockah.AdvancedCrafting",
+	"EntryDll": "AdvancedCrafting.dll",
+	"MinimumApiVersion": "4.0.0-alpha.20230814",
+	"UpdateKeys": [],
+	"Dependencies": [
+		{
+			"UniqueID": "Shockah.Kokoro",
+			"IsRequired": true,
+			"MinimumVersion": "3.0.0-alpha.20230814"
+		}
+	]
+}

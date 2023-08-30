@@ -6,8 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{22CED42A-3C4C-4282-BB23-2B999492A3F5}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		Directory.Build.props = Directory.Build.props
 		Configuration.props = Configuration.props
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DontStopMeNow", "DontStopMeNow\DontStopMeNow.csproj", "{580D339A-1525-4F3B-862F-B1FA06ADC6FE}"
@@ -45,6 +45,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HatsOnHats", "HatsOnHats\HatsOnHats.csproj", "{98D77EA5-7AD6-44B8-A28E-C0B34F205127}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InAHeartbeat", "InAHeartbeat\InAHeartbeat.csproj", "{4F3FDAF9-302F-4F20-8698-3E022D7572F6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdvancedCrafting", "AdvancedCrafting\AdvancedCrafting.csproj", "{66049977-643C-4341-8389-DFA8342B98CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -124,6 +126,10 @@ Global
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F3FDAF9-302F-4F20-8698-3E022D7572F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66049977-643C-4341-8389-DFA8342B98CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66049977-643C-4341-8389-DFA8342B98CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66049977-643C-4341-8389-DFA8342B98CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66049977-643C-4341-8389-DFA8342B98CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
