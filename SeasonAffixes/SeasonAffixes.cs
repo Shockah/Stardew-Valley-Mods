@@ -794,7 +794,8 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 					ILMatches.AnyLdloca,
 					ILMatches.Instruction(OpCodes.Initobj),
 					ILMatches.AnyLdloc,
-					ILMatches.Call("playSound")
+					ILMatches.Call("playSound"),
+					ILMatches.Instruction(OpCodes.Pop)
 				)
 				.PointerMatcher(SequenceMatcherRelativeElement.AfterLast)
 				.ExtractLabels(out var labels)
