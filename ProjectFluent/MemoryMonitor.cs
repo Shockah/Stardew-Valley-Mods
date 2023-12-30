@@ -1,5 +1,6 @@
 ﻿using StardewModdingAPI;
 using System.Collections.Generic;
+using StardewModdingAPI.Framework.Logging;
 
 namespace Shockah.ProjectFluent
 {
@@ -16,6 +17,11 @@ namespace Shockah.ProjectFluent
 		public void LogOnce(string message, LogLevel level = LogLevel.Trace)
 			=> Logs.Add((message, level, once: true, verbose: false));
 
+		public void VerboseLog(ref VerboseLogStringHandler message)
+		{
+			if (this.IsVerbose)
+				Logs.Add((message.ToString(), level: null, once: false, verbose: true));	
+		}
 		public void VerboseLog(string message)
 			=> Logs.Add((message, level: null, once: false, verbose: true));
 
