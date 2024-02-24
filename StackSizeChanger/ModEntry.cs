@@ -8,9 +8,9 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.StackSizeChanger
 {
-	public class StackSizeChanger : Mod
+	public class ModEntry : Mod
 	{
-		private static StackSizeChanger Instance = null!;
+		private static ModEntry Instance = null!;
 		internal ModConfig Config { get; private set; } = null!;
 
 		public override void Entry(IModHelper helper)
@@ -24,7 +24,7 @@ namespace Shockah.StackSizeChanger
 			harmony.TryPatchVirtual(
 				monitor: Monitor,
 				original: () => AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.maximumStackSize)),
-				postfix: new HarmonyMethod(typeof(StackSizeChanger), nameof(SObject_maximumStackSize_Postfix))
+				postfix: new HarmonyMethod(typeof(ModEntry), nameof(SObject_maximumStackSize_Postfix))
 			);
 		}
 
