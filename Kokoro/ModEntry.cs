@@ -13,12 +13,12 @@ using System.Linq;
 
 namespace Shockah.Kokoro;
 
-public class Kokoro : BaseMod
+public class ModEntry : BaseMod
 {
-	public static Kokoro Instance { get; private set; } = null!;
+	public static ModEntry Instance { get; private set; } = null!;
 
 	private readonly PerScreen<LinkedList<string>> QueuedObjectDialogue = new(() => new());
-	private Dictionary<long, SaveFileDescriptor> SaveFileDescriptors { get; init; } = new();
+	private Dictionary<long, SaveFileDescriptor> SaveFileDescriptors { get; init; } = [];
 
 	public override void Entry(IModHelper helper)
 	{

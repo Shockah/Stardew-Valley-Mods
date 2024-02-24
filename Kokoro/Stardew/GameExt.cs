@@ -29,7 +29,7 @@ public static class GameExt
 
 	public static IReadOnlyList<GameLocation> GetAllLocations()
 	{
-		List<GameLocation> locations = new();
+		List<GameLocation> locations = [];
 		Utility.ForEachLocation(l =>
 		{
 			if (l is not null)

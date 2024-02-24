@@ -20,8 +20,8 @@ internal static class LoadGameMenuPatches
 		ListMods, ListChanges, ListChangesAndOtherMods
 	}
 
-	private static readonly ConditionalWeakTable<LoadGameMenu, List<ClickableTextureComponent>> ModInfoButtons = new();
-	private static readonly ConditionalWeakTable<LoadGameMenu, Func<LoadGameMenu, List<LoadGameMenu.MenuSlot>>> MenuSlotsGetters = new();
+	private static readonly ConditionalWeakTable<LoadGameMenu, List<ClickableTextureComponent>> ModInfoButtons = [];
+	private static readonly ConditionalWeakTable<LoadGameMenu, Func<LoadGameMenu, List<LoadGameMenu.MenuSlot>>> MenuSlotsGetters = [];
 	private static readonly Lazy<Func<LoadGameMenu, int>> CurrentItemIndexGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "currentItemIndex").EmitInstanceGetter<LoadGameMenu, int>());
     private static readonly Lazy<Func<LoadGameMenu, int>> TimerToLoadGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "timerToLoad").EmitInstanceGetter<LoadGameMenu, int>());
     private static readonly Lazy<Func<LoadGameMenu, bool>> LoadingGetter = new(() => AccessTools.Field(typeof(LoadGameMenu), "loading").EmitInstanceGetter<LoadGameMenu, bool>());
@@ -32,32 +32,32 @@ internal static class LoadGameMenuPatches
 	internal static void Apply(Harmony harmony)
 	{
 		harmony.TryPatch(
-			monitor: Kokoro.Instance.Monitor,
-			original: () => AccessTools.DeclaredConstructor(typeof(LoadGameMenu), new Type[] { typeof(string) }),
+			monitor: ModEntry.Instance.Monitor,
+			original: () => AccessTools.DeclaredConstructor(typeof(LoadGameMenu), [typeof(string)]),
 			postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_ctor_Postfix)))
 		);
         harmony.TryPatch(
-            monitor: Kokoro.Instance.Monitor,
+            monitor: ModEntry.Instance.Monitor,
             original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.UpdateButtons)),
             postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_UpdateButtons_Postfix)))
         );
         harmony.TryPatch(
-            monitor: Kokoro.Instance.Monitor,
+            monitor: ModEntry.Instance.Monitor,
             original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.gameWindowSizeChanged)),
             postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_gameWindowSizeChanged_Postfix)))
         );
         harmony.TryPatch(
-            monitor: Kokoro.Instance.Monitor,
+            monitor: ModEntry.Instance.Monitor,
             original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.performHoverAction)),
             postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_performHoverAction_Postfix)))
         );
         harmony.TryPatch(
-            monitor: Kokoro.Instance.Monitor,
-            original: () => AccessTools.DeclaredMethod(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
+            monitor: ModEntry.Instance.Monitor,
+            original: () => AccessTools.DeclaredMethod(typeof(IClickableMenu), nameof(IClickableMenu.draw), [typeof(SpriteBatch)]),
             postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(IClickableMenu_draw_Postfix)))
         );
         harmony.TryPatch(
-            monitor: Kokoro.Instance.Monitor,
+            monitor: ModEntry.Instance.Monitor,
             original: () => AccessTools.DeclaredMethod(typeof(LoadGameMenu), nameof(LoadGameMenu.receiveLeftClick)),
             prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LoadGameMenuPatches), nameof(LoadGameMenu_receiveLeftClick_Prefix)))
         );
@@ -191,7 +191,7 @@ internal static class LoadGameMenuPatches
                     continue;
 
                 DesktopClipboard.SetText(BuildTooltip(saveFileSlot.Farmer, TooltipContent.ListMods, limited: false));
-				Game1.addHUDMessage(new(Kokoro.Instance.Helper.Translation.Get("saveDescriptor.copiedToClipboard")));
+				Game1.addHUDMessage(new(ModEntry.Instance.Helper.Translation.Get("saveDescriptor.copiedToClipboard")));
                 if (playSound)
                     Game1.playSound("select");
                 return false;
@@ -203,7 +203,7 @@ internal static class LoadGameMenuPatches
 
     private static string BuildTooltip(Farmer player, TooltipContent content, bool limited)
 	{
-		var kokoro = Kokoro.Instance;
+		var kokoro = ModEntry.Instance;
 		StringBuilder sb = new();
 		sb.AppendLine(kokoro.Helper.Translation.Get("saveDescriptor.gameVersion", new { Version = player.gameVersion }));
 

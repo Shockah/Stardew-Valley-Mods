@@ -12,7 +12,7 @@ namespace Shockah.Kokoro;
 
 public abstract class BaseMod : Mod
 {
-	private Dictionary<string, Action<ModMessageReceivedEventArgs>> ModMessageHandlers { get; init; } = new();
+	private Dictionary<string, Action<ModMessageReceivedEventArgs>> ModMessageHandlers { get; init; } = [];
 
 	public override object? GetApi()
 		=> this;
@@ -54,7 +54,7 @@ public abstract class BaseMod : Mod
 		var key = typeof(T).GetBestName();
 		if (!ModMessageHandlers.ContainsKey(key))
 			throw new InvalidOperationException($"Tried to send a `{key}` mod message, but there is no handler registered for it.");
-		Helper.Multiplayer.SendMessage(message, key, new[] { ModManifest.UniqueID }, recipients.Select(p => p.UniqueMultiplayerID).ToArray());
+		Helper.Multiplayer.SendMessage(message, key, [ModManifest.UniqueID], recipients.Select(p => p.UniqueMultiplayerID).ToArray());
 	}
 
 	public void SendModMessage<T>(T message, IMultiplayerPeer recipient) where T : notnull
@@ -65,7 +65,7 @@ public abstract class BaseMod : Mod
 		var key = typeof(T).GetBestName();
 		if (!ModMessageHandlers.ContainsKey(key))
 			throw new InvalidOperationException($"Tried to send a `{key}` mod message, but there is no handler registered for it.");
-		Helper.Multiplayer.SendMessage(message, key, new[] { ModManifest.UniqueID }, recipients.Select(p => p.PlayerID).ToArray());
+		Helper.Multiplayer.SendMessage(message, key, [ModManifest.UniqueID], recipients.Select(p => p.PlayerID).ToArray());
 	}
 }
 

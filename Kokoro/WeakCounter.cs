@@ -5,7 +5,7 @@ namespace Shockah.Kokoro;
 
 public sealed class WeakCounter<TKey> where TKey : class
 {
-	private readonly ConditionalWeakTable<TKey, StructRef<uint>> Table = new();
+	private readonly ConditionalWeakTable<TKey, StructRef<uint>> Table = [];
 
 	public uint Get(TKey key)
 		=> Table.TryGetValue(key, out var counter) ? counter.Value : 0;
