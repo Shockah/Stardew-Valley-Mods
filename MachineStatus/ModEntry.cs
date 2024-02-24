@@ -22,13 +22,12 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.MachineStatus;
 
-public class MachineStatus : BaseMod<ModConfig>
+public class ModEntry : BaseMod<ModConfig>
 {
 	private static readonly ItemRenderer ItemRenderer = new();
 	private static readonly Vector2 SingleMachineSize = new(64, 64);
 
-	private static readonly (string titleKey, string[] machineIds)[] CategorizedMachineTypes = new[]
-	{
+	private static readonly (string titleKey, string[] machineIds)[] CategorizedMachineTypes = [
 		("config.machine.category.artisan", new string[]
 		{
 			"(BC)10", // Bee House
@@ -71,15 +70,15 @@ public class MachineStatus : BaseMod<ModConfig>
 			"(BC)160", // Statue of Perfection
 			"(BC)280" // Statue of True Perfection
 		})
-	};
+	];
 
-	internal static MachineStatus Instance { get; set; } = null!;
+	internal static ModEntry Instance { get; set; } = null!;
 	private bool IsConfigRegistered { get; set; } = false;
 	internal IDynamicGameAssetsApi? DynamicGameAssetsApi { get; set; }
 
-	private readonly List<WeakReference<SObject>> TrackedMachines = new();
-	private readonly List<SObject> IgnoredMachinesForUpdates = new();
-	private readonly HashSet<SObject> QueuedMachineUpdates = new();
+	private readonly List<WeakReference<SObject>> TrackedMachines = [];
+	private readonly List<SObject> IgnoredMachinesForUpdates = [];
+	private readonly HashSet<SObject> QueuedMachineUpdates = [];
 
 	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenHostMachines = new(() => new());
 	private readonly PerScreen<List<(LocationDescriptor location, SObject machine, MachineState state)>> PerScreenClientMachines = new(() => new());
@@ -288,14 +287,14 @@ public class MachineStatus : BaseMod<ModConfig>
 		harmony.TryPatchVirtual(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.performObjectDropInAction)),
-			prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Prefix)),
-			postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_performObjectDropInAction_Postfix))
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(SObject_performObjectDropInAction_Prefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(SObject_performObjectDropInAction_Postfix))
 		);
 		harmony.TryPatchVirtual(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.checkForAction)),
-			prefix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Prefix)),
-			postfix: new HarmonyMethod(typeof(MachineStatus), nameof(SObject_checkForAction_Postfix))
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(SObject_checkForAction_Prefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(SObject_checkForAction_Postfix))
 		);
 	}
 
@@ -577,7 +576,7 @@ public class MachineStatus : BaseMod<ModConfig>
 
 	private void UpdateFlowMachines()
 	{
-		List<((int column, int row) position, (SObject machine, List<SObject> heldItems) machine)> machineCoords = new();
+		List<((int column, int row) position, (SObject machine, List<SObject> heldItems) machine)> machineCoords = [];
 		int column = 0;
 		int row = 0;
 
@@ -629,7 +628,7 @@ public class MachineStatus : BaseMod<ModConfig>
 			return list;
 		}
 
-		List<(SObject machine, List<SObject> heldItems)> results = new();
+		List<(SObject machine, List<SObject> heldItems)> results = [];
 		foreach (var (location, machine, state) in SortedMachines)
 		{
 			switch (Config.Grouping)

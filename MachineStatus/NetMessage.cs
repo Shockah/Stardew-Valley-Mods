@@ -68,7 +68,7 @@ internal static class NetMessage
 
 				return new(
 					@object.ItemId,
-					MachineStatus.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object),
+					ModEntry.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object),
 					@object.Name,
 					@object.showNextIndex.Value,
 					color,
@@ -77,7 +77,7 @@ internal static class NetMessage
 			}
 
 			public bool Matches(SVObject @object)
-				=> ItemId == @object.ItemId && Equals(DynamicGameAssetsId, MachineStatus.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object)) && Name == @object.Name;
+				=> ItemId == @object.ItemId && Equals(DynamicGameAssetsId, ModEntry.Instance.DynamicGameAssetsApi?.GetDGAItemId(@object)) && Name == @object.Name;
 
 			public SVObject Retrieve(IntPoint? tileLocation)
 			{
@@ -97,9 +97,9 @@ internal static class NetMessage
 
 				if (DynamicGameAssetsId is not null)
 				{
-					var dgaItem = MachineStatus.Instance.DynamicGameAssetsApi?.SpawnDGAItem(DynamicGameAssetsId);
+					var dgaItem = ModEntry.Instance.DynamicGameAssetsApi?.SpawnDGAItem(DynamicGameAssetsId);
 					if (dgaItem is null)
-						MachineStatus.Instance.Monitor.Log($"Received DynamicGameAssets {Name} machine info with ID `{DynamicGameAssetsId}`, but could not instantiate it - are you missing a mod?", LogLevel.Warn);
+						ModEntry.Instance.Monitor.Log($"Received DynamicGameAssets {Name} machine info with ID `{DynamicGameAssetsId}`, but could not instantiate it - are you missing a mod?", LogLevel.Warn);
 					else
 						result = (SVObject)dgaItem;
 				}
