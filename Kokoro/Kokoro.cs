@@ -83,8 +83,9 @@ public class Kokoro : BaseMod
 	{
 		if (Game1.gameMode != Game1.titleScreenGameMode)
 			return;
+		int heightUsed = 0;
 		for (int i = Game1.hudMessages.Count - 1; i >= 0; i--)
-			Game1.hudMessages[i].draw(Game1.spriteBatch, i);
+			Game1.hudMessages[i].draw(Game1.spriteBatch, i, ref heightUsed);
 	}
 
 	public void QueueObjectDialogue(string message)
