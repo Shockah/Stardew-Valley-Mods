@@ -35,7 +35,7 @@ namespace Shockah.ProjectFluent
 
 					if (bundle.TryGetFunction(identifier, out _))
 						continue;
-					bundle.AddFunction(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
+					bundle.AddFunctionOverriding(functionName, (fluentPositionalArguments, fluentNamedArguments) =>
 					{
 						var positionalArguments = fluentPositionalArguments.Select(a => new FluentFunctionValue(a)).ToList();
 						var namedArguments = new Dictionary<string, IFluentFunctionValue>();
@@ -49,7 +49,7 @@ namespace Shockah.ProjectFluent
 							return fluentResultValue;
 						else
 							throw new ArgumentException($"Function `{functionName}` returned a value that is not a `{nameof(IFluentType)}`.");
-					}, out _);
+					});
 				}
 
 				if (errors is not null && errors.Count != 0)
@@ -70,13 +70,13 @@ namespace Shockah.ProjectFluent
 			}
 		}
 
-		private static IDictionary<string, IFluentType> ExtractTokens(object? tokens)
+		private static (string, IFluentType)[] ExtractTokens(object? tokens)
 		{
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Translation.cs
 
-			Dictionary<string, IFluentType> results = [];
 			if (tokens == null)
-				return results;
+				return [];
+			Dictionary<string, IFluentType> results = [];
 
 			void AddResult(string key, object? value)
 			{
@@ -104,7 +104,9 @@ namespace Shockah.ProjectFluent
 					AddResult(prop.Name, prop.GetValue(tokens));
 			}
 
-			return results;
+			return results
+				.Select(kvp => (kvp.Key, kvp.Value))
+				.ToArray();
 		}
 
 		public bool ContainsKey(string key)
