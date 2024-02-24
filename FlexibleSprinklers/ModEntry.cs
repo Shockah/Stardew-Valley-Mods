@@ -17,7 +17,7 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.FlexibleSprinklers
 {
-	public class FlexibleSprinklers : BaseMod<ModConfig>, IFlexibleSprinklersApi
+	public class ModEntry : BaseMod<ModConfig>, IFlexibleSprinklersApi
 	{
 		private const int PressureNozzleParentSheetIndex = 915;
 		internal static readonly string LineSprinklersModID = "hootless.LineSprinklers";
@@ -27,16 +27,16 @@ namespace Shockah.FlexibleSprinklers
 		private const int FPS = 60;
 		private const float SprinklerCoverageAlphaDecrement = 1f / FPS; // 1f per second
 
-		public static FlexibleSprinklers Instance { get; private set; } = null!;
+		public static ModEntry Instance { get; private set; } = null!;
 		private bool IsSlimeHutchWaterSpotsInstalled = false;
 
 		public bool IsSprinklerBehaviorIndependent
 			=> SprinklerBehavior is ISprinklerBehavior.Independent;
 
 		internal ISprinklerBehavior SprinklerBehavior { get; private set; } = null!;
-		private readonly List<Func<SObject, IReadOnlySet<IntPoint>?>> SprinklerCoverageProviders = new();
-		private readonly List<Action<GameLocation, ISet<SprinklerInfo>>> SprinklerInfoInterceptors = new();
-		internal List<Func<GameLocation, IntPoint, bool?>> CustomWaterableTileProviders { get; private set; } = new();
+		private readonly List<Func<SObject, IReadOnlySet<IntPoint>?>> SprinklerCoverageProviders = [];
+		private readonly List<Action<GameLocation, ISet<SprinklerInfo>>> SprinklerInfoInterceptors = [];
+		internal List<Func<GameLocation, IntPoint, bool?>> CustomWaterableTileProviders { get; private set; } = [];
 		private float SprinklerCoverageAlpha = 0f;
 		private float SprinklerCoverageCurrentAnimationTime = 0f;
 

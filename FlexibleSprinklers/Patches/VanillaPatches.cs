@@ -18,21 +18,21 @@ namespace Shockah.FlexibleSprinklers
 		internal static void Apply(Harmony harmony)
 		{
 			harmony.TryPatch(
-				monitor: FlexibleSprinklers.Instance.Monitor,
+				monitor: ModEntry.Instance.Monitor,
 				original: () => AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.GetSprinklerTiles)),
 				prefix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_GetSprinklerTiles_Prefix)),
 				postfix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_GetSprinklerTiles_Postfix))
 			);
 
 			harmony.TryPatch(
-				monitor: FlexibleSprinklers.Instance.Monitor,
+				monitor: ModEntry.Instance.Monitor,
 				original: () => AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.IsInSprinklerRangeBroadphase)),
 				prefix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_IsInSprinklerRangeBroadphase_Prefix)),
 				postfix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_IsInSprinklerRangeBroadphase_Postfix))
 			);
 
 			harmony.TryPatch(
-				monitor: FlexibleSprinklers.Instance.Monitor,
+				monitor: ModEntry.Instance.Monitor,
 				original: () => AccessTools.DeclaredMethod(typeof(SObject), nameof(SObject.ApplySprinklerAnimation)),
 				prefix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_ApplySprinklerAnimation_Prefix))
 			);
@@ -43,14 +43,14 @@ namespace Shockah.FlexibleSprinklers
 					continue;
 
 				harmony.TryPatch(
-					monitor: FlexibleSprinklers.Instance.Monitor,
+					monitor: ModEntry.Instance.Monitor,
 					original: () => method,
 					prefix: new HarmonyMethod(typeof(VanillaPatches), nameof(Object_DayUpdatePostFarmEventOvernightActionsDelegate_Prefix))
 				);
 				goto done;
 			}
 
-			FlexibleSprinklers.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: Cannot patch DayUpdate/PostFarmEventOvernightActions/Delegate.", LogLevel.Error);
+			ModEntry.Instance.Monitor.Log($"Could not patch base methods - FlexibleSprinklers probably won't work.\nReason: Cannot patch DayUpdate/PostFarmEventOvernightActions/Delegate.", LogLevel.Error);
 			done:;
 		}
 
@@ -63,18 +63,18 @@ namespace Shockah.FlexibleSprinklers
 				return result;
 			}
 			if (__instance.Location is null)
-				return new List<Vector2>();
+				return [];
 
-			if (FlexibleSprinklers.Instance.SprinklerBehavior is ISprinklerBehavior.Independent independent)
+			if (ModEntry.Instance.SprinklerBehavior is ISprinklerBehavior.Independent independent)
 			{
 				return independent.GetSprinklerTiles(
-					new GameLocationMap(__instance.Location, FlexibleSprinklers.Instance.CustomWaterableTileProviders),
-					FlexibleSprinklers.Instance.GetSprinklerInfo(__instance)
+					new GameLocationMap(__instance.Location, ModEntry.Instance.CustomWaterableTileProviders),
+					ModEntry.Instance.GetSprinklerInfo(__instance)
 				).Select(e => new Vector2(e.X, e.Y)).ToList();
 			}
 			else
 			{
-				return new List<Vector2>();
+				return [];
 			}
 		}
 
@@ -82,7 +82,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (IsVanillaQueryInProgress)
 				return true;
-			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (ModEntry.Instance.Config.CompatibilityMode)
 				return true;
 			__result = Object_GetSprinklerTiles_Result(__instance);
 			return false;
@@ -92,7 +92,7 @@ namespace Shockah.FlexibleSprinklers
 		{
 			if (IsVanillaQueryInProgress)
 				return;
-			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (!ModEntry.Instance.Config.CompatibilityMode)
 				return;
 			__result = Object_GetSprinklerTiles_Result(__instance);
 		}
@@ -105,7 +105,7 @@ namespace Shockah.FlexibleSprinklers
 			var wasVanillaQueryInProgress = IsVanillaQueryInProgress;
 			IsVanillaQueryInProgress = true;
 			var manhattanDistance = Math.Abs(target.X - __instance.TileLocation.X) + Math.Abs(target.Y - __instance.TileLocation.Y);
-			var result = manhattanDistance <= FlexibleSprinklers.Instance.GetSprinklerMaxRange(__instance) && FlexibleSprinklers.Instance.IsTileInRangeOfAnySprinkler(__instance.Location, new IntPoint((int)target.X, (int)target.Y));
+			var result = manhattanDistance <= ModEntry.Instance.GetSprinklerMaxRange(__instance) && ModEntry.Instance.IsTileInRangeOfAnySprinkler(__instance.Location, new IntPoint((int)target.X, (int)target.Y));
 			IsVanillaQueryInProgress = wasVanillaQueryInProgress;
 			if (result)
 				SprinklerTileOverride = target;
@@ -114,7 +114,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private static bool Object_IsInSprinklerRangeBroadphase_Prefix(SObject __instance, Vector2 target, ref bool __result)
 		{
-			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (ModEntry.Instance.Config.CompatibilityMode)
 				return true;
 			__result = Object_IsInSprinklerRangeBroadphase_Result(__instance, target);
 			return false;
@@ -122,7 +122,7 @@ namespace Shockah.FlexibleSprinklers
 
 		private static void Object_IsInSprinklerRangeBroadphase_Postfix(SObject __instance, Vector2 target, ref bool __result)
 		{
-			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (!ModEntry.Instance.Config.CompatibilityMode)
 				return;
 			__result = Object_IsInSprinklerRangeBroadphase_Result(__instance, target);
 		}

@@ -42,7 +42,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 			catch (Exception e)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch LineSprinklers - they probably won't work.\nReason: {e}", LogLevel.Warn);
+				ModEntry.Instance.Monitor.Log($"Could not patch LineSprinklers - they probably won't work.\nReason: {e}", LogLevel.Warn);
 			}
 		}
 
@@ -72,12 +72,12 @@ namespace Shockah.FlexibleSprinklers
 
 		internal static void Object_IsSprinkler_Postfix(SObject __instance, ref bool __result)
 		{
-			__result = __result || FlexibleSprinklers.Instance.LineSprinklersApi!.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex);
+			__result = __result || ModEntry.Instance.LineSprinklersApi!.GetSprinklerCoverage().ContainsKey(__instance.ParentSheetIndex);
 		}
 
 		private static int? Object_GetBaseRadiusForSprinkler_Result(SObject instance)
 		{
-			if (FlexibleSprinklers.Instance.LineSprinklersApi!.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[]? tilePositions))
+			if (ModEntry.Instance.LineSprinklersApi!.GetSprinklerCoverage().TryGetValue(instance.ParentSheetIndex, out Vector2[]? tilePositions))
 			{
 				return (int)Math.Sqrt(tilePositions.Length / 2) - 1;
 			}
@@ -89,7 +89,7 @@ namespace Shockah.FlexibleSprinklers
 
 		internal static bool Object_GetBaseRadiusForSprinkler_Prefix(SObject __instance, ref int __result)
 		{
-			if (FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (ModEntry.Instance.Config.CompatibilityMode)
 				return true;
 			var radius = Object_GetBaseRadiusForSprinkler_Result(__instance);
 			if (radius is null)
@@ -105,7 +105,7 @@ namespace Shockah.FlexibleSprinklers
 
 		internal static void Object_GetBaseRadiusForSprinkler_Postfix(SObject __instance, ref int __result)
 		{
-			if (!FlexibleSprinklers.Instance.Config.CompatibilityMode)
+			if (!ModEntry.Instance.Config.CompatibilityMode)
 				return;
 			var radius = Object_GetBaseRadiusForSprinkler_Result(__instance);
 			if (radius is not null)

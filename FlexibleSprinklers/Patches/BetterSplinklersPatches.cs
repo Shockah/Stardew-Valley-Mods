@@ -19,7 +19,7 @@ namespace Shockah.FlexibleSprinklers
 			}
 			catch (Exception e)
 			{
-				FlexibleSprinklers.Instance.Monitor.Log($"Could not patch BetterSprinklers - they probably won't work.\nReason: {e}", LogLevel.Warn);
+				ModEntry.Instance.Monitor.Log($"Could not patch BetterSprinklers - they probably won't work.\nReason: {e}", LogLevel.Warn);
 			}
 		}
 
