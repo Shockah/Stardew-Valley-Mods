@@ -9,9 +9,9 @@ using System.Linq;
 
 namespace Shockah.ProjectFluent
 {
-	public class ProjectFluent : Mod
+	public class ModEntry : Mod
 	{
-		public static ProjectFluent Instance { get; private set; } = null!;
+		public static ModEntry Instance { get; private set; } = null!;
 		public IFluentApi Api { get; private set; } = null!;
 		private IGameLocale? LocaleOverride { get; set; }
 		private bool IsConfigRegistered { get; set; } = false;
@@ -37,7 +37,7 @@ namespace Shockah.ProjectFluent
 		private IContextfulFluentFunctionProvider ContextfulFluentFunctionProvider { get; set; } = null!;
 		private IFluentProvider FluentProvider { get; set; } = null!;
 
-		public ProjectFluent()
+		public ModEntry()
 		{
 			Instance = this;
 

@@ -27,25 +27,22 @@ namespace Shockah.ProjectFluent
 
 	internal class ContentPackParser : IContentPackParser
 	{
+		private static readonly SemanticVersion OldestVersion = new(1, 0, 0);
+		private static readonly SemanticVersion IgnoreMissingLocalizedModVersion = new(1, 1, 0);
+
 		private ISemanticVersion ProjectFluentVersion { get; set; }
 		private IModRegistry ModRegistry { get; set; }
-
-		private ISemanticVersion OldestVersion { get; set; }
-		private ISemanticVersion IgnoreMissingLocalizedModVersion { get; set; }
 
 		public ContentPackParser(ISemanticVersion projectFluentVersion, IModRegistry modRegistry)
 		{
 			this.ProjectFluentVersion = projectFluentVersion;
 			this.ModRegistry = modRegistry;
-
-			this.OldestVersion = new SemanticVersion(1, 0, 0);
-			this.IgnoreMissingLocalizedModVersion = new SemanticVersion(1, 1, 0);
 		}
 
 		public ParseResult<ContentPackContent> Parse(IManifest? context, RawContentPackContent raw)
 		{
-			List<string> errors = new();
-			List<string> warnings = new();
+			List<string> errors = [];
+			List<string> warnings = [];
 
 			if (raw.ID is null && context is null)
 				warnings.Add($"Missing `{nameof(raw.ID)}` field. The field is not required, but it is recommended when asset editing to allow patching by other mods.");
@@ -62,7 +59,7 @@ namespace Shockah.ProjectFluent
 			if (errors.Count != 0)
 				return new(null, errors: errors.ToImmutableList(), warnings: warnings.ToImmutableList());
 
-			List<ContentPackContent.AdditionalFluentPath> additionalFluentPaths = new();
+			List<ContentPackContent.AdditionalFluentPath> additionalFluentPaths = [];
 			if (raw.AdditionalFluentPaths is not null)
 			{
 				foreach (var (entry, entryIndex) in raw.AdditionalFluentPaths.Select((e, i) => (e, i)))
@@ -77,7 +74,7 @@ namespace Shockah.ProjectFluent
 				}
 			}
 
-			List<ContentPackContent.AdditionalI18nPath> additionalI18nPaths = new();
+			List<ContentPackContent.AdditionalI18nPath> additionalI18nPaths = [];
 			if (raw.AdditionalI18nPaths is not null)
 			{
 				foreach (var (entry, entryIndex) in raw.AdditionalI18nPaths.Select((e, i) => (e, i)))
@@ -103,8 +100,8 @@ namespace Shockah.ProjectFluent
 
 		private ParseResult<ContentPackContent.AdditionalFluentPath> ParseAdditionalFluentPath(IManifest? context, RawContentPackContent.AdditionalFluentPath raw, ISemanticVersion format)
 		{
-			List<string> errors = new();
-			List<string> warnings = new();
+			List<string> errors = [];
+			List<string> warnings = [];
 
 			if (raw.LocalizedMod is null)
 				errors.Add($"Missing `{nameof(raw.LocalizedMod)}` field.");
@@ -128,7 +125,7 @@ namespace Shockah.ProjectFluent
 				{
 					if (!ignoreMissingLocalizedMod)
 						warnings.Add($"`{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded.");
-					else if (ProjectFluent.Instance.Config.DeveloperMode)
+					else if (ModEntry.Instance.Config.DeveloperMode)
 						warnings.Add($"[Developer Mode] `{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded. The developer opted out of this warning. This may or may not be an actual problem.");
 				}
 			}
@@ -168,8 +165,8 @@ namespace Shockah.ProjectFluent
 
 		private ParseResult<ContentPackContent.AdditionalI18nPath> ParseAdditionalI18nPath(IManifest? context, RawContentPackContent.AdditionalI18nPath raw, ISemanticVersion format)
 		{
-			List<string> errors = new();
-			List<string> warnings = new();
+			List<string> errors = [];
+			List<string> warnings = [];
 
 			if (raw.LocalizedMod is null)
 				errors.Add($"Missing `{nameof(raw.LocalizedMod)}` field.");
@@ -193,7 +190,7 @@ namespace Shockah.ProjectFluent
 				{
 					if (!ignoreMissingLocalizedMod)
 						warnings.Add($"`{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded.");
-					else if (ProjectFluent.Instance.Config.DeveloperMode)
+					else if (ModEntry.Instance.Config.DeveloperMode)
 						warnings.Add($"[Developer Mode] `{nameof(raw.LocalizedMod)}` specifies mod `{raw.LocalizedMod}` that is not currently loaded. The developer opted out of this warning. This may or may not be an actual problem.");
 				}
 			}

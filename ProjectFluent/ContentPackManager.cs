@@ -1,5 +1,4 @@
-﻿using Shockah.CommonModCode;
-using Shockah.Kokoro;
+﻿using Shockah.Kokoro;
 using StardewModdingAPI;
 using System;
 using System.Collections.Generic;
@@ -21,7 +20,7 @@ namespace Shockah.ProjectFluent
 		private IContentPackHelper ContentPackHelper { get; set; }
 		private IContentPackParser ContentPackParser { get; set; }
 
-		private IList<(IContentPack pack, ContentPackContent content)> ContentPackContents { get; set; } = new List<(IContentPack pack, ContentPackContent content)>();
+		private List<(IContentPack pack, ContentPackContent content)> ContentPackContents { get; set; } = [];
 
 		public ContentPackManager(IMonitor monitor, IContentPackHelper contentPackHelper, IContentPackParser contentPackParser)
 		{

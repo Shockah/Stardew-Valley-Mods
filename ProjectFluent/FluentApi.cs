@@ -23,7 +23,7 @@ namespace Shockah.ProjectFluent
 		}
 
 		public IGameLocale CurrentLocale =>
-			ProjectFluent.Instance.CurrentLocale;
+			ModEntry.Instance.CurrentLocale;
 
 		public IEnumerable<IGameLocale> AllKnownLocales
 		{

@@ -74,7 +74,7 @@ namespace Shockah.ProjectFluent
 		{
 			// source: https://github.com/Pathoschild/SMAPI/blob/develop/src/SMAPI/Translation.cs
 
-			Dictionary<string, IFluentType> results = new();
+			Dictionary<string, IFluentType> results = [];
 			if (tokens == null)
 				return results;
 
@@ -108,9 +108,7 @@ namespace Shockah.ProjectFluent
 		}
 
 		public bool ContainsKey(string key)
-		{
-			return Bundle.TryGetAttrMsg(key, null, out _, out _);
-		}
+			=> Bundle.TryGetAttrMessage(key, null, out _, out _);
 
 		public string Get(string key, object? tokens)
 		{
