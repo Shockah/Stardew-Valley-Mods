@@ -163,37 +163,23 @@ namespace Shockah.ProjectFluent
 			try
 			{
 				return new SequenceBlockMatcher<CodeInstruction>(instructions)
-					.AsGuidAnchorable()
 					.Find(
 						ILMatches.Call("get_Current"),
-						ILMatches.AnyStloc.WithAutoAnchor(out Guid modInfoLocalInstruction),
+						ILMatches.AnyStloc.CreateLdlocInstruction(out var ldlocModInfo),
 						ILMatches.AnyLdarg,
 						ILMatches.AnyLdloc,
 						ILMatches.Call("get_DirectoryPath"),
 						ILMatches.Ldstr("i18n"),
 						ILMatches.Call("Combine"),
-						ILMatches.AnyLdloca.WithAutoAnchor(out Guid errorsLocalInstruction),
+						ILMatches.AnyLdloca.CreateLdlocaInstruction(out var ldlocaErrors),
 						ILMatches.Call("ReadTranslationFiles"),
-						ILMatches.AnyStloc.WithAutoAnchor(out Guid translationsLocalInstruction)
+						ILMatches.AnyStloc.CreateLdlocInstruction(out var ldlocTranslations)
 					)
-					.AnchorBlock(out Guid findBlock)
-
-					.PointerMatcher(modInfoLocalInstruction)
-					.CreateLdlocInstruction(out var modInfoLoadInstruction)
-
-					.PointerMatcher(errorsLocalInstruction)
-					.CreateLdlocaInstruction(out var errorsLoadAddressInstruction)
-
-					.PointerMatcher(translationsLocalInstruction)
-					.CreateLdlocInstruction(out var translationsLoadInstruction)
-
-					.BlockMatcher(findBlock)
 					.Insert(
 						SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.JustInsertion,
-
-						modInfoLoadInstruction,
-						translationsLoadInstruction,
-						errorsLoadAddressInstruction,
+						ldlocModInfo,
+						ldlocTranslations,
+						ldlocaErrors,
 						new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(I18nIntegration), nameof(SCore_ReloadTranslations_Transpiler_ModifyList)))
 					)
 					.AllElements();
