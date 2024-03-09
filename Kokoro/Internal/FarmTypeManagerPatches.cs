@@ -60,45 +60,33 @@ internal static class FarmTypeManagerPatches
 			var notFullHourLabel = il.DefineLabel();
 
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.AsGuidAnchorable()
 				// split into two `Find`s, because current published FTM is built in debug and the instructions differ between these parts:
 				// just `bne.un.s` vs `ceq` + `stloc.s` + `ldloc.s` + `brfalse.s`
 				.Find(
-					ILMatches.Call("get_StartOfDay").WithAutoAnchor(out Guid callGetStartOfDayAnchor),
-					ILMatches.Stloc(stardewTimeType, originalMethod.GetMethodBody()!.LocalVariables).WithAutoAnchor(out Guid stlocStardewTimeAnchor),
-					ILMatches.Ldloca(stardewTimeType, originalMethod.GetMethodBody()!.LocalVariables),
-					ILMatches.Call("get_Time").WithAutoAnchor(out Guid callGetTimeAnchor)
+					ILMatches.Call("get_StartOfDay").Anchor(out var callGetStartOfDayAnchor).SelectElement(out var callGetStartOfDay, i => i.Clone()),
+					ILMatches.Stloc(stardewTimeType, originalMethod).CreateLdlocaInstruction(out var ldlocaStardewTime).CreateStlocInstruction(out var stlocStardewTime),
+					ILMatches.Ldloca(stardewTimeType, originalMethod),
+					ILMatches.Call("get_Time").SelectElement(out var callGetTime, i => i.Clone())
 				)
 				.Find(
-					ILMatches.Ldsfld("TimedSpawns").WithAutoAnchor(out Guid ldsfldTimedSpawnsAnchor),
+					ILMatches.Ldsfld("TimedSpawns").SelectElement(out var ldsfldTimedSpawns, i => i.Clone()),
 					ILMatches.LdcI4(600),
-					ILMatches.Call("op_Implicit").WithAutoAnchor(out Guid callOpImplicitAnchor),
-					ILMatches.Newobj(AccessTools.Constructor(typeof(Nullable<>).MakeGenericType(stardewTimeType), [stardewTimeType])).WithAutoAnchor(out Guid newobjNullableStardewTimeAnchor),
-					ILMatches.Call("SpawnTimedSpawns").WithAutoAnchor(out Guid callSpawnTimedSpawnsAnchor)
+					ILMatches.Call("op_Implicit").SelectElement(out var callOpImplicit, i => i.Clone()),
+					ILMatches.Newobj(AccessTools.Constructor(typeof(Nullable<>).MakeGenericType(stardewTimeType), [stardewTimeType])).SelectElement(out var newobjNullableStardewTime, i => i.Clone()),
+					ILMatches.Call("SpawnTimedSpawns").SelectElement(out var callSpawnTimedSpawns, i => i.Clone())
 				)
 				.PointerMatcher(SequenceMatcherRelativeElement.Last)
-				.EncompassUntil(callGetStartOfDayAnchor)
-				.AnchorBlock(out Guid findAnchor)
-
-				.PointerMatcher(callGetStartOfDayAnchor).Element(out var callGetStartOfDayInstruction)
-				.PointerMatcher(stlocStardewTimeAnchor).Element(out var stlocStardewTimeInstruction).CreateLdlocaInstruction(out var ldlocaStardewTimeInstruction)
-				.PointerMatcher(callGetTimeAnchor).Element(out var callGetTimeInstruction)
-				.PointerMatcher(ldsfldTimedSpawnsAnchor).Element(out var ldsfldTimedSpawnsInstruction)
-				.PointerMatcher(callOpImplicitAnchor).Element(out var callOpImplicitInstruction)
-				.PointerMatcher(newobjNullableStardewTimeAnchor).Element(out var newobjNullableStardewTimeInstruction)
-				.PointerMatcher(callSpawnTimedSpawnsAnchor).Element(out var callSpawnTimedSpawnsInstruction)
-
-				.BlockMatcher(findAnchor)
+				.Anchors().EncompassUntil(callGetStartOfDayAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldc_I4, 600),
 					new CodeInstruction(OpCodes.Stloc, timeLocal.LocalIndex),
 					new CodeInstruction(OpCodes.Br, whileLoopCheckLabel),
 
-					ldsfldTimedSpawnsInstruction.Clone().WithLabels(whileLoopStartLabel),
+					ldsfldTimedSpawns.Value.WithLabels(whileLoopStartLabel),
 					new CodeInstruction(OpCodes.Ldloc, timeLocal.LocalIndex),
-					callOpImplicitInstruction.Clone(),
-					newobjNullableStardewTimeInstruction.Clone(),
-					callSpawnTimedSpawnsInstruction.Clone(),
+					callOpImplicit.Value,
+					newobjNullableStardewTime.Value,
+					callSpawnTimedSpawns.Value,
 
 					new CodeInstruction(OpCodes.Ldloc, timeLocal.LocalIndex),
 					new CodeInstruction(OpCodes.Ldc_I4, 10),
@@ -117,10 +105,10 @@ internal static class FarmTypeManagerPatches
 					new CodeInstruction(OpCodes.Stloc, timeLocal.LocalIndex),
 
 					new CodeInstruction(OpCodes.Ldloc, timeLocal.LocalIndex).WithLabels(whileLoopCheckLabel, notFullHourLabel),
-					callGetStartOfDayInstruction.Clone(),
-					stlocStardewTimeInstruction.Clone(),
-					ldlocaStardewTimeInstruction.Clone(),
-					callGetTimeInstruction.Clone(),
+					callGetStartOfDay.Value,
+					stlocStardewTime.Value,
+					ldlocaStardewTime.Value,
+					callGetTime.Value,
 					new CodeInstruction(OpCodes.Ble, whileLoopStartLabel)
 				)
 
@@ -146,27 +134,17 @@ internal static class FarmTypeManagerPatches
 			var notFullHourLabel = il.DefineLabel();
 
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.AsGuidAnchorable()
 				.Find(
-					ILMatches.Call("get_StartOfDay").WithAutoAnchor(out Guid callGetStartOfDayAnchor)
+					ILMatches.Call("get_StartOfDay").SelectElement(out var callGetStartOfDay, i => i.Clone())
 				)
 				.Find(
-					ILMatches.Ldsfld("TimedSpawns").WithAutoAnchor(out Guid ldsfldTimedSpawnsAnchor),
+					ILMatches.Ldsfld("TimedSpawns").SelectElement(out var ldsfldTimedSpawns, i => i.Clone()),
 					ILMatches.Ldarg(2),
 					ILMatches.Call("get_NewTime"),
-					ILMatches.Call("op_Implicit").WithAutoAnchor(out Guid callOpImplicitAnchor),
-					ILMatches.Newobj(AccessTools.Constructor(typeof(Nullable<>).MakeGenericType(stardewTimeType), [stardewTimeType])).WithAutoAnchor(out Guid newobjNullableStardewTimeAnchor),
-					ILMatches.Call("SpawnTimedSpawns").WithAutoAnchor(out Guid callSpawnTimedSpawnsAnchor)
+					ILMatches.Call("op_Implicit").SelectElement(out var callOpImplicit, i => i.Clone()),
+					ILMatches.Newobj(AccessTools.Constructor(typeof(Nullable<>).MakeGenericType(stardewTimeType), [stardewTimeType])).SelectElement(out var newobjNullableStardewTime, i => i.Clone()),
+					ILMatches.Call("SpawnTimedSpawns").SelectElement(out var callSpawnTimedSpawns, i => i.Clone())
 				)
-				.AnchorBlock(out Guid findAnchor)
-
-				.PointerMatcher(callGetStartOfDayAnchor).Element(out var callGetStartOfDayInstruction)
-				.PointerMatcher(ldsfldTimedSpawnsAnchor).Element(out var ldsfldTimedSpawnsInstruction)
-				.PointerMatcher(callOpImplicitAnchor).Element(out var callOpImplicitInstruction)
-				.PointerMatcher(newobjNullableStardewTimeAnchor).Element(out var newobjNullableStardewTimeInstruction)
-				.PointerMatcher(callSpawnTimedSpawnsAnchor).Element(out var callSpawnTimedSpawnsInstruction)
-
-				.BlockMatcher(findAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldarg_2),
 					new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(TimeChangedEventArgs), nameof(TimeChangedEventArgs.OldTime))),
@@ -189,11 +167,11 @@ internal static class FarmTypeManagerPatches
 					new CodeInstruction(OpCodes.Add),
 					new CodeInstruction(OpCodes.Stloc, timeLocal.LocalIndex),
 
-					ldsfldTimedSpawnsInstruction.Clone().WithLabels(notFullHourLabel),
+					ldsfldTimedSpawns.Value.WithLabels(notFullHourLabel),
 					new CodeInstruction(OpCodes.Ldloc, timeLocal.LocalIndex),
-					callOpImplicitInstruction.Clone(),
-					newobjNullableStardewTimeInstruction.Clone(),
-					callSpawnTimedSpawnsInstruction.Clone(),
+					callOpImplicit.Value,
+					newobjNullableStardewTime.Value,
+					callSpawnTimedSpawns.Value,
 
 					new CodeInstruction(OpCodes.Ldloc, timeLocal.LocalIndex).WithLabels(whileLoopCheckLabel),
 					new CodeInstruction(OpCodes.Ldarg_2),

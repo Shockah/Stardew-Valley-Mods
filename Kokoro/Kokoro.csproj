@@ -7,7 +7,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll" Private="false" />
-		<PackageReference Include="Shrike" Version="2.1.0" />
-		<PackageReference Include="Shrike.Harmony" Version="2.0.0" />
+		<PackageReference Include="Shrike" Version="3.1.0" />
+		<PackageReference Include="Shrike.Harmony" Version="3.0.0" />
 	</ItemGroup>
 </Project>
