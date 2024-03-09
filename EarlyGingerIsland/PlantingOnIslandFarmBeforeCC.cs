@@ -1,9 +1,8 @@
-﻿namespace Shockah.EarlyGingerIsland
+﻿namespace Shockah.EarlyGingerIsland;
+
+public enum PlantingOnIslandFarmBeforeCC
 {
-	public enum PlantingOnIslandFarmBeforeCC
-	{
-		Disabled,
-		OnlyOneCrop,
-		Enabled
-	}
+	Disabled,
+	OnlyOneCrop,
+	Enabled
 }
