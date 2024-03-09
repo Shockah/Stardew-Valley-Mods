@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace Shockah.HatsOnHats;
 
-public class HatsOnHats : BaseMod
+public class ModEntry : BaseMod
 {
 	private static Hat? ExtraHatOverride { get; set; }
 	private static Texture2D? OriginalHairstylesTexture { get; set; }
