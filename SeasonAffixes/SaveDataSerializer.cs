@@ -16,7 +16,7 @@ internal sealed class SaveDataSerializer : ISaveDataSerializer
 {
 	public SerializedSaveData Serialize(SaveData data)
 	{
-		SerializedSaveData result = new(SeasonAffixes.Instance.ModManifest.Version);
+		SerializedSaveData result = new(ModEntry.Instance.ModManifest.Version);
 		result.ActiveAffixes.AddRange(data.ActiveAffixes.Select(a => a.UniqueID));
 		result.AffixChoiceHistory.AddRange(data.AffixChoiceHistory.Select(step => step.Select(a => a.UniqueID).ToList()));
 		result.AffixSetChoiceHistory.AddRange(data.AffixSetChoiceHistory.Select(step => step.Select(set => set.Select(a => a.UniqueID).ToList()).ToList()));
@@ -27,9 +27,9 @@ internal sealed class SaveDataSerializer : ISaveDataSerializer
 	{
 		ISeasonAffix? GetOrLog(string id, string context, LogLevel level)
 		{
-			var affix = SeasonAffixes.Instance.GetAffix(id);
+			var affix = ModEntry.Instance.GetAffix(id);
 			if (affix is null)
-				SeasonAffixes.Instance.Monitor.Log($"Tried to deserialize affix `{id}` for {context}, but no such affix is registered. Did you remove a mod?", level);
+				ModEntry.Instance.Monitor.Log($"Tried to deserialize affix `{id}` for {context}, but no such affix is registered. Did you remove a mod?", level);
 			return affix;
 		}
 

@@ -69,14 +69,14 @@ internal sealed class AccumulationAffix : BaseSeasonAffix, ISeasonAffix
 
 	private static void Tree_tickUpdate_Prefix(Tree __instance, ref bool __state)
 	{
-		__state = TreeFallingGetter.Value(__instance);
+		__state = TreeFallingGetter.Value(__instance).Value;
 	}
 
 	private static void Tree_tickUpdate_Postfix(Tree __instance, ref bool __state)
 	{
 		if (TreeDestroyGetter.Value(__instance).Value)
 			return;
-		if (TreeFallingGetter.Value(__instance) || !__state)
+		if (TreeFallingGetter.Value(__instance).Value || !__state)
 			return;
 		if (!Mod.IsAffixActive(a => a is AccumulationAffix))
 			return;

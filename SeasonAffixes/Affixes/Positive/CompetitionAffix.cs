@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Nanoray.Shrike;
 using Newtonsoft.Json;
 using Shockah.CommonModCode.GMCM;
 using Shockah.Kokoro;
@@ -170,7 +171,7 @@ internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 		if (money <= 0)
 			return;
 
-		Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{I18nPrefix}.arcadeMoneyReward", new { Money = money }));
+		Kokoro.ModEntry.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{I18nPrefix}.arcadeMoneyReward", new { Money = money }));
 		Game1.player.Money += money;
 		ArcadeMoneyToReceive.Value = 0;
 	}
@@ -227,12 +228,12 @@ internal sealed class CompetitionAffix : BaseSeasonAffix, ISeasonAffix
 			int minCoins = GetMinimumQiCoinsToSell();
 			if (Game1.player.clubCoins < minCoins)
 			{
-				Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.notEnoughQiCoins"));
+				Kokoro.ModEntry.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.notEnoughQiCoins"));
 				return false;
 			}
 			if (QiCoinsLeftToSell.Value < minCoins)
 			{
-				Kokoro.Kokoro.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.cappedQiCoins"));
+				Kokoro.ModEntry.Instance.QueueObjectDialogue(Mod.Helper.Translation.Get($"{Instance.I18nPrefix}.sellQiCoins.cappedQiCoins"));
 				return false;
 			}
 

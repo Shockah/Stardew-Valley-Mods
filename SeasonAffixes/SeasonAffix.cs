@@ -2,8 +2,8 @@
 
 internal abstract class BaseSeasonAffix
 {
-	protected static SeasonAffixes Mod
-		=> SeasonAffixes.Instance;
+	protected static ModEntry Mod
+		=> ModEntry.Instance;
 
 	public string UniqueID { get; init; }
 	protected string I18nPrefix { get; init; }

@@ -33,25 +33,25 @@ internal static class BillboardPatches
 	internal static void Apply(Harmony harmony)
 	{
 		harmony.TryPatch(
-			monitor: SeasonAffixes.Instance.Monitor,
+			monitor: ModEntry.Instance.Monitor,
 			original: () => AccessTools.Method(typeof(Billboard), nameof(Billboard.performHoverAction)),
 			postfix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(performHoverAction_Postfix)))
 		);
 
 		harmony.TryPatch(
-			monitor: SeasonAffixes.Instance.Monitor,
+			monitor: ModEntry.Instance.Monitor,
 			original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.populateClickableComponentList)),
 			postfix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(IClickableMenu_populateClickableComponentList_Postfix)))
 		);
 
 		harmony.TryPatch(
-				monitor: SeasonAffixes.Instance.Monitor,
+				monitor: ModEntry.Instance.Monitor,
 				original: () => AccessTools.Method(typeof(IClickableMenu), nameof(IClickableMenu.draw), new Type[] { typeof(SpriteBatch) }),
 				prefix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(IClickableMenu_draw_Prefix)))
 			);
 
 		harmony.TryPatch(
-			monitor: SeasonAffixes.Instance.Monitor,
+			monitor: ModEntry.Instance.Monitor,
 			original: () => AccessTools.Method(typeof(Billboard), nameof(Billboard.draw), new Type[] { typeof(SpriteBatch) }),
 			postfix: new HarmonyMethod(AccessTools.Method(typeof(BillboardPatches), nameof(Billboard_draw_Postfix)))
 		);
@@ -63,7 +63,7 @@ internal static class BillboardPatches
 		if (BillboardDailyQuestBoardGetter.Value(__instance))
 			return;
 
-		var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), SeasonAffixes.Instance.ActiveAffixes);
+		var affixes = ModEntry.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), ModEntry.Instance.ActiveAffixes);
 		int width = affixes.Count * IconWidth + (affixes.Count - 1) * IconSpacing;
 		Rectangle bounds = new(
 			__instance.xPositionOnScreen + __instance.width - 144 - width - IconWidth / 2,
@@ -85,7 +85,7 @@ internal static class BillboardPatches
 		if (BillboardDailyQuestBoardGetter.Value(menu))
 			return;
 
-		var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), SeasonAffixes.Instance.ActiveAffixes);
+		var affixes = ModEntry.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), ModEntry.Instance.ActiveAffixes);
 		int width = affixes.Count * IconWidth + (affixes.Count - 1) * IconSpacing;
 		Rectangle bounds = new(
 			__instance.xPositionOnScreen + __instance.width - 144 - width - IconWidth / 2,
@@ -115,7 +115,7 @@ internal static class BillboardPatches
 			AffixIconCache.AddOrUpdate(menu, affixIconCache);
 		}
 
-		var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), SeasonAffixes.Instance.ActiveAffixes);
+		var affixes = ModEntry.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), ModEntry.Instance.ActiveAffixes);
 		int width = affixes.Count * IconWidth + (affixes.Count - 1) * IconSpacing;
 		for (int i = 0; i < affixes.Count; i++)
 		{
@@ -149,8 +149,8 @@ internal static class BillboardPatches
 
 		if (HoveringOverAffixes)
 		{
-			var affixes = SeasonAffixes.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), SeasonAffixes.Instance.ActiveAffixes);
-			IClickableMenu.drawToolTip(b, SeasonAffixes.Instance.GetSeasonDescription(affixes), SeasonAffixes.Instance.GetSeasonName(affixes), null);
+			var affixes = ModEntry.Instance.GetUIOrderedAffixes(new(Game1.Date.Year, Game1.Date.Season), ModEntry.Instance.ActiveAffixes);
+			IClickableMenu.drawToolTip(b, ModEntry.Instance.GetSeasonDescription(affixes), ModEntry.Instance.GetSeasonName(affixes), null);
 		}
 	}
 }

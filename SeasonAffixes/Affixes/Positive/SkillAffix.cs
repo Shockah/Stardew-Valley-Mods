@@ -26,8 +26,8 @@ internal sealed class SkillAffix : ISeasonAffix
 	private static readonly float DefaultVanillaXPIncrease = 0.2f;
 	private static readonly float DefaultCustomXPIncrease = 0.25f;
 
-	private static SeasonAffixes Mod
-		=> SeasonAffixes.Instance;
+	private static ModEntry Mod
+		=> ModEntry.Instance;
 
 	private static bool IsHarmonySetup = false;
 

@@ -43,7 +43,7 @@ internal class AffixChoiceMenu : IClickableMenu
 
 	public AffixChoiceMenu() : base(0, 0, 600, 400)
 	{
-		this.ConfigStorage = SeasonAffixes.Instance.AffixChoiceMenuConfig;
+		this.ConfigStorage = ModEntry.Instance.AffixChoiceMenuConfig;
 		UpdateBounds();
 	}
 
@@ -122,7 +122,7 @@ internal class AffixChoiceMenu : IClickableMenu
 			return;
 		}
 
-		if (Config is not null && !SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
+		if (Config is not null && !ModEntry.Instance.PlayerChoices.ContainsKey(Game1.player))
 		{
 			int choiceHeight = height - 192;
 			for (int i = 0; i < Config.Choices.Count; i++)
@@ -146,7 +146,7 @@ internal class AffixChoiceMenu : IClickableMenu
 
 		if (SelectedChoice is not null)
 		{
-			SeasonAffixes.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices[SelectedChoice.Value]));
+			ModEntry.Instance.RegisterChoice(Game1.player, new PlayerChoice.Choice(Config.Choices[SelectedChoice.Value]));
 			Game1.playSound("smallSelect");
 		}
 	}
@@ -157,25 +157,25 @@ internal class AffixChoiceMenu : IClickableMenu
 		Game1.drawDialogueBox(xPositionOnScreen, yPositionOnScreen, width, height, speaker: false, drawOnlyBox: true);
 
 		{
-			var text = SeasonAffixes.Instance.Helper.Translation.Get("season.title");
+			var text = ModEntry.Instance.Helper.Translation.Get("season.title");
 			Utility.drawTextWithShadow(b, text, Game1.dialogueFont, new Vector2(xPositionOnScreen + width / 2f - Game1.dialogueFont.MeasureString(text).X / 2f, yPositionOnScreen + 116), Color.Black);
 		}
 
 		if (Config is null)
 		{
-			var text = SeasonAffixes.Instance.Helper.Translation.Get("season.awaiting.description");
+			var text = ModEntry.Instance.Helper.Translation.Get("season.awaiting.description");
 			Utility.drawTextWithShadow(b, text, Game1.smallFont, new Vector2(xPositionOnScreen + width / 2f - Game1.smallFont.MeasureString(text).X / 2f, yPositionOnScreen + 164), Color.Black);
 			return;
 		}
 
 		{
-			var text = SeasonAffixes.Instance.Helper.Translation.Get(SeasonAffixes.Instance.Config.Incremental ? "season.incremental.description" : "season.replacement.description");
+			var text = ModEntry.Instance.Helper.Translation.Get(ModEntry.Instance.Config.Incremental ? "season.incremental.description" : "season.replacement.description");
 			Utility.drawTextWithShadow(b, text, Game1.smallFont, new Vector2(xPositionOnScreen + width / 2f - Game1.smallFont.MeasureString(text).X / 2f, yPositionOnScreen + 164), Color.Black);
 		}
 
 		drawHorizontalPartition(b, yPositionOnScreen + 192);
 
-		var orderedChoices = Config.Choices.Select(choice => SeasonAffixes.Instance.GetUIOrderedAffixes(Config.Season, choice)).ToList();
+		var orderedChoices = Config.Choices.Select(choice => ModEntry.Instance.GetUIOrderedAffixes(Config.Season, choice)).ToList();
 
 		int choiceHeight = height - 192;
 		for (int i = 0; i < Config.Choices.Count; i++)
@@ -194,7 +194,7 @@ internal class AffixChoiceMenu : IClickableMenu
 
 			if (Game1.getOnlineFarmers().Count > 1)
 			{
-				var chosenBy = SeasonAffixes.Instance.PlayerChoices
+				var chosenBy = ModEntry.Instance.PlayerChoices
 					.Where(kvp => kvp.Value.Equals(new PlayerChoice.Choice(Config.Choices[i])))
 					.Select(kvp => kvp.Key)
 					.ToList();
@@ -205,10 +205,10 @@ internal class AffixChoiceMenu : IClickableMenu
 			}
 		}
 
-		if (Game1.getOnlineFarmers().Count > 1 && SeasonAffixes.Instance.PlayerChoices.ContainsKey(Game1.player))
+		if (Game1.getOnlineFarmers().Count > 1 && ModEntry.Instance.PlayerChoices.ContainsKey(Game1.player))
 		{
 			int onlinePlayers = Game1.getOnlineFarmers().Count;
-			int readyPlayers = SeasonAffixes.Instance.PlayerChoices.Keys.Count;
+			int readyPlayers = ModEntry.Instance.PlayerChoices.Keys.Count;
 			var message = Game1.content.LoadString("Strings\\UI:ReadyCheck", readyPlayers, onlinePlayers);
 
 			Vector2 txtpos = new(64f, Game1.uiViewport.Height - 64);
@@ -218,7 +218,7 @@ internal class AffixChoiceMenu : IClickableMenu
 		}
 
 		if (SelectedChoice is not null)
-			drawToolTip(b, SeasonAffixes.Instance.GetSeasonDescription(orderedChoices[SelectedChoice.Value]), SeasonAffixes.Instance.GetSeasonName(orderedChoices[SelectedChoice.Value]), null);
+			drawToolTip(b, ModEntry.Instance.GetSeasonDescription(orderedChoices[SelectedChoice.Value]), ModEntry.Instance.GetSeasonName(orderedChoices[SelectedChoice.Value]), null);
 
 		if (!Game1.options.SnappyMenus)
 		{

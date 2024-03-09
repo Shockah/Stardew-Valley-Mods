@@ -233,10 +233,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
+					[
 						ILMatches.LdcI4(10000)
-					},
+					],
 					matcher =>
 					{
 						return matcher
@@ -250,10 +249,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 				)
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
+					[
 						ILMatches.LdcI4(50000)
-					},
+					],
 					matcher =>
 					{
 						return matcher
@@ -267,10 +265,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 				)
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
+					[
 						ILMatches.LdcI4(100000)
-					},
+					],
 					matcher =>
 					{
 						return matcher
@@ -298,10 +295,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
+					[
 						ILMatches.LdcI4(500000)
-					},
+					],
 					matcher =>
 					{
 						return matcher
@@ -315,10 +311,9 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 				)
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
-					new IElementMatch<CodeInstruction>[]
-					{
+					[
 						ILMatches.LdcI4(300000)
-					},
+					],
 					matcher =>
 					{
 						return matcher

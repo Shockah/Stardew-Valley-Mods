@@ -21,9 +21,9 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.SeasonAffixes;
 
-public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
+public class ModEntry : BaseMod<ModConfig>, ISeasonAffixesApi
 {
-	public static SeasonAffixes Instance { get; private set; } = null!;
+	public static ModEntry Instance { get; private set; } = null!;
 	private bool IsConfigRegistered { get; set; } = false;
 	internal Harmony Harmony { get; private set; } = null!;
 	private AffixSetEntry NewAffixSetEntry = new();
@@ -801,7 +801,7 @@ public class SeasonAffixes : BaseMod<ModConfig>, ISeasonAffixesApi
 				.ExtractLabels(out var labels)
 				.Insert(
 					SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SeasonAffixes), nameof(Game1_showEndOfNightStuff_Transpiler_Event))).WithLabels(labels)
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ModEntry), nameof(Game1_showEndOfNightStuff_Transpiler_Event))).WithLabels(labels)
 				)
 				.AllElements();
 		}

@@ -69,29 +69,22 @@ internal sealed class SilenceAffix : BaseSeasonAffix, ISeasonAffix
 			var newLabel = il.DefineLabel();
 
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.AsGuidAnchorable()
 				.Find(
 					ILMatches.Ldarg(1),
 					ILMatches.Call("get_CanMove"),
-					ILMatches.Brtrue.WithAutoAnchor(out Guid branchAnchor),
+					ILMatches.Brtrue.Anchor(out var branchAnchor).GetBranchTarget(out var branchTarget),
 					ILMatches.LdcI4(0),
 					ILMatches.Instruction(OpCodes.Ret)
 				)
-				.PointerMatcher(branchAnchor)
-				.ExtractBranchTarget(out var branchTarget)
+				.Anchors().PointerMatcher(branchAnchor)
 				.Replace(new CodeInstruction(OpCodes.Brtrue, newLabel))
-				.Find(
-					SequenceBlockMatcherFindOccurence.First, SequenceMatcherRelativeBounds.WholeSequence,
-					new ElementMatch<CodeInstruction>($"{{instruction with label {branchTarget}}}", i => i.labels.Contains(branchTarget))
-				)
-				.PointerMatcher(SequenceMatcherRelativeElement.First)
+				.PointerMatcher(branchTarget)
 				.Insert(
 					SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.JustInsertion,
-
 					new CodeInstruction(OpCodes.Ldarg_0).WithLabels(newLabel),
 					new CodeInstruction(OpCodes.Ldarg_1),
 					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SilenceAffix), nameof(NPC_checkAction_Transpiler_SilenceOrContinue))),
-					new CodeInstruction(OpCodes.Brtrue, branchTarget),
+					new CodeInstruction(OpCodes.Brtrue, branchTarget.Value),
 					new CodeInstruction(OpCodes.Ldc_I4_1),
 					new CodeInstruction(OpCodes.Ret)
 				)

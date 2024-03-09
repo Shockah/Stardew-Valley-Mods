@@ -168,7 +168,7 @@ internal sealed class AvoidingChoiceHistoryDuplicatesAffixSetWeightProvider : IA
 	public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
 	{
 		foreach (var affix in combination)
-			foreach (var step in SeasonAffixes.Instance.SaveData.AffixChoiceHistory)
+			foreach (var step in ModEntry.Instance.SaveData.AffixChoiceHistory)
 				if (step.Contains(affix))
 					return RepeatedWeight;
 		return 1;
@@ -186,7 +186,7 @@ internal sealed class AvoidingSetChoiceHistoryDuplicatesAffixSetWeightProvider :
 
 	public double GetWeight(IReadOnlySet<ISeasonAffix> combination, OrdinalSeason season)
 	{
-		foreach (var step in SeasonAffixes.Instance.SaveData.AffixSetChoiceHistory)
+		foreach (var step in ModEntry.Instance.SaveData.AffixSetChoiceHistory)
 			foreach (var stepCombination in step)
 				if (stepCombination.SetEquals(combination))
 					return RepeatedWeight;
