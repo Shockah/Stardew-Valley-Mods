@@ -12,22 +12,22 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.PredictableRetainingSoil;
 
-public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainingSoilApi
+public class ModEntry : BaseMod<ModConfig>, IPredictableRetainingSoilApi
 {
-	private const int BasicRetainingSoilID = 370;
-	private const int QualityRetainingSoilID = 371;
-	private const int DeluxeRetainingSoilID = 920;
+	private const string BasicRetainingSoilID = "(O)370";
+	private const string QualityRetainingSoilID = "(O)371";
+	private const string DeluxeRetainingSoilID = "(O)920";
 
 	private static readonly string MultiFertilizerModQualifiedName = "MultiFertilizer.Mod, MultiFertilizer";
 	private static readonly string MultiFertilizerDirtHelperQualifiedName = "MultiFertilizer.Framework.DirtHelper, MultiFertilizer";
 	private static readonly string MultiFertilizerFertilizerDataQualifiedName = "MultiFertilizer.Framework.FertilizerData, MultiFertilizer";
 
-	internal static PredictableRetainingSoil Instance { get; private set; } = null!;
+	internal static ModEntry Instance { get; private set; } = null!;
 	private IFluent<string> Fluent { get; set; } = null!;
 
 	private bool IsMultiFertilizerLoaded { get; set; } = false;
 	private Func<string?> MultiFertilizerKeyRetain { get; set; } = null!;
-	private Func<HoeDirt, int?> GetMultiFertilizerRetainingSoilType { get; set; } = null!;
+	private Func<HoeDirt, string?> GetMultiFertilizerRetainingSoilType { get; set; } = null!;
 
 	private bool IsStayingWateredViaRetainingSoil = false;
 	private List<(WeakReference<NetInt> State, WeakReference<HoeDirt> Soil)> TrackedSoilStateValues { get; set; } = new();
@@ -50,33 +50,33 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.Constructor(typeof(HoeDirt)),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_ctor_Postfix))
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(HoeDirt_ctor_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.dayUpdate)),
-			prefix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_dayUpdate_Prefix)),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_dayUpdate_Postfix))
+			prefix: new HarmonyMethod(typeof(ModEntry), nameof(HoeDirt_dayUpdate_Prefix)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(HoeDirt_dayUpdate_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(HoeDirt), nameof(HoeDirt.plant)),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(HoeDirt_plant_Postfix))
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(HoeDirt_plant_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(NetInt), nameof(NetInt.Set)),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(NetInt_Set_Postfix))
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(NetInt_Set_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
-			original: () => AccessTools.Constructor(typeof(CraftingRecipe), new Type[] { typeof(string), typeof(bool) }),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(CraftingRecipe_Constructor_Postfix))
+			original: () => AccessTools.Constructor(typeof(CraftingRecipe), [typeof(string), typeof(bool)]),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(CraftingRecipe_Constructor_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.Method(typeof(SObject), nameof(SObject.getDescription)),
-			postfix: new HarmonyMethod(typeof(PredictableRetainingSoil), nameof(Object_getDescription_Postfix))
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(Object_getDescription_Postfix))
 		);
 	}
 
@@ -110,7 +110,7 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 				}
 			};
 
-			var tryGetFertilizerMethod = AccessTools.DeclaredMethod(Type.GetType(MultiFertilizerDirtHelperQualifiedName), "TryGetFertilizer", new Type[] { typeof(HoeDirt), typeof(string), Type.GetType(MultiFertilizerFertilizerDataQualifiedName)!.MakeByRefType() });
+			var tryGetFertilizerMethod = AccessTools.DeclaredMethod(Type.GetType(MultiFertilizerDirtHelperQualifiedName), "TryGetFertilizer", [typeof(HoeDirt), typeof(string), Type.GetType(MultiFertilizerFertilizerDataQualifiedName)!.MakeByRefType()]);
 			var levelPropertyGetter = AccessTools.PropertyGetter(Type.GetType(MultiFertilizerFertilizerDataQualifiedName), "Level");
 			GetMultiFertilizerRetainingSoilType = soil =>
 			{
@@ -142,17 +142,6 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 				}
 			};
 		}
-
-		IsMultiFertilizerLoaded = Helper.ModRegistry.IsLoaded("spacechase0.MultiFertilizer");
-
-		var sc = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore")!;
-		sc.RegisterCustomProperty(
-			typeof(HoeDirt),
-			"RetainingSoilDaysLeft",
-			typeof(int),
-			AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.GetRetainingSoilDaysLeft)),
-			AccessTools.Method(typeof(HoeDirtExtensions), nameof(HoeDirtExtensions.SetRetainingSoilDaysLeft))
-		);
 
 		SetupConfig();
 	}
@@ -205,7 +194,6 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 
 	private static void HoeDirt_ctor_Postfix(HoeDirt __instance)
 	{
-		__instance.NetFields.AddFields(__instance.GetRetainingSoilDaysLeftNetField());
 		Instance.TrackedSoilStateValues.Add((State: new(__instance.state), Soil: new(__instance)));
 	}
 
@@ -282,7 +270,7 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 
 		if (__instance.Category != SObject.fertilizerCategory)
 			return;
-		var retainingSoilDays = Instance.GetRetainingSoilDays(__instance.ParentSheetIndex);
+		var retainingSoilDays = Instance.GetRetainingSoilDays(__instance.QualifiedItemId);
 		if (retainingSoilDays is null)
 			return;
 
@@ -295,7 +283,7 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 	public bool HasRetainingSoil(HoeDirt soil)
 		=> GetRetainingSoilType(soil) != null;
 
-	public int? GetRetainingSoilType(HoeDirt soil)
+	public string? GetRetainingSoilType(HoeDirt soil)
 	{
 		if (IsMultiFertilizerLoaded)
 			return GetMultiFertilizerRetainingSoilType(soil);
@@ -319,20 +307,20 @@ public class PredictableRetainingSoil : BaseMod<ModConfig>, IPredictableRetainin
 		if (retainingSoilType is null)
 			return;
 
-		var retainingSoilDays = GetRetainingSoilDays(retainingSoilType.Value);
+		var retainingSoilDays = GetRetainingSoilDays(retainingSoilType);
 		if (retainingSoilDays is not null)
 			soil.SetRetainingSoilDaysLeft(retainingSoilDays.Value);
 	}
 	#endregion
 
 	#region Object
-	public bool IsRetainingSoil(int index)
-		=> GetRetainingSoilDays(index) != null;
+	public bool IsRetainingSoil(string itemId)
+		=> GetRetainingSoilDays(itemId) != null;
 
-	public int? GetRetainingSoilDays(int index)
+	public int? GetRetainingSoilDays(string itemId)
 	{
 		// TODO: maybe add some API for other mods to add their own, but no idea what to do about config then (probably also make it part of the API)
-		return index switch
+		return itemId switch
 		{
 			BasicRetainingSoilID => Config.BasicRetainingSoilDays,
 			QualityRetainingSoilID => Config.QualityRetainingSoilDays,
