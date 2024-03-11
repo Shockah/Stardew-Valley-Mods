@@ -1,7 +1,7 @@
 ﻿{
 	"config.movement.section.name": "Movement while swinging",
-	"config.movement.slowMove.name": "Slow down movement",
-	"config.movement.slowMove.tooltip": "Makes the character walk instead of running while using items.",
+	"config.movement.speed.name": "Movement speed",
+	"config.movement.speed.tooltip": "The speed multiplier while using items.",
 	"config.movement.tools.name": "Tools",
 	"config.movement.tools.tooltip": "Allows movement while swinging non-charging tools.",
 	"config.movement.meleeWeapons.name": "Melee weapons",

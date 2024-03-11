@@ -2,57 +2,56 @@
 using StardewModdingAPI;
 using StardewValley;
 
-namespace Shockah.DontStopMeNow
+namespace Shockah.DontStopMeNow;
+
+internal static class InputHelper
 {
-	internal static class InputHelper
+	public enum ButtonType
 	{
-		public enum ButtonType
-		{
-			Mouse,
-			Keyboard,
-			Gamepad
-		}
+		Mouse,
+		Keyboard,
+		Gamepad
+	}
 
-		public static ButtonType? GetButtonType(this SButton button)
+	public static ButtonType? GetButtonType(this SButton button)
+	{
+		switch (button)
 		{
-			switch (button)
-			{
-				case SButton.MouseLeft:
-				case SButton.MouseRight:
-				case SButton.MouseMiddle:
-				case SButton.MouseX1:
-				case SButton.MouseX2:
-					return ButtonType.Mouse;
-				default:
-					if (button.TryGetKeyboard(out _))
-						return ButtonType.Keyboard;
-					if (button.TryGetController(out _))
-						return ButtonType.Gamepad;
-					return null;
-			}
+			case SButton.MouseLeft:
+			case SButton.MouseRight:
+			case SButton.MouseMiddle:
+			case SButton.MouseX1:
+			case SButton.MouseX2:
+				return ButtonType.Mouse;
+			default:
+				if (button.TryGetKeyboard(out _))
+					return ButtonType.Keyboard;
+				if (button.TryGetController(out _))
+					return ButtonType.Gamepad;
+				return null;
 		}
+	}
 
-		public static bool IsPressed(this SButton button)
+	public static bool IsPressed(this SButton button)
+	{
+		switch (button)
 		{
-			switch (button)
-			{
-				case SButton.MouseLeft:
-					return Game1.oldMouseState.LeftButton == ButtonState.Pressed;
-				case SButton.MouseRight:
-					return Game1.oldMouseState.RightButton == ButtonState.Pressed;
-				case SButton.MouseMiddle:
-					return Game1.oldMouseState.MiddleButton == ButtonState.Pressed;
-				case SButton.MouseX1:
-					return Game1.oldMouseState.XButton1 == ButtonState.Pressed;
-				case SButton.MouseX2:
-					return Game1.oldMouseState.XButton2 == ButtonState.Pressed;
-				default:
-					if (button.TryGetKeyboard(out var key))
-						return Game1.oldKBState.IsKeyDown(key);
-					if (button.TryGetController(out var controllerButton))
-						return Game1.oldPadState.IsButtonDown(controllerButton);
-					return false;
-			}
+			case SButton.MouseLeft:
+				return Game1.oldMouseState.LeftButton == ButtonState.Pressed;
+			case SButton.MouseRight:
+				return Game1.oldMouseState.RightButton == ButtonState.Pressed;
+			case SButton.MouseMiddle:
+				return Game1.oldMouseState.MiddleButton == ButtonState.Pressed;
+			case SButton.MouseX1:
+				return Game1.oldMouseState.XButton1 == ButtonState.Pressed;
+			case SButton.MouseX2:
+				return Game1.oldMouseState.XButton2 == ButtonState.Pressed;
+			default:
+				if (button.TryGetKeyboard(out var key))
+					return Game1.oldKBState.IsKeyDown(key);
+				if (button.TryGetController(out var controllerButton))
+					return Game1.oldPadState.IsButtonDown(controllerButton);
+				return false;
 		}
 	}
 }
