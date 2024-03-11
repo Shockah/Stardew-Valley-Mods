@@ -3,6 +3,6 @@
 namespace Shockah.InAHeartbeat;
 
 internal record struct FlowerDescriptor(
-	int ParentSheetIndex,
+	string QualifiedItemId,
 	Color Color
 );

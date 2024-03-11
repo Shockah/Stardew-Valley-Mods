@@ -2,7 +2,7 @@
 
 namespace Shockah.InAHeartbeat;
 
-public interface IAdvancedSocialInteractionsApi
+public interface ISpaceCoreApi
 {
 	public event EventHandler<Action<string, Action>> AdvancedInteractionStarted;
 }

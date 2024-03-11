@@ -19,19 +19,19 @@ using SObject = StardewValley.Object;
 
 namespace Shockah.InAHeartbeat;
 
-public class InAHeartbeat : BaseMod<ModConfig>
+public sealed class ModEntry : BaseMod<ModConfig>
 {
-	private const int EmeraldID = 60;
-	private const int AquamarineID = 62;
-	private const int RubyID = 64;
-	private const int AmethystID = 66;
-	private const int TopazID = 68;
-	private const int JadeID = 70;
-	private const int DiamondID = 72;
-	private const int PrismaticShardID = 74;
-	private const int PearlID = 797;
+	private const string EmeraldID = "(O)60";
+	private const string AquamarineID = "(O)62";
+	private const string RubyID = "(O)64";
+	private const string AmethystID = "(O)66";
+	private const string TopazID = "(O)68";
+	private const string JadeID = "(O)70";
+	private const string DiamondID = "(O)72";
+	private const string PrismaticShardID = "(O)74";
+	private const string PearlID = "(O)797";
 
-	private static InAHeartbeat Instance = null!;
+	private static ModEntry Instance = null!;
 
 	public override void OnEntry(IModHelper helper)
 	{
@@ -41,10 +41,10 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 	private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
 	{
-		var api = Helper.ModRegistry.GetApi<IAdvancedSocialInteractionsApi>("spacechase0.AdvancedSocialInteractions");
+		var api = Helper.ModRegistry.GetApi<ISpaceCoreApi>("spacechase0.SpaceCore");
 		if (api is null)
 		{
-			Monitor.Log("Advanced Social Interactions is not installed. The mod will not work.", LogLevel.Error);
+			Monitor.Log("SpaceCore is not installed. The mod will not work.", LogLevel.Error);
 			return;
 		}
 
@@ -105,37 +105,37 @@ public class InAHeartbeat : BaseMod<ModConfig>
 	private void OnArrangeABouquetAction(NPC npc)
 	{
 		var player = Game1.player;
-		int? bestPossibleQuality = GetBestPossibleBouquetQuality(player);
-
-		if (bestPossibleQuality is null)
+		if (GetBestPossibleBouquetQuality(player) is not { } bestPossibleQuality)
 		{
-			Game1.drawDialogue(npc, Helper.Translation.Get("action.arrangeABouquet.notEnoughFlowers"));
+			npc.CurrentDialogue.Push(new Dialogue(npc, ".", Helper.Translation.Get("action.arrangeABouquet.notEnoughFlowers")));
+			Game1.drawDialogue(npc);
 			return;
 		}
 
 		// this should always succeed
-		_ = ConsumeBouquetCraftingRequirements(player, bestPossibleQuality.Value);
+		_ = ConsumeBouquetCraftingRequirements(player, bestPossibleQuality);
 
-		player.addItemByMenuIfNecessary(new SObject(458, 1, quality: bestPossibleQuality.Value));
-		Game1.drawDialogue(npc, Helper.Translation.Get("action.arrangeABouquet.success"));
+		player.addItemByMenuIfNecessary(ItemRegistry.Create("(O)458", quality: bestPossibleQuality));
+		npc.CurrentDialogue.Push(new Dialogue(npc, ".", Helper.Translation.Get("action.arrangeABouquet.success")));
+		Game1.drawDialogue(npc);
 	}
 
 	private void OnCraftAPendantAction(NPC npc)
 	{
 		var player = Game1.player;
-		int? bestPossibleQuality = GetBestPossiblePendantQuality(player);
-
-		if (bestPossibleQuality is null)
+		if (GetBestPossiblePendantQuality(player) is not { } bestPossibleQuality)
 		{
-			Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.notEnoughMaterials"));
+			npc.CurrentDialogue.Push(new Dialogue(npc, ".", Helper.Translation.Get("action.craftAPendant.notEnoughMaterials")));
+			Game1.drawDialogue(npc);
 			return;
 		}
 
 		// this should always succeed
-		_ = ConsumePendantCraftingRequirements(player, bestPossibleQuality.Value);
+		_ = ConsumePendantCraftingRequirements(player, bestPossibleQuality);
 
-		player.addItemByMenuIfNecessary(new SObject(460, 1, quality: bestPossibleQuality.Value));
-		Game1.drawDialogue(npc, Helper.Translation.Get("action.craftAPendant.success"));
+		player.addItemByMenuIfNecessary(ItemRegistry.Create("(O)460", quality: bestPossibleQuality));
+		npc.CurrentDialogue.Push(new Dialogue(npc, ".", Helper.Translation.Get("action.craftAPendant.success")));
+		Game1.drawDialogue(npc);
 	}
 
 	private void SetupConfig()
@@ -270,9 +270,9 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			return null;
 
 		if (item is ColoredObject colored)
-			return new(item.ParentSheetIndex, colored.color.Value);
+			return new(item.QualifiedItemId, colored.color.Value);
 		else
-			return new(item.ParentSheetIndex, Color.White);
+			return new(item.QualifiedItemId, Color.White);
 	}
 
 	private static IEnumerable<(SObject Item, FlowerDescriptor FlowerDescriptor)> GetAllHeldFlowers(Farmer player)
@@ -296,7 +296,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 				continue;
 			if (@object.bigCraftable.Value)
 				continue;
-			if (item.ParentSheetIndex is EmeraldID or AquamarineID or RubyID or AmethystID or TopazID or JadeID or DiamondID or PrismaticShardID)
+			if (item.QualifiedItemId is EmeraldID or AquamarineID or RubyID or AmethystID or TopazID or JadeID or DiamondID or PrismaticShardID)
 				yield return @object;
 		}
 	}
@@ -317,9 +317,9 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 	private int? GetBestPossiblePendantQuality(Farmer player)
 	{
-		if (!player.Items.Any(item => item is SObject @object && !@object.bigCraftable.Value && @object.ParentSheetIndex == PearlID))
+		if (!player.Items.Any(item => item is SObject @object && !@object.bigCraftable.Value && @object.QualifiedItemId == PearlID))
 			return null;
-		var types = GetAllHeldGems(player).Select(gem => gem.ParentSheetIndex).ToHashSet();
+		var types = GetAllHeldGems(player).Select(gem => gem.QualifiedItemId).ToHashSet();
 
 		if (types.Count >= Config.PendantGemsRequired.Iridium)
 			return SObject.bestQuality;
@@ -335,7 +335,7 @@ public class InAHeartbeat : BaseMod<ModConfig>
 
 	private bool HasBouquetCraftingRequirements(Farmer player, int minimumItemQuality)
 	{
-		HashSet<FlowerDescriptor> uniqueFlowerTypes = new();
+		HashSet<FlowerDescriptor> uniqueFlowerTypes = [];
 		int flowersLeft = Config.BouquetFlowersRequired;
 
 		foreach (var flower in GetAllHeldFlowers(player))
@@ -361,8 +361,8 @@ public class InAHeartbeat : BaseMod<ModConfig>
 			.Select(e => (Item: e.Item, FlowerDescriptor: e.FlowerDescriptor, Amount: e.Item.Stack))
 			.ToList();
 
-		List<Item> itemsToConsume = new();
-		HashSet<FlowerDescriptor> uniqueFlowerTypes = new();
+		List<Item> itemsToConsume = [];
+		HashSet<FlowerDescriptor> uniqueFlowerTypes = [];
 		int flowersLeft = Config.BouquetFlowersRequired;
 
 		void ActuallyConsume()
@@ -407,13 +407,13 @@ public class InAHeartbeat : BaseMod<ModConfig>
 	{
 		int gemsRequired = Config.PendantGemsRequired.GetForQuality(itemQuality);
 		var gems = GetAllHeldGems(player).OrderBy(gem => gem.salePrice());
-		HashSet<int> uniqueGemTypes = new();
+		HashSet<string> uniqueGemTypes = [];
 
 		foreach (var gem in gems)
 		{
-			if (uniqueGemTypes.Contains(gem.ParentSheetIndex))
+			if (uniqueGemTypes.Contains(gem.QualifiedItemId))
 				continue;
-			uniqueGemTypes.Add(gem.ParentSheetIndex);
+			uniqueGemTypes.Add(gem.QualifiedItemId);
 			if (uniqueGemTypes.Count >= gemsRequired)
 				break;
 		}
@@ -421,11 +421,11 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		if (uniqueGemTypes.Count < gemsRequired)
 			return false;
 
-		if (!player.ConsumeItem(new SObject(PearlID, 1), exactQuality: false))
+		if (!player.ConsumeItem(ItemRegistry.Create(PearlID), exactQuality: false))
 			return false;
 
 		foreach (var gemType in uniqueGemTypes)
-			player.ConsumeItem(new SObject(gemType, 1), exactQuality: false);
+			player.ConsumeItem(ItemRegistry.Create(gemType), exactQuality: false);
 		return true;
 	}
 
@@ -434,41 +434,40 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		try
 		{
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.AsGuidAnchorable()
 
 				.Find(
 					ILMatches.Call("get_Points"),
-					ILMatches.LdcI4(1000).WithAutoAnchor(out Guid requirementAnchor),
+					ILMatches.LdcI4(1000).Anchor(out Guid requirementAnchor),
 					ILMatches.AnyBranch
 				)
-				.PointerMatcher(requirementAnchor)
+				.Anchors().PointerMatcher(requirementAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldarg_1),
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InAHeartbeat), nameof(GetDateFriendshipRequirement))),
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ModEntry), nameof(GetDateFriendshipRequirement))),
 					new CodeInstruction(OpCodes.Ldc_I4_2),
 					new CodeInstruction(OpCodes.Div)
 				)
 
 				.Find(
 					ILMatches.Call("get_Points"),
-					ILMatches.LdcI4(2000).WithAutoAnchor(out requirementAnchor),
+					ILMatches.LdcI4(2000).Anchor(out requirementAnchor),
 					ILMatches.AnyBranch
 				)
-				.PointerMatcher(requirementAnchor)
+				.Anchors().PointerMatcher(requirementAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldarg_1),
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InAHeartbeat), nameof(GetDateFriendshipRequirement)))
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ModEntry), nameof(GetDateFriendshipRequirement)))
 				)
 
 				.Find(
 					ILMatches.Call("get_Points"),
-					ILMatches.LdcI4(2500).WithAutoAnchor(out requirementAnchor),
+					ILMatches.LdcI4(2500).Anchor(out requirementAnchor),
 					ILMatches.AnyBranch
 				)
-				.PointerMatcher(requirementAnchor)
+				.Anchors().PointerMatcher(requirementAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldarg_1),
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InAHeartbeat), nameof(GetMarryFriendshipRequirement)))
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ModEntry), nameof(GetMarryFriendshipRequirement)))
 				)
 
 				.AllElements();
@@ -488,26 +487,22 @@ public class InAHeartbeat : BaseMod<ModConfig>
 		try
 		{
 			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.AsGuidAnchorable()
 				.Find(
-					ILMatches.Ldarg(1).WithAutoAnchor(out Guid findHeadAnchor),
+					ILMatches.Ldarg(1),
 					ILMatches.Ldarg(0),
 					ILMatches.Call("get_Name"),
 					ILMatches.Call("getFriendshipHeartLevelForNPC"),
 					ILMatches.LdcI4(9),
-					ILMatches.Ble.WithAutoAnchor(out Guid kissDenyAnchor)
+					ILMatches.Ble.GetBranchTarget(out var kissDenyBranchLabel)
 				)
-				.PointerMatcher(kissDenyAnchor)
-				.ExtractBranchTarget(out Label kissDenyBranchLabel)
-				.EncompassUntil(findHeadAnchor)
 				.Replace(
 					new CodeInstruction(OpCodes.Ldarg_1),
 					new CodeInstruction(OpCodes.Ldarg_0),
 					new CodeInstruction(OpCodes.Call, AccessTools.PropertyGetter(typeof(NPC), nameof(NPC.Name))),
 					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Farmer), nameof(Farmer.getFriendshipLevelForNPC))),
 					new CodeInstruction(OpCodes.Ldarg_0),
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(InAHeartbeat), nameof(GetMarriedFriendshipRequirement))),
-					new CodeInstruction(OpCodes.Blt, kissDenyBranchLabel)
+					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ModEntry), nameof(GetMarriedFriendshipRequirement))),
+					new CodeInstruction(OpCodes.Blt, kissDenyBranchLabel.Value)
 				)
 				.AllElements();
 		}
