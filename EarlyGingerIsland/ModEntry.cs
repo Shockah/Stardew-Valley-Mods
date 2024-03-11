@@ -14,7 +14,6 @@ using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.EarlyGingerIsland;
@@ -46,39 +45,39 @@ public class ModEntry : BaseMod<ModConfig>
 		var harmony = new Harmony(ModManifest.UniqueID);
 		harmony.TryPatch(
 			monitor: Monitor,
-			original: () => AccessTools.DeclaredConstructor(typeof(BoatTunnel), new Type[] { typeof(string), typeof(string) }),
-			postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ModEntry), nameof(BoatTunnel_ctor_Postfix)), priority: Priority.VeryHigh)
+			original: () => AccessTools.DeclaredConstructor(typeof(BoatTunnel), [typeof(string), typeof(string)]),
+			postfix: new HarmonyMethod(AccessTools.DeclaredMethod(GetType(), nameof(BoatTunnel_ctor_Postfix)), priority: Priority.VeryHigh)
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.checkAction)),
-			transpiler: new HarmonyMethod(typeof(ModEntry), nameof(BoatTunnel_checkAction_Transpiler))
+			transpiler: new HarmonyMethod(GetType(), nameof(BoatTunnel_checkAction_Transpiler))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.answerDialogue)),
-			transpiler: new HarmonyMethod(typeof(ModEntry), nameof(BoatTunnel_answerDialogue_Transpiler))
+			transpiler: new HarmonyMethod(GetType(), nameof(BoatTunnel_answerDialogue_Transpiler))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(BoatTunnel), nameof(BoatTunnel.StartDeparture)),
-			postfix: new HarmonyMethod(typeof(ModEntry), nameof(BoatTunnel_StartDeparture_Postfix))
+			postfix: new HarmonyMethod(GetType(), nameof(BoatTunnel_StartDeparture_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(ParrotUpgradePerch), nameof(ParrotUpgradePerch.IsAvailable)),
-			postfix: new HarmonyMethod(typeof(ModEntry), nameof(ParrotUpgradePerch_IsAvailable_Postfix)),
-			transpiler: new HarmonyMethod(typeof(ModEntry), nameof(ParrotUpgradePerch_IsAvailable_Transpiler))
+			postfix: new HarmonyMethod(GetType(), nameof(ParrotUpgradePerch_IsAvailable_Postfix)),
+			transpiler: new HarmonyMethod(GetType(), nameof(ParrotUpgradePerch_IsAvailable_Transpiler))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(HoeDirt), nameof(HoeDirt.canPlantThisSeedHere)),
-			postfix: new HarmonyMethod(typeof(ModEntry), nameof(HoeDirt_canPlantThisSeedHere_Postfix))
+			postfix: new HarmonyMethod(GetType(), nameof(HoeDirt_canPlantThisSeedHere_Postfix))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
-			original: () => AccessTools.DeclaredMethod(typeof(IslandWest), nameof(IslandWest.checkAction)),
-			transpiler: new HarmonyMethod(typeof(ModEntry), nameof(IslandWest_checkAction_Transpiler))
+			original: () => AccessTools.DeclaredMethod(typeof(IslandWest), nameof(IslandWest.IsQiWalnutRoomDoorUnlocked)),
+			postfix: new HarmonyMethod(GetType(), nameof(IslandWest_IsQiWalnutRoomDoorUnlocked_Postfix))
 		);
 	}
 
@@ -634,24 +633,9 @@ public class ModEntry : BaseMod<ModConfig>
 			__result = false;
 	}
 
-	private static IEnumerable<CodeInstruction> IslandWest_checkAction_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
+	private static void IslandWest_IsQiWalnutRoomDoorUnlocked_Postfix(ref int actualFoundWalnutsCount, ref bool __result)
 	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(
-					ILMatches.Ldloc<int>(originalMethod.GetMethodBody()!.LocalVariables),
-					ILMatches.LdcI4(100).Anchor(out Guid countAnchor),
-					ILMatches.Bge
-				)
-				.Anchors().PointerMatcher(countAnchor)
-				.Replace(CodeInstruction.CallClosure(() => Instance.Config.GoldenWalnutsRequiredForQiRoom))
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Instance.Monitor.Log($"Could not patch methods - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
+		if (actualFoundWalnutsCount >= Instance.Config.GoldenWalnutsRequiredForQiRoom)
+			__result = true;
 	}
 }
