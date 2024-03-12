@@ -3,67 +3,66 @@ using Shockah.Kokoro.Stardew;
 using StardewValley;
 using System;
 
-namespace Shockah.PleaseGiftMeInPerson
+namespace Shockah.PleaseGiftMeInPerson;
+
+public enum GiftPreference
 {
-	public enum GiftPreference
+	Hates = -5,
+	DislikesAndHatesFrequent = -4,
+	HatesFrequent = -3,
+	Dislikes = -2,
+	DislikesFrequent = -1,
+	Neutral = 0,
+	LikesInfrequentButDislikesFrequent = 1,
+	LikesInfrequent = 2,
+	Likes = 3,
+	LovesInfrequent = 4,
+	LikesAndLovesInfrequent = 5,
+	Loves = 6
+}
+
+internal enum GiftMethod
+{
+	InPerson,
+	ByMail
+}
+
+internal struct GiftEntry : IEquatable<GiftEntry>
+{
+	public int Year { get; set; }
+	public int SeasonIndex { get; set; }
+	public int DayOfMonth { get; set; }
+	public GiftTaste GiftTaste { get; set; }
+	public GiftMethod GiftMethod { get; set; }
+
+	[JsonIgnore]
+	public readonly Season Season
+		=> (Season)SeasonIndex;
+
+	[JsonIgnore]
+	public readonly WorldDate Date
+		=> new(Year, Enum.GetName(Season)?.ToLower(), DayOfMonth);
+
+	public GiftEntry(int year, int seasonIndex, int dayOfMonth, GiftTaste giftTaste, GiftMethod giftMethod)
 	{
-		Hates = -5,
-		DislikesAndHatesFrequent = -4,
-		HatesFrequent = -3,
-		Dislikes = -2,
-		DislikesFrequent = -1,
-		Neutral = 0,
-		LikesInfrequentButDislikesFrequent = 1,
-		LikesInfrequent = 2,
-		Likes = 3,
-		LovesInfrequent = 4,
-		LikesAndLovesInfrequent = 5,
-		Loves = 6
+		this.Year = year;
+		this.SeasonIndex = seasonIndex;
+		this.DayOfMonth = dayOfMonth;
+		this.GiftTaste = giftTaste;
+		this.GiftMethod = giftMethod;
 	}
 
-	internal enum GiftMethod
+	public GiftEntry(WorldDate date, GiftTaste giftTaste, GiftMethod giftMethod)
+		: this(date.Year, date.SeasonIndex, date.DayOfMonth, giftTaste, giftMethod)
 	{
-		InPerson,
-		ByMail
 	}
 
-	internal struct GiftEntry : IEquatable<GiftEntry>
-	{
-		public int Year { get; set; }
-		public int SeasonIndex { get; set; }
-		public int DayOfMonth { get; set; }
-		public GiftTaste GiftTaste { get; set; }
-		public GiftMethod GiftMethod { get; set; }
+	public readonly bool Equals(GiftEntry other)
+		=> Year == other.Year && SeasonIndex == other.SeasonIndex && DayOfMonth == other.DayOfMonth && GiftTaste == other.GiftTaste && GiftMethod == other.GiftMethod;
 
-		[JsonIgnore]
-		public Season Season
-			=> (Season)SeasonIndex;
+	public readonly override bool Equals(object? obj)
+		=> obj is GiftEntry entry && Equals(entry);
 
-		[JsonIgnore]
-		public WorldDate Date
-			=> new(Year, Enum.GetName(Season)?.ToLower(), DayOfMonth);
-
-		public GiftEntry(int year, int seasonIndex, int dayOfMonth, GiftTaste giftTaste, GiftMethod giftMethod)
-		{
-			this.Year = year;
-			this.SeasonIndex = seasonIndex;
-			this.DayOfMonth = dayOfMonth;
-			this.GiftTaste = giftTaste;
-			this.GiftMethod = giftMethod;
-		}
-
-		public GiftEntry(WorldDate date, GiftTaste giftTaste, GiftMethod giftMethod)
-			: this(date.Year, date.SeasonIndex, date.DayOfMonth, giftTaste, giftMethod)
-		{
-		}
-
-		public bool Equals(GiftEntry other)
-			=> Year == other.Year && SeasonIndex == other.SeasonIndex && DayOfMonth == other.DayOfMonth && GiftTaste == other.GiftTaste && GiftMethod == other.GiftMethod;
-
-		public override bool Equals(object? obj)
-			=> obj is GiftEntry entry && Equals(entry);
-
-		public override int GetHashCode()
-			=> (Year, SeasonIndex, DayOfMonth, GiftTaste, GiftMethod).GetHashCode();
-	}
+	public readonly override int GetHashCode()
+		=> (Year, SeasonIndex, DayOfMonth, GiftTaste, GiftMethod).GetHashCode();
 }

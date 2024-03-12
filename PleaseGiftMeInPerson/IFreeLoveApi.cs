@@ -1,10 +1,9 @@
 ﻿using StardewValley;
 using System.Collections.Generic;
 
-namespace Shockah.PleaseGiftMeInPerson
+namespace Shockah.PleaseGiftMeInPerson;
+
+public interface IFreeLoveApi
 {
-	public interface IFreeLoveApi
-	{
-		public Dictionary<string, NPC> GetSpouses(Farmer farmer, bool all = true);
-	}
+	public Dictionary<string, NPC> GetSpouses(Farmer farmer, bool all = true);
 }
