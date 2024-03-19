@@ -2,7 +2,8 @@
 
 # Release notes
 
-## Upcoming version
+## 3.0.0
+Released 19 March 2023.
 
 * Updated to Stardew Valley 1.6 and SMAPI 4.0.0.
 
