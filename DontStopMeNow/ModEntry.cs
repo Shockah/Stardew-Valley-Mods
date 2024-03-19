@@ -22,6 +22,8 @@ namespace Shockah.DontStopMeNow;
 public class ModEntry : BaseMod<ModConfig>
 {
 	private static ModEntry Instance { get; set; } = null!;
+	private static bool IsDuringUpdateControlInputDelegate = false;
+	private static bool IsDuringGetMovementSpeed = false;
 
 	public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 	{
@@ -46,7 +48,9 @@ public class ModEntry : BaseMod<ModConfig>
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => AccessTools.DeclaredMethod(typeof(Farmer), nameof(Farmer.getMovementSpeed)),
-			postfix: new HarmonyMethod(GetType(), nameof(Farmer_getMovementSpeed_Postfix))
+			prefix: new HarmonyMethod(GetType(), nameof(Farmer_getMovementSpeed_Prefix)),
+			postfix: new HarmonyMethod(GetType(), nameof(Farmer_getMovementSpeed_Postfix)),
+			finalizer: new HarmonyMethod(GetType(), nameof(Farmer_getMovementSpeed_Finalizer))
 		);
 		harmony.TryPatch(
 			monitor: Monitor,
@@ -56,7 +60,13 @@ public class ModEntry : BaseMod<ModConfig>
 		harmony.TryPatch(
 			monitor: Monitor,
 			original: () => typeof(Game1).GetNestedTypes(AccessTools.all).SelectMany(t => t.GetMethods(AccessTools.all)).First(m => m.Name.StartsWith("<UpdateControlInput>") && m.ReturnType == typeof(void)),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_UpdateControlInput_Delegate_Transpiler)))
+			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_UpdateControlInput_Delegate_Prefix))),
+			finalizer: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Game1_UpdateControlInput_Delegate_Finalizer)))
+		);
+		harmony.TryPatch(
+			monitor: Monitor,
+			original: () => AccessTools.DeclaredMethod(typeof(Farmer), nameof(Farmer.canStrafeForToolUse)),
+			postfix: new HarmonyMethod(GetType(), nameof(Farmer_canStrafeForToolUse_Postfix))
 		);
 	}
 
@@ -95,6 +105,7 @@ public class ModEntry : BaseMod<ModConfig>
 		);
 
 		helper.AddSectionTitle("config.movement.section");
+		helper.AddBoolOption("config.movement.overrideSpeed", () => Config.OverrideMoveSpeed);
 		helper.AddNumberOption("config.movement.speed", () => Config.MoveSpeed, min: 0f, max: 2f, interval: 0.05f);
 		helper.AddBoolOption("config.movement.tools", () => Config.MoveWhileSwingingTools);
 		helper.AddBoolOption("config.movement.meleeWeapons", () => Config.MoveWhileSwingingMeleeWeapons);
@@ -220,10 +231,37 @@ public class ModEntry : BaseMod<ModConfig>
 		};
 	}
 
+	private static void Farmer_getMovementSpeed_Prefix()
+		=> IsDuringGetMovementSpeed = true;
+
+	private static void Farmer_getMovementSpeed_Finalizer()
+		=> IsDuringGetMovementSpeed = false;
+
 	private static void Farmer_getMovementSpeed_Postfix(Farmer __instance, ref float __result)
 	{
 		if (__instance.UsingTool)
 			__result *= Instance.Config.MoveSpeed;
+	}
+
+	private static void Game1_UpdateControlInput_Delegate_Prefix()
+		=> IsDuringUpdateControlInputDelegate = true;
+
+	private static void Game1_UpdateControlInput_Delegate_Finalizer()
+		=> IsDuringUpdateControlInputDelegate = false;
+
+	private static void Farmer_canStrafeForToolUse_Postfix(Farmer __instance, ref bool __result)
+	{
+		if (Instance.Config.OverrideMoveSpeed && IsDuringGetMovementSpeed)
+		{
+			__result = false;
+			return;
+		}
+
+		if (__result)
+			return;
+
+		if (__instance.CurrentTool is { } tool && Instance.ShouldAllowMovement(__instance, tool))
+			__result = true;
 	}
 
 	private static IEnumerable<CodeInstruction> Farmer_updateMovementAnimation_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
@@ -264,42 +302,6 @@ public class ModEntry : BaseMod<ModConfig>
 
 		if (who.CurrentTool is { } tool && Instance.ShouldAllowMovement(who, tool))
 			result = true;
-		return result;
-	}
-
-	private static IEnumerable<CodeInstruction> Game1_UpdateControlInput_Delegate_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(
-					ILMatches.Ldsfld("locationRequest"),
-					ILMatches.Brtrue,
-					ILMatches.Call("get_player"),
-					ILMatches.Call("get_UsingTool").Anchor(out Guid callGetUsingToolAnchor),
-					ILMatches.Brtrue
-				)
-				.Anchors().PointerMatcher(callGetUsingToolAnchor)
-				.Replace(
-					new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(MethodBase.GetCurrentMethod()!.DeclaringType!, nameof(Game1_UpdateControlInput_Delegate_Transpiler_ShouldStopMovement)))
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Instance.Monitor.Log($"Could not patch method {originalMethod} - {Instance.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
-	}
-
-	private static bool Game1_UpdateControlInput_Delegate_Transpiler_ShouldStopMovement(Farmer who)
-	{
-		var result = who.UsingTool;
-		if (!result)
-			return false;
-
-		if (who.CurrentTool is { } tool && Instance.ShouldAllowMovement(who, tool))
-			result = false;
 		return result;
 	}
 

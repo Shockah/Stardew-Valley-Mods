@@ -9,6 +9,7 @@ namespace Shockah.DontStopMeNow;
 public class ModConfig : IVersioned.Modifiable
 {
 	[JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public ISemanticVersion? Version { get; set; }
+	[JsonProperty] public bool OverrideMoveSpeed { get; set; } = true;
 	[JsonProperty] public float MoveSpeed { get; set; } = 0.5f;
 	[JsonProperty] public bool MoveWhileSwingingTools { get; set; } = false;
 	[JsonProperty] public bool MoveWhileSwingingMeleeWeapons { get; set; } = true;
