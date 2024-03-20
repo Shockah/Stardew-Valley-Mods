@@ -19,7 +19,7 @@ public class ModEntry : BaseMod<ModConfig>
 {
 	internal static ModEntry Instance { get; private set; } = null!;
 
-	private readonly PerScreen<Dictionary<Guid, Action<GameLocation, IntPoint>>> AwaitingNextWarpResponse = new(() => new());
+	private readonly PerScreen<Dictionary<Guid, Action<GameLocation, IntPoint>>> AwaitingNextWarpResponse = new(() => []);
 
 	public override void MigrateConfig(ISemanticVersion? configVersion, ISemanticVersion modVersion)
 	{
@@ -148,7 +148,7 @@ public class ModEntry : BaseMod<ModConfig>
 		DelayedAction.fadeAfterDelay(() =>
 		{
 			Game1.warpFarmer(location.NameOrUniqueName, point.X, point.Y, false);
-			if (!Game1.isStartingToGetDarkOut() && !Game1.isRaining)
+			if (!Game1.isStartingToGetDarkOut(location) && !Game1.isRaining)
 				Game1.playMorningSong();
 			else
 				Game1.changeMusicTrack("none");

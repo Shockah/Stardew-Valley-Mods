@@ -23,7 +23,7 @@ internal class ItemGrabMenuPatches
 	private static ModEntry Instance
 		=> ModEntry.Instance;
 
-	private static readonly ConditionalWeakTable<ItemGrabMenu, ClickableTextureComponent> WarpButtons = new();
+	private static readonly ConditionalWeakTable<ItemGrabMenu, ClickableTextureComponent> WarpButtons = [];
 
 	internal static void Apply(Harmony harmony)
 	{
@@ -35,7 +35,7 @@ internal class ItemGrabMenuPatches
 
 		harmony.TryPatch(
 			monitor: Instance.Monitor,
-			original: () => AccessTools.Method(typeof(ItemGrabMenu), nameof(ItemGrabMenu.draw), new Type[] { typeof(SpriteBatch) }),
+			original: () => AccessTools.Method(typeof(ItemGrabMenu), nameof(ItemGrabMenu.draw), [typeof(SpriteBatch)]),
 			transpiler: new HarmonyMethod(typeof(ItemGrabMenuPatches), nameof(draw_Transpiler))
 		);
 
