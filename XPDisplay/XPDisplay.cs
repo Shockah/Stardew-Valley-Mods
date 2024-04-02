@@ -54,7 +54,7 @@ namespace Shockah.XPDisplay
 			o => o is Pickaxe ? (Farmer.miningSkill, null) : null,
 			o => o is Axe ? (Farmer.foragingSkill, null) : null,
 			o => o is FishingRod ? (Farmer.fishingSkill, null) : null,
-			o => o is Sword or Slingshot || (o is MeleeWeapon && !o.Name.Contains("Scythe")) ? (Farmer.combatSkill, null) : null,
+			o => o is MeleeWeapon /*DLX: Was a is Sword check before */ or Slingshot || (o is MeleeWeapon && !o.Name.Contains("Scythe")) ? (Farmer.combatSkill, null) : null,
 		};
 
 		private readonly PerScreen<ISkill?> ToolbarCurrentPermanentSkill = new(() => null);
@@ -100,12 +100,6 @@ namespace Shockah.XPDisplay
 
 			harmony.TryPatch(
 				monitor: Monitor,
-				original: () => AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), new Type[] { typeof(SpriteBatch) }),
-				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
-				transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
-			);
-			harmony.TryPatch(
-				monitor: Monitor,
 				original: () => AccessTools.Method(typeof(Farmer), nameof(Farmer.gainExperience)),
 				prefix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_gainExperience_Prefix))
 			);
@@ -119,7 +113,7 @@ namespace Shockah.XPDisplay
 			{
 				harmony.TryPatch(
 					monitor: Monitor,
-					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", new Type[] { typeof(SpriteBatch) }),
+					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "draw", [typeof(SpriteBatch)]),
 					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Postfix)),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
 				);
@@ -128,6 +122,14 @@ namespace Shockah.XPDisplay
 					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreSkillsQualifiedName), "AddExperience"),
 					prefix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_Skills_AddExperience_Prefix))
 				);
+			} else {
+				harmony.TryPatch(
+					monitor: Monitor,
+					original: () => AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), [typeof(SpriteBatch)]),
+					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
+					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
+				);
+
 			}
 		}
 
@@ -609,8 +611,8 @@ namespace Shockah.XPDisplay
 								new CodeInstruction(OpCodes.Add),
 
 								new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
-								new CodeInstruction(OpCodes.Ldloc_3), // this *should* be the `i` local - the currently drawn level index (0-9)
-								new CodeInstruction(OpCodes.Ldloc, 4), // this *should* be the `j` local - the skill index
+								new CodeInstruction(OpCodes.Ldloc, 10), // this *should* be the `i` local - the currently drawn level index (0-9)
+								new CodeInstruction(OpCodes.Ldloc, 11), // this *should* be the `j` local - the skill index
 								new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
 								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 							);
@@ -619,10 +621,14 @@ namespace Shockah.XPDisplay
 					{
 						var skillsPageSkillBarsField = AccessTools.Field(typeof(SkillsPage), nameof(SkillsPage.skillBars));
 						return matcher
-							.Repeat(2, matcher =>
+							.Do(matcher => //DLX: Was a repeat 2 before
 							{
 								return matcher
 									.Find(
+										ILMatches.Ldarg(0),
+										ILMatches.Ldfld(skillsPageSkillBarsField),
+										ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+									).Find(
 										ILMatches.Ldarg(0),
 										ILMatches.Ldfld(skillsPageSkillBarsField),
 										ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
@@ -714,7 +720,7 @@ namespace Shockah.XPDisplay
 					{
 						var skillsPageSkillBarsField = AccessTools.Field(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "skillBars");
 						return matcher
-							.Repeat(2, matcher =>
+							.Do(matcher => //DLX: Was a repeat 2 before
 							{
 								return matcher
 									.Find(
@@ -749,7 +755,7 @@ namespace Shockah.XPDisplay
 			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
 			float scale = 4f;
 
-			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 56);
+			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 68);
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
 
 			int currentLevel = skill.GetBaseLevel(Game1.player);
