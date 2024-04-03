@@ -97,6 +97,7 @@ namespace Shockah.XPDisplay
 			IsWalkOfLifeInstalled = Helper.ModRegistry.IsLoaded("DaLion.ImmersiveProfessions");
 			IsMargoInstalled = Helper.ModRegistry.IsLoaded("DaLion.Overhaul");
 			var harmony = new Harmony(ModManifest.UniqueID);
+			//Harmony.DEBUG = true;
 
 			harmony.TryPatch(
 				monitor: Monitor,
@@ -109,6 +110,13 @@ namespace Shockah.XPDisplay
 				prefix: new HarmonyMethod(typeof(XPDisplay), nameof(Farmer_performFireTool_Prefix))
 			);
 
+			harmony.TryPatch(
+				monitor: Monitor,
+				original: () => AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), [typeof(SpriteBatch)]),
+				postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
+				transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
+			);
+
 			if (Helper.ModRegistry.IsLoaded("spacechase0.SpaceCore"))
 			{
 				harmony.TryPatch(
@@ -117,19 +125,12 @@ namespace Shockah.XPDisplay
 					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Postfix)),
 					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_NewSkillsPage_draw_Transpiler))
 				);
+
 				harmony.TryPatch(
 					monitor: Monitor,
 					original: () => AccessTools.Method(AccessTools.TypeByName(SpaceCoreSkillsQualifiedName), "AddExperience"),
 					prefix: new HarmonyMethod(typeof(XPDisplay), nameof(SpaceCore_Skills_AddExperience_Prefix))
 				);
-			} else {
-				harmony.TryPatch(
-					monitor: Monitor,
-					original: () => AccessTools.Method(typeof(SkillsPage), nameof(SkillsPage.draw), [typeof(SpriteBatch)]),
-					postfix: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Postfix)),
-					transpiler: new HarmonyMethod(typeof(XPDisplay), nameof(SkillsPage_draw_Transpiler))
-				);
-
 			}
 		}
 
@@ -613,6 +614,9 @@ namespace Shockah.XPDisplay
 								new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
 								new CodeInstruction(OpCodes.Ldloc, 10), // this *should* be the `i` local - the currently drawn level index (0-9)
 								new CodeInstruction(OpCodes.Ldloc, 11), // this *should* be the `j` local - the skill index
+
+								new CodeInstruction(OpCodes.Ldloc, 3), // this *should* be the `verticalSpacing` local
+
 								new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
 								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 							);
@@ -620,26 +624,25 @@ namespace Shockah.XPDisplay
 					.Do(matcher =>
 					{
 						var skillsPageSkillBarsField = AccessTools.Field(typeof(SkillsPage), nameof(SkillsPage.skillBars));
+						//We draw our partial skill bars between skillBar.draw and the skillBar hovertext draw
 						return matcher
-							.Do(matcher => //DLX: Was a repeat 2 before
-							{
+							.Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Ldfld(skillsPageSkillBarsField),
+								ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+							).Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Ldfld(skillsPageSkillBarsField),
+								ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+							).Do(matcher => {
 								return matcher
-									.Find(
-										ILMatches.Ldarg(0),
-										ILMatches.Ldfld(skillsPageSkillBarsField),
-										ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
-									).Find(
-										ILMatches.Ldarg(0),
-										ILMatches.Ldfld(skillsPageSkillBarsField),
-										ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
-									);
-							})
-							.PointerMatcher(SequenceMatcherRelativeElement.First)
-							.ExtractLabels(out var labels)
-							.Insert(
-								SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
-							);
+									.PointerMatcher(SequenceMatcherRelativeElement.First)
+									.ExtractLabels(out var labels)
+									.Insert(
+										SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
+										new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
+								);
+							});
 					})
 					.AllElements();
 			}
@@ -683,8 +686,11 @@ namespace Shockah.XPDisplay
 										new CodeInstruction(OpCodes.Add),
 
 										new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
-										new CodeInstruction(OpCodes.Ldloc, 8), // this *should* be the `levelIndex` local
-										new CodeInstruction(OpCodes.Ldloc, 9), // this *should* be the `skillIndex` local
+										new CodeInstruction(OpCodes.Ldloc, 14), // this *should* be the `levelIndex` local
+										new CodeInstruction(OpCodes.Ldloc, 15), // this *should* be the `skillIndex` local
+
+										new CodeInstruction(OpCodes.Ldc_I4_S, 56), //1.6 added a variable `verticalSpacing` 68, but SpaceCore still uses a constant 56
+
 										new CodeInstruction(OpCodes.Ldnull), // no skill name, it's a built-in one
 										new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 									);
@@ -709,9 +715,12 @@ namespace Shockah.XPDisplay
 										new CodeInstruction(OpCodes.Add),
 
 										new CodeInstruction(OpCodes.Ldloc_1), // this *should* be the `y` local
-										new CodeInstruction(OpCodes.Ldloc, 19), // this *should* be the `levelIndex` local
+										new CodeInstruction(OpCodes.Ldloc, 25), // this *should* be the second `levelIndex` local
 										new CodeInstruction(OpCodes.Ldloc_2), // this *should* be the `indexWithLuckSkill` local
-										new CodeInstruction(OpCodes.Ldloc, 17), // this *should* be the `skillName` local
+
+										new CodeInstruction(OpCodes.Ldc_I4_S, 56), //1.6 added a variable `verticalSpacing` 68, but SpaceCore still uses a constant 56
+
+										new CodeInstruction(OpCodes.Ldloc, 23), // this *should* be the `skillName` local
 										new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_QueueDelegate)))
 									);
 							});
@@ -719,22 +728,29 @@ namespace Shockah.XPDisplay
 					.Do(matcher =>
 					{
 						var skillsPageSkillBarsField = AccessTools.Field(AccessTools.TypeByName(SpaceCoreNewSkillsPageQualifiedName), "skillBars");
+						//We draw our partial skill bars between skillBar.draw and the skillBar hovertext draw
 						return matcher
-							.Do(matcher => //DLX: Was a repeat 2 before
-							{
+							.Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Ldfld(skillsPageSkillBarsField),
+								ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+							).Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Ldfld(skillsPageSkillBarsField),
+								ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+							).Find(
+								ILMatches.Ldarg(0),
+								ILMatches.Ldfld(skillsPageSkillBarsField),
+								ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
+							).Do(matcher => {
 								return matcher
-									.Find(
-										ILMatches.Ldarg(0),
-										ILMatches.Ldfld(skillsPageSkillBarsField),
-										ILMatches.Call(AccessTools.Method(skillsPageSkillBarsField.FieldType, "GetEnumerator"))
-									);
-							})
-							.PointerMatcher(SequenceMatcherRelativeElement.First)
-							.ExtractLabels(out var labels)
-							.Insert(
-								SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-								new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
-							);
+									.PointerMatcher(SequenceMatcherRelativeElement.First)
+									.ExtractLabels(out var labels)
+									.Insert(
+										SequenceMatcherPastBoundsDirection.Before, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
+										new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(XPDisplay), nameof(SkillsPage_draw_CallQueuedDelegates))).WithLabels(labels)
+								);
+							});
 					})
 					.AllElements();
 			}
@@ -745,7 +761,7 @@ namespace Shockah.XPDisplay
 			}
 		}
 
-		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, string? spaceCoreSkillName)
+		public static void SkillsPage_draw_QueueDelegate(SpriteBatch b, int x, int y, int levelIndex, int uiSkillIndex, int verticalSpacing, string? spaceCoreSkillName)
 		{
 			int skillIndex = OrderedSkillIndexes.Length > uiSkillIndex ? OrderedSkillIndexes[uiSkillIndex] : uiSkillIndex;
 			ISkill skill = SkillExt.GetSkill(skillIndex, spaceCoreSkillName);
@@ -755,7 +771,7 @@ namespace Shockah.XPDisplay
 			Rectangle barTextureRectangle = isBigLevel ? BigObtainedLevelCursorsRectangle : SmallObtainedLevelCursorsRectangle;
 			float scale = 4f;
 
-			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * 68);
+			Vector2 topLeft = new(x + levelIndex * 36, y - 4 + uiSkillIndex * verticalSpacing);
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
 
 			int currentLevel = skill.GetBaseLevel(Game1.player);
