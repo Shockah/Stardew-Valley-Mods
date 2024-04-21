@@ -17,6 +17,7 @@ using StardewValley.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Shockah.XPDisplay
@@ -396,7 +397,9 @@ namespace Shockah.XPDisplay
 
 		private void DrawSkillBar(ISkill skill, SpriteBatch b, UIAnchorSide anchorSide, Vector2 position, float scale, float alpha)
 		{
-			int buffedLevel = skill.GetBuffedLevel(Game1.player);
+			int buffedLevel = skill is SpaceCoreSkill
+				? getBuffedLevelForSpaceCore(Game1.player, skill)
+				: skill.GetBuffedLevel(Game1.player);
 			int currentLevel = skill.GetBaseLevel(Game1.player);
 			int nextLevelXP = skill.GetLevelXP(currentLevel + 1);
 			int currentLevelXP = skill.GetLevelXP(currentLevel);
@@ -775,7 +778,9 @@ namespace Shockah.XPDisplay
 			Vector2 bottomRight = topLeft + new Vector2(barTextureRectangle.Width, barTextureRectangle.Height) * scale;
 
 			int currentLevel = skill.GetBaseLevel(Game1.player);
-			int buffedLevel = skill.GetBuffedLevel(Game1.player);
+			int buffedLevel = skill is SpaceCoreSkill
+				? getBuffedLevelForSpaceCore(Game1.player, skill)
+				: skill.GetBuffedLevel(Game1.player);
 			int nextLevelXP = skill.GetLevelXP(currentLevel + 1);
 			if (levelIndex is 4 or 9 && buffedLevel >= levelIndex)
 				SkillBarHoverExclusions.Add((topLeft, bottomRight));
@@ -834,6 +839,20 @@ namespace Shockah.XPDisplay
 					throw new ArgumentException($"{nameof(Orientation)} has an invalid value.");
 			}
 			SkillsPageDrawQueuedDelegates.Add(() => b.Draw(barTexture, barPosition, barTextureRectangle, Color.White * Instance.Config.Alpha, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.87f));
+		}
+
+		//SpaceCore added skill buffs through eg food
+		//This is a crutch since I don't have editorial rights for Kokoro
+		private static Func<Farmer, object /* Skill */, int> GetBuffedSkillLevelDelegate = null!;
+		public static int getBuffedLevelForSpaceCore(Farmer farmer, ISkill skill)
+		{
+			if (GetBuffedSkillLevelDelegate is null) {
+				string SpaceCoreSkillExtensionsQualifiedName = "SpaceCore.SkillExtensions, SpaceCore";
+				Type skillExtensionsType = AccessTools.TypeByName(SpaceCoreSkillExtensionsQualifiedName);
+				MethodInfo getCustomBuffedSkillLevelMethod = AccessTools.Method(skillExtensionsType, "GetCustomBuffedSkillLevel", [typeof(Farmer), typeof(string)]);
+				GetBuffedSkillLevelDelegate = (farmer, skill) => (int)getCustomBuffedSkillLevelMethod.Invoke(null, [farmer, skill])!;
+			}
+			return GetBuffedSkillLevelDelegate(farmer, skill.UniqueID);
 		}
 
 		public static void SkillsPage_draw_CallQueuedDelegates()
