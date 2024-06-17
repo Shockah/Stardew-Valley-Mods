@@ -1,0 +1,14 @@
+{
+  "saveDescriptor.gameVersion": "Version du jeu : {{Version}}",
+  "saveDescriptor.smapiVersion": "Version de SMAPI : {{Version}}",
+  "saveDescriptor.pendingRemovalMods": "Mods en attente de suppression ({{Count}}) :",
+  "saveDescriptor.pendingAdditionMods": "Mods en attente d’ajout ({{Count}}) :",
+  "saveDescriptor.pendingDowngradeMods": "Mods en attente de rétrogradation ({{Count}}) :",
+  "saveDescriptor.pendingUpgradeMods": "Mods en attente de mise à jour ({{Count}}) :",
+  "saveDescriptor.matchingMods": "Mods correspondants ({{Count}}) :",
+  "saveDescriptor.allMods": "Mods ({{Count}}) :",
+  "saveDescriptor.allModsMatch": "Tous les mods ({{Count}}) correspondent.",
+  "saveDescriptor.andXMore": "... et {{Count}} supplémentaires.",
+  "saveDescriptor.noInfo": "Pas d’information supplémentaires pour ce fichier de sauvegarde.",
+  "saveDescriptor.copiedToClipboard": "Liste de mods copié dans le presse-papiers."
+}
