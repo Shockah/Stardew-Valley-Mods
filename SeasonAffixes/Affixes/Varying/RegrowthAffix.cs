@@ -174,26 +174,30 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 
 	private static IEnumerable<CodeInstruction> Crop_getSourceRect_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
 	{
-		try
-		{
-			return new SequenceBlockMatcher<CodeInstruction>(instructions)
-				.Find(
-					ILMatches.Ldarg(0),
-					ILMatches.Ldfld(AccessTools.Field(typeof(Crop), nameof(Crop.fullyGrown))),
-					ILMatches.Call("op_Implicit")
-				)
-				.Insert(
-					SequenceMatcherPastBoundsDirection.After, SequenceMatcherInsertionResultingBounds.IncludingInsertion,
-					new CodeInstruction(OpCodes.Ldarg_0),
-					new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RegrowthAffix), nameof(Crop_getSourceRect_Transpiler_FullyGrown)))
-				)
-				.AllElements();
-		}
-		catch (Exception ex)
-		{
-			Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-			return instructions;
-		}
+	    try
+	    {
+	        var fullyGrownField = AccessTools.Field(typeof(Crop), nameof(Crop.fullyGrown));
+	        var netBoolGetValue = AccessTools.PropertyGetter(typeof(Netcode.NetBool), nameof(Netcode.NetBool.Value));
+	
+	        var matcher = new CodeMatcher(instructions);
+	
+	        matcher.MatchStartForward(
+	            new CodeMatch(OpCodes.Ldfld, fullyGrownField),
+	            new CodeMatch(OpCodes.Callvirt, netBoolGetValue)
+	        )
+	        .Advance(2)
+	        .Insert(
+	            new CodeInstruction(OpCodes.Ldarg_0),
+	            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RegrowthAffix), nameof(Crop_getSourceRect_Transpiler_FullyGrown)))
+	        );
+	
+	        return matcher.InstructionEnumeration();
+	    }
+	    catch (Exception ex)
+	    {
+	        Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
+	        return instructions;
+	    }
 	}
 
 	public static bool Crop_getSourceRect_Transpiler_FullyGrown(bool fullyGrown, Crop crop)

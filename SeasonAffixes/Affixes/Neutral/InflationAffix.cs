@@ -250,7 +250,7 @@ internal sealed class InflationAffix : BaseSeasonAffix, ISeasonAffix
 				.ForEach(
 					SequenceMatcherRelativeBounds.WholeSequence,
 					[
-						ILMatches.LdcI4(50000)
+						ILMatches.LdcI4(65000)
 					],
 					matcher =>
 					{

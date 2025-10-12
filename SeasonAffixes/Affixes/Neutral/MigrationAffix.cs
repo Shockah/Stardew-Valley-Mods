@@ -89,6 +89,9 @@ internal sealed class MigrationAffix : BaseSeasonAffix, ISeasonAffix
 
 	private static void GameLocation_GetFishFromLocationData_Transpiler_ModifyIgnoreQueryKeys(ref HashSet<string>? ignoreQueryKeys)
 	{
+		if (!Mod.IsAffixActive(a => a is MigrationAffix))
+			return;
+			
 		ignoreQueryKeys ??= new();
 		foreach (var key in GameStateQuery.SeasonQueryKeys)
 			ignoreQueryKeys.Add(key);

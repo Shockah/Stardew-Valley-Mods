@@ -87,7 +87,7 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 		var forage = weighted.Next(random);
 		if (forage is null)
 			return null;
-		if (ItemQueryResolver.TryResolveRandomItem(forage, new ItemQueryContext(location, null, random)) is not SObject item)
+		if (ItemQueryResolver.TryResolveRandomItem(forage, new ItemQueryContext(location, null, random, "SeasonAffixes: Overgrowth Affix")) is not SObject item)
 			return null;
 		return item;
 	}
@@ -145,10 +145,7 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 			scaleChange: 0.01f,
 			rotation: 0f,
 			rotationChange: 0f
-		)
-		{
-			light = true
-		};
+		);
 		Game1.Multiplayer.broadcastSprites(location, sprite);
 	}
 }

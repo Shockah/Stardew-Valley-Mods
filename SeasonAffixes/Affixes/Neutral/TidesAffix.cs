@@ -42,7 +42,7 @@ internal sealed class TidesAffix : BaseSeasonAffix, ISeasonAffix
 			return;
 		e.Edit(asset =>
 		{
-			var data = asset.AsDictionary<int, string>();
+			var data = asset.AsDictionary<string, string>();
 			foreach (var kvp in data.Data)
 			{
 				string[] split = kvp.Value.Split('/');
