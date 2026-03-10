@@ -67,8 +67,7 @@ internal sealed class OvergrowthAffix : BaseSeasonAffix, ISeasonAffix
 
 		DelayedAction.functionAfterDelay(() =>
 		{
-			location.removeObjectsAndSpawned(xTile, yTile, 1, 1);
-			location.dropObject(forage, point * 64, Game1.viewport, initialPlacement: true);
+		Game1.createItemDebris(forage, point * 64, -1, location);
 		}, SpawnDelay);
 	}
 

@@ -9,6 +9,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.GameData.Objects;
 using StardewValley.Locations;
 using System;
 using System.Collections.Generic;
@@ -95,43 +96,28 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 	{
 		GemCavernFloors.Value.Clear();
 
-		var shafts = Enumerable.Range(1, MineShaft.bottomOfMineLevel)
-			.Select(i => new MineShaft(i))
-			.Where(IsPotentialPreLoadGemCavernFloor)
-			.Select(shaft =>
-			{
-				shaft.loadLevel(shaft.mineLevel);
-				return shaft;
+		int maxLevel = MineShaft.lowestLevelReached > 0
+			? Math.Min(MineShaft.lowestLevelReached, MineShaft.bottomOfMineLevel)
+			: MineShaft.bottomOfMineLevel;
+		var eligibleFloors = Enumerable.Range(1, maxLevel)
+			.Where(i => i % 10 != 0)
+			.Where(i => {
+				var shaft = new MineShaft(i);
+				return !shaft.isLevelSlimeArea() && !IsMonsterAreaGetter.Value(shaft) && !IsDinoAreaGetter.Value(shaft);
 			})
-			.Where(IsPotentialPostLoadGemCavernFloor)
 			.ToList();
 
 		Random random = new((int)Game1.stats.DaysPlayed + (int)Game1.uniqueIDForThisGame / 2);
-		int totalFloors = Math.Min(random.Next(Mod.Config.CavernsMinFloors, Mod.Config.CavernsMaxFloors + 1), shafts.Count);
+		int totalFloors = Math.Min(random.Next(Mod.Config.CavernsMinFloors, Mod.Config.CavernsMaxFloors + 1), eligibleFloors.Count);
 
 		for (int i = 0; i < totalFloors; i++)
 		{
-			var shaft = random.NextElement(shafts);
-			shafts.Remove(shaft);
-			GemCavernFloors.Value.Add(shaft.mineLevel);
+			int floor = random.NextElement(eligibleFloors);
+			eligibleFloors.Remove(floor);
+			GemCavernFloors.Value.Add(floor);
 		}
 	}
 
-	private static bool IsPotentialPreLoadGemCavernFloor(MineShaft shaft)
-	{
-		if (shaft.mineLevel > MineShaft.bottomOfMineLevel)
-			return false;
-		if (shaft.mineLevel % 10 == 0)
-			return false;
-		return true;
-	}
-
-	private static bool IsPotentialPostLoadGemCavernFloor(MineShaft shaft)
-	{
-		if (shaft.isLevelSlimeArea() || IsMonsterAreaGetter.Value(shaft) || IsDinoAreaGetter.Value(shaft))
-			return false;
-		return true;
-	}
 
 	private static void MineShaft_populateLevel_Postfix(MineShaft __instance)
 	{
@@ -189,15 +175,14 @@ internal sealed class CavernsAffix : BaseSeasonAffix, ISeasonAffix
 	private static List<(string ItemId, int Price)> GetGemDefinitions()
 	{
 		List<(string ItemId, int Price)> results = new();
-		var data = Game1.content.Load<Dictionary<string, string>>("Data\\ObjectInformation");
-		foreach (var (itemId, rawItemData) in data)
+		var data = Game1.content.Load<Dictionary<string, ObjectData>>("Data\\Objects");
+		foreach (var (itemId, objectData) in data)
 		{
 			if (itemId == "74" && !Mod.Config.CavernsAllowPrismaticShard)
 				continue;
-			var split = rawItemData.Split("/");
-			if (split[3] != "Minerals -2")
+			if (objectData.Category != SObject.mineralsCategory)
 				continue;
-			results.Add((ItemId: $"(O){itemId}", Price: int.Parse(split[1])));
+			results.Add((ItemId: $"(O){itemId}", Price: objectData.Price));
 		}
 		return results;
 	}

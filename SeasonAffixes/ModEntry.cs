@@ -433,6 +433,14 @@ public class ModEntry : BaseMod<ModConfig>, ISeasonAffixesApi
 		AffixChoiceMenuConfig = newConfig;
 		if (Game1.activeClickableMenu is AffixChoiceMenu menu)
 			menu.Config = newConfig;
+		else if (Game1.endOfNightMenus is not null)
+		{
+			foreach (var pendingMenu in Game1.endOfNightMenus.OfType<AffixChoiceMenu>())
+			{
+				pendingMenu.Config = newConfig;
+				break;
+			}
+		}
 	}
 
 	private void OnAffixSetChoiceMessageReceived(Farmer sender, NetMessage.AffixSetChoice message)
@@ -471,7 +479,7 @@ public class ModEntry : BaseMod<ModConfig>, ISeasonAffixesApi
 				menu.exitThisMenu(playSound: false);
 				return;
 			}
-			
+
 			menu.SetConfirmedAffixSetChoice(affixes);
 		}
 		else

@@ -112,6 +112,9 @@ internal class AffixChoiceMenu : IClickableMenu
 
 	public override void update(GameTime time)
 	{
+		if (Config is null && ModEntry.Instance.AffixChoiceMenuConfig is not null)
+			Config = ModEntry.Instance.AffixChoiceMenuConfig;
+
 		SelectedChoice = null;
 
 		if (ConfirmedChoice is not null)

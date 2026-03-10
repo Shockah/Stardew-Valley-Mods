@@ -1,11 +1,9 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Nanoray.Shrike;
-using Nanoray.Shrike.Harmony;
 using Shockah.Kokoro;
 using Shockah.Kokoro.Stardew;
 using Shockah.Kokoro.UI;
-using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.GameData.Crops;
@@ -14,8 +12,6 @@ using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 namespace Shockah.SeasonAffixes;
@@ -25,7 +21,8 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 	private static bool IsHarmonySetup = false;
 	private static readonly WeakCounter<Crop> GetSourceRectCallCounter = new();
 	private static readonly ConditionalWeakTable<Crop, StructRef<int>> OldPhaseToShow = new();
-
+	private static readonly ConditionalWeakTable<Crop, StructRef<bool>> OldFullyGrown = new();
+	private static bool IsRestoringFullyGrown;
 	private static string ShortPositiveID => "Regrowth";
 	private static string ShortNegativeID => "PoorYields";
 	public string LocalizedDescription => Mod.Helper.Translation.Get($"{I18nPrefix}.description");
@@ -84,8 +81,7 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 			monitor: Mod.Monitor,
 			original: () => AccessTools.Method(typeof(Crop), nameof(Crop.getSourceRect)),
 			prefix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Crop_getSourceRect_Prefix))),
-			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Crop_getSourceRect_Postfix))),
-			transpiler: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Crop_getSourceRect_Transpiler)))
+			postfix: new HarmonyMethod(AccessTools.Method(GetType(), nameof(Crop_getSourceRect_Postfix)))
 		);
 	}
 
@@ -145,6 +141,8 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 
 	private static void Crop_getSourceRect_Prefix(Crop __instance)
 	{
+		if (IsRestoringFullyGrown)
+			return;
 		uint counter = GetSourceRectCallCounter.Push(__instance);
 		if (counter != 1)
 			return;
@@ -159,56 +157,33 @@ internal sealed class RegrowthAffix : BaseVariantedSeasonAffix, ISeasonAffix
 		if (!affix.AdjustedCrops.Contains(__instance.netSeedIndex.Value))
 			return;
 
-		bool harvestable = __instance.currentPhase.Value >= __instance.phaseDays.Count - 1 && (!__instance.fullyGrown.Value || __instance.dayOfCurrentPhase.Value <= 0);
+		bool harvestable = __instance.currentPhase.Value >= __instance.phaseDays.Count - 1 && __instance.dayOfCurrentPhase.Value <= 0;
 		__instance.phaseToShow.Value = __instance.phaseDays.Count - (harvestable ? 1 : 2);
+		OldFullyGrown.AddOrUpdate(__instance, new(true));
+		__instance.fullyGrown.Value = false;
 	}
 
 	private static void Crop_getSourceRect_Postfix(Crop __instance)
 	{
+		if (IsRestoringFullyGrown)
+			return;
 		uint counter = GetSourceRectCallCounter.Pop(__instance);
 		if (counter != 0)
 			return;
 		if (OldPhaseToShow.TryGetValue(__instance, out var oldPhaseToShow))
 			__instance.phaseToShow.Value = oldPhaseToShow.Value;
-	}
-
-	private static IEnumerable<CodeInstruction> Crop_getSourceRect_Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase originalMethod)
-	{
-	    try
-	    {
-	        var fullyGrownField = AccessTools.Field(typeof(Crop), nameof(Crop.fullyGrown));
-	        var netBoolGetValue = AccessTools.PropertyGetter(typeof(Netcode.NetBool), nameof(Netcode.NetBool.Value));
-	
-	        var matcher = new CodeMatcher(instructions);
-	
-	        matcher.MatchStartForward(
-	            new CodeMatch(OpCodes.Ldfld, fullyGrownField),
-	            new CodeMatch(OpCodes.Callvirt, netBoolGetValue)
-	        )
-	        .Advance(2)
-	        .Insert(
-	            new CodeInstruction(OpCodes.Ldarg_0),
-	            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RegrowthAffix), nameof(Crop_getSourceRect_Transpiler_FullyGrown)))
-	        );
-	
-	        return matcher.InstructionEnumeration();
-	    }
-	    catch (Exception ex)
-	    {
-	        Mod.Monitor.Log($"Could not patch method {originalMethod} - {Mod.ModManifest.Name} probably won't work.\nReason: {ex}", LogLevel.Error);
-	        return instructions;
-	    }
-	}
-
-	public static bool Crop_getSourceRect_Transpiler_FullyGrown(bool fullyGrown, Crop crop)
-	{
-		if (!fullyGrown)
-			return false;
-		var affix = Mod.ActiveAffixes.OfType<RegrowthAffix>().FirstOrDefault(affix => affix.Variant == AffixVariant.Positive);
-		if (affix is null)
-			return true;
-		if (!affix.AdjustedCrops.Contains(crop.netSeedIndex.Value))
-			return true;
-		return false;
+		if (OldFullyGrown.TryGetValue(__instance, out var oldFullyGrown))
+		{
+			IsRestoringFullyGrown = true;
+			try
+			{
+				__instance.fullyGrown.Value = oldFullyGrown.Value;
+			}
+			finally
+			{
+				IsRestoringFullyGrown = false;
+			}
+			OldFullyGrown.Remove(__instance);
+		}
 	}
 }
